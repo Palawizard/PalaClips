@@ -5,8 +5,13 @@ pub enum EngineError {
     #[error("réglage invalide : {0}")]
     InvalidConfig(String),
 
-    #[error("aucun encodeur vidéo matériel compatible n'a été trouvé")]
+    #[error(
+        "aucun encodeur vidéo matériel n'a fonctionné : PalaClips encode uniquement avec la carte          graphique (NVIDIA NVENC, AMD AMF ou Intel Quick Sync). Mets à jour le pilote de ta carte          graphique puis relance PalaClips"
+    )]
     NoHardwareEncoder,
+
+    #[error("ta carte graphique ne sait pas encoder en {0:?} : choisis un autre codec")]
+    CodecUnavailable(crate::config::VideoCodec),
 
     #[error("la capture audio par application nécessite Windows 10 build 20348 ou plus récent")]
     UnsupportedWindowsBuild,
