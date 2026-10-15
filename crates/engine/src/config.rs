@@ -91,7 +91,7 @@ impl Default for VideoSettings {
 }
 
 impl VideoSettings {
-    fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<()> {
         if !(10..=240).contains(&self.fps) {
             return Err(EngineError::InvalidConfig(
                 "les images par seconde doivent être entre 10 et 240".into(),
