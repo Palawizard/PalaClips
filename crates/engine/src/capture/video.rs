@@ -54,7 +54,7 @@ pub struct VideoCapture {
     stream: VideoStream,
     packets: Receiver<AVPacket>,
     alert: Option<EngineEvent>,
-    stop: Arc<AtomicBool>,
+    shared: Arc<Shared>,
     encoder_thread: Option<JoinHandle<Result<VideoCaptureStats>>>,
     session: Option<CaptureControl<FrameSink, EngineError>>,
 }
@@ -111,36 +111,45 @@ impl VideoCapture {
                 keyframe_interval_secs: settings.keyframe_interval_secs,
             },
         )?;
-        let clock = CfrClock::new(Hns::now(), settings.fps);
         let stream = VideoStream {
             codec_parameters: encoder.codec_parameters(),
             time_base: encoder.time_base(),
             fps: settings.fps,
             size,
-            origin: clock.origin(),
+            origin: Hns::ZERO,
         };
         let (packet_tx, packets) = bounded(settings.fps as usize * 2);
-        let stop = Arc::new(AtomicBool::new(false));
+        let (origin_tx, origin_rx) = bounded(1);
         let encoder_thread = std::thread::Builder::new()
             .name("palaclips-video".into())
             .spawn({
-                let stop = stop.clone();
+                let shared = shared.clone();
                 let device = SendCom(device);
+                let fps = settings.fps;
                 move || {
                     let hdr = hdr_white
                         .map(|white| HdrToSdr::new(&device.0, white))
                         .transpose()?;
-                    run_encoder(shared, device, hdr, encoder, clock, packet_tx, stop)
+                    run_encoder(shared, device, hdr, encoder, fps, origin_tx, packet_tx)
                 }
             })?;
-        Ok(Self {
+        let mut capture = Self {
             stream,
             packets,
             alert,
-            stop,
+            shared,
             encoder_thread: Some(encoder_thread),
             session: Some(session),
-        })
+        };
+        match origin_rx.recv() {
+            Ok(origin) => {
+                capture.stream.origin = origin;
+                Ok(capture)
+            }
+            Err(_) => Err(capture.shutdown().err().unwrap_or_else(|| {
+                EngineError::Encoder("le fil d'encodage s'est arrêté au démarrage".into())
+            })),
+        }
     }
 
     pub fn stream(&self) -> &VideoStream {
@@ -160,7 +169,7 @@ impl VideoCapture {
     }
 
     fn shutdown(&mut self) -> Result<VideoCaptureStats> {
-        self.stop.store(true, Ordering::Relaxed);
+        self.shared.stop.store(true, Ordering::Relaxed);
         let stats = match self.encoder_thread.take() {
             Some(thread) => thread
                 .join()
@@ -216,6 +225,7 @@ struct LatestFrame {
 struct Shared {
     latest: Mutex<Option<LatestFrame>>,
     closed: AtomicBool,
+    stop: AtomicBool,
 }
 
 impl Shared {
@@ -340,9 +350,9 @@ fn run_encoder(
     device: SendCom<ID3D11Device>,
     mut hdr: Option<HdrToSdr>,
     mut encoder: VideoEncoder,
-    mut clock: CfrClock,
+    fps: u32,
+    origin: Sender<Hns>,
     packets: Sender<AVPacket>,
-    stop: Arc<AtomicBool>,
 ) -> Result<VideoCaptureStats> {
     let device = device.0;
     let output = encoder.size();
@@ -352,7 +362,9 @@ fn run_encoder(
     let mut send = |mut packet: AVPacket| loop {
         match packets.send_timeout(packet, SEND_RETRY) {
             Ok(()) => return Ok(()),
-            Err(SendTimeoutError::Timeout(_)) if stop.load(Ordering::Relaxed) => return Ok(()),
+            Err(SendTimeoutError::Timeout(_)) if shared.stop.load(Ordering::Relaxed) => {
+                return Ok(());
+            }
             Err(SendTimeoutError::Timeout(unsent)) => packet = unsent,
             Err(SendTimeoutError::Disconnected(_)) => {
                 return Err(EngineError::Encoder(
@@ -362,7 +374,9 @@ fn run_encoder(
         }
     };
 
-    while !stop.load(Ordering::Relaxed) {
+    let mut clock = CfrClock::new(Hns::now(), fps);
+    let mut origin = Some(origin);
+    while !shared.stop.load(Ordering::Relaxed) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
             return Err(EngineError::CaptureSourceLost(
@@ -372,7 +386,7 @@ fn run_encoder(
         let wait = clock.next_deadline() - Hns::now();
         if wait > Hns::ZERO {
             std::thread::sleep(Duration::from_nanos(wait.0 as u64 * 100));
-            if stop.load(Ordering::Relaxed) {
+            if shared.stop.load(Ordering::Relaxed) {
                 break;
             }
         }
@@ -424,6 +438,11 @@ fn run_encoder(
             last_count = latest.count;
         }
         stats.captured = latest.count;
+        if let Some(origin) = origin.take() {
+            clock = CfrClock::new(Hns::now(), fps);
+            clock.take_due(clock.origin());
+            origin.send(clock.origin()).ok();
+        }
     }
     encoder.finish(&mut send)?;
     tracing::info!(
