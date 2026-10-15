@@ -237,7 +237,9 @@ pub fn probe_hdr(target: &CaptureTarget) -> Result<()> {
     let resolved = resolve_target(target)?;
     let (width, height, bgra) = grab(resolved, ColorFormat::Bgra8)?;
     let bgra_max: Vec<f32> = bgra
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|px| px[0].max(px[1]).max(px[2]) as f32 / 255.0)
         .collect();
     println!(
@@ -247,7 +249,9 @@ pub fn probe_hdr(target: &CaptureTarget) -> Result<()> {
 
     let (width, height, half) = grab(resolved, ColorFormat::Rgba16F)?;
     let scrgb_max: Vec<f32> = half
-        .chunks_exact(8)
+        .as_chunks::<8>()
+        .0
+        .iter()
         .map(|px| {
             let channel = |i: usize| half_to_f32(u16::from_le_bytes([px[i], px[i + 1]]));
             channel(0).max(channel(2)).max(channel(4))
