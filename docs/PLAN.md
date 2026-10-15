@@ -50,12 +50,12 @@ Critères :
 
 ## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10, 11 moteur)
 
-- [ ] Loopback du périphérique de sortie (mix complet), micro, horodatage QPC.
-- [ ] Combleur de silences, gestion `AUDCLNT_BUFFERFLAGS_SILENT`, pas d'arrêt sur timeout.
-- [ ] Encodeurs AAC par piste, gestion du délai d'amorçage, titres des pistes.
-- [ ] Suivi du périphérique par défaut à chaud.
-- [ ] CLI `capture-av --seconds N --out f.mp4`.
-- [ ] Décalage de synchro par piste (AUD-11) dans la config et le moteur, options CLI.
+- [x] Loopback du périphérique de sortie (mix complet), micro, horodatage QPC.
+- [x] Combleur de silences, gestion `AUDCLNT_BUFFERFLAGS_SILENT`, pas d'arrêt sur timeout.
+- [x] Encodeurs AAC par piste, gestion du délai d'amorçage, titres des pistes.
+- [x] Suivi du périphérique par défaut à chaud.
+- [x] CLI `capture-av --seconds N --out f.mp4`.
+- [x] Décalage de synchro par piste (AUD-11) dans la config et le moteur, options CLI.
 
 Critères :
 - 👤 Test du clap (`docs/TESTING.md` § T2) sur **1 h** : décalage < 1 image au début, au

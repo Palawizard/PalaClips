@@ -5,10 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 2 — Audio système + micro (pas commencée). Phase 1 validée le
-  2026-10-15 ([rapport](reports/phase-1.md)).
-- **Branche :** `dev` (PR #5 vidéo et PR `fix/hdr-capture` mergées, branches supprimées : il
-  ne reste que `main` et `dev`).
+- **Phase en cours :** 2 — Audio système + micro : code terminé, **pas validée** (T2 d'une
+  heure à faire par Palawi). Phase 1 validée ; ses suites (PR #7) mergées.
+- **Branche :** `feature/system-audio`, **PR #8 ouverte vers `dev`**, à merger seulement
+  quand le T2 est vert (critère de la tâche).
 - **Dernière mise à jour :** 2026-10-15
 
 ## Ce qui existe
@@ -52,17 +52,43 @@
     capture FP16 ; SDR → BGRA8.
 - Tests 👤 de la phase 1 faits avec Palawi : Fortnite fenêtré et plein écran fluides, HDR
   correct après correction, bordure, curseur, mise à l'échelle 150 %.
+- **Suites de la phase 1 (PR #7, 2026-10-15)** : `SendCom` limité aux types D3D11 ;
+  toolchain épinglée 1.94.1 ; HDR détecté par `activeColorMode`
+  (`GET_ADVANCED_COLOR_INFO_2`, `display_color_info`) ; hautes lumières HDR atténuées
+  (ADR-016, `ROLL_OFF_START = 0.9`) ; horloge vidéo démarrée après le premier encodage ;
+  `probe-wgc` affiche l'horloge DWM ; limite G-Sync documentée.
+- **Phase 2 (`feature/system-audio`, PR #8)** :
+  - `audio/` (Windows) : `AudioSource` (`SystemMix`, `Microphone { gain_db }`),
+    `AudioTrack::start(source, titre, origin, sync_offset)` → `stream()` (`AudioStream`),
+    `packets()`, `alerts()`, `finish_at(fin)`, `stop(fin)` ; un thread par source, attente
+    `WaitForMultipleObjects` (arrêt, données, défaut changé), réouverture sur changement de
+    défaut / `AUDCLNT_E_DEVICE_INVALIDATED`, alertes `audio_device_changed` et
+    `audio_device_unavailable` ; `GapFiller` (`filler.rs`, 7 tests).
+  - `encode/audio.rs` : `AacEncoder` (AAC 48 kHz stéréo 192 kb/s, PTS = échantillons).
+  - `mux.rs` : `Mp4Writer::create(path, &[MuxStream])`, `write(index, packet)`, titres.
+  - Config : `full_mix_sync_offset_ms`, `microphone_sync_offset_ms`,
+    `AppTrack::sync_offset_ms` (AUD-11, ADR-017), `ipc.ts` à jour ; `EngineError::Audio`.
+  - CLI : `probe-audio [--mic] [--seconds]`, `probe-av-emitter [--seconds]`,
+    `capture-av` (mêmes options que `capture-video` + `--no-mix`, `--no-mic`,
+    `--mic-gain-db`, `--mix-offset-ms`, `--mic-offset-ms`).
+  - Scripts : `scripts/t2-av-sync.ps1` (T2 automatisé, `-Minutes`, `-NoPause`),
+    `scripts/measure-av-sync.py` (Python 3, flashs ↔ bips).
+  - Preuves : `docs/reports/phase-2/` (journaux `probe-audio`, débranchement), rapport
+    `docs/reports/phase-2.md`.
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 2 (`docs/PLAN.md`) sur `feature/system-audio` depuis `dev` : loopback de la sortie
-   par défaut (mix complet) et micro avec `wasapi` 0.26, horodatage `pu64QPCPosition`.
-   Commencer par une sous-commande de test `probe-audio` (QPC des paquets, drapeau SILENT,
-   comportement quand rien ne joue).
-2. Combleur de silences d'après les écarts QPC, encodeur AAC (priming), mux A/V dans
-   `Mp4Writer` avec `VideoStream::origin` comme `t0` commun.
-3. CLI `capture-av` puis protocole T2 (synchro sur 1 h) : préparer les commandes et faire
-   faire à Palawi uniquement les actions physiques par le widget de questions.
+1. Récupérer de Palawi la sortie de `pwsh scripts\t2-av-sync.ps1` (T2, 1 h ; voir
+   `docs/TESTING.md` § T2). Attendu : 3 × `OK` mix et 3 × `OK` micro. Si le micro « n'a
+   entendu aucun bip », lui faire coller l'écouteur au micro et relancer.
+2. T2 vert → compléter `docs/reports/phase-2.md` (critères 1 et 2 avec la sortie), cocher
+   la phase 2 dans `docs/PLAN.md`, attendre la CI de la PR #8, merger, supprimer la branche.
+   T2 rouge → corriger sur `feature/system-audio` avant toute autre chose.
+3. Phase 3 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : process loopback
+   (`AudioClient::new_application_loopback_client(pid_parent, true)`) en réutilisant
+   `AudioTrack`/`GapFiller` (ajouter une variante `AudioSource::Application`), `sources`
+   (sessions + crêtes), rattachement par nom d'exe, `app_track_silent`. Commencer par une
+   sonde CLI sur la piste muette signalée sous build 26200.
 
 ## Bloquants
 
@@ -94,6 +120,16 @@ Aucun.
   install`) : la monter volontairement, dans un commit `build(repo)`, jamais par la CI seule.
 - G-Sync + écrans à fréquences différentes : WGC ne livre que la cadence de l'autre écran
   (~165 i/s pour un jeu à 225 sur la machine de Palawi, `RESEARCH.md`). Sortie CFR correcte.
+- Machine de Palawi : sortie par défaut « Voicemeeter Input » (loopback ~100 ms en retard →
+  `--mix-offset-ms` ≈ −100 à −120, AUD-11), interface USB Apogee BOOM, micro par défaut
+  « CABLE Output ». Les applis en pause envoient des zéros **sans** drapeau SILENT.
+- Les noms GDI `\\.\DISPLAYn` se renumérotent pendant une session : pour les tests,
+  `--target primary` ; CAP-03 (mémoriser un écran) devra utiliser un identifiant stable
+  (chemin du moniteur / EDID), pas le nom GDI.
+- Tests avec fenêtre (VLC, `probe-av-emitter`) : toujours demander à Palawi avant, ils
+  couvrent l'écran principal. Ne jamais capturer un autre écran que celui demandé.
+- PowerShell : `@(a, b, c * 60)` multiplie le **tableau** (priorité de la virgule) ; mettre
+  des parenthèses.
 - Tests 👤 : Claude lance lui-même les commandes et ne demande à Palawi que les actions
   physiques et son avis visuel, via le widget de questions.
 - HDR basculé pendant une capture : pris en compte seulement au démarrage suivant (à traiter
@@ -113,3 +149,4 @@ Aucun.
 | 2026-10-15 | — | Création du repo, docs, squelette, CI | Phase 0 |
 | 2026-10-15 | 0 | Règles Git `main`/`dev` (PR #1) ; env Windows vert, rsmpeg 0.18 ↔ FFmpeg 8.1 (bindgen 0.72.1), `ffmpeg-info`, `PRODUCT.md`, direction visuelle ; phase 0 validée (PR #2) | Phase 1 |
 | 2026-10-15 | 1 | Pipeline vidéo GPU (WGC → Video Processor NV12 → NVENC/AMF/QSV), pacer CFR QPC, repli, préréglages de débit, CLI `capture-video` ; PR #5. Tests 👤 avec Palawi : Fortnite ✅, HDR délavé → correction FP16 + shader (`fix/hdr-capture`) ✅ ; phase 1 validée | Phase 2 |
+| 2026-10-15 | 1→2 | Suites phase 1 (PR #7 mergée : HDR par `activeColorMode`, atténuation des hautes lumières, horloge après le 1er encodage, 240 i/s, limite G-Sync). Phase 2 : `probe-audio`, `AudioTrack`/`GapFiller`/AAC/mux multi-pistes, `capture-av`, débranchement ✅, Voicemeeter +100 ms → AUD-11 (décalage par piste), T2 automatisé ; PR #8 ouverte | T2 1 h par Palawi, puis merge et phase 3 |
