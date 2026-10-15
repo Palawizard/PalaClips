@@ -29,7 +29,8 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
    `docs/reports/phase-N.md` (`/valider-phase`).
 3. Fin de session (ou contexte qui se remplit) : lance `/handoff`. `docs/HANDOFF.md` doit
    permettre à une nouvelle session de reprendre **sans rien te demander**.
-4. Une phase = une branche `phase-N-<nom>` = une PR vers `main` (modèle dans `.github/`).
+4. Une phase = une ou plusieurs branches conventionnelles (§ 4 Git) = une PR par branche vers
+   `main` (modèle dans `.github/`).
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
@@ -75,7 +76,23 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 
 - `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`
   et `npm run build` (dans `app/`) passent avant chaque commit. La CI fait pareil sur Windows.
-- Tout bloc `unsafe` a un commentaire `// SAFETY:` (lint `undocumented_unsafe_blocks` = deny).
+
+### Commentaires
+
+- **Pas de commentaires dans le code.** Pas de doc comments (`///`, `//!`, JSDoc), pas de
+  commentaires qui paraphrasent le code, pas de renvois à `CLAUDE.md`, à une phase ou à une
+  règle, pas de `// Phase N`, pas de code commenté, pas de commentaires dans les fichiers de
+  config (TOML, YAML, JSON, CSS, `.gitignore`, scripts).
+- Le code s'explique par ses noms (types, fonctions, variables, tests). Si un passage a besoin
+  d'une explication, c'est d'abord un signal pour mieux nommer ou découper.
+- Seules exceptions, en une ligne et sans phrase d'introduction :
+  - `// SAFETY:` avant chaque bloc `unsafe` (exigé par le lint `undocumented_unsafe_blocks`) ;
+  - un « pourquoi » réellement non évident (contournement d'un bug Windows, valeur imposée par
+    une API), avec le lien vers la source.
+- Le contexte, les règles et les raisons vivent dans `docs/` (ARCHITECTURE, DECISIONS,
+  RESEARCH), jamais dans le code.
+- Noms de tests en anglais, au format comportement (`replay_starts_on_keyframe`).
+- Les textes visibles par l'utilisateur (erreurs, `about` de la CLI) restent en français.
 - Messages d'erreur destinés à l'utilisateur : en **français**, actionnables. Logs : `tracing`,
   structurés, avec par piste : paquets, trous comblés, crête.
 - Nouvelle dépendance : justifiée dans la PR, version **stable**, ajoutée à
@@ -85,7 +102,42 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
   `docs/ARCHITECTURE.md` § IPC.
 - Doute sur le comportement d'une API Windows : écris d'abord une sous-commande de test dans
   `crates/cli`, ne suppose pas.
-- Commits : style conventionnel (`feat(engine): ...`, `fix(app): ...`, `docs: ...`).
+
+### Git
+
+**Commits** — [Conventional Commits 1.0](https://www.conventionalcommits.org/en/v1.0.0/),
+strictement :
+
+```
+<type>(<scope>): <description>
+```
+
+- `type` : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`,
+  `revert`.
+- `scope` (obligatoire) : `engine`, `capture`, `audio`, `encode`, `replay`, `record`, `mux`,
+  `library`, `cli`, `app`, `ui`, `ipc`, `deps`, `ci`, `scripts`, `docs`, `repo`.
+- `description` : en anglais, à l'impératif, en minuscules, sans point final, ≤ 72 caractères
+  pour toute la première ligne. Ex. : `feat(capture): add cfr frame pacer`,
+  `fix(audio): fill silence gaps from qpc timestamps`, `docs(handoff): update session notes`.
+- Corps facultatif (ligne vide puis texte) : le **pourquoi**, pas la liste des fichiers.
+- Changement cassant : `!` après le scope et pied `BREAKING CHANGE: ...`.
+- Un commit = un changement cohérent. Pas de commit fourre-tout.
+
+**Branches** — [Conventional Branch](https://conventionalbranch.org/) :
+
+```
+<type>/<description>
+```
+
+- `type` : `feature/`, `fix/`, `hotfix/`, `release/`, `chore/`. Jamais de préfixe d'agent
+  (`claude/`, `ai/`...).
+- `description` : minuscules, chiffres et tirets uniquement, courte. Ex. :
+  `feature/video-capture`, `feature/per-app-audio`, `fix/replay-keyframe-alignment`,
+  `chore/ffmpeg-setup`, `release/v1.0.0`.
+- `main` est la seule branche longue. Pas de commit direct sur `main` : tout passe par une PR.
+
+**Tags** : `vMAJEUR.MINEUR.CORRECTIF` (`v1.0.0`).
+
 - **Identité des commits** : tout agent (Claude Code ou autre) commite **uniquement** avec le
   profil git de l'utilisateur (`git config user.name` / `user.email`, aujourd'hui
   `Palawi <bapcoloj@gmail.com>`). Jamais de trailer `Co-Authored-By`, `Claude-Session`, ni de
@@ -97,7 +149,8 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 ## 5. Carte du repo
 
 ```
-crates/engine/      moteur (capture, audio, encodage, replay, mux) — sans UI
+crates/engine/      moteur (capture, audio, encodage, replay, mux) — sans UI ; les modules
+                    sont créés au fil des phases (responsabilités : docs/ARCHITECTURE.md § 2)
 crates/cli/         banc de test du moteur (une sous-commande par phase)
 app/                front React + TS + Tailwind 4 (Vite)
 app/src-tauri/      shell Tauri 2 : commandes, zone de notification, raccourcis, plugins

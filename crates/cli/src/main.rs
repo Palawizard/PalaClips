@@ -1,8 +1,3 @@
-//! `palaclips-cli` — banc de test du moteur, sans UI.
-//!
-//! Chaque phase du moteur (docs/PLAN.md) ajoute ici une sous-commande qui permet
-//! de valider ses critères d'acceptation à la main ou dans un script.
-
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use palaclips_engine::{EngineConfig, VERSION, replay::estimate_buffer_bytes};
@@ -20,24 +15,17 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Affiche la version et la configuration par défaut (JSON).
+    #[command(about = "Affiche la version et la configuration par défaut (JSON)")]
     Info,
-    /// Estime la RAM du buffer de replay.
+    #[command(about = "Estime la RAM du buffer de replay")]
     Estimate {
-        /// Débit vidéo en kbit/s.
         #[arg(long, default_value_t = 40_000)]
         video_kbps: u32,
-        /// Nombre de pistes audio.
         #[arg(long, default_value_t = 3)]
         audio_tracks: usize,
-        /// Durée du replay en secondes.
         #[arg(long, default_value_t = 60)]
         duration: u32,
     },
-    // Phase 1 : `capture-video --target <...> --seconds 10 --out <fichier>`
-    // Phase 2 : `capture-av --seconds 3600 --out <fichier>`
-    // Phase 3 : `list-audio-sessions`, `capture-apps --app <exe>... --out <fichier>`
-    // Phase 4 : `replay --duration 60` (raccourci de sauvegarde, stats RAM)
 }
 
 fn main() -> Result<()> {

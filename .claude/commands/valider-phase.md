@@ -14,5 +14,5 @@ Valide la phase en cours (ou celle donnée en argument : $ARGUMENTS).
 5. Écris `docs/reports/phase-N.md` (modèle dans `docs/reports/README.md`). Un critère sans
    preuve reste ❌.
 6. Si tout est ✅ : coche la phase dans `docs/PLAN.md`, mets à jour `docs/HANDOFF.md` vers la
-   phase suivante, ouvre la PR de la branche de phase.
+   phase suivante, ouvre la PR de la branche en cours (titre au format conventionnel).
    Sinon : liste ce qui manque et corrige-le avant toute autre chose.

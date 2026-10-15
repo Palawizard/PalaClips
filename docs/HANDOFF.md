@@ -14,8 +14,9 @@
 - Workspace Cargo (`crates/engine`, `crates/cli`, `app/src-tauri`), edition 2024.
 - Moteur : modules `clock` (`Hns`, conversions, testé), `config` (`EngineConfig` + validation,
   testé), `events` (contrat `EngineEvent`), `error`, `replay` (`PacketRing` purgé par âge +
-  estimation RAM, testés). Les autres modules (`capture`, `audio`, `encode`, `mux`, `record`,
-  `sources`) sont des squelettes documentés : leur doc décrit exactement ce qu'ils doivent faire.
+  estimation RAM, testés). Les autres modules n'existent pas encore : leur cahier des charges
+  est dans `docs/ARCHITECTURE.md` § 2.
+- Code sans commentaires ; conventions de commentaires, commits et branches dans `CLAUDE.md` § 4.
 - CLI : `palaclips-cli info`, `palaclips-cli estimate`.
 - App Tauri 2.12 minimale : une fenêtre, commandes `engine_version` et `default_config`.
 - Front : Vite 8 + React 19 + TS 5.9 + Tailwind 4, écran provisoire, `src/lib/ipc.ts` (miroir
