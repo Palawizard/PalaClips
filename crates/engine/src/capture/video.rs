@@ -17,13 +17,14 @@ use windows_capture::settings::{
     GraphicsCaptureItemType, MinimumUpdateIntervalSettings, SecondaryWindowSettings, Settings,
 };
 
+use super::display::display_color;
 use super::pacer::CfrClock;
 use super::targets::{ResolvedTarget, resolve_target};
 use crate::clock::Hns;
 use crate::config::{CaptureTarget, VideoSettings};
 use crate::encode::{
-    GpuConverter, Size, VideoEncoder, VideoEncoderSettings, bgra_texture, frame_texture,
-    output_size,
+    GpuConverter, HdrToSdr, Size, VideoEncoder, VideoEncoderSettings, frame_texture, output_size,
+    render_texture,
 };
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Severity};
@@ -62,7 +63,18 @@ impl VideoCapture {
     pub fn start(target: &CaptureTarget, settings: &VideoSettings, encoder: &str) -> Result<Self> {
         settings.validate()?;
         let resolved = resolve_target(target)?;
-        let ((shared, session), alert) = match start_session(resolved, settings) {
+        let hdr_white = resolved
+            .monitor()
+            .and_then(|monitor| monitor.device_name().ok())
+            .and_then(|name| display_color(&name))
+            .filter(|color| color.hdr)
+            .map(|color| color.sdr_white_scrgb());
+        let color_format = if hdr_white.is_some() {
+            ColorFormat::Rgba16F
+        } else {
+            ColorFormat::Bgra8
+        };
+        let ((shared, session), alert) = match start_session(resolved, settings, color_format) {
             Ok(session) => (session, None),
             Err(error) => {
                 let (ResolvedTarget::Window(window), Some(monitor)) =
@@ -72,7 +84,8 @@ impl VideoCapture {
                 };
                 tracing::warn!(%error, "capture de fenêtre impossible, repli sur son écran");
                 let session =
-                    start_session(ResolvedTarget::Monitor(monitor), settings).map_err(|_| error)?;
+                    start_session(ResolvedTarget::Monitor(monitor), settings, color_format)
+                        .map_err(|_| error)?;
                 let message = format!(
                     "La fenêtre « {} » ne peut pas être capturée : PalaClips capture son écran à la place.",
                     window.title().unwrap_or_default()
@@ -113,7 +126,12 @@ impl VideoCapture {
             .spawn({
                 let stop = stop.clone();
                 let device = SendCom(device);
-                move || run_encoder(shared, device, encoder, clock, size, packet_tx, stop)
+                move || {
+                    let hdr = hdr_white
+                        .map(|white| HdrToSdr::new(&device.0, white))
+                        .transpose()?;
+                    run_encoder(shared, device, hdr, encoder, clock, packet_tx, stop)
+                }
             })?;
         Ok(Self {
             stream,
@@ -231,7 +249,11 @@ impl GraphicsCaptureApiHandler for FrameSink {
         let (texture, count) = match latest.as_ref() {
             Some(previous) if previous.size == size => (previous.texture.clone(), previous.count),
             previous => (
-                Arc::new(SendCom(bgra_texture(frame.device(), size)?)),
+                Arc::new(SendCom(render_texture(
+                    frame.device(),
+                    size,
+                    frame.desc().Format,
+                )?)),
                 previous.map_or(0, |previous| previous.count),
             ),
         };
@@ -259,16 +281,17 @@ impl GraphicsCaptureApiHandler for FrameSink {
 fn start_session(
     target: ResolvedTarget,
     settings: &VideoSettings,
+    color_format: ColorFormat,
 ) -> Result<(Arc<Shared>, CaptureControl<FrameSink, EngineError>)> {
     let shared = Arc::new(Shared::default());
     let (first_tx, first_rx) = bounded(1);
     let flags = (shared.clone(), first_tx);
     let control = match target {
         ResolvedTarget::Monitor(monitor) => {
-            FrameSink::start_free_threaded(session_settings(monitor, settings, flags))
+            FrameSink::start_free_threaded(session_settings(monitor, settings, color_format, flags))
         }
         ResolvedTarget::Window(window) => {
-            FrameSink::start_free_threaded(session_settings(window, settings, flags))
+            FrameSink::start_free_threaded(session_settings(window, settings, color_format, flags))
         }
     }
     .map_err(|error| EngineError::Capture(error.to_string()))?;
@@ -284,6 +307,7 @@ fn start_session(
 fn session_settings<T: TryInto<GraphicsCaptureItemType>>(
     item: T,
     settings: &VideoSettings,
+    color_format: ColorFormat,
     flags: (Arc<Shared>, Sender<()>),
 ) -> Settings<(Arc<Shared>, Sender<()>), T> {
     let half_period = Duration::from_secs_f64(0.5 / settings.fps as f64);
@@ -302,7 +326,7 @@ fn session_settings<T: TryInto<GraphicsCaptureItemType>>(
         SecondaryWindowSettings::Default,
         MinimumUpdateIntervalSettings::Custom(half_period),
         DirtyRegionSettings::Default,
-        ColorFormat::Bgra8,
+        color_format,
         flags,
     )
 }
@@ -310,13 +334,14 @@ fn session_settings<T: TryInto<GraphicsCaptureItemType>>(
 fn run_encoder(
     shared: Arc<Shared>,
     device: SendCom<ID3D11Device>,
+    mut hdr: Option<HdrToSdr>,
     mut encoder: VideoEncoder,
     mut clock: CfrClock,
-    output: Size,
     packets: Sender<AVPacket>,
     stop: Arc<AtomicBool>,
 ) -> Result<VideoCaptureStats> {
     let device = device.0;
+    let output = encoder.size();
     let mut converter: Option<GpuConverter> = None;
     let mut stats = VideoCaptureStats::default();
     let mut last_count = 0;
@@ -378,11 +403,15 @@ fn run_encoder(
         let Some(converter) = converter.as_ref() else {
             continue;
         };
+        let source = match hdr.as_mut() {
+            Some(hdr) => hdr.convert(&latest.texture.0)?,
+            None => latest.texture.0.clone(),
+        };
         for index in due {
             let frame = encoder.acquire_frame()?;
             let (texture, slice) = frame_texture(&frame)
                 .ok_or_else(|| EngineError::Encoder("image matérielle sans texture".into()))?;
-            converter.convert(&latest.texture.0, texture, slice)?;
+            converter.convert(&source, texture, slice)?;
             encoder.encode(frame, index, &mut send)?;
             stats.frames += 1;
             if latest.count == last_count {
