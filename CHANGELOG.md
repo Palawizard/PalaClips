@@ -26,3 +26,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - CLI : `list-targets`, `resolve-target`, `probe-wgc`, `probe-hdr`, `capture-video`.
 - Documentation : SPEC V1, architecture, plan par phases, handoff, ADR, recherche, protocoles
   de test, brief design.
+
+### Corrigé
+- Écran SDR avec gestion automatique des couleurs : il n'est plus pris pour un écran HDR.
+- Écran HDR : les hautes lumières (ciel, soleil, explosions) gardent leurs détails et leur
+  couleur au lieu de virer au blanc uniforme.
+- Capture à 240 i/s : plus de retard au démarrage (première image encodée avant le départ de
+  l'horloge).

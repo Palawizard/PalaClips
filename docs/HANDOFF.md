@@ -68,6 +68,14 @@
 
 Aucun.
 
+## Décisions en attente de Palawi
+
+- **Alerte « images de la source limitées »** (proposée le 2026-10-15, à la demande de
+  Palawi) : quand WGC livre durablement moins d'images que le fps demandé alors que la source
+  est active (cas G-Sync ci-dessous), émettre une alerte `capture_source_rate_limited` avec un
+  message actionnable (« désactive G-Sync ou passe tes autres écrans à ≥ N Hz »). Pas dans la
+  SPEC : à ajouter (exigence CAP-xx, phase 7 robustesse) si Palawi la valide.
+
 ## Points d'attention
 
 - Retirer `third_party/rusty_ffmpeg` et le `[patch.crates-io]` dès qu'une version de rsmpeg
@@ -82,9 +90,10 @@ Aucun.
   oblique). `cargo run` passe aussi par `with-ffmpeg.cmd`.
 - La CLI n'est pas « DPI aware » : les tailles de fenêtres de `list-targets` peuvent être
   virtualisées sous mise à l'échelle Windows (la capture, elle, est en pixels physiques).
-- La CI prend la dernière Rust stable (1.99 le 2026-10-15) alors que la machine de Palawi est
-  en 1.94 : un lint clippy récent peut casser la CI seule (`chunks_exact_to_as_chunks`).
-  `rustup update` avant de commencer une phase.
+- Toolchain épinglée sur Rust 1.94.1 (`rust-toolchain.toml`, la CI fait `rustup toolchain
+  install`) : la monter volontairement, dans un commit `build(repo)`, jamais par la CI seule.
+- G-Sync + écrans à fréquences différentes : WGC ne livre que la cadence de l'autre écran
+  (~165 i/s pour un jeu à 225 sur la machine de Palawi, `RESEARCH.md`). Sortie CFR correcte.
 - Tests 👤 : Claude lance lui-même les commandes et ne demande à Palawi que les actions
   physiques et son avis visuel, via le widget de questions.
 - HDR basculé pendant une capture : pris en compte seulement au démarrage suivant (à traiter
