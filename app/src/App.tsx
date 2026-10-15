@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { engineVersion } from "./lib/ipc.ts";
 
-/**
- * Écran provisoire (phase 0) : prouve que le front parle au moteur.
- * L'interface réelle est conçue en phase 5 avec /impeccable (voir docs/DESIGN-BRIEF.md).
- */
 export default function App() {
   const [version, setVersion] = useState<string>("…");
 
