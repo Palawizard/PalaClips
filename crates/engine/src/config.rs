@@ -1,30 +1,16 @@
-//! Configuration du moteur, choisie par l'utilisateur dans l'app.
-//!
-//! Sérialisée en JSON dans `%APPDATA%\PalaClips\settings.json` par l'app
-//! (versionnée, avec migration). Le moteur ne lit jamais le disque lui-même :
-//! il reçoit un [`EngineConfig`] validé.
-
 use serde::{Deserialize, Serialize};
 
 use crate::error::{EngineError, Result};
 
-/// Version du schéma de configuration. À incrémenter à chaque changement
-/// incompatible, avec une migration dans l'app.
 pub const CONFIG_SCHEMA_VERSION: u32 = 1;
 
-/// Configuration complète du moteur.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct EngineConfig {
-    /// Version du schéma.
     pub schema_version: u32,
-    /// Zone capturée.
     pub capture: CaptureTarget,
-    /// Réglages vidéo.
     pub video: VideoSettings,
-    /// Réglages audio et pistes.
     pub audio: AudioSettings,
-    /// Réglages du replay instantané.
     pub replay: ReplaySettings,
 }
 
@@ -41,7 +27,6 @@ impl Default for EngineConfig {
 }
 
 impl EngineConfig {
-    /// Vérifie que la configuration est utilisable. Les messages sont affichables tels quels.
     pub fn validate(&self) -> Result<()> {
         self.video.validate()?;
         self.audio.validate()?;
@@ -50,69 +35,44 @@ impl EngineConfig {
     }
 }
 
-/// Ce que l'on capture.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum CaptureTarget {
-    /// Un écran, identifié par son nom de périphérique (stable entre redémarrages).
     Monitor {
-        /// Nom de périphérique Windows (ex. `\\.\DISPLAY1`).
         device_name: String,
     },
-    /// Une fenêtre, retrouvée par le nom de l'exe (pas par HWND, qui change).
     Window {
-        /// Nom de l'exécutable propriétaire (ex. `FortniteClient-Win64-Shipping.exe`).
         exe_name: String,
-        /// Titre au moment du choix, pour départager plusieurs fenêtres du même exe.
         title_hint: Option<String>,
     },
-    /// L'écran principal (valeur par défaut au premier lancement).
     #[default]
     PrimaryMonitor,
 }
 
-/// Codec vidéo matériel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum VideoCodec {
-    /// H.264 : compatibilité maximale (Discord, navigateurs, éditeurs).
     H264,
-    /// HEVC : ~2× plus compact, lecture à vérifier dans la galerie (WebView2).
     Hevc,
-    /// AV1 : RTX 40+ / RX 7000+ / Arc.
     Av1,
 }
 
-/// Résolution de sortie.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum OutputResolution {
-    /// Résolution native de la source.
     Native,
-    /// Hauteur cible (largeur calculée en gardant le ratio, arrondie au pair).
-    Height {
-        /// Hauteur en pixels (ex. 1080).
-        height: u32,
-    },
+    Height { height: u32 },
 }
 
-/// Réglages vidéo.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct VideoSettings {
-    /// Images par seconde en sortie (CFR).
     pub fps: u32,
-    /// Résolution de sortie.
     pub resolution: OutputResolution,
-    /// Codec.
     pub codec: VideoCodec,
-    /// Débit cible en kbit/s.
     pub bitrate_kbps: u32,
-    /// Intervalle entre images clés, en secondes (précision du replay).
     pub keyframe_interval_secs: f32,
-    /// Capturer le curseur.
     pub capture_cursor: bool,
-    /// Afficher la bordure jaune de Windows autour de la zone capturée.
     pub draw_border: bool,
 }
 
@@ -158,36 +118,23 @@ impl VideoSettings {
     }
 }
 
-/// Une piste audio dédiée à une application.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppTrack {
-    /// Nom de l'exécutable (persistance par exe, jamais par PID — CLAUDE.md règle 5).
     pub exe_name: String,
-    /// Nom affiché et écrit dans les métadonnées de la piste (ex. « Discord »).
     pub label: String,
-    /// Piste active.
     pub enabled: bool,
 }
 
-/// Réglages audio.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AudioSettings {
-    /// Enregistrer la piste « mix complet » (toujours piste 1 si activée).
     pub record_full_mix: bool,
-    /// Périphérique de sortie dont on capture le mix (None = périphérique par défaut, suivi à chaud).
     pub output_device_id: Option<String>,
-    /// Enregistrer le micro.
     pub record_microphone: bool,
-    /// Périphérique micro (None = micro par défaut, suivi à chaud).
     pub microphone_device_id: Option<String>,
-    /// Gain du micro en dB.
     pub microphone_gain_db: f32,
-    /// Pistes par application, dans l'ordre d'écriture dans le fichier.
     pub app_tracks: Vec<AppTrack>,
-    /// Nombre maximal de pistes par application.
     pub max_app_tracks: usize,
-    /// L'appli au premier plan alimente automatiquement la piste « Jeu ».
     pub auto_game_track: bool,
 }
 
@@ -236,7 +183,6 @@ impl AudioSettings {
         Ok(())
     }
 
-    /// Nombre total de pistes audio qui seront écrites.
     pub fn track_count(&self) -> usize {
         usize::from(self.record_full_mix)
             + usize::from(self.record_microphone)
@@ -245,25 +191,18 @@ impl AudioSettings {
     }
 }
 
-/// Où vit le buffer de replay.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReplayStorage {
-    /// Paquets encodés en RAM (par défaut).
     Ram,
-    /// Segments sur disque (pour les longues durées).
     Disk,
 }
 
-/// Réglages du replay instantané.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ReplaySettings {
-    /// Replay armé au démarrage de l'app.
     pub arm_on_startup: bool,
-    /// Durée conservée, en secondes.
     pub duration_secs: u32,
-    /// Stockage du buffer.
     pub storage: ReplayStorage,
 }
 
@@ -293,26 +232,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn config_par_defaut_valide() {
-        EngineConfig::default().validate().expect("défaut valide");
+    fn default_config_is_valid() {
+        EngineConfig::default().validate().expect("valid default");
     }
 
     #[test]
-    fn json_aller_retour() {
+    fn json_round_trip() {
         let cfg = EngineConfig::default();
-        let json = serde_json::to_string(&cfg).expect("sérialisation");
-        let back: EngineConfig = serde_json::from_str(&json).expect("désérialisation");
+        let json = serde_json::to_string(&cfg).expect("serialize");
+        let back: EngineConfig = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(cfg, back);
     }
 
     #[test]
-    fn champs_manquants_prennent_le_defaut() {
-        let back: EngineConfig = serde_json::from_str("{}").expect("désérialisation");
+    fn missing_fields_use_defaults() {
+        let back: EngineConfig = serde_json::from_str("{}").expect("deserialize");
         assert_eq!(back, EngineConfig::default());
     }
 
     #[test]
-    fn doublon_d_application_refuse() {
+    fn duplicate_app_is_rejected() {
         let mut cfg = EngineConfig::default();
         for name in ["Discord.exe", "discord.exe"] {
             cfg.audio.app_tracks.push(AppTrack {
@@ -325,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn fps_hors_bornes_refuse() {
+    fn out_of_range_fps_is_rejected() {
         let mut cfg = EngineConfig::default();
         cfg.video.fps = 500;
         assert!(cfg.validate().is_err());
