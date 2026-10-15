@@ -412,11 +412,14 @@ fn run_capture(
 
     let half_frame = Hns(HNS_PER_SECOND / stream.fps as i64 / 2);
     let end = stream.origin + Hns(args.seconds as i64 * HNS_PER_SECOND);
-    let remaining = (end - half_frame - Hns::now()).0.max(0) as u64;
-    std::thread::sleep(std::time::Duration::from_nanos(remaining * 100));
+    let audio_lead = Hns::from_millis(100);
+    let until_audio_stop = (end - audio_lead - Hns::now()).0.max(0) as u64;
+    std::thread::sleep(std::time::Duration::from_nanos(until_audio_stop * 100));
     for track in &tracks {
         track.finish_at(end);
     }
+    let remaining = (end - half_frame - Hns::now()).0.max(0) as u64;
+    std::thread::sleep(std::time::Duration::from_nanos(remaining * 100));
     let stats = capture.stop()?;
     let mut track_reports = Vec::new();
     for track in tracks {
