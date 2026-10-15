@@ -5,7 +5,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use palaclips_engine::{
     EngineConfig, VERSION,
-    config::CaptureTarget,
+    config::{CaptureTarget, OutputResolution, VideoCodec, VideoSettings},
     replay::estimate_buffer_bytes,
 };
 
@@ -41,6 +41,31 @@ enum Command {
     ListTargets {
         #[arg(long, help = "Sortie JSON")]
         json: bool,
+    },
+    #[cfg(windows)]
+    #[command(about = "Capture la vidéo d'une cible et l'encode sur le GPU dans un MP4")]
+    CaptureVideo {
+        #[arg(long, value_parser = parse_target, default_value = "primary")]
+        target: CaptureTarget,
+        #[arg(long, default_value_t = 60)]
+        fps: u32,
+        #[arg(long, default_value_t = 10)]
+        seconds: u64,
+        #[arg(long)]
+        out: std::path::PathBuf,
+        #[arg(long, value_parser = parse_codec, default_value = "h264")]
+        codec: VideoCodec,
+        #[arg(
+            long,
+            help = "Hauteur de sortie (mise à l'échelle GPU) ; absente = native"
+        )]
+        height: Option<u32>,
+        #[arg(long, default_value_t = 40)]
+        bitrate_mbps: u32,
+        #[arg(long)]
+        no_cursor: bool,
+        #[arg(long)]
+        border: bool,
     },
     #[cfg(windows)]
     #[command(about = "Test WGC : Video Processor sur le périphérique, cadence et horodatages QPC")]
@@ -91,6 +116,31 @@ fn main() -> Result<()> {
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
         Command::ListTargets { json } => list_targets(json)?,
+        #[cfg(windows)]
+        Command::CaptureVideo {
+            target,
+            fps,
+            seconds,
+            out,
+            codec,
+            height,
+            bitrate_mbps,
+            no_cursor,
+            border,
+        } => {
+            let video = VideoSettings {
+                fps,
+                resolution: height.map_or(OutputResolution::Native, |height| {
+                    OutputResolution::Height { height }
+                }),
+                codec,
+                bitrate_kbps: bitrate_mbps * 1_000,
+                capture_cursor: !no_cursor,
+                draw_border: border,
+                ..VideoSettings::default()
+            };
+            capture_video(&target, &video, seconds, &out)?
+        }
         #[cfg(windows)]
         Command::ProbeWgc {
             target,
@@ -177,6 +227,69 @@ fn resolve_target(target: &CaptureTarget) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(windows)]
+fn capture_video(
+    target: &CaptureTarget,
+    video: &VideoSettings,
+    seconds: u64,
+    out: &std::path::Path,
+) -> Result<()> {
+    use palaclips_engine::capture::VideoCapture;
+    use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
+    use palaclips_engine::encode::{hardware_video_encoders, pick_encoder};
+    use palaclips_engine::events::EngineEvent;
+    use palaclips_engine::mux::Mp4Writer;
+
+    let encoders = hardware_video_encoders()?;
+    let encoder = pick_encoder(&encoders, video.codec)?;
+    let capture = VideoCapture::start(target, video, &encoder.name)?;
+    if let Some(EngineEvent::Alert { message, .. }) = capture.alert() {
+        println!("{message}");
+    }
+    let stream = capture.stream().clone();
+    println!(
+        "{} → {}x{} @ {} i/s, {} s",
+        encoder.name, stream.size.width, stream.size.height, stream.fps, seconds
+    );
+    let mut writer =
+        Mp4Writer::create(out, &stream.codec_parameters, stream.time_base, stream.fps)?;
+    let packets = capture.packets().clone();
+    let writer_thread = std::thread::spawn(move || -> Result<Mp4Writer> {
+        for packet in packets.iter() {
+            writer.write(packet)?;
+        }
+        Ok(writer)
+    });
+    let half_frame = Hns(HNS_PER_SECOND / stream.fps as i64 / 2);
+    let stop_at = stream.origin + Hns(seconds as i64 * HNS_PER_SECOND) - half_frame;
+    let remaining = (stop_at - Hns::now()).0.max(0) as u64;
+    std::thread::sleep(std::time::Duration::from_nanos(remaining * 100));
+    let stats = capture.stop()?;
+    writer_thread
+        .join()
+        .map_err(|_| anyhow::anyhow!("le fil d'écriture a paniqué"))??
+        .finish()?;
+    println!(
+        "{} images écrites ({} reçues de Windows, {} dupliquées, {} changements de résolution, retard max {:.2} ms) → {}",
+        stats.frames,
+        stats.captured,
+        stats.duplicated,
+        stats.resolution_changes,
+        stats.max_lateness.0 as f64 / 10_000.0,
+        out.display()
+    );
+    Ok(())
+}
+
+fn parse_codec(value: &str) -> std::result::Result<VideoCodec, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "h264" => Ok(VideoCodec::H264),
+        "hevc" | "h265" => Ok(VideoCodec::Hevc),
+        "av1" => Ok(VideoCodec::Av1),
+        _ => Err("codec attendu : h264, hevc ou av1".into()),
+    }
 }
 
 fn parse_target(value: &str) -> std::result::Result<CaptureTarget, String> {

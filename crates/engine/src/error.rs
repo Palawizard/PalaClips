@@ -25,6 +25,9 @@ pub enum EngineError {
     #[error("l'encodeur vidéo a échoué : {0}")]
     Encoder(String),
 
+    #[error("écriture du fichier vidéo impossible : {0}")]
+    Mux(String),
+
     #[error("la source de capture n'est plus disponible : {0}")]
     CaptureSourceLost(String),
 

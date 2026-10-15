@@ -6,6 +6,8 @@ pub mod config;
 pub mod encode;
 pub mod error;
 pub mod events;
+#[cfg(windows)]
+pub mod mux;
 pub mod replay;
 
 pub use config::EngineConfig;
