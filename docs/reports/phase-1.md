@@ -64,3 +64,23 @@ clés à 0, 1, 2… s dans `ffprobe -show_entries packet=pts_time,flags`), ENC-0
 - Capture lancée dans le Bloc-notes de Palawi pour le test de redimensionnement : il affichait
   une boîte « Conserver les modifications non enregistrées ? » sur un de ses fichiers, laissée
   telle quelle.
+
+## Suivi après validation (`fix/phase-1-followups`)
+
+- **Détection du HDR** : `advancedColorEnabled` vaut 1 sur un écran SDR avec la gestion
+  automatique des couleurs, ce qui envoyait la capture dans le shader HDR → SDR. Détection par
+  `activeColorMode` (`GET_ADVANCED_COLOR_INFO_2`), avec repli ; les 4 états HDR × ACM sont
+  mesurés dans `RESEARCH.md` (Capture vidéo).
+- **Hautes lumières HDR** (ADR-016) : atténuation douce au-dessus de 90 % du blanc SDR au lieu
+  de l'écrêtage. Scène HDR10 de synthèse (ciel 60 → 400 nits, soleil 2000 nits, explosion
+  1000 nits, rampe 0 → 1500 nits) jouée par VLC en plein écran sur l'écran 2 (blanc SDR
+  280 nits), capturée 2 s avec chaque shader, image extraite à 1 s. Rampe (niveau 8 bits) :
+
+  | nits | 100 | 200 | 250 | 280 | 350 | 500 | 1000 | 1500 |
+  |---|---|---|---|---|---|---|---|---|
+  | écrêtage | 159 | 218 | 242 | 254 | 255 | 255 | 255 | 255 |
+  | atténuation | 159 | 218 | 242 | 248 | 251 | 252 | 254 | 254 |
+
+  À l'œil : avec l'écrêtage, ciel au-delà de 280 nits, soleil et cœur de l'explosion en
+  aplats blancs ; avec l'atténuation, dégradé du ciel, disque et halo du soleil, explosion
+  orange conservés.
