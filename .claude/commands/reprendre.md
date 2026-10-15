@@ -16,8 +16,9 @@ Tu reprends le travail sur PalaClips.
    - ce que tu proposes de faire maintenant, en tâches courtes, avec les critères
      d'acceptation visés ;
    - ce dont tu auras besoin de moi (tests 👤).
-5. Si tu es sur `main`, crée la branche conventionnelle de la tâche (`feature/...`, `fix/...`,
-   `chore/...`, voir `CLAUDE.md` § 4 Git) avant toute modification.
+5. Si tu es sur `main` ou `dev`, crée la branche conventionnelle de la tâche à partir de `dev`
+   à jour (`feature/...`, `fix/...`, `chore/...` ; `hotfix/...` à partir de `main`, voir
+   `CLAUDE.md` § 4 Git) avant toute modification. Jamais de commit direct sur `main` ni `dev`.
 6. Puis commence directement par la première tâche, sauf s'il y a un bloquant.
 
 $ARGUMENTS

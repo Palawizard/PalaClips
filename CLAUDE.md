@@ -29,8 +29,8 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
    `docs/reports/phase-N.md` (`/valider-phase`).
 3. Fin de session (ou contexte qui se remplit) : lance `/handoff`. `docs/HANDOFF.md` doit
    permettre à une nouvelle session de reprendre **sans rien te demander**.
-4. Une phase = une ou plusieurs branches conventionnelles (§ 4 Git) = une PR par branche vers
-   `main` (modèle dans `.github/`).
+4. Une phase = une ou plusieurs branches conventionnelles parties de `dev` (§ 4 Git) = une PR
+   par branche vers `dev` (modèle dans `.github/`). `main` ne reçoit que les versions publiées.
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
@@ -134,9 +134,18 @@ strictement :
 - `description` : minuscules, chiffres et tirets uniquement, courte. Ex. :
   `feature/video-capture`, `feature/per-app-audio`, `fix/replay-keyframe-alignment`,
   `chore/ffmpeg-setup`, `release/v1.0.0`.
-- `main` est la seule branche longue. Pas de commit direct sur `main` : tout passe par une PR.
+**Branches longues** — deux, et **jamais de commit direct** sur l'une ou l'autre : tout passe
+par une PR.
 
-**Tags** : `vMAJEUR.MINEUR.CORRECTIF` (`v1.0.0`).
+- `main` : versions publiées uniquement. Alimentée seulement par des PR `dev` → `main` ou
+  `release/vX.Y.Z` → `main` (et les `hotfix/`).
+- `dev` : branche d'intégration. Toute branche `feature/`, `fix/`, `chore/` part de `dev` et
+  revient dans `dev` par PR.
+- `release/vX.Y.Z` part de `dev`, est mergée dans `main` (puis le tag), et `main` est remergée
+  dans `dev` si la release a reçu des correctifs.
+- `hotfix/` part de `main` et est mergée dans `main` **et** dans `dev`.
+
+**Tags** : `vMAJEUR.MINEUR.CORRECTIF` (`v1.0.0`), posés uniquement sur `main`.
 
 - **Identité des commits** : tout agent (Claude Code ou autre) commite **uniquement** avec le
   profil git de l'utilisateur (`git config user.name` / `user.email`, aujourd'hui
