@@ -116,7 +116,8 @@ strictement :
 - `type` : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`,
   `revert`.
 - `scope` (obligatoire) : `engine`, `capture`, `audio`, `encode`, `replay`, `record`, `mux`,
-  `library`, `cli`, `app`, `ui`, `ipc`, `deps`, `ci`, `scripts`, `docs`, `repo`.
+  `library`, `cli`, `app`, `ui`, `ipc`, `deps`, `ci`, `scripts`, `docs`, `handoff`, `reports`,
+  `repo`.
 - `description` : en anglais, à l'impératif, en minuscules, sans point final, ≤ 72 caractères
   pour toute la première ligne. Ex. : `feat(capture): add cfr frame pacer`,
   `fix(audio): fill silence gaps from qpc timestamps`, `docs(handoff): update session notes`.

@@ -81,6 +81,7 @@ pub fn probe_wgc(target: &CaptureTarget, seconds: u64, min_interval_ms: u64) -> 
     }
     .map_err(|error| anyhow!("{error}"))?;
     std::thread::sleep(Duration::from_secs(seconds));
+    let dwm = dwm_timing()?;
     control.stop().map_err(|error| anyhow!("{error}"))?;
 
     let report = report.lock().map_err(|_| anyhow!("verrou"))?;
@@ -114,7 +115,26 @@ pub fn probe_wgc(target: &CaptureTarget, seconds: u64, min_interval_ms: u64) -> 
         "latence QPC (réception − horodatage) : {}",
         stats(&report.latencies)
     );
+    println!(
+        "horloge de composition DWM : {:.1} Hz",
+        dwm.rateRefresh.uiNumerator as f64 / dwm.rateRefresh.uiDenominator.max(1) as f64
+    );
     Ok(())
+}
+
+fn dwm_timing() -> Result<windows::Win32::Graphics::Dwm::DWM_TIMING_INFO> {
+    let mut timing = windows::Win32::Graphics::Dwm::DWM_TIMING_INFO {
+        cbSize: size_of::<windows::Win32::Graphics::Dwm::DWM_TIMING_INFO>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: `timing` is a valid DWM_TIMING_INFO with cbSize set, as the API requires.
+    unsafe {
+        windows::Win32::Graphics::Dwm::DwmGetCompositionTimingInfo(
+            windows::Win32::Foundation::HWND::default(),
+            &mut timing,
+        )?
+    };
+    Ok(timing)
 }
 
 fn settings<T: TryInto<windows_capture::settings::GraphicsCaptureItemType>>(
@@ -218,19 +238,60 @@ fn percentiles(mut values: Vec<f32>) -> String {
 }
 
 pub fn probe_hdr(target: &CaptureTarget) -> Result<()> {
-    use palaclips_engine::capture::display_color;
+    use palaclips_engine::capture::{display_color, display_color_info};
     use windows_capture::monitor::Monitor;
 
     for monitor in Monitor::enumerate()? {
         let name = monitor.device_name()?;
+        let Some(info) = display_color_info(&name) else {
+            println!("{name} : chemin d'affichage introuvable");
+            continue;
+        };
+        println!("{name}");
+        match info.legacy_flags {
+            Some(flags) => println!(
+                "  ADVANCED_COLOR_INFO   : bits {flags:#06b} (supported {}, enabled {}, wideColorEnforced {}, forceDisabled {})",
+                flags & 1,
+                flags >> 1 & 1,
+                flags >> 2 & 1,
+                flags >> 3 & 1
+            ),
+            None => println!("  ADVANCED_COLOR_INFO   : échec"),
+        }
+        match info.info2 {
+            Some(info2) => println!(
+                "  ADVANCED_COLOR_INFO_2 : bits {:#010b} (supported {}, active {}, limitedByPolicy {}, hdrSupported {}, hdrUserEnabled {}, wcgSupported {}, wcgUserEnabled {}), {} bits/canal, activeColorMode {} ({})",
+                info2.flags,
+                info2.flags & 1,
+                info2.flags >> 1 & 1,
+                info2.flags >> 3 & 1,
+                info2.flags >> 4 & 1,
+                info2.flags >> 5 & 1,
+                info2.flags >> 6 & 1,
+                info2.flags >> 7 & 1,
+                info2.bits_per_color_channel,
+                info2.active_color_mode,
+                ["SDR", "WCG", "HDR"]
+                    .get(info2.active_color_mode as usize)
+                    .unwrap_or(&"?")
+            ),
+            None => println!("  ADVANCED_COLOR_INFO_2 : échec"),
+        }
+        match info.sdr_white_level {
+            Some(level) => println!(
+                "  SDRWhiteLevel         : {level} ({:.0} nits)",
+                info.sdr_white_nits()
+            ),
+            None => println!("  SDRWhiteLevel         : échec"),
+        }
         match display_color(&name) {
             Some(color) => println!(
-                "{name} : HDR {}, blanc SDR {:.0} nits (scRGB {:.2})",
+                "  => HDR {}, blanc SDR {:.0} nits (scRGB {:.2})",
                 if color.hdr { "activé" } else { "désactivé" },
                 color.sdr_white_nits,
                 color.sdr_white_scrgb()
             ),
-            None => println!("{name} : informations couleur indisponibles"),
+            None => println!("  => informations couleur indisponibles"),
         }
     }
 

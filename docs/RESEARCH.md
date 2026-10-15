@@ -44,14 +44,45 @@
   éclaircit les tons moyens (scRGB 0,75 → 0,57 au lieu de 0,50 en sRGB fidèle) et compresse
   les blancs → vidéo délavée. En `R16G16B16A16_FLOAT`, on reçoit le scRGB linéaire (1,0 =
   80 nits ; blanc SDR = `SDRWhiteLevel / 1000` ; jusqu'à 16,9 avec HDR automatique).
-- `DisplayConfigGetDeviceInfo` : `DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO` (bit 1 =
-  HDR actif) et `GET_SDR_WHITE_LEVEL` (`SDRWhiteLevel` en millièmes de 80 nits), en passant
-  par `GET_SOURCE_NAME` pour relier le nom GDI `\\.\DISPLAYn` au chemin d'affichage.
+- `DisplayConfigGetDeviceInfo` : `GET_SDR_WHITE_LEVEL` (`SDRWhiteLevel` en millièmes de
+  80 nits), en passant par `GET_SOURCE_NAME` pour relier le nom GDI `\.\DISPLAYn` au chemin
+  d'affichage.
   — [Microsoft](https://learn.microsoft.com/windows/win32/api/wingdi/ns-wingdi-displayconfig_sdr_white_level)
+- Détection du HDR : `advancedColorEnabled` (`GET_ADVANCED_COLOR_INFO`, bit 1) vaut aussi 1
+  sur un écran SDR avec la gestion automatique des couleurs (ACM)
+  ([xbmc/xbmc#26140](https://github.com/xbmc/xbmc/issues/26140)). On lit
+  `GET_ADVANCED_COLOR_INFO_2` (type 15, absent de `windows` 0.62 : structure déclarée
+  d'après `wingdi.h` du SDK 10.0.26100) et HDR ⇔ `activeColorMode == HDR (2)` ; si l'appel
+  échoue, repli sur `advancedColorEnabled && !wideColorEnforced`. Mesuré le 2026-10-15
+  (`probe-hdr`, écran 2 GO27Q24, Windows 11 build 26200) :
+
+  | État | `INFO` (bits) | `INFO_2` (bits) | `activeColorMode` | `SDRWhiteLevel` |
+  |---|---|---|---|---|
+  | HDR on, ACM on | `0011` | `11110011` | 2 (HDR) | 3500 (280 nits) |
+  | HDR on, ACM off | `0011` | `01110011` | 2 (HDR) | 3500 (280 nits) |
+  | HDR off, ACM on | `0111` | `11010111` | 1 (WCG) | 1000 (80 nits) |
+  | HDR off, ACM off | `0001` | `01010001` | 0 (SDR) | 1000 (80 nits) |
+
+  Bits de `INFO` (poids faible à droite) : supported, enabled, wideColorEnforced,
+  forceDisabled. Bits de `INFO_2` : supported, active, —, limitedByPolicy, hdrSupported,
+  hdrUserEnabled, wcgSupported, wcgUserEnabled. HDR off + ACM on est bien le cas piégé
+  (`enabled = 1`), et `wideColorEnforced = 1` y suffit au repli. Le réglage ACM n'est pas
+  affiché quand le HDR est actif (il se règle HDR désactivé, dans « Profil de couleurs ») ; il
+  reste mémorisé dessous (`wcgUserEnabled`).
 - Mise à l'échelle Windows à 150 % : WGC capture l'écran en pixels physiques (1920×1080),
   vérifié le 2026-10-15.
 - Fortnite (EAC) en fenêtré et en plein écran : la capture de fenêtre WGC fonctionne sans
   repli (2560×1440 en plein écran), fluide à 60 i/s. — 2026-10-15
+- Débit de WGC à 240 Hz (2026-10-15, `probe-wgc`, écran 2 à 240 Hz, écran 1 à 165 Hz,
+  écran 3 à 60 Hz, RTX 4070 Super) : vidéo de test à 240 i/s dans VLC → 232 i/s reçus
+  (écran) et 227 i/s (fenêtre). Fortnite à 225 i/s (plafond Reflex) **avec G-Sync** → 165 à
+  175 i/s reçus, que la cible soit la fenêtre ou l'écran, en plein écran comme en plein écran
+  fenêtré, et sans encodage ; l'horloge de composition DWM (`DwmGetCompositionTimingInfo`)
+  annonce alors 164,9 Hz, celle de l'écran 1. **Sans G-Sync** → 219 i/s reçus, horloge DWM
+  240 Hz. Avec la VRR, l'écran du jeu n'a plus de cadence fixe et DWM se cale sur un autre
+  écran ; WGC ne livre qu'une image par composition. Écartés par mesure : nombre de tampons
+  du frame pool (`windows-capture` en crée 1, essai à 3 identique) et fréquence de l'écran 1
+  (à 60 Hz, 175 i/s reçus). Aucun contournement sans injection.
 - La bordure jaune (`IsBorderRequired`) est dessinée par DWM à l'écran, **pas** dans l'image
   capturée (constaté le 2026-10-15).
 - Git Bash réécrit `\\.\DISPLAY1` (perte d'une barre oblique) : lancer la CLI depuis

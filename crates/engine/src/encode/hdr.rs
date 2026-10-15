@@ -11,6 +11,8 @@ use super::convert::Size;
 use super::d3d11::{gpu_error, render_texture};
 use crate::error::{EngineError, Result};
 
+const ROLL_OFF_START: f32 = 0.9;
+
 const SHADER: &str = r"
 Texture2D<float4> source : register(t0);
 
@@ -25,8 +27,18 @@ float3 encode_srgb(float3 linear_rgb) {
         : 1.055 * pow(linear_rgb, 1.0 / 2.4) - 0.055;
 }
 
+float3 roll_off(float3 rgb) {
+    float peak = max(max(rgb.r, rgb.g), rgb.b);
+    if (peak <= ROLL_OFF_START) {
+        return rgb;
+    }
+    float headroom = 1.0 - ROLL_OFF_START;
+    float excess = peak - ROLL_OFF_START;
+    return rgb * ((ROLL_OFF_START + headroom * excess / (excess + headroom)) / peak);
+}
+
 float4 scrgb_to_sdr(float4 position : SV_Position) : SV_Target {
-    float3 linear_rgb = saturate(source.Load(int3(position.xy, 0)).rgb / SDR_WHITE);
+    float3 linear_rgb = saturate(roll_off(source.Load(int3(position.xy, 0)).rgb / SDR_WHITE));
     return float4(encode_srgb(linear_rgb), 1);
 }
 ";
@@ -42,7 +54,7 @@ pub struct HdrToSdr {
 
 impl HdrToSdr {
     pub fn new(device: &ID3D11Device, sdr_white_scrgb: f32) -> Result<Self> {
-        let source = SHADER.replace("SDR_WHITE", &format!("{sdr_white_scrgb:.4}"));
+        let source = shader_source(sdr_white_scrgb);
         let vertex = compile(&source, s!("fullscreen"), s!("vs_5_0"))?;
         let pixel = compile(&source, s!("scrgb_to_sdr"), s!("ps_5_0"))?;
         let mut vertex_shader = None;
@@ -107,6 +119,12 @@ impl HdrToSdr {
     }
 }
 
+fn shader_source(sdr_white_scrgb: f32) -> String {
+    SHADER
+        .replace("SDR_WHITE", &format!("{sdr_white_scrgb:.4}"))
+        .replace("ROLL_OFF_START", &format!("{ROLL_OFF_START:.4}"))
+}
+
 fn compile(source: &str, entry: PCSTR, target: PCSTR) -> Result<ID3DBlob> {
     let mut code = None;
     let mut errors = None;
@@ -143,4 +161,17 @@ fn blob_bytes(blob: &ID3DBlob) -> &[u8] {
 
 fn missing_shader() -> EngineError {
     EngineError::Encoder("shader HDR → SDR non créé".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hdr_to_sdr_shaders_compile() -> Result<()> {
+        let source = shader_source(3.5);
+        compile(&source, s!("fullscreen"), s!("vs_5_0"))?;
+        compile(&source, s!("scrgb_to_sdr"), s!("ps_5_0"))?;
+        Ok(())
+    }
 }
