@@ -19,4 +19,7 @@ rien me demander.
    `cargo test --workspace` et `npm run build` (dans `app/`), puis commite :
    `docs(handoff): update session notes` (le code a ses propres commits conventionnels, voir
    `CLAUDE.md` § 4 Git).
-6. Résume-moi en 5 lignes : fait, reste, ce que j'ai à tester.
+6. Pousse la branche. Si elle a une PR vers `dev` dont la tâche est terminée : attends la CI,
+   merge et supprime la branche (`CLAUDE.md` § 4 Git, « Merge et ménage »). Sinon, laisse la
+   PR ouverte et note-la dans « État actuel ».
+7. Résume-moi en 5 lignes : fait, reste, ce que j'ai à tester.

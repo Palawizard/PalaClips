@@ -30,7 +30,8 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
 3. Fin de session (ou contexte qui se remplit) : lance `/handoff`. `docs/HANDOFF.md` doit
    permettre à une nouvelle session de reprendre **sans rien te demander**.
 4. Une phase = une ou plusieurs branches conventionnelles parties de `dev` (§ 4 Git) = une PR
-   par branche vers `dev` (modèle dans `.github/`). `main` ne reçoit que les versions publiées.
+   par branche vers `dev` (modèle dans `.github/`), mergée par toi une fois la CI verte, puis
+   branche supprimée. `main` ne reçoit que les versions publiées.
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
@@ -144,6 +145,17 @@ par une PR.
 - `release/vX.Y.Z` part de `dev`, est mergée dans `main` (puis le tag), et `main` est remergée
   dans `dev` si la release a reçu des correctifs.
 - `hotfix/` part de `main` et est mergée dans `main` **et** dans `dev`.
+
+**Merge et ménage** — dès que la CI d'une PR vers `dev` est verte et que les critères de la
+tâche sont vérifiés, tu la merges toi-même puis tu supprimes la branche :
+
+- `gh pr merge <N> --merge --subject "<titre conventionnel de la PR> (#<N>)" --delete-branch`
+  (commit de merge au format conventionnel, branche supprimée en local et sur GitHub) ;
+- puis `git switch dev && git pull --ff-only && git fetch --prune`, et supprime toute autre
+  branche locale déjà contenue dans `dev` (`git branch -d`).
+- Il ne reste que `main` et `dev` (plus les branches de travail en cours).
+- Jamais de merge vers `main` sans demande explicite de Palawi (publication d'une version ou
+  `hotfix/`).
 
 **Tags** : `vMAJEUR.MINEUR.CORRECTIF` (`v1.0.0`), posés uniquement sur `main`.
 
