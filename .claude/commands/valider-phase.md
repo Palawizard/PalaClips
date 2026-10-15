@@ -17,4 +17,6 @@ Valide la phase en cours (ou celle donnée en argument : $ARGUMENTS).
    phase suivante, ouvre la PR de la branche en cours **vers `dev`** (titre au format
    conventionnel ; vers `main` et `dev` seulement pour une `hotfix/`). La PR `dev` → `main`
    n'est ouverte que pour publier une version, à la demande de Palawi.
+   Attends la CI ; verte → merge la PR dans `dev` et supprime la branche (`CLAUDE.md` § 4 Git,
+   « Merge et ménage »). Rouge → corrige avant toute autre chose.
    Sinon : liste ce qui manque et corrige-le avant toute autre chose.
