@@ -47,29 +47,25 @@ enum Command {
     #[cfg(windows)]
     #[command(about = "Capture la vidéo d'une cible et l'encode sur le GPU dans un MP4")]
     CaptureVideo {
-        #[arg(long, value_parser = parse_target, default_value = "primary")]
-        target: CaptureTarget,
-        #[arg(long, default_value_t = 60)]
-        fps: u32,
-        #[arg(long, default_value_t = 10)]
-        seconds: u64,
-        #[arg(long)]
-        out: std::path::PathBuf,
-        #[arg(long, value_parser = parse_codec, default_value = "h264")]
-        codec: VideoCodec,
+        #[command(flatten)]
+        capture: CaptureArgs,
+    },
+    #[cfg(windows)]
+    #[command(about = "Capture vidéo + audio (piste 1 = mix complet, piste 2 = micro) dans un MP4")]
+    CaptureAv {
+        #[command(flatten)]
+        capture: CaptureArgs,
+        #[arg(long, help = "Sans la piste mix complet")]
+        no_mix: bool,
+        #[arg(long, help = "Sans la piste micro")]
+        no_mic: bool,
         #[arg(
             long,
-            help = "Hauteur de sortie (mise à l'échelle GPU) ; absente = native"
+            default_value_t = 0.0,
+            allow_hyphen_values = true,
+            help = "Gain du micro en dB (-20 à +20)"
         )]
-        height: Option<u32>,
-        #[arg(long, value_parser = parse_quality, default_value = "equilibre")]
-        quality: VideoQuality,
-        #[arg(long, help = "Débit libre en Mb/s (remplace le préréglage)")]
-        bitrate_mbps: Option<u32>,
-        #[arg(long)]
-        no_cursor: bool,
-        #[arg(long)]
-        border: bool,
+        mic_gain_db: f32,
     },
     #[cfg(windows)]
     #[command(about = "Test WGC : Video Processor sur le périphérique, cadence et horodatages QPC")]
@@ -139,36 +135,26 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::ListTargets { json } => list_targets(json)?,
         #[cfg(windows)]
-        Command::CaptureVideo {
-            target,
-            fps,
-            seconds,
-            out,
-            codec,
-            height,
-            quality,
-            bitrate_mbps,
-            no_cursor,
-            border,
+        Command::CaptureVideo { capture } => run_capture(&capture, Vec::new())?,
+        #[cfg(windows)]
+        Command::CaptureAv {
+            capture,
+            no_mix,
+            no_mic,
+            mic_gain_db,
         } => {
-            let video = VideoSettings {
-                fps,
-                resolution: height.map_or(OutputResolution::Native, |height| {
-                    OutputResolution::Height { height }
-                }),
-                codec,
-                quality: if bitrate_mbps.is_some() {
-                    VideoQuality::Custom
-                } else {
-                    quality
-                },
-                bitrate_kbps: bitrate_mbps
-                    .map_or(VideoSettings::default().bitrate_kbps, |mbps| mbps * 1_000),
-                capture_cursor: !no_cursor,
-                draw_border: border,
-                ..VideoSettings::default()
-            };
-            capture_video(&target, &video, seconds, &out)?
+            use palaclips_engine::audio::AudioSource;
+            let mut audio = Vec::new();
+            if !no_mix {
+                audio.push(AudioSource::SystemMix { device_id: None });
+            }
+            if !no_mic {
+                audio.push(AudioSource::Microphone {
+                    device_id: None,
+                    gain_db: mic_gain_db,
+                });
+            }
+            run_capture(&capture, audio)?
         }
         #[cfg(windows)]
         Command::ProbeWgc {
@@ -263,43 +249,143 @@ fn resolve_target(target: &CaptureTarget) -> Result<()> {
 }
 
 #[cfg(windows)]
-fn capture_video(
-    target: &CaptureTarget,
-    video: &VideoSettings,
+#[derive(Debug, clap::Args)]
+struct CaptureArgs {
+    #[arg(long, value_parser = parse_target, default_value = "primary")]
+    target: CaptureTarget,
+    #[arg(long, default_value_t = 60)]
+    fps: u32,
+    #[arg(long, default_value_t = 10)]
     seconds: u64,
-    out: &std::path::Path,
-) -> Result<()> {
+    #[arg(long)]
+    out: std::path::PathBuf,
+    #[arg(long, value_parser = parse_codec, default_value = "h264")]
+    codec: VideoCodec,
+    #[arg(
+        long,
+        help = "Hauteur de sortie (mise à l'échelle GPU) ; absente = native"
+    )]
+    height: Option<u32>,
+    #[arg(long, value_parser = parse_quality, default_value = "equilibre")]
+    quality: VideoQuality,
+    #[arg(long, help = "Débit libre en Mb/s (remplace le préréglage)")]
+    bitrate_mbps: Option<u32>,
+    #[arg(long)]
+    no_cursor: bool,
+    #[arg(long)]
+    border: bool,
+}
+
+#[cfg(windows)]
+impl CaptureArgs {
+    fn video_settings(&self) -> VideoSettings {
+        VideoSettings {
+            fps: self.fps,
+            resolution: self.height.map_or(OutputResolution::Native, |height| {
+                OutputResolution::Height { height }
+            }),
+            codec: self.codec,
+            quality: if self.bitrate_mbps.is_some() {
+                VideoQuality::Custom
+            } else {
+                self.quality
+            },
+            bitrate_kbps: self
+                .bitrate_mbps
+                .map_or(VideoSettings::default().bitrate_kbps, |mbps| mbps * 1_000),
+            capture_cursor: !self.no_cursor,
+            draw_border: self.border,
+            ..VideoSettings::default()
+        }
+    }
+}
+
+#[cfg(windows)]
+fn run_capture(args: &CaptureArgs, audio: Vec<palaclips_engine::audio::AudioSource>) -> Result<()> {
+    use palaclips_engine::audio::{AudioTrack, SAMPLE_RATE};
     use palaclips_engine::capture::VideoCapture;
     use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
     use palaclips_engine::encode::{hardware_video_encoders, pick_encoder};
     use palaclips_engine::events::EngineEvent;
-    use palaclips_engine::mux::Mp4Writer;
+    use palaclips_engine::mux::{Mp4Writer, MuxStream};
 
+    let video = args.video_settings();
     let encoders = hardware_video_encoders()?;
     let encoder = pick_encoder(&encoders, video.codec)?;
-    let capture = VideoCapture::start(target, video, &encoder.name)?;
+    let capture = VideoCapture::start(&args.target, &video, &encoder.name)?;
     if let Some(EngineEvent::Alert { message, .. }) = capture.alert() {
         println!("{message}");
     }
     let stream = capture.stream().clone();
+    let tracks = audio
+        .into_iter()
+        .map(|source| {
+            let title = source.label();
+            AudioTrack::start(source, title, stream.origin)
+        })
+        .collect::<palaclips_engine::Result<Vec<_>>>()?;
     println!(
-        "{} → {}x{} @ {} i/s, {} s",
-        encoder.name, stream.size.width, stream.size.height, stream.fps, seconds
+        "{} → {}x{} @ {} i/s, {} s, {} piste(s) audio",
+        encoder.name,
+        stream.size.width,
+        stream.size.height,
+        stream.fps,
+        args.seconds,
+        tracks.len()
     );
-    let mut writer =
-        Mp4Writer::create(out, &stream.codec_parameters, stream.time_base, stream.fps)?;
-    let packets = capture.packets().clone();
+
+    let mut specs = vec![MuxStream {
+        codec_parameters: stream.codec_parameters.clone(),
+        time_base: stream.time_base,
+        frame_rate: Some(stream.fps),
+        title: None,
+    }];
+    let mut receivers = vec![capture.packets().clone()];
+    for track in &tracks {
+        specs.push(MuxStream {
+            codec_parameters: track.stream().codec_parameters.clone(),
+            time_base: track.stream().time_base,
+            frame_rate: None,
+            title: Some(track.stream().title.clone()),
+        });
+        receivers.push(track.packets().clone());
+    }
+    let mut writer = Mp4Writer::create(&args.out, &specs)?;
     let writer_thread = std::thread::spawn(move || -> Result<Mp4Writer> {
-        for packet in packets.iter() {
-            writer.write(packet)?;
+        let mut select = crossbeam_channel::Select::new();
+        for receiver in &receivers {
+            select.recv(receiver);
+        }
+        let mut open = receivers.len();
+        while open > 0 {
+            let operation = select.select();
+            let index = operation.index();
+            match operation.recv(&receivers[index]) {
+                Ok(packet) => writer.write(index, packet)?,
+                Err(_) => {
+                    select.remove(index);
+                    open -= 1;
+                }
+            }
         }
         Ok(writer)
     });
+
     let half_frame = Hns(HNS_PER_SECOND / stream.fps as i64 / 2);
-    let stop_at = stream.origin + Hns(seconds as i64 * HNS_PER_SECOND) - half_frame;
-    let remaining = (stop_at - Hns::now()).0.max(0) as u64;
+    let end = stream.origin + Hns(args.seconds as i64 * HNS_PER_SECOND);
+    let remaining = (end - half_frame - Hns::now()).0.max(0) as u64;
     std::thread::sleep(std::time::Duration::from_nanos(remaining * 100));
+    for track in &tracks {
+        track.finish_at(end);
+    }
     let stats = capture.stop()?;
+    let mut track_reports = Vec::new();
+    for track in tracks {
+        let title = track.stream().title.clone();
+        let alerts = track.alerts().clone();
+        let track_stats = track.stop(end)?;
+        track_reports.push((title, track_stats, alerts.try_iter().collect::<Vec<_>>()));
+    }
     writer_thread
         .join()
         .map_err(|_| anyhow::anyhow!("le fil d'écriture a paniqué"))??
@@ -311,8 +397,25 @@ fn capture_video(
         stats.duplicated,
         stats.resolution_changes,
         stats.max_lateness.0 as f64 / 10_000.0,
-        out.display()
+        args.out.display()
     );
+    let ms = |frames: u64| frames * 1_000 / u64::from(SAMPLE_RATE);
+    for (title, track, alerts) in track_reports {
+        println!(
+            "piste « {title} » : {} paquets WASAPI, silence comblé {} ms, chevauchement coupé {} ms, {} corrections de dérive, {} changements de périphérique, crête {:.3}",
+            track.packets,
+            ms(track.fill.silence_frames),
+            ms(track.fill.dropped_frames),
+            track.fill.drift_corrections,
+            track.device_switches,
+            track.peak
+        );
+        for alert in alerts {
+            if let EngineEvent::Alert { message, .. } = alert {
+                println!("  alerte : {message}");
+            }
+        }
+    }
     Ok(())
 }
 

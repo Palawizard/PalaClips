@@ -28,6 +28,9 @@ pub enum EngineError {
     #[error("écriture du fichier vidéo impossible : {0}")]
     Mux(String),
 
+    #[error("la capture audio a échoué : {0}")]
+    Audio(String),
+
     #[error("la source de capture n'est plus disponible : {0}")]
     CaptureSourceLost(String),
 
