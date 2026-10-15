@@ -35,7 +35,7 @@ New-Item -ItemType Directory -Force target\clips | Out-Null
    place ».
 6. Haute cadence pendant une partie :
    `Start-Sleep 10; & $cli capture-video --target primary --fps 144 --seconds 20 --out target\clips\fn_144.mp4`
-7. **HDR** : activer le HDR de l'écran principal (Paramètres > Affichage > HDR), afficher une
+7. **HDR** (`& $cli probe-hdr` montre l'état HDR et le blanc SDR de chaque écran) : activer le HDR de l'écran principal (Paramètres > Affichage > HDR), afficher une
    image très colorée, `& $cli capture-video --target primary --fps 60 --seconds 5 --out target\clips\hdr.mp4`,
    puis comparer la vidéo à l'écran : couleurs normales, délavées ou sombres ?
 8. **Bordure** : pendant `& $cli capture-video --fps 30 --seconds 10 --border --out target\clips\border.mp4`,

@@ -39,6 +39,19 @@
   `QueryFullProcessImageNameW` avec `PROCESS_QUERY_LIMITED_INFORMATION`.
 - Fenêtre réduite : WGC n'envoie aucune image → repli sur l'écran après 3 s sans image
   (constaté le 2026-10-15).
+- HDR (vérifié le 2026-10-15, `palaclips-cli probe-hdr`, écran principal en HDR, blanc SDR
+  280 nits, « HDR automatique » actif) : en `B8G8R8A8`, Windows applique sa propre courbe qui
+  éclaircit les tons moyens (scRGB 0,75 → 0,57 au lieu de 0,50 en sRGB fidèle) et compresse
+  les blancs → vidéo délavée. En `R16G16B16A16_FLOAT`, on reçoit le scRGB linéaire (1,0 =
+  80 nits ; blanc SDR = `SDRWhiteLevel / 1000` ; jusqu'à 16,9 avec HDR automatique).
+- `DisplayConfigGetDeviceInfo` : `DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO` (bit 1 =
+  HDR actif) et `GET_SDR_WHITE_LEVEL` (`SDRWhiteLevel` en millièmes de 80 nits), en passant
+  par `GET_SOURCE_NAME` pour relier le nom GDI `\\.\DISPLAYn` au chemin d'affichage.
+  — [Microsoft](https://learn.microsoft.com/windows/win32/api/wingdi/ns-wingdi-displayconfig_sdr_white_level)
+- Mise à l'échelle Windows à 150 % : WGC capture l'écran en pixels physiques (1920×1080),
+  vérifié le 2026-10-15.
+- Fortnite (EAC) en fenêtré et en plein écran : la capture de fenêtre WGC fonctionne sans
+  repli (2560×1440 en plein écran), fluide à 60 i/s. — 2026-10-15
 - La bordure jaune (`IsBorderRequired`) est dessinée par DWM à l'écran, **pas** dans l'image
   capturée (constaté le 2026-10-15).
 - Git Bash réécrit `\\.\DISPLAY1` (perte d'une barre oblique) : lancer la CLI depuis
