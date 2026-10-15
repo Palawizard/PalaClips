@@ -1,3 +1,5 @@
+#[cfg(windows)]
+pub mod capture;
 pub mod clock;
 pub mod config;
 #[cfg(windows)]
