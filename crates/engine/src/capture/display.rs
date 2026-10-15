@@ -10,6 +10,52 @@ use windows::Win32::Foundation::ERROR_SUCCESS;
 
 const SCRGB_REFERENCE_NITS: f32 = 80.0;
 const ADVANCED_COLOR_ENABLED: u32 = 0b10;
+const WIDE_COLOR_ENFORCED: u32 = 0b100;
+const GET_ADVANCED_COLOR_INFO_2: DISPLAYCONFIG_DEVICE_INFO_TYPE =
+    DISPLAYCONFIG_DEVICE_INFO_TYPE(15);
+pub const ADVANCED_COLOR_MODE_HDR: i32 = 2;
+
+#[repr(C)]
+#[derive(Default)]
+struct AdvancedColorInfo2Request {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    value: u32,
+    color_encoding: i32,
+    bits_per_color_channel: u32,
+    active_color_mode: i32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdvancedColorInfo2 {
+    pub flags: u32,
+    pub bits_per_color_channel: u32,
+    pub active_color_mode: i32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DisplayColorInfo {
+    pub legacy_flags: Option<u32>,
+    pub info2: Option<AdvancedColorInfo2>,
+    pub sdr_white_level: Option<u32>,
+}
+
+impl DisplayColorInfo {
+    pub fn hdr(&self) -> bool {
+        match (self.info2, self.legacy_flags) {
+            (Some(info2), _) => info2.active_color_mode == ADVANCED_COLOR_MODE_HDR,
+            (None, Some(flags)) => {
+                flags & ADVANCED_COLOR_ENABLED != 0 && flags & WIDE_COLOR_ENFORCED == 0
+            }
+            (None, None) => false,
+        }
+    }
+
+    pub fn sdr_white_nits(&self) -> f32 {
+        self.sdr_white_level.map_or(SCRGB_REFERENCE_NITS, |level| {
+            level as f32 * SCRGB_REFERENCE_NITS / 1_000.0
+        })
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DisplayColor {
@@ -24,6 +70,17 @@ impl DisplayColor {
 }
 
 pub fn display_color(device_name: &str) -> Option<DisplayColor> {
+    let info = display_color_info(device_name)?;
+    if info.legacy_flags.is_none() && info.info2.is_none() {
+        return None;
+    }
+    Some(DisplayColor {
+        hdr: info.hdr(),
+        sdr_white_nits: info.sdr_white_nits(),
+    })
+}
+
+pub fn display_color_info(device_name: &str) -> Option<DisplayColorInfo> {
     let path = active_paths()?.into_iter().find(|path| {
         let mut source = DISPLAYCONFIG_SOURCE_DEVICE_NAME {
             header: header::<DISPLAYCONFIG_SOURCE_DEVICE_NAME>(
@@ -39,37 +96,36 @@ pub fn display_color(device_name: &str) -> Option<DisplayColor> {
                 .eq_ignore_ascii_case(device_name)
     })?;
 
-    let target = (path.targetInfo.adapterId, path.targetInfo.id);
-    let mut color = DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO {
+    let (adapter, id) = (path.targetInfo.adapterId, path.targetInfo.id);
+    let mut legacy = DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO {
         header: header::<DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO>(
             DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO,
-            target.0,
-            target.1,
+            adapter,
+            id,
         ),
+        ..Default::default()
+    };
+    let mut info2 = AdvancedColorInfo2Request {
+        header: header::<AdvancedColorInfo2Request>(GET_ADVANCED_COLOR_INFO_2, adapter, id),
         ..Default::default()
     };
     let mut white = DISPLAYCONFIG_SDR_WHITE_LEVEL {
         header: header::<DISPLAYCONFIG_SDR_WHITE_LEVEL>(
             DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL,
-            target.0,
-            target.1,
+            adapter,
+            id,
         ),
         SDRWhiteLevel: 1_000,
     };
-    if !query(&mut color.header) {
-        return None;
-    }
-    // SAFETY: reading the bitfield union written by DisplayConfigGetDeviceInfo.
-    let flags = unsafe { color.Anonymous.value };
-    let hdr = flags & ADVANCED_COLOR_ENABLED != 0;
-    let sdr_white_nits = if query(&mut white.header) {
-        white.SDRWhiteLevel as f32 * SCRGB_REFERENCE_NITS / 1_000.0
-    } else {
-        SCRGB_REFERENCE_NITS
-    };
-    Some(DisplayColor {
-        hdr,
-        sdr_white_nits,
+    Some(DisplayColorInfo {
+        // SAFETY: reading the bitfield union written by DisplayConfigGetDeviceInfo.
+        legacy_flags: query(&mut legacy.header).then_some(unsafe { legacy.Anonymous.value }),
+        info2: query(&mut info2.header).then_some(AdvancedColorInfo2 {
+            flags: info2.value,
+            bits_per_color_channel: info2.bits_per_color_channel,
+            active_color_mode: info2.active_color_mode,
+        }),
+        sdr_white_level: query(&mut white.header).then_some(white.SDRWhiteLevel),
     })
 }
 
@@ -118,4 +174,46 @@ fn header<T>(
 fn query(header: &mut DISPLAYCONFIG_DEVICE_INFO_HEADER) -> bool {
     // SAFETY: `header` is the first field of a request struct whose size it declares.
     unsafe { DisplayConfigGetDeviceInfo(header) == 0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn info(legacy: Option<u32>, mode: Option<i32>) -> DisplayColorInfo {
+        DisplayColorInfo {
+            legacy_flags: legacy,
+            info2: mode.map(|active_color_mode| AdvancedColorInfo2 {
+                flags: 0,
+                bits_per_color_channel: 8,
+                active_color_mode,
+            }),
+            sdr_white_level: None,
+        }
+    }
+
+    #[test]
+    fn hdr_follows_active_color_mode_when_available() {
+        assert!(info(Some(0b0011), Some(ADVANCED_COLOR_MODE_HDR)).hdr());
+        assert!(!info(Some(0b0111), Some(1)).hdr());
+        assert!(!info(Some(0b0011), Some(0)).hdr());
+    }
+
+    #[test]
+    fn legacy_fallback_ignores_auto_color_management() {
+        assert!(info(Some(0b0011), None).hdr());
+        assert!(!info(Some(0b0111), None).hdr());
+        assert!(!info(Some(0b0001), None).hdr());
+        assert!(!info(None, None).hdr());
+    }
+
+    #[test]
+    fn sdr_white_defaults_to_scrgb_reference() {
+        assert_eq!(info(None, None).sdr_white_nits(), 80.0);
+        let bright = DisplayColorInfo {
+            sdr_white_level: Some(2_500),
+            ..info(None, None)
+        };
+        assert_eq!(bright.sdr_white_nits(), 200.0);
+    }
 }
