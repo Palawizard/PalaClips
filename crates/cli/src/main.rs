@@ -5,7 +5,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use palaclips_engine::{
     EngineConfig, VERSION,
-    config::{CaptureTarget, OutputResolution, VideoCodec, VideoSettings},
+    config::{CaptureTarget, OutputResolution, VideoCodec, VideoQuality, VideoSettings},
     replay::estimate_buffer_bytes,
 };
 
@@ -60,8 +60,10 @@ enum Command {
             help = "Hauteur de sortie (mise à l'échelle GPU) ; absente = native"
         )]
         height: Option<u32>,
-        #[arg(long, default_value_t = 40)]
-        bitrate_mbps: u32,
+        #[arg(long, value_parser = parse_quality, default_value = "equilibre")]
+        quality: VideoQuality,
+        #[arg(long, help = "Débit libre en Mb/s (remplace le préréglage)")]
+        bitrate_mbps: Option<u32>,
         #[arg(long)]
         no_cursor: bool,
         #[arg(long)]
@@ -124,6 +126,7 @@ fn main() -> Result<()> {
             out,
             codec,
             height,
+            quality,
             bitrate_mbps,
             no_cursor,
             border,
@@ -134,7 +137,13 @@ fn main() -> Result<()> {
                     OutputResolution::Height { height }
                 }),
                 codec,
-                bitrate_kbps: bitrate_mbps * 1_000,
+                quality: if bitrate_mbps.is_some() {
+                    VideoQuality::Custom
+                } else {
+                    quality
+                },
+                bitrate_kbps: bitrate_mbps
+                    .map_or(VideoSettings::default().bitrate_kbps, |mbps| mbps * 1_000),
                 capture_cursor: !no_cursor,
                 draw_border: border,
                 ..VideoSettings::default()
@@ -281,6 +290,15 @@ fn capture_video(
         out.display()
     );
     Ok(())
+}
+
+fn parse_quality(value: &str) -> std::result::Result<VideoQuality, String> {
+    match value.to_lowercase().as_str() {
+        "qualite" | "qualité" => Ok(VideoQuality::Quality),
+        "equilibre" | "équilibré" => Ok(VideoQuality::Balanced),
+        "leger" | "léger" => Ok(VideoQuality::Light),
+        _ => Err("qualité attendue : qualite, equilibre ou leger".into()),
+    }
 }
 
 fn parse_codec(value: &str) -> std::result::Result<VideoCodec, String> {
