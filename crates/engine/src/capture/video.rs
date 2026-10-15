@@ -197,9 +197,13 @@ impl Drop for VideoCapture {
 
 struct SendCom<T>(T);
 
-// SAFETY: D3D11 devices and textures are free-threaded; the immediate context is used only with
+// SAFETY: D3D11 devices are free-threaded; the immediate context is used only with
 // ID3D11Multithread protection enabled before any frame is processed.
-unsafe impl<T> Send for SendCom<T> {}
+unsafe impl Send for SendCom<ID3D11Device> {}
+
+// SAFETY: D3D11 textures are free-threaded resources, only read or copied through the protected
+// immediate context.
+unsafe impl Send for SendCom<ID3D11Texture2D> {}
 
 #[derive(Clone)]
 struct LatestFrame {
