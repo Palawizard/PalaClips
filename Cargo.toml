@@ -6,6 +6,7 @@ members = [
     "app/src-tauri",
 ]
 default-members = ["crates/engine", "crates/cli"]
+exclude = ["third_party"]
 
 [workspace.package]
 version = "0.1.0"
@@ -46,3 +47,6 @@ panic = "unwind"
 
 [profile.dev.package."*"]
 opt-level = 2
+
+[patch.crates-io]
+rusty_ffmpeg = { path = "third_party/rusty_ffmpeg" }
