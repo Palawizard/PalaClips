@@ -23,6 +23,7 @@ export interface AppTrack {
   exe_name: string;
   label: string;
   enabled: boolean;
+  sync_offset_ms: number;
 }
 
 export interface EngineConfig {
@@ -41,9 +42,11 @@ export interface EngineConfig {
   audio: {
     record_full_mix: boolean;
     output_device_id: string | null;
+    full_mix_sync_offset_ms: number;
     record_microphone: boolean;
     microphone_device_id: string | null;
     microphone_gain_db: number;
+    microphone_sync_offset_ms: number;
     app_tracks: AppTrack[];
     max_app_tracks: number;
     auto_game_track: boolean;

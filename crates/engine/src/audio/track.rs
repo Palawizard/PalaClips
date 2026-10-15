@@ -60,7 +60,12 @@ impl std::fmt::Debug for AudioTrack {
 }
 
 impl AudioTrack {
-    pub fn start(source: AudioSource, title: impl Into<String>, origin: Hns) -> Result<Self> {
+    pub fn start(
+        source: AudioSource,
+        title: impl Into<String>,
+        origin: Hns,
+        sync_offset: Hns,
+    ) -> Result<Self> {
         let encoder = AacEncoder::open(SAMPLE_RATE, CHANNELS)?;
         let title = title.into();
         let stream = AudioStream {
@@ -76,6 +81,7 @@ impl AudioTrack {
             source,
             title,
             filler: GapFiller::new(origin),
+            sync_offset,
             stats: AudioTrackStats::default(),
             filled: Vec::new(),
             encoder,
@@ -145,6 +151,7 @@ struct Worker {
     source: AudioSource,
     title: String,
     filler: GapFiller,
+    sync_offset: Hns,
     stats: AudioTrackStats,
     filled: Vec<f32>,
     encoder: AacEncoder,
@@ -294,7 +301,8 @@ impl Worker {
         samples: &mut Vec<f32>,
     ) -> Result<()> {
         self.filler.set_end(Hns(self.end.load(Ordering::Relaxed)));
-        let deadline = Hns::now() + Hns::from_millis(END_GRACE_MS);
+        let deadline =
+            Hns::now() + Hns::from_millis(END_GRACE_MS) + Hns((-self.sync_offset.0).max(0));
         let handles = [stream.event.as_handle()];
         while !self.filler.reached_end() {
             let remaining_ms = (deadline - Hns::now()).0 / 10_000;
@@ -313,7 +321,8 @@ impl Worker {
             *sample *= gain;
             self.stats.peak = self.stats.peak.max(sample.abs());
         }
-        self.filler.push(qpc, data, &mut self.filled);
+        self.filler
+            .push(qpc + self.sync_offset, data, &mut self.filled);
         self.flush()
     }
 
