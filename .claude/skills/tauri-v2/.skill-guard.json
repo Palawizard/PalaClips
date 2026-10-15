@@ -1,0 +1,50 @@
+{
+  "source": "nodnarbnitram/claude-code-extensions@tauri-v2",
+  "commit": "35e7f7deae689e12b94f9c242b8f59efe0f66476",
+  "verdict": "PROPRE",
+  "scanned_at": "2026-10-15T19:05:50",
+  "approved_by_user": false,
+  "block_overridden": false,
+  "files": [
+    {
+      "path": "README.md",
+      "size": 7833,
+      "sha256": "73823d1a69b7a3046c335be89a11f2a2f216f5406cfcf10533cdae33a88f864c"
+    },
+    {
+      "path": "references/advanced-runtime-reference.md",
+      "size": 5275,
+      "sha256": "6ec03d1c1fa332edd1fbd891912f889dab569e445ee86f232a50c2f0347d82f9"
+    },
+    {
+      "path": "references/capabilities-reference.md",
+      "size": 9210,
+      "sha256": "f3218239ba08284fc83de0fd87a005053d8a7f1d4723629d4bbb54de90833581"
+    },
+    {
+      "path": "references/ipc-patterns.md",
+      "size": 12732,
+      "sha256": "5c96e957e594c9b871957632b6031a1321ab9bdabeaa6dc3a108f0f387963d71"
+    },
+    {
+      "path": "references/plugin-reference.md",
+      "size": 9217,
+      "sha256": "1883ae4dbc4a49005882a00116000c5d86b7430fea683fd89e034e223c00d1c8"
+    },
+    {
+      "path": "references/README.md",
+      "size": 1912,
+      "sha256": "963a40d7088582bd38895bd394fb55d9e2452045234614aab649add1aba6744e"
+    },
+    {
+      "path": "references/updater-distribution-reference.md",
+      "size": 4393,
+      "sha256": "11e10f1ed6228edef986a83e11145a68143cf850227864ffbb64b1d42de732ad"
+    },
+    {
+      "path": "SKILL.md",
+      "size": 17049,
+      "sha256": "f946942ec09f889777b6884ab0a2198015dd59ed56686d88ff45834c52fa533d"
+    }
+  ]
+}
