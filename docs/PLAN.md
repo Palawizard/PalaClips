@@ -8,21 +8,22 @@
 > Légende des critères : 🤖 vérifiable par Claude Code (tests, CLI, mesure) · 👤 nécessite
 > Palawi sur sa machine (jeu, Resolve, écoute) — protocole dans `docs/TESTING.md`.
 
-## Phase 0 — Mise en route
+## Phase 0 — Mise en route ✅ ([rapport](reports/phase-0.md))
 
 But : un environnement qui compile, une CI verte, les outils de design prêts.
 
-- [ ] `pwsh scripts/check-env.ps1` tout vert (installer ce qui manque).
-- [ ] `pwsh scripts/fetch-ffmpeg.ps1` ; ajouter `rsmpeg = "0.18"` (cfg windows) à l'engine et
+- [x] `pwsh scripts/check-env.ps1` tout vert (installer ce qui manque).
+- [x] `pwsh scripts/fetch-ffmpeg.ps1` ; ajouter `rsmpeg = "0.18"` (cfg windows) à l'engine et
       prouver la liaison : sous-commande `palaclips-cli ffmpeg-info` qui liste les encodeurs
       matériels disponibles (`h264_nvenc`...). Si les bindings 8.0 de rsmpeg 0.18 ne compilent
       pas avec les en-têtes 8.1, appliquer le plan B de l'ADR-004 et le noter.
-- [ ] Icônes : déjà générées depuis `app-icon.svg` et commitées. Si le logo change :
+- [x] Icônes : déjà générées depuis `app-icon.svg` et commitées. Si le logo change :
       `cd app && npm run tauri icon src-tauri/icons/app-icon.svg`, supprimer `android/` et `ios/`.
-- [ ] `npm run tauri dev` ouvre la fenêtre et affiche « Moteur 0.1.0 ».
-- [ ] CI GitHub Actions verte sur `main`.
-- [ ] Skills de design installés et `/impeccable init` lancé avec `docs/DESIGN-BRIEF.md`
-      → `PRODUCT.md` et `DESIGN.md` à la racine, commités.
+- [x] `npm run tauri dev` ouvre la fenêtre et affiche « Moteur 0.1.0 ».
+- [x] CI GitHub Actions verte (sur les PR vers `dev` : `main` ne reçoit que les versions).
+- [x] Skills de design installés et `/impeccable init` lancé avec `docs/DESIGN-BRIEF.md`
+      → `PRODUCT.md` commité, direction visuelle choisie (`.impeccable/surfaces/`). `DESIGN.md`
+      est produit avec le premier écran (phase 5).
 
 Critères :
 - 🤖 `cargo clippy --workspace --all-targets -- -D warnings` et `cargo test --workspace` passent sur Windows.
@@ -95,6 +96,8 @@ Critères :
 
 Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 
+- [ ] Premier écran construit selon la direction de `.impeccable/surfaces/`, puis `DESIGN.md`
+      (et `.impeccable/design.json`) produits par le documenteur impeccable, commités.
 - [ ] Shell Tauri : zone de notification + menu, instance unique, fenêtre créée/détruite,
       `prevent_exit`, raccourcis globaux personnalisables avec conflits.
 - [ ] Toasts sans vol de focus, son de confirmation.
