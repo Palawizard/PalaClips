@@ -5,10 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 1 — Vidéo : code terminé et critères 🤖 ✅, **en attente des tests 👤 de
-  Palawi** (Fortnite fenêtré/plein écran, HDR) — [rapport](reports/phase-1.md).
-- **Branche :** `dev` (PR #5 `feature/video-capture` mergée et supprimée s'il ne reste rien à
-  corriger ; sinon voir `gh pr list`).
+- **Phase en cours :** 2 — Audio système + micro (pas commencée). Phase 1 validée le
+  2026-10-15 ([rapport](reports/phase-1.md)).
+- **Branche :** `dev` (PR #5 vidéo et PR `fix/hdr-capture` mergées, branches supprimées : il
+  ne reste que `main` et `dev`).
 - **Dernière mise à jour :** 2026-10-15
 
 ## Ce qui existe
@@ -46,19 +46,24 @@
   - `mux.rs` : `Mp4Writer` (MP4 classique vidéo seule). `clock` : `Hns::now()` (QPC).
   - `config` : `VideoQuality` (Qualité/Équilibré/Léger/Custom), `bitrate_kbps_for(w, h)`.
   - Erreurs : `TargetNotFound`, `Capture`, `Encoder`, `Mux`, `CodecUnavailable`.
-  - CLI : `list-targets [--json]`, `resolve-target`, `probe-wgc`, `capture-video`.
+  - CLI : `list-targets [--json]`, `resolve-target`, `probe-wgc`, `probe-hdr`, `capture-video`.
+  - HDR (ADR-015) : `capture/display.rs` (`display_color(device_name)` : HDR actif, blanc
+    SDR), `encode/hdr.rs` (`HdrToSdr` : pixel shader FP16 scRGB → BGRA8 sRGB). Écran HDR →
+    capture FP16 ; SDR → BGRA8.
+- Tests 👤 de la phase 1 faits avec Palawi : Fortnite fenêtré et plein écran fluides, HDR
+  correct après correction, bordure, curseur, mise à l'échelle 150 %.
 
 ## Prochaines actions (dans l'ordre)
 
-1. Récupérer les résultats 👤 de Palawi (protocole `docs/TESTING.md` T1 points 4–10) et les
-   reporter dans `docs/reports/phase-1.md`.
-2. Si le HDR donne des couleurs délavées ou sombres : capturer en `ColorFormat::Rgba16F` sur
-   un écran HDR et convertir scRGB → SDR (tone mapping) dans le Video Processor ou un shader,
-   sur une branche `fix/hdr-capture` ; refaire T1 point 7.
-3. Si Fortnite saccade ou échoue : analyser la dernière ligne de la CLI (images dupliquées,
-   retard max) ; plein écran → vérifier que le repli sur l'écran s'affiche.
-4. Tout ✅ → cocher les critères de la phase 1 dans `docs/PLAN.md`, puis phase 2 (audio
-   système + micro) sur `feature/system-audio` depuis `dev`.
+1. Phase 2 (`docs/PLAN.md`) sur `feature/system-audio` depuis `dev` : loopback de la sortie
+   par défaut (mix complet) et micro avec `wasapi` 0.26, horodatage `pu64QPCPosition`.
+   Commencer par une sous-commande de test `probe-audio` (QPC des paquets, drapeau SILENT,
+   comportement quand rien ne joue).
+2. Combleur de silences d'après les écarts QPC, encodeur AAC (priming), mux A/V dans
+   `Mp4Writer` avec `VideoStream::origin` comme `t0` commun.
+3. CLI `capture-av` puis protocole T2 (synchro sur 1 h) : préparer les commandes et faire
+   faire à Palawi uniquement les actions physiques par le widget de questions.
+
 ## Bloquants
 
 Aucun.
@@ -77,6 +82,10 @@ Aucun.
   oblique). `cargo run` passe aussi par `with-ffmpeg.cmd`.
 - La CLI n'est pas « DPI aware » : les tailles de fenêtres de `list-targets` peuvent être
   virtualisées sous mise à l'échelle Windows (la capture, elle, est en pixels physiques).
+- Tests 👤 : Claude lance lui-même les commandes et ne demande à Palawi que les actions
+  physiques et son avis visuel, via le widget de questions.
+- HDR basculé pendant une capture : pris en compte seulement au démarrage suivant (à traiter
+  en phase 7, robustesse).
 - Phase 4 : le replay devra cloner les `AVPacket` (refcount) pour le fan-out, et utiliser
   `VideoStream::origin` comme `t0` commun avec l'audio.
 - La capture audio par appli a un rapport de piste muette sur Windows 11 build 26200 (avec
@@ -91,4 +100,4 @@ Aucun.
 |---|---|---|---|
 | 2026-10-15 | — | Création du repo, docs, squelette, CI | Phase 0 |
 | 2026-10-15 | 0 | Règles Git `main`/`dev` (PR #1) ; env Windows vert, rsmpeg 0.18 ↔ FFmpeg 8.1 (bindgen 0.72.1), `ffmpeg-info`, `PRODUCT.md`, direction visuelle ; phase 0 validée (PR #2) | Phase 1 |
-| 2026-10-15 | 1 | Pipeline vidéo GPU (WGC → Video Processor NV12 → NVENC/AMF/QSV), pacer CFR QPC, repli, préréglages de débit, CLI `capture-video` ; 🤖 ✅ (600 images, 60/1) ; PR #5 | Tests 👤 Fortnite + HDR |
+| 2026-10-15 | 1 | Pipeline vidéo GPU (WGC → Video Processor NV12 → NVENC/AMF/QSV), pacer CFR QPC, repli, préréglages de débit, CLI `capture-video` ; PR #5. Tests 👤 avec Palawi : Fortnite ✅, HDR délavé → correction FP16 + shader (`fix/hdr-capture`) ✅ ; phase 1 validée | Phase 2 |
