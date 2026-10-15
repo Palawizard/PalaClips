@@ -86,6 +86,13 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 - Doute sur le comportement d'une API Windows : écris d'abord une sous-commande de test dans
   `crates/cli`, ne suppose pas.
 - Commits : style conventionnel (`feat(engine): ...`, `fix(app): ...`, `docs: ...`).
+- **Identité des commits** : tout agent (Claude Code ou autre) commite **uniquement** avec le
+  profil git de l'utilisateur (`git config user.name` / `user.email`, aujourd'hui
+  `Palawi <bapcoloj@gmail.com>`). Jamais de trailer `Co-Authored-By`, `Claude-Session`, ni de
+  mention « Generated with Claude » dans les commits, PR, tags ou releases. L'attribution est
+  coupée dans `.claude/settings.json` ; ne la réactive pas.
+- Si le profil git est vide ou que tu ne sais vraiment pas qui est l'utilisateur, **demande-lui**
+  avant de commiter. N'invente jamais d'auteur et ne commite jamais sous une identité d'agent.
 
 ## 5. Carte du repo
 
