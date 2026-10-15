@@ -38,6 +38,14 @@ New-Item -ItemType Directory -Force target\clips | Out-Null
 7. **HDR** (`& $cli probe-hdr` montre l'état HDR et le blanc SDR de chaque écran) : activer le HDR de l'écran principal (Paramètres > Affichage > HDR), afficher une
    image très colorée, `& $cli capture-video --target primary --fps 60 --seconds 5 --out target\clips\hdr.mp4`,
    puis comparer la vidéo à l'écran : couleurs normales, délavées ou sombres ?
+8. **240 i/s** (build release, `cargo build --release -p palaclips-cli` et
+   `$cli = ".\target\release\palaclips-cli.exe"`) : Fortnite plein écran 1440p sur l'écran
+   240 Hz, en partie, noter le FPS du jeu. `Start-Sleep 10; & $cli probe-wgc --target window:FortniteClient-Win64-Shipping.exe --seconds 15 --min-interval-ms 2`
+   (images reçues sans encodage, horloge DWM), puis
+   `Start-Sleep 10; & $cli capture-video --target window:FortniteClient-Win64-Shipping.exe --fps 240 --seconds 30 --out target\clips\fn_240.mp4`
+   et `ffprobe` du point 2. Attendu : `nb_frames=7200`, retard max < 4,17 ms. Avec G-Sync et
+   des écrans à fréquences différentes, WGC plafonne à la fréquence de l'autre écran
+   (`RESEARCH.md`) : refaire l'essai G-Sync désactivé.
 8. **Bordure** : pendant `& $cli capture-video --fps 30 --seconds 10 --border --out target\clips\border.mp4`,
    une bordure jaune entoure l'écran ; sans `--border`, aucune bordure.
 9. **Curseur** : avec `--no-cursor`, aucun curseur dans la vidéo ; sans l'option, curseur
