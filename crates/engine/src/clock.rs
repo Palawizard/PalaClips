@@ -36,6 +36,21 @@ impl Hns {
         rounded as i64
     }
 
+    #[cfg(windows)]
+    pub fn now() -> Self {
+        use windows::Win32::System::Performance::{
+            QueryPerformanceCounter, QueryPerformanceFrequency,
+        };
+        let mut counter = 0;
+        let mut frequency = 1;
+        // SAFETY: both calls only write into the provided i64 and cannot fail on Windows XP or later.
+        unsafe {
+            let _ = QueryPerformanceCounter(&mut counter);
+            let _ = QueryPerformanceFrequency(&mut frequency);
+        }
+        Hns((counter as i128 * HNS_PER_SECOND as i128 / frequency as i128) as i64)
+    }
+
     pub fn to_samples(self, sample_rate: u32) -> i64 {
         self.to_timebase(1, sample_rate as i64)
     }

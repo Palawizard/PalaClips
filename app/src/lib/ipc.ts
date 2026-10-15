@@ -9,6 +9,7 @@ export function defaultConfig(): Promise<EngineConfig> {
 }
 
 export type VideoCodec = "h264" | "hevc" | "av1";
+export type VideoQuality = "quality" | "balanced" | "light" | "custom";
 export type ReplayStorage = "ram" | "disk";
 
 export type CaptureTarget =
@@ -31,6 +32,7 @@ export interface EngineConfig {
     fps: number;
     resolution: OutputResolution;
     codec: VideoCodec;
+    quality: VideoQuality;
     bitrate_kbps: number;
     keyframe_interval_secs: number;
     capture_cursor: boolean;
