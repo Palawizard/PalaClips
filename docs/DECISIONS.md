@@ -95,3 +95,20 @@
 - `tauri-plugin-updater` avec signature Tauri (clé privée hors repo, en secret GitHub).
 - Pas de certificat Authenticode (payant) : SmartScreen avertit au premier lancement,
   documenté dans le README.
+
+## ADR-013 — Deux branches longues : `main` (versions) et `dev` (intégration)
+**Statut :** acceptée (2026-10-15, PR #1)
+- `feature/`, `fix/`, `chore/` partent de `dev` et y reviennent par PR ; `main` ne reçoit que
+  des PR `dev` ou `release/vX.Y.Z` (versions publiées) ; `hotfix/` part de `main` et est
+  mergée dans `main` et `dev`. Jamais de commit direct sur `main` ni `dev`.
+- La CI tourne sur les PR et sur les pushs vers `main` et `dev`.
+
+## ADR-014 — Direction visuelle « Écran d'après-match »
+**Statut :** acceptée (2026-10-15, choix de Palawi sur le tirage impeccable `cabeab00`)
+- Les pistes audio forment un roster présenté comme un tableau des scores ; une couleur
+  mi-saturée par piste, langue fixe dans toute l'app ; rouge réservé à « ça enregistre » ;
+  fond bleu-noir. Contrat détaillé : `.impeccable/surfaces/app-src-app-tsx.md`.
+- Écartées : « Carte mémoire » (familière, risque rétro), « Console graphite » (générique),
+  standard de la catégorie.
+- Build code-led (pas de génération d'image) ; `DESIGN.md` produit avec le premier écran
+  (phase 5).
