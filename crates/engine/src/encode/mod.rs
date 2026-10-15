@@ -1,3 +1,4 @@
+mod audio;
 mod convert;
 mod d3d11;
 mod hdr;
@@ -11,6 +12,7 @@ use rsmpeg::ffi;
 use windows::Win32::Graphics::Direct3D11::ID3D11Device;
 use windows::Win32::Graphics::Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM;
 
+pub use audio::AacEncoder;
 pub use convert::{GpuConverter, Size, fit_rect, output_size};
 pub use d3d11::{create_device, frame_texture, render_texture};
 pub use hdr::HdrToSdr;
