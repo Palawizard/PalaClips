@@ -27,7 +27,7 @@
   processus → pas de piste « tout le reste » propre, d'où la piste 1 = mix complet.
 
 ## ADR-004 — Encodage et mux via FFmpeg (`rsmpeg` 0.18) + build BtbN LGPL partagée
-**Statut :** acceptée, à confirmer en phase 0
+**Statut :** acceptée, confirmée en phase 0 (2026-10-15) avec un correctif de build
 - Alternatives : `ffmpeg-next` (mode maintenance seulement — écarté), Media Foundation seul
   (pas de MP4 hybride, multi-pistes plus pénible), SDK NVENC direct (NVIDIA seulement).
 - Décision : `rsmpeg` 0.18 (feature `ffmpeg8`, liaison dynamique via `FFMPEG_DLL_PATH`,
@@ -35,6 +35,14 @@
 - Risque : rsmpeg 0.18 date d'août 2025 (FFmpeg 8.0) ; la build actuelle est 8.1.
 - **Plan B**, dans l'ordre : (1) épingler une build BtbN 8.0 datée ; (2) utiliser directement
   `rusty_ffmpeg` 0.17 (feature `ffmpeg8_1`) avec une fine couche sûre écrite dans `encode`/`mux`.
+- **Phase 0 (2026-10-15)** : rsmpeg 0.18 compile avec FFmpeg 8.1 (plan B inutile), mais son
+  `rusty_ffmpeg 0.16` épingle bindgen 0.71, cassé avec LLVM ≥ 22. Choix de Palawi : copie de
+  `rusty_ffmpeg 0.16.7` dans `third_party/rusty_ffmpeg`, seule modification bindgen `0.72.1`,
+  branchée par `[patch.crates-io]` (MIT, `binding.rs` pré-généré retiré). Écartés : épingler
+  LLVM 21 (fragile), plan B sans rsmpeg (plus d'unsafe à maintenir). À retirer dès qu'une
+  version de rsmpeg dépend de `rusty_ffmpeg ≥ 0.17`.
+- DLL au lancement : runner Cargo `scripts/with-ffmpeg.cmd` (PATH préfixé) pour `cargo run`,
+  `cargo test` et `tauri dev` ; le bundle (phase 8) les place à côté de l'exécutable.
 - Licence : liaison dynamique aux DLL LGPL, fichiers de licence livrés dans le bundle, lien vers
   les sources FFmpeg dans « À propos ».
 

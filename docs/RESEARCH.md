@@ -54,6 +54,19 @@
   (liaison dynamique, `.lib` à côté des `.dll`) ou `FFMPEG_LIBS_DIR` (statique), ou vcpkg.
   — [rusty_ffmpeg](https://github.com/CCExtractor/rusty_ffmpeg)
 - Build LGPL partagée : `ffmpeg-n8.1-latest-win64-lgpl-shared-8.1.zip`. — [BtbN releases](https://github.com/BtbN/FFmpeg-Builds/releases/latest)
+- Vérifié le 2026-10-15 sur la machine de Palawi : `rsmpeg 0.18` compile avec les en-têtes
+  FFmpeg **n8.1.3** (BtbN) à condition que bindgen soit ≥ 0.72.1 ; `h264_nvenc`, `hevc_nvenc`,
+  `av1_nvenc` s'ouvrent (RTX 4070 Super, pilote 617.42). — `palaclips-cli ffmpeg-info`
+- bindgen < 0.72.1 + libclang ≥ 22 : structs déclarées en avance puis définies générées
+  opaques (`_address: u8`) ; `rusty_ffmpeg 0.16.x` épingle bindgen 0.71, `0.17` passe à 0.72.
+  — [rust-bindgen #3264](https://github.com/rust-lang/rust-bindgen/issues/3264)
+- `rsmpeg` : aucun commit depuis le 2025-08-24 (0.18.0, toujours `rusty_ffmpeg 0.16.7`).
+  — [larksuite/rsmpeg](https://github.com/larksuite/rsmpeg)
+- clang autodétecte la dernière installation Visual Studio même sans outils C++ et ne trouve
+  alors ni MSVC ni le Windows SDK (`errno.h` introuvable) ; `VCToolsInstallDir` ou `INCLUDE`
+  le contournent. — constaté le 2026-10-15
+- Liaison dynamique : les exécutables (tests compris) exigent les DLL FFmpeg dans le PATH
+  (`STATUS_DLL_NOT_FOUND` sinon) ; runner Cargo `scripts/with-ffmpeg.cmd`. — constaté le 2026-10-15
 - MP4 fragmenté brut : mal supporté par éditeurs/lecteurs ; OBS a créé le « Hybrid MP4 »,
   compatible DaVinci Resolve. — [OBS](https://obsproject.com/blog/obs-studio-hybrid-mp4)
 - FFmpeg : `movflags hybrid_fragmented` (fragmenté pendant l'écriture, normal à la fin).
