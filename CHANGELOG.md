@@ -22,6 +22,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Encodeurs détectés par un encodage de test réel (NVENC, AMF, Quick Sync) avec la raison d'un
   échec ; message clair si aucun ; logs FFmpeg dans les journaux au lieu de la console.
 - Préréglages de débit Qualité / Équilibré / Léger et débit libre.
-- CLI : `list-targets`, `resolve-target`, `probe-wgc`, `capture-video`.
+- Écran HDR : la vidéo garde les couleurs de l'écran au lieu d'être délavée.
+- CLI : `list-targets`, `resolve-target`, `probe-wgc`, `probe-hdr`, `capture-video`.
 - Documentation : SPEC V1, architecture, plan par phases, handoff, ADR, recherche, protocoles
   de test, brief design.

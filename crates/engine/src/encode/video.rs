@@ -25,6 +25,7 @@ pub struct VideoEncoder {
     context: AVCodecContext,
     frames: AVHWFramesContext,
     qsv_frames: Option<AVHWFramesContext>,
+    size: Size,
 }
 
 impl std::fmt::Debug for VideoEncoder {
@@ -88,7 +89,12 @@ impl VideoEncoder {
             context,
             frames,
             qsv_frames,
+            size: settings.size,
         })
+    }
+
+    pub fn size(&self) -> Size {
+        self.size
     }
 
     pub fn time_base(&self) -> AVRational {

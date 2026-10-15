@@ -88,6 +88,8 @@ charges :
   périphérique de WGC ; BGRA → NV12 + mise à l'échelle + bandes noires par le D3D11 Video
   Processor (BT.709 limité), écrit directement dans la frame de l'encodeur. QSV : contexte
   dérivé + `av_hwframe_map`.
+- Écran HDR : capture FP16 scRGB → `HdrToSdr` (pixel shader : ÷ blanc SDR, sRGB) → BGRA8 →
+  même chemin (ADR-015).
 - CBR pour le replay, intervalle d'images clés configurable.
 - AAC-LC 48 kHz stéréo, un encodeur par piste, délai d'amorçage (priming) géré.
 - Une seule session matérielle partagée par le replay et l'enregistrement.

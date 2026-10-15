@@ -5,11 +5,14 @@ use rsmpeg::ffi;
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::Graphics::Direct3D::D3D_DRIVER_TYPE_HARDWARE;
 use windows::Win32::Graphics::Direct3D11::{
-    D3D11_BIND_RENDER_TARGET, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_CREATE_DEVICE_VIDEO_SUPPORT,
-    D3D11_SDK_VERSION, D3D11CreateDevice, ID3D11Device, ID3D11Multithread, ID3D11Texture2D,
+    D3D11_BIND_RENDER_TARGET, D3D11_BIND_SHADER_RESOURCE, D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+    D3D11_CREATE_DEVICE_VIDEO_SUPPORT, D3D11_SDK_VERSION, D3D11_TEXTURE2D_DESC,
+    D3D11_USAGE_DEFAULT, D3D11CreateDevice, ID3D11Device, ID3D11Multithread, ID3D11Texture2D,
 };
+use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT, DXGI_SAMPLE_DESC};
 use windows::core::Interface;
 
+use super::convert::Size;
 use crate::error::{EngineError, Result};
 
 #[repr(C)]
@@ -99,6 +102,32 @@ pub fn frame_texture(frame: &AVFrame) -> Option<(&ID3D11Texture2D, u32)> {
         ID3D11Texture2D::from_raw_borrowed(&*(&raw const frame.data[0]).cast::<*mut c_void>())
     }?;
     Some((texture, frame.data[1] as usize as u32))
+}
+
+pub fn render_texture(
+    device: &ID3D11Device,
+    size: Size,
+    format: DXGI_FORMAT,
+) -> Result<ID3D11Texture2D> {
+    let desc = D3D11_TEXTURE2D_DESC {
+        Width: size.width,
+        Height: size.height,
+        MipLevels: 1,
+        ArraySize: 1,
+        Format: format,
+        SampleDesc: DXGI_SAMPLE_DESC {
+            Count: 1,
+            Quality: 0,
+        },
+        Usage: D3D11_USAGE_DEFAULT,
+        BindFlags: (D3D11_BIND_RENDER_TARGET.0 | D3D11_BIND_SHADER_RESOURCE.0) as u32,
+        CPUAccessFlags: 0,
+        MiscFlags: 0,
+    };
+    let mut texture = None;
+    // SAFETY: `desc` describes a valid GPU-only texture and the out-pointer is valid.
+    unsafe { device.CreateTexture2D(&desc, None, Some(&mut texture)) }.map_err(gpu_error)?;
+    texture.ok_or_else(|| EngineError::Encoder("texture GPU non créée".into()))
 }
 
 pub(crate) fn gpu_error(error: windows::core::Error) -> EngineError {

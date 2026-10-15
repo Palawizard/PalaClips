@@ -30,7 +30,7 @@ Critères :
 - 🤖 `palaclips-cli ffmpeg-info` affiche au moins un encodeur matériel sur la machine de Palawi.
 - 👤 Palawi voit la fenêtre de l'app.
 
-## Phase 1 — Vidéo (CAP-01, 03, 05–08, 10 ; ENC-01–05)
+## Phase 1 — Vidéo (CAP-01, 03, 05–08, 10 ; ENC-01–05) ✅ ([rapport](reports/phase-1.md))
 
 - [x] Énumération écrans/fenêtres (`windows-capture`), CLI `list-targets`.
 - [x] Session WGC → texture D3D11 → conversion NV12 sur GPU → encodeur matériel (FFmpeg
@@ -42,11 +42,11 @@ Critères :
 - [x] CLI `capture-video --target <...> --fps 60 --seconds 10 --out clip.mp4`.
 
 Critères :
-- 🤖 Le MP4 se lit ; `ffprobe` montre un fps constant (`r_frame_rate` = `avg_frame_rate`) et
+- [x] 🤖 Le MP4 se lit ; `ffprobe` montre un fps constant (`r_frame_rate` = `avg_frame_rate`) et
   la bonne durée (±1 image).
-- 🤖 Profil : aucune lecture CPU de la texture (pas de `Map` de staging dans le chemin nominal).
-- 👤 Capture de Fortnite en fenêtre et en plein écran : image correcte, pas de saccade visible.
-- 👤 Écran HDR activé : couleurs correctes (CAP-09) — sinon implémenter la conversion et refaire le test.
+- [x] 🤖 Profil : aucune lecture CPU de la texture (pas de `Map` de staging dans le chemin nominal).
+- [x] 👤 Capture de Fortnite en fenêtre et en plein écran : image correcte, pas de saccade visible.
+- [x] 👤 Écran HDR activé : couleurs correctes (CAP-09) — sinon implémenter la conversion et refaire le test (conversion implémentée, ADR-015).
 
 ## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10)
 

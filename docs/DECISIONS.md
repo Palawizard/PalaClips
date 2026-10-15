@@ -127,5 +127,10 @@
   absorbé par le Video Processor (bandes noires).
 - Repli fenêtre → écran : si la session de fenêtre ne démarre pas ou n'envoie aucune image en
   3 s, alerte `capture_fallback_monitor`.
+- Écran HDR (CAP-09) : capture en FP16 scRGB, division par le blanc SDR de l'écran,
+  écrêtage à 1 et encodage sRGB par un pixel shader (compilé à l'exécution par
+  `d3dcompiler_47`) vers une texture BGRA8, puis Video Processor comme en SDR. Les hautes
+  lumières HDR (HDR automatique, vidéos HDR) sont écrêtées au blanc SDR : le rendu SDR reste
+  fidèle à ce qu'affiche un écran SDR. Écarté : la conversion BGRA8 de Windows (délavée).
 - Débit : préréglages Qualité / Équilibré / Léger = 0,30 / 0,18 / 0,08 bit par pixel et par
   image (borné à 1–200 Mb/s), ou débit libre ; CBR.
