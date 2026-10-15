@@ -1,3 +1,9 @@
+## Branches
+
+- [ ] `feature/`, `fix/`, `chore/` → `dev`
+- [ ] `dev` ou `release/vX.Y.Z` → `main` (version publiée)
+- [ ] `hotfix/` → `main`, puis la même correction vers `dev`
+
 ## Phase / tâche
 
 Phase N — (lien vers la section de docs/PLAN.md)
