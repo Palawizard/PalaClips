@@ -82,6 +82,9 @@ Aucun.
   oblique). `cargo run` passe aussi par `with-ffmpeg.cmd`.
 - La CLI n'est pas « DPI aware » : les tailles de fenêtres de `list-targets` peuvent être
   virtualisées sous mise à l'échelle Windows (la capture, elle, est en pixels physiques).
+- La CI prend la dernière Rust stable (1.99 le 2026-10-15) alors que la machine de Palawi est
+  en 1.94 : un lint clippy récent peut casser la CI seule (`chunks_exact_to_as_chunks`).
+  `rustup update` avant de commencer une phase.
 - Tests 👤 : Claude lance lui-même les commandes et ne demande à Palawi que les actions
   physiques et son avis visuel, via le widget de questions.
 - HDR basculé pendant une capture : pris en compte seulement au démarrage suivant (à traiter
