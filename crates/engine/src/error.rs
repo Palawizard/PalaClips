@@ -11,6 +11,15 @@ pub enum EngineError {
     #[error("la capture audio par application nécessite Windows 10 build 20348 ou plus récent")]
     UnsupportedWindowsBuild,
 
+    #[error("cible de capture introuvable : {0}")]
+    TargetNotFound(String),
+
+    #[error("la capture a échoué : {0}")]
+    Capture(String),
+
+    #[error("l'encodeur vidéo a échoué : {0}")]
+    Encoder(String),
+
     #[error("la source de capture n'est plus disponible : {0}")]
     CaptureSourceLost(String),
 
