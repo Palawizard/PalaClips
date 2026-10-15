@@ -1,5 +1,7 @@
 #[cfg(windows)]
 mod probe;
+#[cfg(windows)]
+mod probe_audio;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -92,6 +94,16 @@ enum Command {
         target: CaptureTarget,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Observe le flux WASAPI (loopback de la sortie par défaut ou micro) : horodatages QPC, drapeaux, trous, périphériques"
+    )]
+    ProbeAudio {
+        #[arg(long, help = "Micro par défaut au lieu du loopback de la sortie")]
+        mic: bool,
+        #[arg(long, default_value_t = 10)]
+        seconds: u64,
+    },
+    #[cfg(windows)]
     #[command(about = "Montre ce qu'une cible désigne (écran ou fenêtre retrouvée par nom d'exe)")]
     ResolveTarget {
         #[arg(long, value_parser = parse_target)]
@@ -166,6 +178,8 @@ fn main() -> Result<()> {
         } => probe::probe_wgc(&target, seconds, min_interval_ms)?,
         #[cfg(windows)]
         Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
+        #[cfg(windows)]
+        Command::ProbeAudio { mic, seconds } => probe_audio::probe_audio(mic, seconds)?,
         #[cfg(windows)]
         Command::ResolveTarget { target } => resolve_target(&target)?,
     }
