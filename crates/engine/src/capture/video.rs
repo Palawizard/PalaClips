@@ -93,7 +93,7 @@ impl VideoCapture {
                 encoder: encoder.to_owned(),
                 size,
                 fps: settings.fps,
-                bitrate_kbps: settings.bitrate_kbps,
+                bitrate_kbps: settings.bitrate_kbps_for(size.width, size.height),
                 keyframe_interval_secs: settings.keyframe_interval_secs,
             },
         )?;

@@ -57,6 +57,16 @@ pub enum VideoCodec {
     Av1,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum VideoQuality {
+    Quality,
+    #[default]
+    Balanced,
+    Light,
+    Custom,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum OutputResolution {
@@ -70,6 +80,7 @@ pub struct VideoSettings {
     pub fps: u32,
     pub resolution: OutputResolution,
     pub codec: VideoCodec,
+    pub quality: VideoQuality,
     pub bitrate_kbps: u32,
     pub keyframe_interval_secs: f32,
     pub capture_cursor: bool,
@@ -82,6 +93,7 @@ impl Default for VideoSettings {
             fps: 60,
             resolution: OutputResolution::Native,
             codec: VideoCodec::H264,
+            quality: VideoQuality::Balanced,
             bitrate_kbps: 40_000,
             keyframe_interval_secs: 1.0,
             capture_cursor: true,
@@ -91,13 +103,24 @@ impl Default for VideoSettings {
 }
 
 impl VideoSettings {
+    pub fn bitrate_kbps_for(&self, width: u32, height: u32) -> u32 {
+        let bits_per_pixel = match self.quality {
+            VideoQuality::Quality => 0.30,
+            VideoQuality::Balanced => 0.18,
+            VideoQuality::Light => 0.08,
+            VideoQuality::Custom => return self.bitrate_kbps,
+        };
+        let kbps = width as f64 * height as f64 * self.fps as f64 * bits_per_pixel / 1_000.0;
+        (kbps.round() as u32).clamp(1_000, 200_000)
+    }
+
     pub fn validate(&self) -> Result<()> {
         if !(10..=240).contains(&self.fps) {
             return Err(EngineError::InvalidConfig(
                 "les images par seconde doivent être entre 10 et 240".into(),
             ));
         }
-        if !(1_000..=200_000).contains(&self.bitrate_kbps) {
+        if self.quality == VideoQuality::Custom && !(1_000..=200_000).contains(&self.bitrate_kbps) {
             return Err(EngineError::InvalidConfig(
                 "le débit doit être entre 1 et 200 Mb/s".into(),
             ));
@@ -261,6 +284,20 @@ mod tests {
             });
         }
         assert!(cfg.validate().is_err());
+    }
+
+    #[test]
+    fn quality_presets_scale_bitrate_with_pixels_per_second() {
+        let mut video = VideoSettings::default();
+        assert_eq!(video.bitrate_kbps_for(2560, 1440), 39_813);
+        video.quality = VideoQuality::Light;
+        assert_eq!(video.bitrate_kbps_for(1920, 1080), 9_953);
+        video.quality = VideoQuality::Quality;
+        video.fps = 240;
+        assert_eq!(video.bitrate_kbps_for(3840, 2160), 200_000);
+        video.quality = VideoQuality::Custom;
+        video.bitrate_kbps = 12_000;
+        assert_eq!(video.bitrate_kbps_for(3840, 2160), 12_000);
     }
 
     #[test]
