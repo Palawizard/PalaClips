@@ -83,19 +83,17 @@ fn ffmpeg_info() -> Result<()> {
     use palaclips_engine::encode::{ffmpeg_version, hardware_video_encoders};
 
     println!("FFmpeg {}", ffmpeg_version());
-    let encoders = hardware_video_encoders();
+    let encoders = hardware_video_encoders()?;
     for encoder in &encoders {
-        let status = if encoder.opens {
-            "disponible"
-        } else {
-            "indisponible"
-        };
-        println!(
-            "  {:<18} {:<13} {}",
-            encoder.name, status, encoder.description
-        );
+        match &encoder.failure {
+            None => println!(
+                "  {:<14} disponible     {}",
+                encoder.name, encoder.description
+            ),
+            Some(reason) => println!("  {:<14} indisponible   {reason}", encoder.name),
+        }
     }
-    if !encoders.iter().any(|encoder| encoder.opens) {
+    if !encoders.iter().any(|encoder| encoder.is_available()) {
         anyhow::bail!(palaclips_engine::EngineError::NoHardwareEncoder);
     }
     Ok(())
