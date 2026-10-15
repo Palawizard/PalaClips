@@ -300,9 +300,11 @@ impl Worker {
         buffer: &mut Vec<u8>,
         samples: &mut Vec<f32>,
     ) -> Result<()> {
-        self.filler.set_end(Hns(self.end.load(Ordering::Relaxed)));
-        let deadline =
-            Hns::now() + Hns::from_millis(END_GRACE_MS) + Hns((-self.sync_offset.0).max(0));
+        let end = Hns(self.end.load(Ordering::Relaxed));
+        self.filler.set_end(end);
+        let deadline = end.max(Hns::now())
+            + Hns::from_millis(END_GRACE_MS)
+            + Hns((-self.sync_offset.0).max(0));
         let handles = [stream.event.as_handle()];
         while !self.filler.reached_end() {
             let remaining_ms = (deadline - Hns::now()).0 / 10_000;
