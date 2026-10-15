@@ -1,7 +1,3 @@
-# Chemins FFmpeg pour rsmpeg / rusty_ffmpeg (Windows).
-# Les fichiers sont téléchargés par scripts/fetch-ffmpeg.ps1 dans third_party/ffmpeg (non commité).
-# - FFMPEG_INCLUDE_DIR : en-têtes, pour générer les bindings (bindgen → nécessite LLVM/libclang)
-# - FFMPEG_DLL_PATH    : dossier des DLL, avec les .lib correspondants à côté (liaison dynamique)
 [env]
 FFMPEG_INCLUDE_DIR = { value = "third_party/ffmpeg/include", relative = true }
 FFMPEG_DLL_PATH = { value = "third_party/ffmpeg/bin", relative = true }
