@@ -128,6 +128,19 @@
     `TIMESTAMP_ERROR`.
   - `read_from_device_to_deque` fait un `unwrap()` sur `ReleaseBuffer` (panique si le
     périphérique disparaît) : utiliser `read_from_device`.
+- Synchro A/V mesurée le 2026-10-15 (`capture-av` 60 i/s, écran principal ; détection des
+  flashs dans la vidéo et des bips dans la piste mix, script `av_sync.py` de la session) :
+  - Vidéo de test lue par VLC (qui compense la latence annoncée du périphérique), sortie
+    Voicemeeter, 160 s dont 60 s sans son : +103,7 ms constant (±0,2 ms), aucune dérive,
+    synchro intacte après le silence. Même vidéo, sortie Apogee : +1,2 ms en moyenne.
+  - Source « comme un jeu » (`probe-av-emitter`, flash et bip émis ensemble, tampon de rendu
+    1056 images) : Apogee +15,7 ms constant ; Voicemeeter +103 à +136 ms (moy. +117) ;
+    Voicemeeter avec `--mix-offset-ms -100` : +10 à +27 ms (moy. +16,9). Le loopback de
+    « Voicemeeter Input » reçoit le son ~100 ms plus tard ; `GetStreamLatency` vaut 0 sur un
+    client loopback et ne permet pas de le deviner (ADR-017).
+- Les noms GDI `\\.\DISPLAYn` changent d'un moment à l'autre de la session (constaté le
+  2026-10-15 : l'écran principal est passé de `DISPLAY2` à `DISPLAY1`) : ils ne suffisent pas
+  à mémoriser un écran (CAP-03).
 - Jeux qui ouvrent le périphérique en mode exclusif : la capture loopback échoue
   (`AUDCLNT_E_DEVICE_IN_USE`), il faut réessayer et le signaler. — [ClipFlow CHANGELOG](https://github.com/jaimitus/ClipFlow/blob/main/CHANGELOG.md)
 

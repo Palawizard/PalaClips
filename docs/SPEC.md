@@ -57,6 +57,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | AUD-08 | Synchronisation audio/vidéo < 1 image sur **1 h**, y compris avec de longs silences. |
 | AUD-09 | Alerte si une piste reste muette alors que l'appli émet du son. |
 | AUD-10 | Changement de périphérique de sortie/entrée par défaut (casque branché/débranché) suivi à chaud. |
+| AUD-11 | **Décalage de synchro par piste** (−1000 à +1000 ms, positif = son retardé) pour compenser les périphériques virtuels (Voicemeeter…), avec un **assistant de calibrage** : flash + bip émis comme par un jeu, capturés et mesurés, valeur proposée pour chaque piste. |
 
 ### 2.4 Replay instantané (RPL)
 

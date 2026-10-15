@@ -48,13 +48,14 @@ Critères :
 - [x] 👤 Capture de Fortnite en fenêtre et en plein écran : image correcte, pas de saccade visible.
 - [x] 👤 Écran HDR activé : couleurs correctes (CAP-09) — sinon implémenter la conversion et refaire le test (conversion implémentée, ADR-015).
 
-## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10)
+## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10, 11 moteur)
 
 - [ ] Loopback du périphérique de sortie (mix complet), micro, horodatage QPC.
 - [ ] Combleur de silences, gestion `AUDCLNT_BUFFERFLAGS_SILENT`, pas d'arrêt sur timeout.
 - [ ] Encodeurs AAC par piste, gestion du délai d'amorçage, titres des pistes.
 - [ ] Suivi du périphérique par défaut à chaud.
 - [ ] CLI `capture-av --seconds N --out f.mp4`.
+- [ ] Décalage de synchro par piste (AUD-11) dans la config et le moteur, options CLI.
 
 Critères :
 - 👤 Test du clap (`docs/TESTING.md` § T2) sur **1 h** : décalage < 1 image au début, au
@@ -92,7 +93,7 @@ Critères :
 - 🤖 2 h armé : RAM stable (écart < 5 % entre 30 min et 2 h).
 - 👤 Import dans DaVinci Resolve : pistes séparées, nommées, synchronisées (STO-01).
 
-## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04 ; RPL-01, 03, 06)
+## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04, 11 ; RPL-01, 03, 06)
 
 Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 
@@ -106,6 +107,9 @@ Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
       (vumètres, recherche, appli non lancée, renommage), Replay & qualité (estimation RAM
       en direct), Raccourcis, Stockage, Général.
 - [ ] Contrat IPC complet pour ces écrans (`ipc.ts` à jour).
+- [ ] Assistant de calibrage de la synchro (AUD-11) dans Sources audio : émetteur flash + bip
+      (logique de `probe-av-emitter`), capture de test, mesure automatique du décalage par
+      piste, valeur proposée puis enregistrée.
 
 Critères :
 - 🤖 Fenêtre fermée : un seul processus PalaClips (aucun `msedgewebview2.exe` enfant).
