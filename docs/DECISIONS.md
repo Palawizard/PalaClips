@@ -112,3 +112,20 @@
   standard de la catégorie.
 - Build code-led (pas de génération d'image) ; `DESIGN.md` produit avec le premier écran
   (phase 5).
+
+## ADR-015 — Pipeline vidéo GPU : Video Processor D3D11 et pacer sur ticks QPC
+**Statut :** acceptée (2026-10-15, phase 1)
+- Conversion BGRA → NV12, mise à l'échelle et bandes noires par `ID3D11VideoProcessor`, sur le
+  périphérique de WGC, directement dans la frame matérielle de l'encodeur. Alternatives :
+  shader maison (plus de code), entrée BGRA dans NVENC (NVIDIA seulement, pas d'échelle).
+- Pacer piloté par un tick QPC (`t0 + n/fps`) qui encode la dernière image reçue : WGC n'émet
+  que sur changement et son horodatage peut devancer le QPC de quelques ms (RESEARCH), donc pas
+  de sélection par horodatage. PTS = `n` : CFR par construction, sans dérive.
+- Pacer et encodeur dans le même fil (`palaclips-video`) : un encodage lent retarde le tick,
+  qui émet ensuite les ticks manqués.
+- Sortie de taille fixe pendant une session : un changement de taille de la source est
+  absorbé par le Video Processor (bandes noires).
+- Repli fenêtre → écran : si la session de fenêtre ne démarre pas ou n'envoie aucune image en
+  3 s, alerte `capture_fallback_monitor`.
+- Débit : préréglages Qualité / Équilibré / Léger = 0,30 / 0,18 / 0,08 bit par pixel et par
+  image (borné à 1–200 Mb/s), ou débit libre ; CBR.
