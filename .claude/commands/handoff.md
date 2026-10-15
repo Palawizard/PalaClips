@@ -17,5 +17,6 @@ rien me demander.
    ajoute-le à `docs/RESEARCH.md` avec la source et la date.
 5. Vérifie `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings`,
    `cargo test --workspace` et `npm run build` (dans `app/`), puis commite :
-   `docs: handoff <date>` (et le code s'il ne l'est pas).
+   `docs(handoff): update session notes` (le code a ses propres commits conventionnels, voir
+   `CLAUDE.md` § 4 Git).
 6. Résume-moi en 5 lignes : fait, reste, ce que j'ai à tester.
