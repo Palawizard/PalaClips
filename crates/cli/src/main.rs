@@ -1,7 +1,12 @@
+#[cfg(windows)]
+mod probe;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use palaclips_engine::{
-    EngineConfig, VERSION, config::CaptureTarget, replay::estimate_buffer_bytes,
+    EngineConfig, VERSION,
+    config::CaptureTarget,
+    replay::estimate_buffer_bytes,
 };
 
 #[derive(Debug, Parser)]
@@ -38,6 +43,20 @@ enum Command {
         json: bool,
     },
     #[cfg(windows)]
+    #[command(about = "Test WGC : Video Processor sur le périphérique, cadence et horodatages QPC")]
+    ProbeWgc {
+        #[arg(long, value_parser = parse_target, default_value = "primary")]
+        target: CaptureTarget,
+        #[arg(long, default_value_t = 3)]
+        seconds: u64,
+        #[arg(
+            long,
+            default_value_t = 0,
+            help = "MinUpdateInterval en ms (0 = défaut Windows)"
+        )]
+        min_interval_ms: u64,
+    },
+    #[cfg(windows)]
     #[command(about = "Montre ce qu'une cible désigne (écran ou fenêtre retrouvée par nom d'exe)")]
     ResolveTarget {
         #[arg(long, value_parser = parse_target)]
@@ -72,6 +91,12 @@ fn main() -> Result<()> {
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
         Command::ListTargets { json } => list_targets(json)?,
+        #[cfg(windows)]
+        Command::ProbeWgc {
+            target,
+            seconds,
+            min_interval_ms,
+        } => probe::probe_wgc(&target, seconds, min_interval_ms)?,
         #[cfg(windows)]
         Command::ResolveTarget { target } => resolve_target(&target)?,
     }
