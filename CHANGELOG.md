@@ -15,5 +15,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Liaison FFmpeg 8.1 LGPL via `rsmpeg` 0.18 ; `cargo run`/`cargo test` trouvent les DLL seuls.
 - `check-env.ps1` détecte les problèmes clang/Visual Studio et les skills de design.
 - Contexte produit `PRODUCT.md` et direction visuelle « Écran d'après-match ».
+- Capture vidéo (phase 1) : écrans et fenêtres par Windows Graphics Capture, fenêtre retrouvée
+  par nom d'exe, conversion NV12 et mise à l'échelle sur le GPU, encodage matériel H.264 /
+  HEVC / AV1 sans copie CPU, fps constant sur l'horloge QPC, curseur et bordure réglables,
+  changement de résolution à chaud, repli fenêtre → écran.
+- Encodeurs détectés par un encodage de test réel (NVENC, AMF, Quick Sync) avec la raison d'un
+  échec ; message clair si aucun ; logs FFmpeg dans les journaux au lieu de la console.
+- Préréglages de débit Qualité / Équilibré / Léger et débit libre.
+- CLI : `list-targets`, `resolve-target`, `probe-wgc`, `capture-video`.
 - Documentation : SPEC V1, architecture, plan par phases, handoff, ADR, recherche, protocoles
   de test, brief design.

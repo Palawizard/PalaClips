@@ -45,11 +45,11 @@ Modules du moteur (`crates/engine/src/`) :
 | `events` | `EngineEvent` (contrat moteur → UI) | 0 ✅ |
 | `error` | `EngineError` (messages FR affichables) | 0 ✅ |
 | `replay` | `PacketRing` purgé par âge, estimation RAM, stockage disque | 0 (file) ✅ / 4 |
-| `capture` | WGC, énumération écrans/fenêtres, miniatures, pacer CFR, repli | 1 |
-| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, AAC, détection par test réel | 1–2 |
+| `capture` | WGC, énumération écrans/fenêtres, pacer CFR, repli (miniatures : phase 5) | 1 ✅ |
+| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, conversion GPU, détection par test réel ; AAC | 1 ✅ / 2 |
 | `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2–3 |
 | `sources` | Sessions audio, processus, appli au premier plan, périphériques | 3 |
-| `mux` | MP4 replay, MP4 hybride, métadonnées des pistes, noms de fichiers | 4–6 |
+| `mux` | MP4 classique vidéo seule (`Mp4Writer`) ; MP4 replay, hybride, métadonnées, noms | 1 ✅ / 4–6 |
 | `record` | Enregistrement manuel, découpage, récupération après crash | 6 |
 | `library` | Index des clips (SQLite), miniatures, surveillance du dossier, quota | 6 |
 | `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4–5 |
@@ -61,9 +61,12 @@ charges :
 - Énumérer écrans et fenêtres capturables (`Window::enumerate` + `is_valid()`), avec miniatures.
 - Session WGC sur la `CaptureTarget` choisie : bordure (`DrawBorderSettings`) et curseur selon
   les réglages.
-- Passer la texture D3D11 brute (`Frame::as_raw_texture`) à l'encodeur sans copie CPU, avec
-  `Frame::timestamp` (QPC).
-- Pacer CFR : dupliquer la dernière image ou sauter les surplus pour tenir le fps cible.
+- Le rappel WGC ne fait qu'un `CopyResource` GPU de `Frame::as_raw_texture` vers la « dernière
+  image » (texture BGRA recréée si la taille change). Aucune copie CPU.
+- Pacer CFR (`CfrClock`) : tick `n` à `t0 + n / fps` sur l'horloge QPC ; à chaque tick, la
+  dernière image reçue est convertie et encodée (doublon si Windows n'a rien envoyé, surplus
+  ignorés). Tick en retard → tous les ticks manqués sont émis. `MinUpdateInterval` = moitié de
+  la période.
 - Repli sur l'écran de la fenêtre si la capture de fenêtre échoue → alerte
   `capture_fallback_monitor`.
 - Suivre changement de résolution, fermeture de la fenêtre, perte du périphérique D3D.
@@ -81,7 +84,10 @@ charges :
 
 **`encode`**
 - Encodeurs `h264/hevc/av1` × `nvenc/amf/qsv`, détectés par un encodage de test réel.
-- Entrée en frames matérielles `d3d11va`, BGRA → NV12 sur le GPU.
+- Entrée en frames matérielles `d3d11va` (pool dynamique, `BIND_RENDER_TARGET`) sur le
+  périphérique de WGC ; BGRA → NV12 + mise à l'échelle + bandes noires par le D3D11 Video
+  Processor (BT.709 limité), écrit directement dans la frame de l'encodeur. QSV : contexte
+  dérivé + `av_hwframe_map`.
 - CBR pour le replay, intervalle d'images clés configurable.
 - AAC-LC 48 kHz stéréo, un encodeur par piste, délai d'amorçage (priming) géré.
 - Une seule session matérielle partagée par le replay et l'enregistrement.
@@ -128,9 +134,8 @@ tenu pendant un appel système bloquant.
 
 | Thread | Entrée | Sortie | Notes |
 |---|---|---|---|
-| Capture (callback WGC) | images WGC | `VideoFrame { texture, qpc }` | ne fait que transmettre ; jamais de travail lourd |
-| Pacer CFR | `VideoFrame` | images à fps fixe | duplique la dernière image / saute les surplus, horloge = QPC |
-| Encodeur vidéo | images | `EncodedPacket` vidéo | une seule session matérielle |
+| Capture (callback WGC) | images WGC | « dernière image » (texture GPU) | un `CopyResource`, jamais de travail lourd |
+| Vidéo (`palaclips-video`) | dernière image | `AVPacket` vidéo (canal borné) | pacer CFR sur QPC + conversion GPU + encodeur : une seule session matérielle |
 | Audio × N (un par source) | WASAPI | `PcmChunk { samples, qpc }` | 48 kHz stéréo f32, événementiel |
 | Combleur + encodeur AAC × N | `PcmChunk` | `EncodedPacket` audio | insère le silence d'après les écarts QPC |
 | Fan-out | paquets | replay + enregistreur | `Arc<[u8]>` : pas de copie entre les deux |
@@ -147,7 +152,7 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
                      │
                      ▼
             t0 = QPC au démarrage de la session
-     PTS(vidéo) = (qpc − t0).to_timebase(1, fps)       (après pacing CFR)
+     PTS(vidéo) = n, tick n à t0 + n/fps (QPC)          (t0 = VideoStream::origin)
      PTS(audio) = (qpc − t0).to_samples(48_000)        (après comblement)
 ```
 

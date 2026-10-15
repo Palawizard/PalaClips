@@ -32,14 +32,14 @@ Critères :
 
 ## Phase 1 — Vidéo (CAP-01, 03, 05–08, 10 ; ENC-01–05)
 
-- [ ] Énumération écrans/fenêtres (`windows-capture`), CLI `list-targets`.
-- [ ] Session WGC → texture D3D11 → conversion NV12 sur GPU → encodeur matériel (FFmpeg
+- [x] Énumération écrans/fenêtres (`windows-capture`), CLI `list-targets`.
+- [x] Session WGC → texture D3D11 → conversion NV12 sur GPU → encodeur matériel (FFmpeg
       `d3d11va`), sans copie CPU.
-- [ ] Pacer CFR sur horloge QPC.
-- [ ] Mise à l'échelle GPU, curseur, bordure, changement de résolution à chaud.
-- [ ] Détection des encodeurs par encodage de test ; message si aucun.
-- [ ] Repli fenêtre → écran (CAP-04).
-- [ ] CLI `capture-video --target <...> --fps 60 --seconds 10 --out clip.mp4`.
+- [x] Pacer CFR sur horloge QPC.
+- [x] Mise à l'échelle GPU, curseur, bordure, changement de résolution à chaud.
+- [x] Détection des encodeurs par encodage de test ; message si aucun.
+- [x] Repli fenêtre → écran (CAP-04).
+- [x] CLI `capture-video --target <...> --fps 60 --seconds 10 --out clip.mp4`.
 
 Critères :
 - 🤖 Le MP4 se lit ; `ffprobe` montre un fps constant (`r_frame_rate` = `avg_frame_rate`) et
