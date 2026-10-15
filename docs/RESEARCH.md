@@ -73,6 +73,16 @@
   vérifié le 2026-10-15.
 - Fortnite (EAC) en fenêtré et en plein écran : la capture de fenêtre WGC fonctionne sans
   repli (2560×1440 en plein écran), fluide à 60 i/s. — 2026-10-15
+- Débit de WGC à 240 Hz (2026-10-15, `probe-wgc`, écran 2 à 240 Hz, écran 1 à 165 Hz,
+  écran 3 à 60 Hz, RTX 4070 Super) : vidéo de test à 240 i/s dans VLC → 232 i/s reçus
+  (écran) et 227 i/s (fenêtre). Fortnite à 225 i/s (plafond Reflex) **avec G-Sync** → 165 à
+  175 i/s reçus, que la cible soit la fenêtre ou l'écran, en plein écran comme en plein écran
+  fenêtré, et sans encodage ; l'horloge de composition DWM (`DwmGetCompositionTimingInfo`)
+  annonce alors 164,9 Hz, celle de l'écran 1. **Sans G-Sync** → 219 i/s reçus, horloge DWM
+  240 Hz. Avec la VRR, l'écran du jeu n'a plus de cadence fixe et DWM se cale sur un autre
+  écran ; WGC ne livre qu'une image par composition. Écartés par mesure : nombre de tampons
+  du frame pool (`windows-capture` en crée 1, essai à 3 identique) et fréquence de l'écran 1
+  (à 60 Hz, 175 i/s reçus). Aucun contournement sans injection.
 - La bordure jaune (`IsBorderRequired`) est dessinée par DWM à l'écran, **pas** dans l'image
   capturée (constaté le 2026-10-15).
 - Git Bash réécrit `\\.\DISPLAY1` (perte d'une barre oblique) : lancer la CLI depuis

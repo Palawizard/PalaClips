@@ -84,3 +84,23 @@ clés à 0, 1, 2… s dans `ffprobe -show_entries packet=pts_time,flags`), ENC-0
   À l'œil : avec l'écrêtage, ciel au-delà de 280 nits, soleil et cœur de l'explosion en
   aplats blancs ; avec l'atténuation, dégradé du ciel, disque et halo du soleil, explosion
   orange conservés.
+- **240 i/s** (Fortnite plein écran 2560×1440 sur l'écran 240 Hz, `window:FortniteClient-Win64-Shipping.exe`,
+  build release, `TESTING.md` § phase 1 point 8) :
+  - Premier essai : `7200 images écrites (3882 reçues de Windows, 3361 dupliquées, retard max
+    18.96 ms)` ❌ — jeu dans le menu (plafonné à 120 i/s) et retard > 1 période (4,17 ms).
+    Instrumentation temporaire du fil d'encodage : seul le tout premier tick était en retard
+    (compilation du shader HDR puis premier encodage NVENC de 3 à 9 ms, après la pose de
+    l'origine de l'horloge) ; ensuite p99,9 < 1 ms. Correction `fix(capture): start the frame
+    clock after the first encode` : l'origine est posée une fois le tick 0 encodé.
+  - Après correction, G-Sync actif, jeu à 225 i/s (plafond Reflex, Palawi) : `7200 images
+    écrites (5046 reçues de Windows, 2250 dupliquées, 0 changements de résolution, retard max
+    0.81 ms)` ; `ffprobe` : `codec_name=h264 width=2560 height=1440 r_frame_rate=240/1
+    avg_frame_rate=240/1 duration=30.000000 nb_frames=7200 bit_rate=161766980`. Windows ne
+    livre que 168 i/s : limite de WGC avec G-Sync et des écrans à fréquences différentes
+    (`RESEARCH.md`, mesures `probe-wgc`), pas du pipeline (identique sans encodage).
+  - G-Sync désactivé : `7200 images écrites (5992 reçues de Windows, 1321 dupliquées, 0
+    changements de résolution, retard max 2.65 ms)` ; `ffprobe` : `codec_name=h264
+    width=2560 height=1440 r_frame_rate=240/1 avg_frame_rate=240/1 duration=30.000000
+    nb_frames=7200 bit_rate=160506217`. 200 i/s reçus pendant l'encodage, 219 i/s sans.
+  - Décision de Palawi (2026-10-15) : documenter la limite G-Sync et proposer une alerte
+    « images de la source limitées » (`HANDOFF.md`, à intégrer à la SPEC s'il la valide).
