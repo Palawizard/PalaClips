@@ -1,9 +1,3 @@
-<#
-.SYNOPSIS
-    Vérifie que la machine de dev a tout ce qu'il faut pour PalaClips.
-.EXAMPLE
-    pwsh scripts/check-env.ps1
-#>
 $ErrorActionPreference = "Continue"
 $ok = $true
 

@@ -23,17 +23,5 @@ serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 
-# Plugins prévus (versions stables vérifiées le 2026-10-15) — ajoutés en phase 5/8 :
-# tauri-plugin-global-shortcut = "2.4"
-# tauri-plugin-single-instance = "2.5"
-# tauri-plugin-autostart = "2.7"
-# tauri-plugin-notification = "2.7"
-# tauri-plugin-opener = "2.7"
-# tauri-plugin-dialog = "2.8"
-# tauri-plugin-log = "2.10"
-# tauri-plugin-updater = "2.14"
-# tauri-plugin-process = "2.4"
-# ⚠️ Ne PAS passer sur les 3.0.0-alpha (Tauri 3 n'est pas stable).
-
 [lints]
 workspace = true
