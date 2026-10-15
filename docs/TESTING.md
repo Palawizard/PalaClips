@@ -12,10 +12,38 @@
 - DaVinci Resolve (version gratuite) pour les imports.
 
 ## T1 — Vidéo (phase 1)
-1. `palaclips-cli capture-video --target primary --fps 60 --seconds 10 --out t1.mp4`
-2. `ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate,avg_frame_rate,nb_frames -of compact t1.mp4`
+Depuis **PowerShell** à la racine du repo (Git Bash abîme `\\.\DISPLAYn`) :
+
+```powershell
+cargo build -p palaclips-cli
+$env:PATH = "$PWD\third_party\ffmpeg\bin;$env:PATH"
+$cli = ".\target\debug\palaclips-cli.exe"
+New-Item -ItemType Directory -Force target\clips | Out-Null
+```
+
+1. `& $cli capture-video --target primary --fps 60 --seconds 10 --out target\clips\t1.mp4`
+2. `ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate,avg_frame_rate,nb_frames,duration -of compact target\clips\t1.mp4`
 3. Attendu : `r_frame_rate = avg_frame_rate = 60/1`, `nb_frames = 600 ± 1`.
-4. Refaire en capturant Fortnite (fenêtré puis plein écran) et un écran HDR.
+4. Fortnite **fenêtré** : lancer Fortnite en mode fenêtré, `& $cli list-targets` pour noter
+   la ligne `window:<exe>`, puis
+   `Start-Sleep 10; & $cli capture-video --target window:FortniteClient-Win64-Shipping.exe --fps 60 --seconds 30 --out target\clips\fn_fenetre.mp4`
+   (10 s pour revenir dans le jeu et bouger la caméra). Rapporter : la dernière ligne de la
+   CLI, la sortie `ffprobe` du point 2 sur ce fichier, et à la lecture : image correcte ?
+   saccades ?
+5. Fortnite **plein écran** : même commande avec `--out target\clips\fn_plein.mp4`. Rapporter en
+   plus si la CLI affiche « … ne peut pas être capturée : PalaClips capture son écran à la
+   place ».
+6. Haute cadence pendant une partie :
+   `Start-Sleep 10; & $cli capture-video --target primary --fps 144 --seconds 20 --out target\clips\fn_144.mp4`
+7. **HDR** : activer le HDR de l'écran principal (Paramètres > Affichage > HDR), afficher une
+   image très colorée, `& $cli capture-video --target primary --fps 60 --seconds 5 --out target\clips\hdr.mp4`,
+   puis comparer la vidéo à l'écran : couleurs normales, délavées ou sombres ?
+8. **Bordure** : pendant `& $cli capture-video --fps 30 --seconds 10 --border --out target\clips\border.mp4`,
+   une bordure jaune entoure l'écran ; sans `--border`, aucune bordure.
+9. **Curseur** : avec `--no-cursor`, aucun curseur dans la vidéo ; sans l'option, curseur
+   visible.
+10. Facultatif (CAP-08) : mettre un écran à 150 % de mise à l'échelle et le capturer avec
+    `--target "monitor:\\.\DISPLAYn"` : la vidéo est dans la définition native de l'écran.
 
 ## T2 — Synchro audio/vidéo sur 1 h (phase 2)
 1. Lancer `capture-av --seconds 3700`.

@@ -5,8 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 1 — Vidéo (pas commencée). Phase 0 validée ([rapport](reports/phase-0.md)).
-- **Branche :** `dev` (PR #1 et #2 mergées, branches supprimées : il ne reste que `main` et `dev`).
+- **Phase en cours :** 1 — Vidéo : code terminé et critères 🤖 ✅, **en attente des tests 👤 de
+  Palawi** (Fortnite fenêtré/plein écran, HDR) — [rapport](reports/phase-1.md).
+- **Branche :** `dev` (PR #5 `feature/video-capture` mergée et supprimée s'il ne reste rien à
+  corriger ; sinon voir `gh pr list`).
 - **Dernière mise à jour :** 2026-10-15
 
 ## Ce qui existe
@@ -32,16 +34,31 @@
   Pas encore de `DESIGN.md` (phase 5).
 - CI Windows : fmt, clippy `-D warnings`, tests, build front ; sur PR et pushs `main`/`dev`.
 - Code sans commentaires ; conventions dans `CLAUDE.md` § 4 (modèle `main`/`dev` : ADR-013).
+- **Phase 1 (2026-10-15)**, pipeline vidéo GPU (ADR-015) :
+  - `capture/targets.rs` : `list_targets()`, `resolve_target(&CaptureTarget)` (fenêtre par nom
+    d'exe, casse ignorée, `title_hint`) ; `capture/pacer.rs` : `CfrClock` (ticks QPC,
+    6 tests) ; `capture/video.rs` : `VideoCapture::start(target, &VideoSettings, encoder)` →
+    `stream()` (`VideoStream` : codecpar, time_base, fps, taille, `origin` QPC),
+    `packets()` (canal borné d'`AVPacket`), `alert()` (repli), `stop()` → `VideoCaptureStats`.
+  - `encode/` : `hardware_video_encoders()` (encodage de test réel, raison d'échec),
+    `pick_encoder`, `VideoEncoder` (frames `d3d11`, QSV dérivé), `GpuConverter` (Video
+    Processor), `route_ffmpeg_logs()` (FFmpeg → `tracing`, cible `ffmpeg`).
+  - `mux.rs` : `Mp4Writer` (MP4 classique vidéo seule). `clock` : `Hns::now()` (QPC).
+  - `config` : `VideoQuality` (Qualité/Équilibré/Léger/Custom), `bitrate_kbps_for(w, h)`.
+  - Erreurs : `TargetNotFound`, `Capture`, `Encoder`, `Mux`, `CodecUnavailable`.
+  - CLI : `list-targets [--json]`, `resolve-target`, `probe-wgc`, `capture-video`.
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 1 sur une branche `feature/video-capture` depuis `dev` : énumération écrans/fenêtres
-   (`windows-capture`), CLI `list-targets`.
-2. Session WGC → texture D3D11 → NV12 GPU → encodeur `d3d11va` sans copie CPU ; partir de
-   `encode::hardware_video_encoders()` pour la détection par encodage de test réel (ENC-01).
-3. Pacer CFR sur QPC, CLI `capture-video`, vérification `ffprobe` (`r_frame_rate` =
-   `avg_frame_rate`).
-
+1. Récupérer les résultats 👤 de Palawi (protocole `docs/TESTING.md` T1 points 4–10) et les
+   reporter dans `docs/reports/phase-1.md`.
+2. Si le HDR donne des couleurs délavées ou sombres : capturer en `ColorFormat::Rgba16F` sur
+   un écran HDR et convertir scRGB → SDR (tone mapping) dans le Video Processor ou un shader,
+   sur une branche `fix/hdr-capture` ; refaire T1 point 7.
+3. Si Fortnite saccade ou échoue : analyser la dernière ligne de la CLI (images dupliquées,
+   retard max) ; plein écran → vérifier que le repli sur l'écran s'affiche.
+4. Tout ✅ → cocher les critères de la phase 1 dans `docs/PLAN.md`, puis phase 2 (audio
+   système + micro) sur `feature/system-audio` depuis `dev`.
 ## Bloquants
 
 Aucun.
@@ -52,8 +69,16 @@ Aucun.
   dépend de `rusty_ffmpeg ≥ 0.17` (rsmpeg inactif depuis août 2025).
 - Tout exécutable lié à l'engine a besoin des DLL FFmpeg dans le PATH : passer par
   `cargo run`/`cargo test` (runner) ; le bundle NSIS (phase 8) devra les livrer à côté de l'exe.
-- `ffmpeg-info` laisse FFmpeg écrire ses erreurs d'ouverture sur stderr (AMF/QSV absents) :
-  router les logs FFmpeg vers `tracing` en phase 1.
+- AMF et QSV sont codés mais jamais testés sur du vrai matériel (Palawi : 13600KF sans iGPU,
+  pas de carte AMD). La détection par encodage réel les écarte s'ils échouent.
+- `rsmpeg` : ne jamais passer de dictionnaire à `AVCodecContext::open` (double libération si
+  l'ouverture échoue) → `av_opt_set` sur `priv_data`.
+- Cibles `monitor:\\.\DISPLAYn` : lancer la CLI depuis PowerShell (Git Bash retire une barre
+  oblique). `cargo run` passe aussi par `with-ffmpeg.cmd`.
+- La CLI n'est pas « DPI aware » : les tailles de fenêtres de `list-targets` peuvent être
+  virtualisées sous mise à l'échelle Windows (la capture, elle, est en pixels physiques).
+- Phase 4 : le replay devra cloner les `AVPacket` (refcount) pour le fan-out, et utiliser
+  `VideoStream::origin` comme `t0` commun avec l'audio.
 - La capture audio par appli a un rapport de piste muette sur Windows 11 build 26200 (avec
   NAudio, cause non établie) : à tester dès la phase 3 sur la machine de Palawi.
 - Tauri 3 est en alpha sur crates.io : ne pas suivre les suggestions de mise à jour vers 3.x.
@@ -66,3 +91,4 @@ Aucun.
 |---|---|---|---|
 | 2026-10-15 | — | Création du repo, docs, squelette, CI | Phase 0 |
 | 2026-10-15 | 0 | Règles Git `main`/`dev` (PR #1) ; env Windows vert, rsmpeg 0.18 ↔ FFmpeg 8.1 (bindgen 0.72.1), `ffmpeg-info`, `PRODUCT.md`, direction visuelle ; phase 0 validée (PR #2) | Phase 1 |
+| 2026-10-15 | 1 | Pipeline vidéo GPU (WGC → Video Processor NV12 → NVENC/AMF/QSV), pacer CFR QPC, repli, préréglages de débit, CLI `capture-video` ; 🤖 ✅ (600 images, 60/1) ; PR #5 | Tests 👤 Fortnite + HDR |

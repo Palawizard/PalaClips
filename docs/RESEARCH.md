@@ -24,6 +24,25 @@
   When Required ») → pacer CFR nécessaire.
 - Plein écran exclusif « legacy » : la capture de fenêtre peut échouer, un autre projet se
   rabat sur l'écran. — [WKI-Clipper](https://github.com/WKImods/WKI-Clipper)
+- Vérifié le 2026-10-15 sur la machine de Palawi (`palaclips-cli probe-wgc`) : le périphérique
+  D3D11 créé par `windows-capture` (sans `D3D11_CREATE_DEVICE_VIDEO_SUPPORT`) expose
+  `ID3D11VideoDevice` et `ID3D11VideoContext1` → conversion NV12 sur le même périphérique.
+- Même sonde : `SystemRelativeTime` est bien sur l'horloge QPC mais peut **devancer** le QPC
+  lu à la réception de l'image (jusqu'à ~7 ms à 240 Hz) → ne pas choisir les images en
+  comparant leur horodatage à l'heure du tick.
+- Même sonde : `MinUpdateInterval` par défaut ≈ 12,5 ms (~80 Hz max) ; une valeur
+  personnalisée (1–4 ms) laisse passer 240 Hz. On règle la moitié de la période cible.
+- `windows-capture` : pool d'images à **1** tampon recréé quand `ContentSize` change ; le seul
+  `Map` de staging est dans `Frame::buffer()` / `buffer_crop()` (jamais appelés).
+- `Window::process_name()` de `windows-capture` ouvre le processus avec `PROCESS_VM_READ`
+  (refusé sur les processus protégés) → on lit le nom d'exe par
+  `QueryFullProcessImageNameW` avec `PROCESS_QUERY_LIMITED_INFORMATION`.
+- Fenêtre réduite : WGC n'envoie aucune image → repli sur l'écran après 3 s sans image
+  (constaté le 2026-10-15).
+- La bordure jaune (`IsBorderRequired`) est dessinée par DWM à l'écran, **pas** dans l'image
+  capturée (constaté le 2026-10-15).
+- Git Bash réécrit `\\.\DISPLAY1` (perte d'une barre oblique) : lancer la CLI depuis
+  PowerShell pour les cibles `monitor:` (constaté le 2026-10-15).
 
 ## Audio (`wasapi` 0.26)
 
@@ -67,6 +86,20 @@
   le contournent. — constaté le 2026-10-15
 - Liaison dynamique : les exécutables (tests compris) exigent les DLL FFmpeg dans le PATH
   (`STATUS_DLL_NOT_FOUND` sinon) ; runner Cargo `scripts/with-ffmpeg.cmd`. — constaté le 2026-10-15
+- FFmpeg 8.1 : `h264_qsv`/`hevc_qsv`/`av1_qsv` n'acceptent que des frames `qsv` → dériver un
+  périphérique QSV du D3D11VA, un contexte de frames QSV du pool D3D11
+  (`av_hwframe_ctx_create_derived`, pool dynamique géré par `qsv_dynamic_frames_derive_to`),
+  puis `av_hwframe_map` par image. Non testable sur la machine de Palawi (13600KF sans iGPU).
+  — [hwcontext_qsv.c n8.1](https://github.com/FFmpeg/FFmpeg/blob/n8.1/libavutil/hwcontext_qsv.c)
+- Sans pilote AMD, `*_amf` échoue proprement (« DLL amfrt64.dll failed to open »).
+- `rsmpeg 0.18` : `AVCodecContext::open(Some(dict))` libère deux fois le dictionnaire quand
+  `avcodec_open2` échoue (FFmpeg a déjà remplacé `*options`) → plantage. On règle les options
+  privées par `av_opt_set` sur `priv_data` et on ouvre sans dictionnaire. — constaté le 2026-10-15
+- NVENC accepte les frames `d3d11` d'un pool dynamique (`initial_pool_size = 0`) avec
+  `BindFlags = D3D11_BIND_RENDER_TARGET` (requis par la sortie du Video Processor).
+- Capture 1440p60 → `h264_nvenc` : 0,4 % du CPU de la machine (7,8 % d'un cœur, build debug),
+  125 Mo de mémoire de travail. Premier `send_frame` NVENC ≈ 15–50 ms, rattrapé par des
+  doublons ; ensuite retard des ticks < 1 ms avec `std::thread::sleep`. — mesuré le 2026-10-15
 - MP4 fragmenté brut : mal supporté par éditeurs/lecteurs ; OBS a créé le « Hybrid MP4 »,
   compatible DaVinci Resolve. — [OBS](https://obsproject.com/blog/obs-studio-hybrid-mp4)
 - FFmpeg : `movflags hybrid_fragmented` (fragmenté pendant l'écriture, normal à la fin).
