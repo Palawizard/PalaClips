@@ -1,17 +1,9 @@
-/**
- * Contrat IPC front ↔ Tauri. Source de vérité côté Rust :
- * - commandes : app/src-tauri/src/commands.rs
- * - événements : crates/engine/src/events.rs
- * Toute modification se reporte ici ET dans docs/ARCHITECTURE.md (section IPC).
- */
 import { invoke } from "@tauri-apps/api/core";
 
-/** Version du moteur. */
 export function engineVersion(): Promise<string> {
   return invoke<string>("engine_version");
 }
 
-/** Configuration par défaut du moteur (miroir de `EngineConfig`). */
 export function defaultConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("default_config");
 }
@@ -64,7 +56,6 @@ export interface EngineConfig {
 export type EngineState = "idle" | "replay_armed" | "recording";
 export type Severity = "info" | "warning" | "error";
 
-/** Événements moteur → UI (miroir de `EngineEvent`). */
 export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
   | { type: "clip_saved"; path: string; duration_secs: number; save_latency_ms: number }

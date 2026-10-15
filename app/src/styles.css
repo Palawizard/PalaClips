@@ -1,11 +1,5 @@
 @import "tailwindcss";
 
-/*
- * Les jetons de design (couleurs, typo, rayons, ombres, durées d'animation) sont
- * définis en phase 5 avec /impeccable init puis /impeccable extract, et déclarés ici
- * via @theme. Ne pas ajouter de couleurs « au feeling » avant : voir docs/DESIGN-BRIEF.md.
- */
-
 :root {
   color-scheme: dark;
 }
