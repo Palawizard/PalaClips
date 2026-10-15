@@ -84,6 +84,14 @@ enum Command {
         min_interval_ms: u64,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Test HDR : état HDR et blanc SDR des écrans, valeurs d'une image BGRA8 et FP16"
+    )]
+    ProbeHdr {
+        #[arg(long, value_parser = parse_target, default_value = "primary")]
+        target: CaptureTarget,
+    },
+    #[cfg(windows)]
     #[command(about = "Montre ce qu'une cible désigne (écran ou fenêtre retrouvée par nom d'exe)")]
     ResolveTarget {
         #[arg(long, value_parser = parse_target)]
@@ -156,6 +164,8 @@ fn main() -> Result<()> {
             seconds,
             min_interval_ms,
         } => probe::probe_wgc(&target, seconds, min_interval_ms)?,
+        #[cfg(windows)]
+        Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
         #[cfg(windows)]
         Command::ResolveTarget { target } => resolve_target(&target)?,
     }

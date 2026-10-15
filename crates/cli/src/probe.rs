@@ -133,3 +133,148 @@ fn settings<T: TryInto<windows_capture::settings::GraphicsCaptureItemType>>(
         report,
     )
 }
+
+type GrabbedFrame = Arc<Mutex<Option<(u32, u32, Vec<u8>)>>>;
+
+#[derive(Debug)]
+struct FrameGrab(GrabbedFrame);
+
+impl GraphicsCaptureApiHandler for FrameGrab {
+    type Flags = GrabbedFrame;
+    type Error = anyhow::Error;
+
+    fn new(context: Context<Self::Flags>) -> Result<Self> {
+        Ok(Self(context.flags))
+    }
+
+    fn on_frame_arrived(
+        &mut self,
+        frame: &mut Frame,
+        control: InternalCaptureControl,
+    ) -> Result<()> {
+        let (width, height) = (frame.width(), frame.height());
+        let buffer = frame.buffer()?;
+        let mut packed = Vec::new();
+        let bytes = buffer.as_nopadding_buffer(&mut packed).to_vec();
+        *self.0.lock().map_err(|_| anyhow!("verrou"))? = Some((width, height, bytes));
+        control.stop();
+        Ok(())
+    }
+}
+
+fn grab(target: ResolvedTarget, format: ColorFormat) -> Result<(u32, u32, Vec<u8>)> {
+    let slot = Arc::new(Mutex::new(None));
+    let settings = |item| {
+        Settings::new(
+            item,
+            CursorCaptureSettings::WithoutCursor,
+            DrawBorderSettings::WithoutBorder,
+            SecondaryWindowSettings::Default,
+            MinimumUpdateIntervalSettings::Default,
+            DirtyRegionSettings::Default,
+            format,
+            slot.clone(),
+        )
+    };
+    match target {
+        ResolvedTarget::Monitor(monitor) => FrameGrab::start(settings(monitor)),
+        ResolvedTarget::Window(window) => FrameGrab::start(Settings::new(
+            window,
+            CursorCaptureSettings::WithoutCursor,
+            DrawBorderSettings::WithoutBorder,
+            SecondaryWindowSettings::Default,
+            MinimumUpdateIntervalSettings::Default,
+            DirtyRegionSettings::Default,
+            format,
+            slot.clone(),
+        )),
+    }
+    .map_err(|error| anyhow!("{error}"))?;
+    let grabbed = slot.lock().map_err(|_| anyhow!("verrou"))?.take();
+    grabbed.ok_or_else(|| anyhow!("aucune image"))
+}
+
+fn half_to_f32(bits: u16) -> f32 {
+    let sign = if bits & 0x8000 != 0 { -1.0 } else { 1.0 };
+    let exponent = ((bits >> 10) & 0x1f) as i32;
+    let mantissa = (bits & 0x3ff) as f32;
+    match exponent {
+        0 => sign * mantissa * 2f32.powi(-24),
+        31 => f32::INFINITY,
+        _ => sign * (1.0 + mantissa / 1024.0) * 2f32.powi(exponent - 15),
+    }
+}
+
+fn percentiles(mut values: Vec<f32>) -> String {
+    values.sort_by(f32::total_cmp);
+    let at = |q: f64| values[((values.len() - 1) as f64 * q) as usize];
+    format!(
+        "p50 {:.3}  p90 {:.3}  p99 {:.3}  max {:.3}",
+        at(0.5),
+        at(0.9),
+        at(0.99),
+        at(1.0)
+    )
+}
+
+pub fn probe_hdr(target: &CaptureTarget) -> Result<()> {
+    use palaclips_engine::capture::display_color;
+    use windows_capture::monitor::Monitor;
+
+    for monitor in Monitor::enumerate()? {
+        let name = monitor.device_name()?;
+        match display_color(&name) {
+            Some(color) => println!(
+                "{name} : HDR {}, blanc SDR {:.0} nits (scRGB {:.2})",
+                if color.hdr { "activé" } else { "désactivé" },
+                color.sdr_white_nits,
+                color.sdr_white_scrgb()
+            ),
+            None => println!("{name} : informations couleur indisponibles"),
+        }
+    }
+
+    let resolved = resolve_target(target)?;
+    let (width, height, bgra) = grab(resolved, ColorFormat::Bgra8)?;
+    let bgra_max: Vec<f32> = bgra
+        .chunks_exact(4)
+        .map(|px| px[0].max(px[1]).max(px[2]) as f32 / 255.0)
+        .collect();
+    println!(
+        "BGRA8 {width}x{height}, max(R,G,B) normalisé : {}",
+        percentiles(bgra_max.clone())
+    );
+
+    let (width, height, half) = grab(resolved, ColorFormat::Rgba16F)?;
+    let scrgb_max: Vec<f32> = half
+        .chunks_exact(8)
+        .map(|px| {
+            let channel = |i: usize| half_to_f32(u16::from_le_bytes([px[i], px[i + 1]]));
+            channel(0).max(channel(2)).max(channel(4))
+        })
+        .collect();
+    println!(
+        "RGBA16F {width}x{height}, max(R,G,B) scRGB linéaire : {}",
+        percentiles(scrgb_max.clone())
+    );
+    println!("BGRA8 moyen selon le scRGB du même pixel :");
+    let bins = [0.0, 0.05, 0.2, 0.5, 1.0, 2.0, 3.0, 4.0, 100.0];
+    for range in bins.windows(2) {
+        let matching: Vec<f32> = scrgb_max
+            .iter()
+            .zip(&bgra_max)
+            .filter(|(scrgb, _)| (range[0]..range[1]).contains(*scrgb))
+            .map(|(_, bgra)| *bgra)
+            .collect();
+        if !matching.is_empty() {
+            let mean = matching.iter().sum::<f32>() / matching.len() as f32;
+            println!(
+                "  scRGB [{:.2} ; {:.2}[ : {:>8} px, BGRA8 moyen {mean:.3}",
+                range[0],
+                range[1],
+                matching.len()
+            );
+        }
+    }
+    Ok(())
+}
