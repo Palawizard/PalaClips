@@ -103,6 +103,31 @@
 - Navigateurs multi-processus : cibler le bon arbre. — [LiveTranscriber #2](https://github.com/avysotsky/LiveTranscriber/issues/2)
 - Piste process loopback **entièrement à zéro** sur Windows 11 build 26200 avec NAudio 3.1.0 ;
   cause non établie (wrapper ou Windows), une seule machine. — [MeetCap #38](https://github.com/lybym/MeetCap/issues/38)
+- Mesuré le 2026-10-15 avec `palaclips-cli probe-audio` (`wasapi` 0.26, flux partagé piloté
+  par événement, 48 kHz stéréo f32 `autoconvert`, tampon 200 ms ; journaux bruts dans
+  `docs/reports/phase-2/`), machine de Palawi (sortie par défaut « Voicemeeter Input »,
+  interface USB Apogee BOOM, micro par défaut « CABLE Output ») :
+  - Un paquet de 480 images toutes les 10 ms ; `pu64QPCPosition` tremble de ±1,5 à 2 ms
+    d'un paquet à l'autre (Voicemeeter), ±0,55 ms (Apogee), sans dérive cumulée : sur 176 s,
+    nombre d'images = durée QPC × 48 000 à 0 ppm. Ne jamais recaler paquet par paquet.
+  - Latence réception − QPC : ~17 ms (Voicemeeter), **−10 à 0 ms** sur l'Apogee (horodatage
+    en avance sur la réception), ~20 ms (micro virtuel).
+  - Musique en pause : le flux continue avec des paquets de **zéros sans
+    `AUDCLNT_BUFFERFLAGS_SILENT`** (Voicemeeter comme Apogee) ; aucun réveil manqué. Le cas
+    « aucun paquet quand rien ne joue » ne s'est pas produit ici (les applis gardent leur flux
+    ouvert), mais reste possible : le combleur ne doit pas en dépendre.
+  - Zéros sans drapeau aussi sur un micro virtuel muet : la détection de piste muette ne peut
+    pas se fier au drapeau SILENT.
+  - Changement du périphérique par défaut : `OnDefaultDeviceChanged` (Console puis
+    Multimedia) ; l'ancien flux continue de recevoir des données, c'est à nous de rouvrir
+    (~210 ms sans audio). Débranchement USB du périphérique ouvert : `OnDeviceStateChanged
+    → NotPresent`, puis `GetBuffer` → `AUDCLNT_E_DEVICE_INVALIDATED` (`0x88890004`) 12 ms
+    plus tard, puis Windows bascule seul le défaut. Les premiers paquets d'un flux rouvert
+    peuvent **chevaucher** la fin du précédent (jusqu'à 20 ms) : à couper.
+  - Une seule `DATA_DISCONTINUITY`, sur le premier paquet de chaque flux ; jamais de
+    `TIMESTAMP_ERROR`.
+  - `read_from_device_to_deque` fait un `unwrap()` sur `ReleaseBuffer` (panique si le
+    périphérique disparaît) : utiliser `read_from_device`.
 - Jeux qui ouvrent le périphérique en mode exclusif : la capture loopback échoue
   (`AUDCLNT_E_DEVICE_IN_USE`), il faut réessayer et le signaler. — [ClipFlow CHANGELOG](https://github.com/jaimitus/ClipFlow/blob/main/CHANGELOG.md)
 

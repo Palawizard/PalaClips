@@ -24,6 +24,7 @@ tracing-subscriber.workspace = true
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_Graphics_Direct3D11", "Win32_Graphics_Dwm"] }
 windows-capture.workspace = true
+wasapi.workspace = true
 
 [lints]
 workspace = true
