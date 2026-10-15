@@ -141,11 +141,15 @@ impl VideoSettings {
     }
 }
 
+pub const SYNC_OFFSET_RANGE_MS: std::ops::RangeInclusive<i32> = -1_000..=1_000;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppTrack {
     pub exe_name: String,
     pub label: String,
     pub enabled: bool,
+    #[serde(default)]
+    pub sync_offset_ms: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -153,9 +157,11 @@ pub struct AppTrack {
 pub struct AudioSettings {
     pub record_full_mix: bool,
     pub output_device_id: Option<String>,
+    pub full_mix_sync_offset_ms: i32,
     pub record_microphone: bool,
     pub microphone_device_id: Option<String>,
     pub microphone_gain_db: f32,
+    pub microphone_sync_offset_ms: i32,
     pub app_tracks: Vec<AppTrack>,
     pub max_app_tracks: usize,
     pub auto_game_track: bool,
@@ -166,9 +172,11 @@ impl Default for AudioSettings {
         Self {
             record_full_mix: true,
             output_device_id: None,
+            full_mix_sync_offset_ms: 0,
             record_microphone: true,
             microphone_device_id: None,
             microphone_gain_db: 0.0,
+            microphone_sync_offset_ms: 0,
             app_tracks: Vec::new(),
             max_app_tracks: 6,
             auto_game_track: true,
@@ -202,6 +210,16 @@ impl AudioSettings {
             return Err(EngineError::InvalidConfig(
                 "le gain du micro doit être entre -20 et +20 dB".into(),
             ));
+        }
+        let offsets = [self.full_mix_sync_offset_ms, self.microphone_sync_offset_ms]
+            .into_iter()
+            .chain(self.app_tracks.iter().map(|track| track.sync_offset_ms));
+        for offset in offsets {
+            if !SYNC_OFFSET_RANGE_MS.contains(&offset) {
+                return Err(EngineError::InvalidConfig(
+                    "le décalage de synchro d'une piste doit être entre -1000 et +1000 ms".into(),
+                ));
+            }
         }
         Ok(())
     }
@@ -281,8 +299,18 @@ mod tests {
                 exe_name: name.into(),
                 label: "Discord".into(),
                 enabled: true,
+                sync_offset_ms: 0,
             });
         }
+        assert!(cfg.validate().is_err());
+    }
+
+    #[test]
+    fn sync_offsets_beyond_one_second_are_rejected() {
+        let mut cfg = EngineConfig::default();
+        cfg.audio.full_mix_sync_offset_ms = -100;
+        assert!(cfg.validate().is_ok());
+        cfg.audio.microphone_sync_offset_ms = 1_001;
         assert!(cfg.validate().is_err());
     }
 

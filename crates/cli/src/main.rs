@@ -68,6 +68,20 @@ enum Command {
             help = "Gain du micro en dB (-20 à +20)"
         )]
         mic_gain_db: f32,
+        #[arg(
+            long,
+            default_value_t = 0,
+            allow_hyphen_values = true,
+            help = "Décalage de synchro de la piste mix en ms (positif = son retardé)"
+        )]
+        mix_offset_ms: i32,
+        #[arg(
+            long,
+            default_value_t = 0,
+            allow_hyphen_values = true,
+            help = "Décalage de synchro de la piste micro en ms (positif = son retardé)"
+        )]
+        mic_offset_ms: i32,
     },
     #[cfg(windows)]
     #[command(about = "Test WGC : Video Processor sur le périphérique, cadence et horodatages QPC")]
@@ -152,17 +166,22 @@ fn main() -> Result<()> {
             no_mix,
             no_mic,
             mic_gain_db,
+            mix_offset_ms,
+            mic_offset_ms,
         } => {
             use palaclips_engine::audio::AudioSource;
             let mut audio = Vec::new();
             if !no_mix {
-                audio.push(AudioSource::SystemMix { device_id: None });
+                audio.push((AudioSource::SystemMix { device_id: None }, mix_offset_ms));
             }
             if !no_mic {
-                audio.push(AudioSource::Microphone {
-                    device_id: None,
-                    gain_db: mic_gain_db,
-                });
+                audio.push((
+                    AudioSource::Microphone {
+                        device_id: None,
+                        gain_db: mic_gain_db,
+                    },
+                    mic_offset_ms,
+                ));
             }
             run_capture(&capture, audio)?
         }
@@ -313,7 +332,10 @@ impl CaptureArgs {
 }
 
 #[cfg(windows)]
-fn run_capture(args: &CaptureArgs, audio: Vec<palaclips_engine::audio::AudioSource>) -> Result<()> {
+fn run_capture(
+    args: &CaptureArgs,
+    audio: Vec<(palaclips_engine::audio::AudioSource, i32)>,
+) -> Result<()> {
     use palaclips_engine::audio::{AudioTrack, SAMPLE_RATE};
     use palaclips_engine::capture::VideoCapture;
     use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
@@ -331,9 +353,14 @@ fn run_capture(args: &CaptureArgs, audio: Vec<palaclips_engine::audio::AudioSour
     let stream = capture.stream().clone();
     let tracks = audio
         .into_iter()
-        .map(|source| {
+        .map(|(source, offset_ms)| {
             let title = source.label();
-            AudioTrack::start(source, title, stream.origin)
+            AudioTrack::start(
+                source,
+                title,
+                stream.origin,
+                Hns::from_millis(offset_ms.into()),
+            )
         })
         .collect::<palaclips_engine::Result<Vec<_>>>()?;
     println!(
