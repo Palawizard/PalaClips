@@ -114,7 +114,7 @@
   (phase 5).
 
 ## ADR-015 — Pipeline vidéo GPU : Video Processor D3D11 et pacer sur ticks QPC
-**Statut :** acceptée (2026-10-15, phase 1)
+**Statut :** acceptée (2026-10-15, phase 1) ; écrêtage des hautes lumières HDR remplacé par ADR-016
 - Conversion BGRA → NV12, mise à l'échelle et bandes noires par `ID3D11VideoProcessor`, sur le
   périphérique de WGC, directement dans la frame matérielle de l'encodeur. Alternatives :
   shader maison (plus de code), entrée BGRA dans NVENC (NVIDIA seulement, pas d'échelle).
@@ -134,3 +134,24 @@
   fidèle à ce qu'affiche un écran SDR. Écarté : la conversion BGRA8 de Windows (délavée).
 - Débit : préréglages Qualité / Équilibré / Léger = 0,30 / 0,18 / 0,08 bit par pixel et par
   image (borné à 1–200 Mb/s), ou débit libre ; CBR.
+
+## ADR-016 — Hautes lumières HDR atténuées en douceur au lieu d'être écrêtées
+**Statut :** acceptée (2026-10-15)
+- Contexte : l'écrêtage au blanc SDR (ADR-015) transformait tout ce qui dépasse le blanc SDR
+  (ciel en HDR automatique, soleil, explosions) en aplats blancs sans détail.
+- Décision : dans le shader HDR → SDR, après division par le blanc SDR, on calcule
+  `m = max(R, G, B)` ; si `m ≤ 0,9`, rien ne change ; au-dessus, les trois canaux sont
+  multipliés par `f(m) / m` avec `f(m) = s + h·e / (e + h)` (`s = 0,9`, `h = 1 − s`,
+  `e = m − s`). La courbe a une pente de 1 au seuil (pas de cassure visible) et tend vers 1
+  sans jamais l'atteindre.
+- Pourquoi sur `max(R, G, B)` et pas par canal : le facteur commun garde la teinte (une
+  explosion reste orange, un ciel reste bleu) ; par canal, les couleurs vives virent au blanc.
+- Pourquoi 0,9 : le contenu SDR (interface, jeu sous le blanc SDR) reste identique jusqu'à
+  90 % du blanc ; un seuil plus bas garderait plus de détail dans les hautes lumières mais
+  assombrirait le blanc des interfaces. Réglable par `ROLL_OFF_START` (`encode/hdr.rs`).
+- Écarté : tone mapping complet (Reinhard ou ACES sur toute la plage), qui modifie aussi les
+  tons moyens et donc le rendu des jeux SDR sur écran HDR.
+- Vérification (2026-10-15, scène HDR10 de synthèse jouée par VLC sur l'écran 2, blanc SDR
+  280 nits) : rampe de gris identique jusqu'à 250 nits (242/255), puis 248 → 254 de 280 à
+  1500 nits au lieu de 255 dès 280 nits ; ciel, disque du soleil et couleur de l'explosion
+  conservés au lieu d'aplats blancs (`docs/reports/phase-1.md`).
