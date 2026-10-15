@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use crossbeam_channel::{Receiver, Sender, bounded};
+use crossbeam_channel::{Receiver, SendTimeoutError, Sender, bounded};
 use parking_lot::Mutex;
 use rsmpeg::avcodec::{AVCodecParameters, AVPacket};
 use rsmpeg::avutil::AVRational;
@@ -29,6 +29,7 @@ use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Severity};
 
 const FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(3);
+const SEND_RETRY: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Clone)]
 pub struct VideoStream {
@@ -319,10 +320,17 @@ fn run_encoder(
     let mut converter: Option<GpuConverter> = None;
     let mut stats = VideoCaptureStats::default();
     let mut last_count = 0;
-    let mut send = |packet: AVPacket| {
-        packets
-            .send(packet)
-            .map_err(|_| EngineError::Encoder("plus personne ne lit les paquets vidéo".into()))
+    let mut send = |mut packet: AVPacket| loop {
+        match packets.send_timeout(packet, SEND_RETRY) {
+            Ok(()) => return Ok(()),
+            Err(SendTimeoutError::Timeout(_)) if stop.load(Ordering::Relaxed) => return Ok(()),
+            Err(SendTimeoutError::Timeout(unsent)) => packet = unsent,
+            Err(SendTimeoutError::Disconnected(_)) => {
+                return Err(EngineError::Encoder(
+                    "plus personne ne lit les paquets vidéo".into(),
+                ));
+            }
+        }
     };
 
     while !stop.load(Ordering::Relaxed) {
