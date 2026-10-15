@@ -6,8 +6,7 @@
 ## État actuel
 
 - **Phase en cours :** 1 — Vidéo (pas commencée). Phase 0 validée ([rapport](reports/phase-0.md)).
-- **Branche :** `chore/dev-environment` (PR #2 vers `dev`, CI verte, à merger par Palawi).
-  PR #1 `chore/dev-branch-workflow` → `dev` aussi ouverte (règles Git à deux branches).
+- **Branche :** `dev` (PR #1 et #2 mergées, branches supprimées : il ne reste que `main` et `dev`).
 - **Dernière mise à jour :** 2026-10-15
 
 ## Ce qui existe
@@ -36,12 +35,11 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Palawi merge les PR #1 et #2 dans `dev`. Puis `git switch dev && git pull`.
-2. Phase 1 sur une branche `feature/video-capture` depuis `dev` : énumération écrans/fenêtres
+1. Phase 1 sur une branche `feature/video-capture` depuis `dev` : énumération écrans/fenêtres
    (`windows-capture`), CLI `list-targets`.
-3. Session WGC → texture D3D11 → NV12 GPU → encodeur `d3d11va` sans copie CPU ; partir de
+2. Session WGC → texture D3D11 → NV12 GPU → encodeur `d3d11va` sans copie CPU ; partir de
    `encode::hardware_video_encoders()` pour la détection par encodage de test réel (ENC-01).
-4. Pacer CFR sur QPC, CLI `capture-video`, vérification `ffprobe` (`r_frame_rate` =
+3. Pacer CFR sur QPC, CLI `capture-video`, vérification `ffprobe` (`r_frame_rate` =
    `avg_frame_rate`).
 
 ## Bloquants
@@ -59,8 +57,8 @@ Aucun.
 - La capture audio par appli a un rapport de piste muette sur Windows 11 build 26200 (avec
   NAudio, cause non établie) : à tester dès la phase 3 sur la machine de Palawi.
 - Tauri 3 est en alpha sur crates.io : ne pas suivre les suggestions de mise à jour vers 3.x.
-- Branche locale `devc` (même commit que `dev`) : probablement une faute de frappe, à
-  supprimer par Palawi s'il le confirme.
+- Fin de tâche : merger soi-même la PR vers `dev` quand la CI est verte, puis supprimer la
+  branche (`CLAUDE.md` § 4 Git, « Merge et ménage »).
 
 ## Journal des sessions
 
