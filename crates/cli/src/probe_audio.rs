@@ -112,8 +112,10 @@ fn run_stream(
     let event = client.set_get_eventhandle()?;
     let capture = client.get_audiocaptureclient()?;
     let (default_period, _) = client.get_device_period()?;
+    // SAFETY: GetStreamLatency only reads the state of an initialized audio client.
+    let stream_latency = unsafe { client.as_iaudioclient().GetStreamLatency() }.unwrap_or(-1);
     println!(
-        "[{:>8.3} s] ouvert : « {} » ({}), format du moteur {} Hz × {} canaux, période {:.1} ms, tampon {} images",
+        "[{:>8.3} s] ouvert : « {} » ({}), format du moteur {} Hz × {} canaux, période {:.1} ms, latence du flux {:.1} ms, tampon {} images",
         elapsed(start),
         device.get_friendlyname()?,
         if direction == Direction::Render {
@@ -124,6 +126,7 @@ fn run_stream(
         mix_format.get_samplespersec(),
         mix_format.get_nchannels(),
         default_period as f64 / 10_000.0,
+        stream_latency as f64 / 10_000.0,
         client.get_buffer_size()?
     );
     client.start_stream()?;

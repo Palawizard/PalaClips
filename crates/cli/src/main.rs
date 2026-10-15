@@ -2,6 +2,8 @@
 mod probe;
 #[cfg(windows)]
 mod probe_audio;
+#[cfg(windows)]
+mod probe_av;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -100,6 +102,14 @@ enum Command {
         seconds: u64,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Émetteur de test A/V : fenêtre plein écran qui flashe en même temps qu'un bip WASAPI, chaque seconde, sans compensation de latence (comme un jeu)"
+    )]
+    ProbeAvEmitter {
+        #[arg(long, default_value_t = 30)]
+        seconds: u64,
+    },
+    #[cfg(windows)]
     #[command(about = "Montre ce qu'une cible désigne (écran ou fenêtre retrouvée par nom d'exe)")]
     ResolveTarget {
         #[arg(long, value_parser = parse_target)]
@@ -166,6 +176,8 @@ fn main() -> Result<()> {
         Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
         #[cfg(windows)]
         Command::ProbeAudio { mic, seconds } => probe_audio::probe_audio(mic, seconds)?,
+        #[cfg(windows)]
+        Command::ProbeAvEmitter { seconds } => probe_av::probe_av_emitter(seconds)?,
         #[cfg(windows)]
         Command::ResolveTarget { target } => resolve_target(&target)?,
     }

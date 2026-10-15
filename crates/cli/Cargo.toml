@@ -23,7 +23,7 @@ tracing-subscriber.workspace = true
 crossbeam-channel.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Graphics_Direct3D11", "Win32_Graphics_Dwm"] }
+windows = { workspace = true, features = ["Win32_Graphics_Direct3D11", "Win32_Graphics_Dwm", "Win32_Graphics_Gdi", "Win32_Media_Audio", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging"] }
 windows-capture.workspace = true
 wasapi.workspace = true
 
