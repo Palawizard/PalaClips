@@ -1,0 +1,46 @@
+[package]
+edition = "2021"
+name = "rusty_ffmpeg"
+version = "0.16.7+ffmpeg.8"
+authors = ["ldm0 <ldm2993593805@163.com>"]
+build = "build.rs"
+links = "ffmpeg"
+autolib = false
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
+description = "A library that provides Rust bindings for FFmpeg"
+license = "MIT"
+repository = "https://github.com/CCExtractor/rusty_ffmpeg/"
+publish = false
+
+[features]
+ffmpeg5 = []
+ffmpeg6 = ["ffmpeg5"]
+ffmpeg7 = ["ffmpeg6"]
+ffmpeg7_1 = ["ffmpeg7"]
+ffmpeg8 = ["ffmpeg7_1"]
+link_system_ffmpeg = []
+link_vcpkg_ffmpeg = ["vcpkg"]
+
+[lib]
+name = "rusty_ffmpeg"
+path = "src/lib.rs"
+doctest = false
+
+[build-dependencies.bindgen]
+version = "0.72.1"
+
+[build-dependencies.camino]
+version = "1.1"
+
+[build-dependencies.once_cell]
+version = "1.12"
+
+[build-dependencies.vcpkg]
+version = "0.2"
+optional = true
+
+[target."cfg(not(windows))".build-dependencies.pkg-config]
+version = "0.3"
