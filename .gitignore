@@ -1,0 +1,38 @@
+# Rust
+/target/
+**/target/
+
+# Node / front
+node_modules/
+app/dist/
+*.tsbuildinfo
+
+# Tauri
+app/src-tauri/gen/
+app/src-tauri/target/
+
+# FFmpeg téléchargé par scripts/fetch-ffmpeg.ps1 (jamais commité)
+/third_party/ffmpeg/
+
+# Sorties de test et captures
+/test-output/
+*.mp4
+*.mkv
+*.wav
+!docs/**/*.wav
+
+# Clés de signature des mises à jour (JAMAIS dans le repo)
+*.key
+*.key.pub
+.tauri-signing/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# Logs
+*.log

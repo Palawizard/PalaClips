@@ -1,0 +1,28 @@
+[package]
+name = "palaclips-engine"
+description = "Moteur de capture, d'encodage et de replay de PalaClips (sans UI)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+# Dépendances Windows : ajoutées phase par phase (voir docs/PLAN.md).
+# [target.'cfg(windows)'.dependencies]
+# windows-capture = "2.0"   # phase 1
+# windows = { version = "0.62", features = [...] }   # phase 1
+# rsmpeg = "0.18"           # phase 1 (FFmpeg 8.x, scripts/fetch-ffmpeg.ps1)
+# wasapi = "0.26"           # phase 2
+# sysinfo = "0.39"          # phase 3
+
+[lints]
+workspace = true

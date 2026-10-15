@@ -1,0 +1,163 @@
+# Architecture — PalaClips
+
+> Référence technique. Les choix et leurs raisons sont dans `docs/DECISIONS.md`, les faits
+> vérifiés et leurs sources dans `docs/RESEARCH.md`.
+
+## 1. Vue d'ensemble
+
+```
+┌──────────────────────────── processus palaclips.exe ─────────────────────────────┐
+│                                                                                  │
+│  Zone de notification · raccourcis globaux · instance unique · mises à jour      │
+│                       (app/src-tauri, Tauri 2)                                    │
+│        │ commandes ▲ événements                         ┌──────────────────────┐ │
+│        ▼           │                                    │ WebView2 (React UI)  │ │
+│  ┌───────────── palaclips-engine ──────────────┐        │ créé à la demande,   │ │
+│  │ EngineHandle (canal de commandes)           │◄──IPC─►│ détruit à la         │ │
+│  │                                             │        │ fermeture            │ │
+│  │  capture ─► pacer CFR ─► encode vidéo ─┐    │        └──────────────────────┘ │
+│  │                                        ├─► fan-out ─┬─► replay (PacketRing)  │ │
+│  │  audio x N ─► combleur ─► encode AAC ──┘            └─► record (mux hybride) │ │
+│  │                                                                             │ │
+│  │  sources (sessions audio, processus, écrans)   library (index des clips)    │ │
+│  └─────────────────────────────────────────────┘                                │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Un seul processus. Le WebView2 (et ses processus enfants) n'existe que quand la fenêtre est
+ouverte (APP-02, PERF-01).
+
+## 2. Crates et modules
+
+| Chemin | Rôle | Dépend de Tauri ? |
+|---|---|---|
+| `crates/engine` | Capture, audio, encodage, replay, mux, sources, bibliothèque de clips | **Non, jamais** |
+| `crates/cli` | Banc de test du moteur, une sous-commande par phase | Non |
+| `app/src-tauri` | Shell : commandes, événements, zone de notification, raccourcis, plugins | Oui |
+| `app/src` | UI React 19 + TypeScript + Tailwind 4 | — |
+
+Modules du moteur (`crates/engine/src/`) :
+
+| Module | Contenu | Phase |
+|---|---|---|
+| `clock` | `Hns` (QPC en 100 ns), conversions vers bases de temps | 0 ✅ |
+| `config` | `EngineConfig` sérialisable + validation | 0 ✅ |
+| `events` | `EngineEvent` (contrat moteur → UI) | 0 ✅ |
+| `error` | `EngineError` (messages FR affichables) | 0 ✅ |
+| `replay` | `PacketRing` purgé par âge, estimation RAM, stockage disque | 0 (file) ✅ / 4 |
+| `capture` | WGC, énumération écrans/fenêtres, miniatures, pacer CFR, repli | 1 |
+| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, AAC, détection par test réel | 1–2 |
+| `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2–3 |
+| `sources` | Sessions audio, processus, appli au premier plan, périphériques | 3 |
+| `mux` | MP4 replay, MP4 hybride, métadonnées des pistes, noms de fichiers | 4–6 |
+| `record` | Enregistrement manuel, découpage, récupération après crash | 6 |
+| `library` | Index des clips (SQLite), miniatures, surveillance du dossier, quota | 6 |
+| `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4–5 |
+
+## 3. Threads et flux de données
+
+Tous les échanges passent par des canaux **bornés** (`crossbeam-channel`). Aucun verrou n'est
+tenu pendant un appel système bloquant.
+
+| Thread | Entrée | Sortie | Notes |
+|---|---|---|---|
+| Capture (callback WGC) | images WGC | `VideoFrame { texture, qpc }` | ne fait que transmettre ; jamais de travail lourd |
+| Pacer CFR | `VideoFrame` | images à fps fixe | duplique la dernière image / saute les surplus, horloge = QPC |
+| Encodeur vidéo | images | `EncodedPacket` vidéo | une seule session matérielle |
+| Audio × N (un par source) | WASAPI | `PcmChunk { samples, qpc }` | 48 kHz stéréo f32, événementiel |
+| Combleur + encodeur AAC × N | `PcmChunk` | `EncodedPacket` audio | insère le silence d'après les écarts QPC |
+| Fan-out | paquets | replay + enregistreur | `Arc<[u8]>` : pas de copie entre les deux |
+| Écriture replay | instantané du `PacketRing` | MP4 | lancée à la sauvegarde, n'arrête pas la capture |
+| Enregistreur | paquets | MP4 hybride | écriture continue |
+| Sources | sondes Windows | listes + crêtes | actif seulement si l'UI est ouverte ou rattachement en attente |
+| Bibliothèque | dossier des clips | index SQLite + miniatures | notifications de fichiers, pas de polling |
+
+### Horloge (règle 1)
+
+```
+vidéo : Frame::timestamp() = SystemRelativeTime (QPC, 100 ns)
+audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
+                     │
+                     ▼
+            t0 = QPC au démarrage de la session
+     PTS(vidéo) = (qpc − t0).to_timebase(1, fps)       (après pacing CFR)
+     PTS(audio) = (qpc − t0).to_samples(48_000)        (après comblement)
+```
+
+### Replay
+
+- `PacketRing` par flux, purge par âge, conserve toujours une image clé au début (testé).
+- Sauvegarde : instantané des indices sous verrou court, `start_index(maintenant − durée)`,
+  alignement de chaque piste audio sur le PTS de l'image clé, écriture dans un thread dédié.
+- Stockage disque : même interface, segments de quelques secondes dans
+  `%LOCALAPPDATA%\PalaClips\replay\`.
+
+## 4. Pistes et métadonnées
+
+| Ordre | Piste | Titre écrit |
+|---|---|---|
+| 1 | Mix complet | `Mix complet` |
+| 2 | Micro | `Micro` |
+| 3… | Appli (choisie ou « Jeu » automatique) | libellé choisi par l'utilisateur |
+
+Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout.
+
+## 5. UI et lecture des clips
+
+- Les fichiers sont servis au WebView par un **protocole personnalisé `palaclips://`** qui
+  gère les requêtes `Range` (lecture et déplacement fluides sur des fichiers de plusieurs Go,
+  ADR-007).
+- Chromium ne permet pas de choisir la piste audio d'une `<video>` sans option expérimentale :
+  le lecteur lit la vidéo **sans son** et joue les pistes via Web Audio à partir de fichiers
+  audio extraits à la demande et mis en cache (ADR-008). Mute/solo/volume par piste.
+- HEVC/AV1 : si WebView2 ne sait pas décoder le codec sur la machine, le lecteur utilise un
+  proxy H.264 généré à la demande (vérifié en phase 6).
+
+## 6. IPC (contrat)
+
+Source de vérité : `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`,
+miroir TypeScript `app/src/lib/ipc.ts`.
+
+### Commandes (front → app)
+
+| Commande | Phase | Rôle |
+|---|---|---|
+| `engine_version` | 0 ✅ | version du moteur |
+| `default_config` | 0 ✅ | configuration par défaut |
+| `get_config` / `set_config` | 5 | lire / valider + appliquer + persister |
+| `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
+| `list_audio_sources` | 5 | sessions audio, processus, périphériques |
+| `replay_arm` / `replay_disarm` / `replay_save` | 5 | contrôle du replay |
+| `record_start` / `record_stop` | 6 | enregistrement |
+| `list_clips` / `clip_*` | 6 | galerie : renommer, favori, supprimer, copier, exporter |
+| `get_hotkeys` / `set_hotkeys` | 5 | raccourcis, avec conflits |
+| `performance_snapshot` | 7 | panneau de performances |
+| `export_diagnostics` | 8 | archive zip |
+
+### Événements (app → front) : `EngineEvent`
+
+`state_changed`, `clip_saved`, `audio_levels` (~20 Hz, seulement fenêtre ouverte),
+`replay_stats`, `alert { severity, code, message }`.
+
+Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `app_track_silent`,
+`audio_device_changed`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`.
+
+## 7. Données sur le disque
+
+| Quoi | Où |
+|---|---|
+| Réglages (`settings.json`, versionné) | `%APPDATA%\PalaClips\` |
+| Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
+| Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
+| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` |
+| Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` |
+| Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
+| DLL FFmpeg (LGPL) | à côté de `palaclips.exe` (ressources du bundle) |
+
+## 8. Légèreté
+
+- WebView détruit à la fermeture ; `RunEvent::ExitRequested` → `prevent_exit()` ; sortie via
+  « Quitter » uniquement.
+- Sondes (sessions audio, crêtes) arrêtées quand l'UI est fermée, sauf rattachement en attente.
+- Pas de polling : notifications Windows (périphériques audio, fichiers, processus via WMI ou
+  `sysinfo` à faible fréquence seulement si une piste attend son appli).
