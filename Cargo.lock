@@ -2367,12 +2367,16 @@ dependencies = [
  "serde_json",
  "tracing",
  "tracing-subscriber",
+ "windows",
+ "windows-capture",
 ]
 
 [[package]]
 name = "palaclips-engine"
 version = "0.1.0"
 dependencies = [
+ "crossbeam-channel",
+ "parking_lot",
  "rsmpeg",
  "serde",
  "serde_json",
