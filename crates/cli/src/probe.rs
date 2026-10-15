@@ -218,19 +218,60 @@ fn percentiles(mut values: Vec<f32>) -> String {
 }
 
 pub fn probe_hdr(target: &CaptureTarget) -> Result<()> {
-    use palaclips_engine::capture::display_color;
+    use palaclips_engine::capture::{display_color, display_color_info};
     use windows_capture::monitor::Monitor;
 
     for monitor in Monitor::enumerate()? {
         let name = monitor.device_name()?;
+        let Some(info) = display_color_info(&name) else {
+            println!("{name} : chemin d'affichage introuvable");
+            continue;
+        };
+        println!("{name}");
+        match info.legacy_flags {
+            Some(flags) => println!(
+                "  ADVANCED_COLOR_INFO   : bits {flags:#06b} (supported {}, enabled {}, wideColorEnforced {}, forceDisabled {})",
+                flags & 1,
+                flags >> 1 & 1,
+                flags >> 2 & 1,
+                flags >> 3 & 1
+            ),
+            None => println!("  ADVANCED_COLOR_INFO   : échec"),
+        }
+        match info.info2 {
+            Some(info2) => println!(
+                "  ADVANCED_COLOR_INFO_2 : bits {:#010b} (supported {}, active {}, limitedByPolicy {}, hdrSupported {}, hdrUserEnabled {}, wcgSupported {}, wcgUserEnabled {}), {} bits/canal, activeColorMode {} ({})",
+                info2.flags,
+                info2.flags & 1,
+                info2.flags >> 1 & 1,
+                info2.flags >> 3 & 1,
+                info2.flags >> 4 & 1,
+                info2.flags >> 5 & 1,
+                info2.flags >> 6 & 1,
+                info2.flags >> 7 & 1,
+                info2.bits_per_color_channel,
+                info2.active_color_mode,
+                ["SDR", "WCG", "HDR"]
+                    .get(info2.active_color_mode as usize)
+                    .unwrap_or(&"?")
+            ),
+            None => println!("  ADVANCED_COLOR_INFO_2 : échec"),
+        }
+        match info.sdr_white_level {
+            Some(level) => println!(
+                "  SDRWhiteLevel         : {level} ({:.0} nits)",
+                info.sdr_white_nits()
+            ),
+            None => println!("  SDRWhiteLevel         : échec"),
+        }
         match display_color(&name) {
             Some(color) => println!(
-                "{name} : HDR {}, blanc SDR {:.0} nits (scRGB {:.2})",
+                "  => HDR {}, blanc SDR {:.0} nits (scRGB {:.2})",
                 if color.hdr { "activé" } else { "désactivé" },
                 color.sdr_white_nits,
                 color.sdr_white_scrgb()
             ),
-            None => println!("{name} : informations couleur indisponibles"),
+            None => println!("  => informations couleur indisponibles"),
         }
     }
 
