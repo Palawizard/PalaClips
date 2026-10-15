@@ -54,6 +54,73 @@ Modules du moteur (`crates/engine/src/`) :
 | `library` | Index des clips (SQLite), miniatures, surveillance du dossier, quota | 6 |
 | `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4–5 |
 
+Les modules sans ✅ n'existent pas encore : ils sont créés dans leur phase. Leur cahier des
+charges :
+
+**`capture`**
+- Énumérer écrans et fenêtres capturables (`Window::enumerate` + `is_valid()`), avec miniatures.
+- Session WGC sur la `CaptureTarget` choisie : bordure (`DrawBorderSettings`) et curseur selon
+  les réglages.
+- Passer la texture D3D11 brute (`Frame::as_raw_texture`) à l'encodeur sans copie CPU, avec
+  `Frame::timestamp` (QPC).
+- Pacer CFR : dupliquer la dernière image ou sauter les surplus pour tenir le fps cible.
+- Repli sur l'écran de la fenêtre si la capture de fenêtre échoue → alerte
+  `capture_fallback_monitor`.
+- Suivre changement de résolution, fermeture de la fenêtre, perte du périphérique D3D.
+
+**`audio`**
+- Pistes dans l'ordre : mix complet (loopback de la sortie par défaut, suivie à chaud), micro
+  (gain appliqué), une par appli (`new_application_loopback_client(pid_parent, true)`).
+- Horodatage uniquement par `pu64QPCPosition`.
+- Combler les trous par du silence d'après les écarts QPC ; `AUDCLNT_BUFFERFLAGS_SILENT` =
+  silence ; jamais d'arrêt sur timeout.
+- Mode exclusif d'un jeu (`AUDCLNT_E_DEVICE_IN_USE`) : réessayer chaque seconde et le signaler.
+- Rattachement automatique d'une piste à son appli (suivi par nom d'exe).
+- Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent`.
+- Capture en 48 kHz, stéréo, f32, `autoconvert = true`.
+
+**`encode`**
+- Encodeurs `h264/hevc/av1` × `nvenc/amf/qsv`, détectés par un encodage de test réel.
+- Entrée en frames matérielles `d3d11va`, BGRA → NV12 sur le GPU.
+- CBR pour le replay, intervalle d'images clés configurable.
+- AAC-LC 48 kHz stéréo, un encodeur par piste, délai d'amorçage (priming) géré.
+- Une seule session matérielle partagée par le replay et l'enregistrement.
+
+**`mux`**
+- Replay : MP4 classique écrit dans un thread dédié depuis le `PacketRing`.
+- Enregistrement : `movflags +hybrid_fragmented`.
+- Titre de chaque piste audio dans les métadonnées.
+- Nom : `<Jeu>_<AAAA-MM-JJ_HH-MM-SS>[_replay].mp4` dans `<dossier>/<Jeu>/`.
+- Vérification d'espace disque → `disk_almost_full` / `disk_full`.
+
+**`record`**
+- Partage capture et encodeur avec le replay.
+- Option « inclure le replay en cours au début ».
+- Découpage par durée ou taille ; récupération au démarrage d'un fichier interrompu.
+
+**`sources`**
+- Sessions audio actives + crête (`get_iaudiosessionmanager` → `get_audiosessionenumerator` →
+  `get_process_id`, `get_audiometerinformation`).
+- Processus (appli non lancée), résolution exe → PID parent, démarrages/arrêts.
+- Appli au premier plan (piste « Jeu », nom des clips).
+- Périphériques audio et changements du périphérique par défaut.
+- Persistance par nom d'exe / identifiant de périphérique, jamais par PID.
+
+**`library`**
+- Index SQLite, miniatures, surveillance du dossier, quota, pistes extraites, proxys H.264.
+
+### Dépendances prévues (versions stables vérifiées le 2026-10-15)
+
+| Crate | Version | Module | Phase |
+|---|---|---|---|
+| `windows-capture` | 2.0 | capture | 1 |
+| `windows` | 0.62 | capture, audio, sources | 1 |
+| `rsmpeg` | 0.18 (FFmpeg 8.x, ADR-004) | encode, mux | 0–1 |
+| `wasapi` | 0.26 | audio, sources | 2 |
+| `sysinfo` | 0.39 | sources | 3 |
+| `rusqlite` (feature `bundled`) | dernière stable | library | 6 |
+| `tauri-plugin-*` | voir `docs/RESEARCH.md` § UI | app | 5–8 |
+
 ## 3. Threads et flux de données
 
 Tous les échanges passent par des canaux **bornés** (`crossbeam-channel`). Aucun verrou n'est
