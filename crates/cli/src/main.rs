@@ -26,6 +26,9 @@ enum Command {
         #[arg(long, default_value_t = 60)]
         duration: u32,
     },
+    #[cfg(windows)]
+    #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
+    FfmpegInfo,
 }
 
 fn main() -> Result<()> {
@@ -51,6 +54,31 @@ fn main() -> Result<()> {
             let bytes = estimate_buffer_bytes(video_kbps, audio_tracks, duration);
             println!("≈ {:.0} Mo", bytes as f64 / 1_000_000.0);
         }
+        #[cfg(windows)]
+        Command::FfmpegInfo => ffmpeg_info()?,
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn ffmpeg_info() -> Result<()> {
+    use palaclips_engine::encode::{ffmpeg_version, hardware_video_encoders};
+
+    println!("FFmpeg {}", ffmpeg_version());
+    let encoders = hardware_video_encoders();
+    for encoder in &encoders {
+        let status = if encoder.opens {
+            "disponible"
+        } else {
+            "indisponible"
+        };
+        println!(
+            "  {:<18} {:<13} {}",
+            encoder.name, status, encoder.description
+        );
+    }
+    if !encoders.iter().any(|encoder| encoder.opens) {
+        anyhow::bail!(palaclips_engine::EngineError::NoHardwareEncoder);
     }
     Ok(())
 }
