@@ -5,12 +5,11 @@
 
 ## État actuel
 
-- **Phase en cours :** 4 — Replay. Code mergé dans `dev` (PR #13), 2 critères sur 4
-  vérifiés (`docs/reports/phase-4.md`) ; RPL-08 passé en test accéléré (ADR-020), à lancer,
-  STO-01 partiel (noms de pistes invisibles dans Resolve) : voir « Bloquants ». Phase 3
+- **Phase en cours :** 4 — Replay. Code mergé dans `dev` (PR #13), 3 critères sur 4
+  vérifiés (`docs/reports/phase-4.md`) ; RPL-08 passé en test accéléré (ADR-020), en cours,
+  STO-01 ✅ (noms de pistes hors périmètre dans Resolve, ADR-021). Phase 3
   **validée** le 2026-10-16 (`docs/reports/phase-3.md`).
-- **Branche :** `chore/resolve-track-names-blocker` (docs du bloquant, PR vers `dev`), puis
-  `dev`.
+- **Branche :** `chore/replay-memory-test` (ADR-020, ADR-021, test mémoire accéléré).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -114,27 +113,13 @@
    arrière-plan (~21 min) et avancer sur autre chose ; lire `target\journals\replay-ram-*.txt`.
    Si la pente par sauvegarde dépasse 0,1 Mo : trouver la cause (tampons du mux, `AVPacket`
    partagés, fichiers non fermés) et corriger avant `/valider-phase`.
-2. AUD-05/STO-01 : attendre l'option choisie par Palawi (bloquant), l'appliquer, puis refaire
-   l'import Resolve avec lui.
-3. `/valider-phase` pour la phase 4.
-4. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front ; réutiliser
+2. `/valider-phase` pour la phase 4.
+3. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front ; réutiliser
    `Engine`/`EngineHandle` côté Tauri, `CurrentGame` pour le nom des clips.
 
 ## Bloquants
 
-- **AUD-05 / STO-01 — noms de pistes invisibles dans Resolve** (2026-10-16). Le MP4 porte le
-  nom de chaque piste aux deux endroits standard (`hdlr` et `udta/name` de la piste, vérifiés
-  par lecture des atomes), mais DaVinci Resolve (version de Palawi) affiche « Audio 1 » à
-  « Audio 4 » : ni dans la timeline, ni dans Attributs du clip → Audio, ni dans le panneau
-  Métadonnées, ni avec le même clip en MOV. Pistes séparées et alignées : ✅. Options pour
-  Palawi :
-  1. Garder les noms dans le fichier (lus par VLC, ffprobe, MPC…) et réécrire AUD-05 sans
-     « visible dans Resolve » (l'ordre fixe des pistes, `ARCHITECTURE.md` § 4, sert de repère).
-  2. Écrire à côté de chaque clip un fichier de timeline (OpenTimelineIO `.otio`, importé par
-     Resolve 18.5+) dont les pistes audio portent les noms : à vérifier sur sa version avant
-     de coder.
-  3. Option « exporter les pistes séparées » (phase 6, GAL) : un WAV par piste nommé
-     `<clip>_<piste>.wav`, que Resolve affiche par nom de fichier.
+Aucun.
 
 ## Décisions en attente de Palawi
 

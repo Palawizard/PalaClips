@@ -92,7 +92,8 @@ Critères :
 - 🤖 Durée du clip = durée demandée ± 1 intervalle d'images clés ; pistes de même durée.
 - 🤖 RAM stable (test accéléré, ADR-020) : 20 min armé, une sauvegarde toutes les 5 s ;
   après la première minute de tampon plein, pente < 0,1 Mo par sauvegarde et < 20 Mo/h.
-- 👤 Import dans DaVinci Resolve : pistes séparées, nommées, synchronisées (STO-01).
+- 👤 Import dans DaVinci Resolve : pistes séparées et synchronisées (STO-01 ; noms non affichés
+  par Resolve, ADR-021).
 
 ## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04, 11 ; RPL-01, 03, 06)
 
