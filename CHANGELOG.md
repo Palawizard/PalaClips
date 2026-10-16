@@ -26,6 +26,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - CLI : `list-targets`, `resolve-target`, `probe-wgc`, `probe-hdr`, `capture-video`.
 - Documentation : SPEC V1, architecture, plan par phases, handoff, ADR, recherche, protocoles
   de test, brief design.
+- Audio (phase 2) : piste « Mix complet » (tout ce qui sort par défaut) et piste « Micro »
+  (gain réglable) en AAC dans le MP4, synchronisées sur la même horloge que la vidéo ; les
+  silences et les coupures sont comblés sans décaler la synchro ; la capture suit le
+  périphérique par défaut quand on change de sortie ou qu'on débranche le casque.
+- Décalage de synchro par piste, pour compenser les périphériques virtuels comme Voicemeeter.
+- CLI : `capture-av`, `probe-audio`, `probe-av-emitter` ; script de test de synchro sur une
+  heure (`scripts/t2-av-sync.ps1`).
 
 ### Corrigé
 - Écran SDR avec gestion automatique des couleurs : il n'est plus pris pour un écran HDR.

@@ -155,3 +155,38 @@
   280 nits) : rampe de gris identique jusqu'à 250 nits (242/255), puis 248 → 254 de 280 à
   1500 nits au lieu de 255 dès 280 nits ; ciel, disque du soleil et couleur de l'explosion
   conservés au lieu d'aplats blancs (`docs/reports/phase-1.md`).
+
+## ADR-017 — Décalage de synchro par piste (AUD-11)
+**Statut :** acceptée (2026-10-15, décision de Palawi)
+- Contexte : mesuré avec `probe-av-emitter` (flash et bip émis ensemble, sans compensation,
+  comme un jeu) et `capture-av` : sortie par défaut directe (Apogee BOOM) → son +15,7 ms
+  après l'image, constant (tampon de rendu de l'émetteur) ; sortie par défaut « Voicemeeter
+  Input » → +103 à +136 ms. Le loopback du périphérique virtuel reçoit le son ~100 ms plus
+  tard, et Windows ne l'expose pas (`GetStreamLatency` = 0 sur le loopback). Aucune dérive
+  dans les deux cas : le pipeline QPC est juste.
+- Décision : un décalage par piste en ms (−1000 à +1000, positif = son retardé, comme le
+  « Sync Offset » d'OBS), ajouté aux horodatages QPC des paquets de la piste avant le
+  combleur. À l'arrêt, la piste attend en plus `max(0, −décalage)` pour recevoir le son
+  jusqu'à la fin. Valeurs dans `AudioSettings` (`full_mix_sync_offset_ms`,
+  `microphone_sync_offset_ms`, `AppTrack::sync_offset_ms`).
+- Assistant de calibrage en phase 5 (même principe que `probe-av-emitter` + mesure).
+- Écarté : compensation automatique d'après la latence annoncée par Windows (nulle, donc
+  inexploitable) ; capture d'un autre point de la chaîne Voicemeeter (sorties ASIO/KS hors
+  du moteur audio de Windows).
+
+## ADR-018 — Alerte de cadence limitée sur l'horloge de composition DWM (CAP-11)
+**Statut :** acceptée (2026-10-16, décision de Palawi)
+- Contexte : avec G-Sync et des écrans à fréquences différentes, DWM se cale sur un autre
+  écran et WGC ne livre qu'une image par composition (Fortnite à 225 i/s → 165 i/s reçus,
+  horloge DWM 164,9 Hz ; `RESEARCH.md` § Capture vidéo). La sortie CFR reste juste mais
+  duplique des images, sans que l'utilisateur sache pourquoi. Aucun contournement sans
+  injection.
+- Décision : alerte `capture_source_rate_limited` (avertissement) quand la cadence de
+  composition DWM (`DwmGetCompositionTimingInfo`, `rateCompose`, comme `probe-wgc`) est
+  inférieure de plus de 2 % au fps demandé pendant 5 s ; une seule fois par capture, et de
+  nouveau seulement si la cadence change. Message : « Windows ne compose ton écran qu'à
+  N Hz alors que tu enregistres à M i/s : la vidéo répétera des images. Désactive G-Sync
+  pour cet écran, ou passe tes autres écrans à au moins M Hz. »
+- Écarté : déclenchement sur le nombre d'images reçues par WGC, qui alerterait à tort pour un
+  jeu plafonné, une scène statique ou un menu.
+- Code en phase 7.

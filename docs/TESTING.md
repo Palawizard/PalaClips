@@ -54,12 +54,50 @@ New-Item -ItemType Directory -Force target\clips | Out-Null
     `--target "monitor:\\.\DISPLAYn"` : la vidéo est dans la définition native de l'écran.
 
 ## T2 — Synchro audio/vidéo sur 1 h (phase 2)
-1. Lancer `capture-av --seconds 3700`.
-2. À 0:00, 30:00 et 60:00 : taper dans les mains **devant une vidéo de chronomètre affichée à
-   l'écran avec un son de « bip » à chaque seconde** (ou utiliser une page de test A/V sync).
-3. Dans Resolve : mesurer l'écart image du bip / son du bip, sur la piste mix et la piste micro.
-4. Attendu : écart < 1 image (< 16,7 ms à 60 fps) aux trois instants.
-5. Variante silence : couper tout son 2 min au milieu, refaire la mesure à la fin.
+
+Source de référence : `palaclips-cli probe-av-emitter` (fenêtre plein écran sur l'écran
+principal qui flashe en blanc au moment exact où un bip de 50 ms est envoyé à WASAPI, chaque
+seconde, sans compensation de latence, comme un jeu). Mesure : `scripts/measure-av-sync.py`
+(Python 3, appelle `ffmpeg`) apparie chaque flash de la vidéo au bip de la piste.
+
+Préparation : sortie par défaut habituelle (Voicemeeter chez Palawi), le **micro doit entendre
+les bips** (écouteur du casque collé au micro, ou enceintes), écran principal libre aux trois
+instants de mesure. Depuis **PowerShell 7** à la racine du repo :
+
+```powershell
+pwsh scripts\t2-av-sync.ps1
+```
+
+Le script, sans autre intervention :
+1. compile la CLI en release ;
+2. **calibre** (35 s : `capture-av` + émetteur 20 s) et calcule `--mix-offset-ms` /
+   `--mic-offset-ms` (AUD-11) qui ramènent les deux pistes à 0, puis attend Entrée ;
+3. lance `capture-av --target primary --seconds 3640` avec ces décalages, et l'émetteur à
+   0:10, 30:00 et 60:00 (20 s chacun) ;
+4. à 28:00, bip de rappel : **couper tout son pendant 2 min** (jusqu'au flash de 30:00) ;
+5. affiche `ffprobe` du fichier `target\clips\t2.mp4` et, pour chaque piste (mix, micro) et
+   chaque instant (fenêtres de 60 s), le décalage moyen son − image avec `OK` si |moyenne| < 16,7 ms.
+
+Rapporter toute la sortie du script. Attendu : 3 × `OK` sur le mix et 3 × `OK` sur le micro,
+fichier de 3640 s, pistes de même durée. Variante courte pour vérifier l'installation :
+`pwsh scripts\t2-av-sync.ps1 -Minutes 2`. Calibrage seul (35 s, décalages mesurés sans
+capture longue) : `pwsh scripts\t2-av-sync.ps1 -CalibrateOnly`.
+
+## Débranchement du périphérique audio (phase 2)
+
+Sortie par défaut sur un périphérique USB débranchable (chez Palawi : « Haut-parleurs
+(3- Apogee BOOM) »), musique en lecture, puis :
+
+```powershell
+$env:PATH = "$PWD\third_party\ffmpeg\bin;$env:PATH"
+.\target\release\palaclips-cli.exe capture-av --target primary --seconds 60 --out target\clips\debranche.mp4
+```
+
+Vers 15 s débrancher l'USB, vers 35 s le rebrancher. Attendu : pas de plantage, lignes
+`flux audio interrompu` puis `périphérique audio ouvert` vers le nouveau défaut, alertes
+« la capture suit maintenant … », fichier de 60 s qui se décode sans erreur
+(`ffmpeg -v error -i target\clips\debranche.mp4 -map 0 -f null -`), trois flux de même
+durée.
 
 ## T3 — Isolation par logiciel (phase 3)
 1. Navigateur : jouer une sinusoïde 440 Hz en boucle. Lecteur audio : 880 Hz en boucle.
@@ -96,6 +134,7 @@ New-Item -ItemType Directory -Force target\clips | Out-Null
 | Disque plein | dossier de clips sur une petite clé USB / VHD de 1 Go | `disk_full`, arrêt propre, aucun fichier corrompu |
 | Redémarrage du pilote GPU | `dxcap -forcetdr` (Outils graphiques Windows) ou Win+Ctrl+Maj+B | `encoder_reset`, reprise automatique |
 | Veille / sortie de veille | mettre le PC en veille avec replay armé | reprise propre au réveil |
+| Cadence limitée (G-Sync) | Fortnite à 225 i/s, G-Sync actif, autre écran à 165 Hz, capture à 240 i/s ; puis G-Sync coupé et jeu plafonné à 120 i/s | `capture_source_rate_limited` (165 Hz) dans le premier cas, aucune alerte dans le second |
 
 ## PERF — mesures (phase 7)
 - Build release **installée** (pas `tauri dev`).

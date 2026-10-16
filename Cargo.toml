@@ -29,6 +29,7 @@ clap = { version = "4.6", features = ["derive"] }
 
 windows = "0.62.2"
 windows-capture = "2.0.1"
+wasapi = "0.26.0"
 
 palaclips-engine = { path = "crates/engine" }
 

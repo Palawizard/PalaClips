@@ -32,6 +32,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | CAP-08 | Multi-écrans et mise à l'échelle Windows (100–200 %) gérés ; changement de résolution à chaud géré. |
 | CAP-09 | Écran HDR : la vidéo SDR produite a des couleurs correctes (pas délavées ni sombres). |
 | CAP-10 | Aucune injection dans le processus capturé ; compatible Easy Anti-Cheat / BattlEye / Vanguard (capture via API Windows uniquement). |
+| CAP-11 | Alerte quand l'écran capturé est composé par Windows (cadence DWM) moins vite que le fps demandé, cas typique de G-Sync avec des écrans à fréquences différentes : message en français qui donne la cadence réelle et la marche à suivre. Un jeu plafonné sous le fps demandé ne la déclenche pas. |
 
 ### 2.2 Encodage (ENC)
 
@@ -57,6 +58,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | AUD-08 | Synchronisation audio/vidéo < 1 image sur **1 h**, y compris avec de longs silences. |
 | AUD-09 | Alerte si une piste reste muette alors que l'appli émet du son. |
 | AUD-10 | Changement de périphérique de sortie/entrée par défaut (casque branché/débranché) suivi à chaud. |
+| AUD-11 | **Décalage de synchro par piste** (−1000 à +1000 ms, positif = son retardé) pour compenser les périphériques virtuels (Voicemeeter…), avec un **assistant de calibrage** : flash + bip émis comme par un jeu, capturés et mesurés, valeur proposée pour chaque piste. |
 
 ### 2.4 Replay instantané (RPL)
 
