@@ -4,18 +4,27 @@ use std::sync::{Arc, Mutex};
 
 use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle};
-use palaclips_engine::events::{EngineEvent, EngineState};
+use palaclips_engine::events::{EngineEvent, EngineState, Severity};
 use serde::Serialize;
 use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
 
 #[derive(Debug, Clone, Serialize)]
+pub struct ActiveAlert {
+    pub severity: Severity,
+    pub code: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct AppStatus {
     pub state: EngineState,
     pub buffered_secs: f64,
     pub buffer_bytes: u64,
+    pub alerts: Vec<ActiveAlert>,
 }
 
 impl AppStatus {
@@ -35,6 +44,18 @@ impl AppStatus {
                 self.buffered_secs = *buffered_secs;
                 self.buffer_bytes = *bytes;
             }
+            EngineEvent::Alert {
+                severity,
+                code,
+                message,
+            } => {
+                self.alerts.retain(|alert| alert.code != *code);
+                self.alerts.push(ActiveAlert {
+                    severity: *severity,
+                    code: code.clone(),
+                    message: message.clone(),
+                });
+            }
             _ => {}
         }
     }
@@ -52,11 +73,7 @@ impl EngineSlot {
         let arm = config.replay.arm_on_startup;
         let engine = Engine::start(config)?;
         let handle = engine.handle();
-        let status = Arc::new(Mutex::new(AppStatus {
-            state: EngineState::Idle,
-            buffered_secs: 0.0,
-            buffer_bytes: 0,
-        }));
+        let status = Arc::new(Mutex::new(AppStatus::default()));
         let events = engine.events().clone();
         let relay_status = status.clone();
         let app = app.clone();
@@ -80,6 +97,13 @@ impl EngineSlot {
         })
     }
 
+    fn publish(&self, app: &tauri::AppHandle, event: EngineEvent) {
+        if let Ok(mut status) = self.status.lock() {
+            status.apply(&event);
+        }
+        app.emit(ENGINE_EVENT, &event).ok();
+    }
+
     fn shutdown(&self) {
         let engine = self.engine.lock().ok().and_then(|mut engine| engine.take());
         drop(engine);
@@ -88,6 +112,19 @@ impl EngineSlot {
 
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state() == ShortcutState::Pressed
+                        && *shortcut == save_replay_shortcut()
+                        && let Some(slot) = app.try_state::<EngineSlot>()
+                        && let Err(error) = slot.handle.save_replay()
+                    {
+                        tracing::warn!(%error, "sauvegarde par raccourci impossible");
+                    }
+                })
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             commands::engine_version,
             commands::default_config,
@@ -98,6 +135,10 @@ pub fn run() {
         ])
         .setup(|app| {
             let slot = EngineSlot::start(app.handle(), EngineConfig::default())?;
+            if let Err(error) = app.global_shortcut().register(save_replay_shortcut()) {
+                tracing::warn!(%error, "raccourci de sauvegarde indisponible");
+                slot.publish(app.handle(), hotkey_unavailable_alert("Alt+F10"));
+            }
             app.manage(slot);
             open_main_window(app.handle())?;
             Ok(())
@@ -114,6 +155,20 @@ pub fn run() {
             slot.shutdown();
         }
     });
+}
+
+fn save_replay_shortcut() -> Shortcut {
+    Shortcut::new(Some(Modifiers::ALT), Code::F10)
+}
+
+fn hotkey_unavailable_alert(keys: &str) -> EngineEvent {
+    EngineEvent::Alert {
+        severity: Severity::Warning,
+        code: "hotkey_unavailable".into(),
+        message: format!(
+            "{keys} est déjà pris par une autre application, probablement l'overlay NVIDIA (il y enregistre son propre replay). Désactive ce raccourci dans l'overlay (Alt+Z → Paramètres → Raccourcis clavier) ou choisis-en un autre dans Réglages → Raccourcis."
+        ),
+    }
 }
 
 pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
@@ -136,11 +191,7 @@ mod tests {
 
     #[test]
     fn status_follows_replay_stats_and_clears_when_disarmed() {
-        let mut status = AppStatus {
-            state: EngineState::Idle,
-            buffered_secs: 0.0,
-            buffer_bytes: 0,
-        };
+        let mut status = AppStatus::default();
         status.apply(&EngineEvent::StateChanged {
             state: EngineState::ReplayArmed,
         });
@@ -155,5 +206,14 @@ mod tests {
         });
         assert_eq!(status.buffered_secs, 0.0);
         assert_eq!(status.buffer_bytes, 0);
+    }
+
+    #[test]
+    fn an_alert_code_is_listed_once_with_its_latest_message() {
+        let mut status = AppStatus::default();
+        status.apply(&hotkey_unavailable_alert("Alt+F10"));
+        status.apply(&hotkey_unavailable_alert("Alt+F9"));
+        assert_eq!(status.alerts.len(), 1);
+        assert!(status.alerts[0].message.starts_with("Alt+F9"));
     }
 }

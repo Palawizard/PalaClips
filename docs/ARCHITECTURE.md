@@ -250,7 +250,7 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 |---|---|---|
 | `engine_version` | 0 ✅ | version du moteur |
 | `default_config` | 0 ✅ | configuration par défaut |
-| `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon) |
+| `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, alertes actives, une par code) |
 | `get_config` / `set_config` | 5 | lire / valider + appliquer + persister |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
 | `list_audio_sources` | 5 | sessions audio, processus, périphériques |
@@ -270,7 +270,11 @@ aussi l'`AppStatus` renvoyé par `get_state`.
 `replay_stats`, `alert { severity, code, message }`.
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
-`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`.
+`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA).
+
+Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
+`save_replay` (personnalisable avec la persistance des réglages).
 
 ## 7. Données sur le disque
 
