@@ -46,6 +46,11 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
    - supprime les fichiers vidéo après la mesure ;
    - écrit le résultat dans un journal (`target/journals/`) que tu lis ensuite.
    Modèle : `scripts/av-drift.ps1`. Ne demande jamais à Palawi de rester devant un test.
+7. **Un test range ce qu'il ouvre.** Un test n'utilise jamais les applis de Palawi
+   (navigateur, Discord…) quand un outil du projet peut produire le son (`play-tone`, VLC
+   lancé et fermé par le script). Tout processus, onglet, fenêtre ou son lancé par un test est
+   arrêté à la fin, même en cas d'échec. Si un test a besoin d'une appli de Palawi, demande-lui
+   avant et dis-lui exactement quoi refermer après.
 
 ## 2. Front : skills de design obligatoires
 
