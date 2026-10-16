@@ -2,9 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use serde::Serialize;
 use wasapi::{DeviceEnumerator, Direction, SessionState};
-use windows::Win32::Foundation::CloseHandle;
+use windows::Win32::Foundation::{CloseHandle, FILETIME};
 use windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
+};
+use windows::Win32::System::Threading::{
+    GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
@@ -25,6 +28,7 @@ pub struct Process {
     pub pid: u32,
     pub parent_pid: u32,
     pub exe_name: String,
+    pub created: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -58,11 +62,43 @@ pub fn processes() -> Result<Vec<Process>> {
                 pid: entry.th32ProcessID,
                 parent_pid: entry.th32ParentProcessID,
                 exe_name: String::from_utf16_lossy(&entry.szExeFile[..length]),
+                created: creation_time(entry.th32ProcessID),
             });
             more = Process32NextW(snapshot, &mut entry).is_ok();
         }
         CloseHandle(snapshot).ok();
+        drop_reused_parents(&mut list);
         Ok(list)
+    }
+}
+
+fn creation_time(pid: u32) -> Option<u64> {
+    // SAFETY: the handle only allows querying limited information and is closed before returning.
+    unsafe {
+        let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+        let (mut created, mut exited, mut kernel, mut user) = (
+            FILETIME::default(),
+            FILETIME::default(),
+            FILETIME::default(),
+            FILETIME::default(),
+        );
+        let result = GetProcessTimes(process, &mut created, &mut exited, &mut kernel, &mut user);
+        CloseHandle(process).ok();
+        result
+            .ok()
+            .map(|()| (u64::from(created.dwHighDateTime) << 32) | u64::from(created.dwLowDateTime))
+    }
+}
+
+fn drop_reused_parents(processes: &mut [Process]) {
+    let created: HashMap<u32, Option<u64>> = processes.iter().map(|p| (p.pid, p.created)).collect();
+    for process in processes.iter_mut() {
+        if let (Some(Some(parent)), Some(child)) =
+            (created.get(&process.parent_pid), process.created)
+            && *parent > child
+        {
+            process.parent_pid = 0;
+        }
     }
 }
 
@@ -175,9 +211,16 @@ pub fn audio_sessions(processes: &[Process]) -> Result<Vec<AudioSession>> {
     Ok(sessions)
 }
 
-pub fn session_peak(processes: &[Process], root: u32) -> Result<f32> {
-    let tree = process_tree(processes, root);
-    Ok(audio_sessions(processes)?
+pub fn session_peak(root: u32) -> Result<f32> {
+    let loud: Vec<AudioSession> = audio_sessions(&[])?
+        .into_iter()
+        .filter(|session| session.peak > 0.0 && session.pid != std::process::id())
+        .collect();
+    if loud.is_empty() {
+        return Ok(0.0);
+    }
+    let tree = process_tree(&processes()?, root);
+    Ok(loud
         .iter()
         .filter(|session| tree.contains(&session.pid))
         .map(|session| session.peak)
@@ -197,6 +240,7 @@ mod tests {
             pid,
             parent_pid,
             exe_name: exe_name.into(),
+            created: Some(u64::from(pid)),
         }
     }
 
@@ -231,6 +275,35 @@ mod tests {
             HashSet::from([1200, 1210, 1220, 1230])
         );
         assert_eq!(process_tree(&list, 2110), HashSet::from([2110]));
+    }
+
+    #[test]
+    fn a_reused_parent_pid_does_not_adopt_an_older_process() {
+        let mut list = vec![
+            process(17652, 900, "WindowsTerminal.exe"),
+            process(22376, 17652, "python.exe"),
+            Process {
+                created: Some(100),
+                ..process(12752, 22376, "zen.exe")
+            },
+        ];
+        drop_reused_parents(&mut list);
+        assert_eq!(list[2].parent_pid, 0);
+        assert_eq!(list[1].parent_pid, 17652);
+        assert_eq!(process_tree(&list, 17652), HashSet::from([17652, 22376]));
+    }
+
+    #[test]
+    fn unknown_creation_times_keep_the_parent_link() {
+        let mut list = vec![
+            Process {
+                created: None,
+                ..process(500, 4, "a.exe")
+            },
+            process(10, 500, "b.exe"),
+        ];
+        drop_reused_parents(&mut list);
+        assert_eq!(list[1].parent_pid, 500);
     }
 
     #[test]

@@ -103,6 +103,7 @@ impl AudioTrack {
             end: end.clone(),
             app: None,
             game_exe: None,
+            foreground_pid: None,
             next_foreground_check: Hns(0),
             silence: SilenceWatch::default(),
         };
@@ -177,6 +178,7 @@ struct Worker {
     end: Arc<AtomicI64>,
     app: Option<AttachedApp>,
     game_exe: Option<String>,
+    foreground_pid: Option<u32>,
     next_foreground_check: Hns,
     silence: SilenceWatch,
 }
@@ -469,6 +471,11 @@ impl Worker {
         let now = Hns::now();
         if matches!(self.source, AudioSource::Foreground) && now >= self.next_foreground_check {
             self.next_foreground_check = now + Hns::from_millis(FOREGROUND_CHECK_MS);
+            let foreground_pid = sources::foreground_pid();
+            if foreground_pid == self.foreground_pid {
+                return false;
+            }
+            self.foreground_pid = foreground_pid;
             let foreground = sources::processes()
                 .ok()
                 .and_then(|processes| sources::foreground_app(&processes));
@@ -488,9 +495,7 @@ impl Worker {
 
     fn check_silent_track(&mut self) {
         let Some(app) = &self.app else { return };
-        let session_peak = sources::processes()
-            .and_then(|processes| sources::session_peak(&processes, app.pid))
-            .unwrap_or(0.0);
+        let session_peak = sources::session_peak(app.pid).unwrap_or(0.0);
         if !self.silence.should_alert(session_peak) {
             return;
         }
