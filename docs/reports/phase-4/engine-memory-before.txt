@@ -1,0 +1,9 @@
+2026-10-16T22:07:20 engine-memory : 1440p60 NVENC 40 Mb/s, 4 pistes (mix, tone-a, tone-b, Jeu), fenêtre de bruit ffplay ; médiane des mesures après mise en régime
+(a) moteur sans capture      privée    16,7 Mo, working set    17,8 Mo, tampon journalisé    0,0 Mo (5 mesures)
+(b) capture sans replay      privée   275,5 Mo, working set   139,1 Mo, tampon journalisé    0,0 Mo (13 mesures)
+(c) replay 5 s               privée   321,1 Mo, working set   182,1 Mo, tampon journalisé   45,0 Mo (13 mesures)
+(d) replay 60 s              privée   615,7 Mo, working set   471,3 Mo, tampon journalisé  319,0 Mo (15 mesures)
+buffer réel (d) − (c) : 294,6 Mo ; tampon journalisé (d) − (c) : 274,0 Mo ; écart 20,6 Mo
+hors buffer (c) : 321,1 Mo, dont tampon de (c) 45,0 Mo → 276,1 Mo ; capture seule (b) − (a) : 258,8 Mo ; moteur à vide (a) : 16,7 Mo
+RÉSULTAT PERF-02 : hors buffer 321,1 Mo (seuil 150) → ÉCHEC
+2026-10-16T22:10:03 fin : ffplay, sons de test et moteur arrêtés, clips supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\engine-memory-2026-10-16_22-07.txt

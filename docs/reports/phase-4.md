@@ -58,3 +58,30 @@ STO-01 (pistes séparées et synchronisées dans Resolve), RPL-08 (test accélé
   fenêtre, la CLI s'arrête si l'armement échoue, un clip manquant compte comme un échec.
 - Mémoire privée pendant les 20 sauvegardes : 612 → 633 Mo (~1 Mo par sauvegarde) ; à suivre
   dans le test de 2 h (qui ne sauvegarde qu'à la fin).
+
+## PERF-02 mesuré (2026-10-16, `fix/engine-memory-overhead`)
+
+PERF-02 (moteur hors tampon < 150 Mo, replay armé) est un critère de la phase 7 ; mesuré ici
+parce que le test de 30 min montrait ~650 Mo privés pour ~300 Mo de tampon.
+`pwsh scripts\engine-memory.ps1` : 1440p60 `h264_nvenc` 40 Mb/s, pistes mix / tone-a / tone-b
+/ Jeu, fenêtre de bruit ffplay ; médiane des mesures après mise en régime ; Mo = 10⁶ octets.
+
+| Étape | Privée avant | Privée après | Working set privé après | Tampon journalisé |
+|---|---|---|---|---|
+| (a) moteur démarré, sans capture | 16,7 | 16,8 | 3,6 | 0 |
+| (b) capture sans replay (`capture-apps`) | 275,5 | 166,8 | 65,4 | 0 |
+| (c) replay 5 s | 321,1 | 212,6 | 102,1 | 41 |
+| (d) replay 60 s | 615,7 | 510,0 | 408,2 | 320 |
+
+- Tampon réel (d) − (c) : 297 Mo pour 276–279 Mo journalisés (+7 % : en-têtes, arrondis,
+  fragmentation du tas ; aucune copie de paquet).
+- Hors tampon : (c) = 213 Mo engagés (172 Mo sans le tampon de 5 s) ; RAM réellement occupée
+  (working set privé de (c) moins le tampon) : **61 Mo**.
+- Gros postes (`palaclips-cli probe-memory`) : session NVENC 1440p avec les défauts de FFmpeg
+  ~175 Mo (DPB auto + surfaces), ramenée à ~63 Mo par ADR-022 ; premier périphérique D3D11
+  +52 Mo ; réserve système que le pilote NVIDIA engage pour chaque texture (~22 Mo) ; 4 pistes
+  audio +30 Mo (WASAPI surtout) ; processus à vide 17 Mo.
+- **❌ en mémoire engagée** : la part du pilote (~136 Mo) plus le processus à vide (17 Mo)
+  dépasse déjà 150 Mo → bloquant dans `HANDOFF.md`, décision de Palawi sur la mesure.
+- Journaux : `docs/reports/phase-4/engine-memory-before.txt`, `engine-memory-after.txt` ;
+  détail et sources dans `RESEARCH.md` § Mémoire du pipeline.
