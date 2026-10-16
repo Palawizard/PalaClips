@@ -44,15 +44,16 @@ Modules du moteur (`crates/engine/src/`) :
 | `config` | `EngineConfig` sérialisable + validation | 0 ✅ |
 | `events` | `EngineEvent` (contrat moteur → UI) | 0 ✅ |
 | `error` | `EngineError` (messages FR affichables) | 0 ✅ |
-| `replay` | `PacketRing` purgé par âge, estimation RAM, stockage disque | 0 (file) ✅ / 4 |
+| `replay` | `PacketRing` purgé par âge, estimation RAM, `plan_clip`, paquets en RAM ou sur disque (`Spool`) | 0 (file) ✅ / 4 ✅ |
 | `capture` | WGC, énumération écrans/fenêtres, pacer CFR, repli (miniatures : phase 5) | 1 ✅ |
 | `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, conversion GPU, détection par test réel ; AAC | 1 ✅ / 2 |
-| `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2–3 |
-| `sources` | Sessions audio, processus, appli au premier plan, périphériques | 3 |
-| `mux` | MP4 classique vidéo seule (`Mp4Writer`) ; MP4 replay, hybride, métadonnées, noms | 1 ✅ / 4–6 |
+| `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2–3 ✅ |
+| `sources` | Sessions audio, processus, jeu en cours (`CurrentGame`), périphériques | 3 ✅ |
+| `mux` | `Mp4Writer` multi-pistes titrées (vidéo, replay) ; MP4 hybride | 1–4 ✅ / 6 |
+| `paths` | Dossiers connus (Vidéos, LocalAppData), nom des clips, mémoire du processus | 4 ✅ |
 | `record` | Enregistrement manuel, découpage, récupération après crash | 6 |
 | `library` | Index des clips (SQLite), miniatures, surveillance du dossier, quota | 6 |
-| `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4–5 |
+| `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4 ✅ / 5 |
 
 Les modules sans ✅ n'existent pas encore : ils sont créés dans leur phase. Leur cahier des
 charges :
@@ -176,8 +177,8 @@ tenu pendant un appel système bloquant.
 | Capture (callback WGC) | images WGC | « dernière image » (texture GPU) | un `CopyResource`, jamais de travail lourd |
 | Vidéo (`palaclips-video`) | dernière image | `AVPacket` vidéo (canal borné) | pacer CFR sur QPC + conversion GPU + encodeur : une seule session matérielle |
 | Audio × N (`palaclips-audio-<piste>`, un par source) | WASAPI | `AVPacket` AAC (canal borné) | 48 kHz stéréo f32, `WaitForMultipleObjects` (arrêt, données, défaut changé), réveil après 50 ms sans paquet pour combler ; gain, décalage de synchro, `GapFiller`, AAC dans le même fil |
-| Fan-out | paquets | replay + enregistreur | `Arc<[u8]>` : pas de copie entre les deux |
-| Écriture replay | instantané du `PacketRing` | MP4 | lancée à la sauvegarde, n'arrête pas la capture |
+| Moteur (`palaclips-engine`) | commandes (`EngineHandle`) + paquets de tous les flux + alertes des pistes | un `PacketRing` par flux, événements | un seul fil : armer, désarmer, sauvegarder, reconfigurer ; `select` sur les canaux, réveil chaque seconde pour `replay_stats` ; paquets partagés par référence FFmpeg (`av_packet_clone`), sans copie, pour le replay et (phase 6) l'enregistreur |
+| Écriture replay (`palaclips-replay-save`) | instantané du `PacketRing` | MP4 | lancée à la sauvegarde, n'arrête pas la capture ; un fil par sauvegarde |
 | Enregistreur | paquets | MP4 hybride | écriture continue |
 | Sources | sondes Windows | listes + crêtes | actif seulement si l'UI est ouverte ou rattachement en attente |
 | Bibliothèque | dossier des clips | index SQLite + miniatures | notifications de fichiers, pas de polling |
@@ -197,10 +198,25 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
 ### Replay
 
 - `PacketRing` par flux, purge par âge, conserve toujours une image clé au début (testé).
-- Sauvegarde : instantané des indices sous verrou court, `start_index(maintenant − durée)`,
-  alignement de chaque piste audio sur le PTS de l'image clé, écriture dans un thread dédié.
-- Stockage disque : même interface, segments de quelques secondes dans
-  `%LOCALAPPDATA%\PalaClips\replay\`.
+  Fenêtre = durée + intervalle d'images clés + 2 s : l'audio arrive ~150 ms après la vidéo
+  (comblement, AAC, décalage de synchro) et doit encore couvrir l'image clé de départ.
+- Sauvegarde (`plan_clip`, dans le fil moteur, sans verrou) : fin = la plus petite des fins
+  disponibles (dernière image + 1 image, dernier paquet AAC + 1024 échantillons de chaque
+  piste) ; début = image clé ≤ fin − durée ; chaque piste audio part du paquet qui couvre
+  cette image clé. Paquets partagés, triés par temps, PTS/DTS décalés du début dans la base
+  de chaque flux (premier paquet audio légèrement négatif, compensé par la liste d'édition :
+  `start_time = 0`), puis MP4 écrit par `palaclips-replay-save`, qui émet `clip_saved`
+  (chemin, durée, latence depuis la commande).
+- Stockage disque (`Spool`) : données des paquets dans des segments de 4 s
+  (`%LOCALAPPDATA%\PalaClips\replay\NNNNNNNN.seg`), le ring ne garde que les positions ;
+  un segment se supprime dès que plus aucun paquet ne le référence ; les restes d'une session
+  précédente sont effacés au démarrage.
+- Nom (STO-03) : `<dossier>/<Jeu>/<Jeu>_<AAAA-MM-JJ_HH-MM-SS>_replay.mp4`, `<Jeu>` = exe du
+  jeu en cours sans `.exe`, « Bureau » s'il n'y en a pas ; suffixe `_2`, `_3`… si deux
+  sauvegardes tombent dans la même seconde. Dossier par défaut : `Vidéos\PalaClips`
+  (`StorageSettings::clips_dir`).
+- Redémarrage (RPL-07) : `configure` redémarre la capture et vide le tampon si la zone, la
+  vidéo, l'audio ou le stockage changent ; une nouvelle durée ne fait que changer la fenêtre.
 
 ## 4. Pistes et métadonnées
 
