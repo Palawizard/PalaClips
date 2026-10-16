@@ -34,6 +34,7 @@ try {
     $seconds = $Minutes * 60
     $capture = Start-Job -ScriptBlock {
         param($root, $cli, $arguments)
+        [Console]::OutputEncoding = [Text.Encoding]::UTF8
         Set-Location $root
         $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
         & $cli @arguments 2>&1 | Out-String -Width 300
