@@ -5,8 +5,8 @@ use std::time::Duration;
 use anyhow::{Result, anyhow};
 use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
 use wasapi::{
-    DeviceEnumerator, DeviceEventCallbacks, Direction, Role, SampleType, StreamMode, WasapiError,
-    WaveFormat, initialize_mta,
+    Device, DeviceEnumerator, DeviceEventCallbacks, Direction, Role, SampleType, StreamMode,
+    WasapiError, WaveFormat, initialize_mta,
 };
 
 const SAMPLE_RATE: i64 = 48_000;
@@ -42,6 +42,26 @@ struct StreamTotals {
     end_qpc: Hns,
     frames: u64,
     index_jumps: u64,
+}
+
+pub fn find_device(direction: Direction, name: &str) -> Result<Device> {
+    initialize_mta()
+        .ok()
+        .map_err(|error| anyhow!("COM : {error}"))?;
+    let wanted = name.to_lowercase();
+    let mut names = Vec::new();
+    for device in &DeviceEnumerator::new()?.get_device_collection(&direction)? {
+        let device = device?;
+        let friendly = device.get_friendlyname()?;
+        if friendly.to_lowercase().contains(&wanted) {
+            return Ok(device);
+        }
+        names.push(friendly);
+    }
+    Err(anyhow!(
+        "aucun périphérique actif ne contient « {name} ». Disponibles : {}",
+        names.join(", ")
+    ))
 }
 
 pub fn probe_audio(mic: bool, seconds: u64) -> Result<()> {

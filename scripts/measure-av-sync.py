@@ -57,6 +57,28 @@ for start in range(0, int(len(brightness) / fps) + 1, args.window):
             "max_ms": round(max(offsets), 1),
         })
 offsets = [offset for _, offset in pairs]
+
+
+def fit(points):
+    count = len(points)
+    if count < 3:
+        return None
+    mean_t = sum(t for t, _ in points) / count
+    mean_y = sum(y for _, y in points) / count
+    spread = sum((t - mean_t) ** 2 for t, _ in points)
+    if spread == 0:
+        return None
+    slope = sum((t - mean_t) * (y - mean_y) for t, y in points) / spread
+    residuals = [y - mean_y - slope * (t - mean_t) for t, y in points]
+    dispersion = (sum(r * r for r in residuals) / (count - 2)) ** 0.5
+    return {
+        "slope_ms_per_h": round(slope * 3_600, 2),
+        "slope_stderr_ms_per_h": round(dispersion / spread ** 0.5 * 3_600, 2),
+        "offset_at_0_ms": round(mean_y - slope * mean_t, 1),
+        "dispersion_ms": round(dispersion, 1),
+    }
+
+
 result = {
     "file": args.file,
     "audio_track": args.audio,
@@ -64,6 +86,7 @@ result = {
     "beeps": len(beeps),
     "pairs": len(pairs),
     "mean_ms": round(sum(offsets) / len(offsets), 1) if offsets else None,
+    "fit": fit(pairs),
     "windows": windows,
 }
 if args.json:
@@ -72,3 +95,6 @@ else:
     print(f"{args.file}, piste audio {args.audio} : {len(flashes)} flashs, {len(beeps)} bips, {len(pairs)} paires (positif = son en retard)")
     for window in windows:
         print(f"  {window['start_s']:>5} s : {window['pairs']:>3} paires, min {window['min_ms']:+.1f} ms, moy {window['mean_ms']:+.1f} ms, max {window['max_ms']:+.1f} ms")
+    if result["fit"]:
+        line = result["fit"]
+        print(f"  régression sur {len(pairs)} bips : pente {line['slope_ms_per_h']:+.2f} ± {line['slope_stderr_ms_per_h']:.2f} ms/h, décalage à 0 s {line['offset_at_0_ms']:+.1f} ms, dispersion {line['dispersion_ms']:.1f} ms")
