@@ -263,3 +263,27 @@ premier plan » de la phase 3.
 - Écarté : `dpb_size=1` (−7 Mo de plus pour −0,8 dB) ; `tune=ll`/`ull` (aucun effet mémoire).
 - Limite : 120 et 144 i/s prennent les défauts sans mesure du pipeline court ; AMF et QSV ne
   sont pas réglés (pas de matériel pour mesurer).
+- **Vérifié sur Fortnite (2026-10-16, demande de Palawi)** : 30 s de partie capturées en
+  1440p60 à 150 Mb/s, réencodées à 40 Mb/s avec les deux réglages (`scripts/nvenc-quality.ps1`) :
+  VMAF 99,37 contre 99,37, PSNR 40,43 contre 40,44 dB, SSIM 0,97112 contre 0,97115. Pendant la
+  capture, jeu en charge : retard max d'encodage 0,79 ms, 1800 images sur 1800. Pas de perte
+  visible ni de retard : réglages gardés.
+
+## ADR-023 — RAM des critères PERF : mémoire privée réellement occupée
+**Statut :** acceptée (2026-10-16, décision de Palawi) ; lève le bloquant PERF-02.
+- Contexte : PERF-02 (moteur hors tampon < 150 Mo) mesuré en mémoire privée engagée
+  (`PrivateUsage`) donnait 172 Mo hors tampon après ADR-022, dont ~136 Mo pour le pilote
+  NVIDIA : il engage en mémoire système une réserve de la taille de chaque texture et des
+  tampons de la session NVENC, sans jamais y toucher (10 textures 1440p : +55 Mo engagés,
+  +1 Mo de working set ; `RESEARCH.md` § Mémoire du pipeline). Aucun réglage de notre côté ne
+  passe sous 150 Mo dans cette mesure.
+- Décision : PERF-01 et PERF-02 se mesurent sur la mémoire privée réellement occupée
+  (*private working set*, colonne « Mémoire » du Gestionnaire des tâches), hors pression
+  mémoire. Le rapport garde la mémoire engagée pour information.
+- Pourquoi : c'est la RAM que PalaClips retire vraiment aux jeux et que l'utilisateur voit ;
+  les réserves engagées du pilote ne coûtent que de l'espace dans le fichier d'échange.
+  Mesuré : 102 Mo pour le replay de 5 s, 61 Mo sans son tampon.
+- Limite : sous forte pression mémoire, Windows retire des pages du working set ; la mesure
+  n'a de sens que machine non saturée (`TESTING.md` § PERF). Une fuite qui engage sans
+  toucher ne se verrait pas : RPL-08 (ADR-020) reste mesuré en mémoire engagée.
+- Écarté : relever le seuil en mémoire engagée (~200 Mo) ; `dpb_size=1` (−7 Mo seulement).

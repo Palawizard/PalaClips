@@ -151,11 +151,16 @@ Tout est arrêté et les clips supprimés à la fin.
   **< 20 Mo/h** et **< 0,1 Mo par sauvegarde**, aucun clip manquant. Journal
   `target\journals\replay-ram-*.txt`.
 - Mémoire hors tampon, PERF-02 (🤖, ~3 min, fenêtre ffplay en bas à droite et sons de test sur
-  `Realtek`) : `pwsh scripts\engine-memory.ps1` → mémoire privée, working set et working set
-  privé (médianes) pour (a) moteur sans capture (`replay --no-arm`), (b) capture sans replay
+  `Realtek`) : `pwsh scripts\engine-memory.ps1` → working set privé (critère, ADR-023),
+  mémoire engagée et working set (information), médianes pour (a) moteur sans capture
+  (`replay --no-arm`), (b) capture sans replay
   (`capture-apps`), (c) replay 5 s, (d) replay 60 s ; tampon réel = (d) − (c), comparé au
   tampon journalisé. Détail par étape (D3D11, sondage, NVENC, pistes) :
   `palaclips-cli probe-memory --target window:ffplay.exe --height 1440 --app tone-a.exe`.
+- Qualité des réglages NVENC (👤 Palawi en partie de Fortnite, ~3 min dont 30 s de jeu) :
+  `pwsh scripts\nvenc-quality.ps1` → capture 30 s de la fenêtre du jeu à 150 Mb/s (référence,
+  retard max d'encodage dans le journal), réencodage à 40 Mb/s avec les défauts de FFmpeg et
+  avec ADR-022, VMAF / PSNR / SSIM contre la référence ; vidéos supprimées à la fin.
 - Resolve (👤) : importer un replay produit par `palaclips-cli replay`, vérifier que chaque
   piste est séparée, nommée et alignée sur la vidéo.
 
@@ -186,6 +191,10 @@ Tout est arrêté et les clips supprimés à la fin.
 
 ## PERF — mesures (phase 7)
 - Build release **installée** (pas `tauri dev`).
-- RAM : Gestionnaire des tâches, colonne « Mémoire (jeu de travail privé) ».
+- RAM (PERF-01, PERF-02, ADR-023) : mémoire privée réellement occupée (*private working
+  set*), colonne « Mémoire (jeu de travail privé) » du Gestionnaire des tâches ou
+  `Win32_PerfFormattedData_PerfProc_Process.WorkingSetPrivate` ; machine hors pression
+  mémoire (pas d'autre gros consommateur, RAM libre > 4 Go). Relever aussi la mémoire engagée
+  (`PrivateUsage`) pour information dans le rapport.
 - CPU : moyenne sur 5 min (Analyseur de performances ou `typeperf`).
 - Impact en jeu : fps moyen Fortnite (mode créatif, même scène) avec et sans PalaClips, 3 essais.
