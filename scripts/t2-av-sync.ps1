@@ -1,7 +1,8 @@
 param(
     [int]$Minutes = 60,
     [string]$OutDir = "target\clips",
-    [switch]$NoPause
+    [switch]$NoPause,
+    [switch]$CalibrateOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,6 +57,7 @@ if ($null -eq $mic.mean_ms) {
     $micOffset = [int][math]::Round(-$mic.mean_ms)
 }
 Write-Host "Décalages mesurés : mix $($mix.mean_ms) ms, micro $($mic.mean_ms) ms -> options --mix-offset-ms $mixOffset --mic-offset-ms $micOffset"
+if ($CalibrateOnly) { return }
 if (-not $NoPause) { Read-Host "Entrée pour lancer la capture de $Minutes min" }
 
 $file = Join-Path $OutDir "t2.mp4"
