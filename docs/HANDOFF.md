@@ -5,11 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 4 — Replay. Code mergé dans `dev` (PR #13), 3 critères sur 4
-  vérifiés (`docs/reports/phase-4.md`) ; RPL-08 passé en test accéléré (ADR-020), en cours,
-  STO-01 ✅ (noms de pistes hors périmètre dans Resolve, ADR-021). Phase 3
-  **validée** le 2026-10-16 (`docs/reports/phase-3.md`).
-- **Branche :** `chore/replay-memory-test` (ADR-020, ADR-021, test mémoire accéléré).
+- **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
+  (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
+  confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
+- **Branche :** `feature/app-shell` (depuis `dev`, brief commité).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -109,13 +108,19 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. RPL-08 (ADR-020) : sur le feu vert de Palawi, lancer `pwsh scripts\replay-ram.ps1` en
-   arrière-plan (~21 min) et avancer sur autre chose ; lire `target\journals\replay-ram-*.txt`.
-   Si la pente par sauvegarde dépasse 0,1 Mo : trouver la cause (tampons du mux, `AVPacket`
-   partagés, fichiers non fermés) et corriger avant `/valider-phase`.
-2. `/valider-phase` pour la phase 4.
-3. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front ; réutiliser
-   `Engine`/`EngineHandle` côté Tauri, `CurrentGame` pour le nom des clips.
+1. Phase 5 sur `feature/app-shell`, écran État + shell (brief confirmé, `/design` : impeccable
+   new-work/build dans la direction ADR-014, puis `emil-design-eng`, critique, audit, polish,
+   et `DESIGN.md` par le documenteur impeccable) :
+   - Tauri : `Engine` dans l'état de l'app, commandes `get_state`, `replay_arm`,
+     `replay_disarm`, `replay_save`, `record_start`/`record_stop` (branchées en phase 6),
+     liste des clips récents ; événements moteur relayés ; raccourci global `Alt+F10` (alerte
+     actionnable citant l'overlay NVIDIA s'il est pris) ;
+   - moteur : `audio_levels` (~20 Hz, crête par piste), coupé quand la fenêtre est cachée,
+     réduite ou fermée, ~10 i/s sans focus ; miniature JPEG à la sauvegarde ; espace disque ;
+   - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés ; mesure CPU fenêtre ouverte non
+     focalisée pendant une capture (PERF-03).
+2. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
+   Replay & qualité, Raccourcis, Stockage, Général ; assistant de calibrage AUD-11).
 
 ## Bloquants
 
@@ -198,3 +203,4 @@ Aucun.
 | 2026-10-16 | 2 | CAP-11 + ADR-018 (alerte G-Sync, code en phase 7) ; chaîne micro Voicemeeter/LightHost instable d'un lancement à l'autre (hors moteur, assistant de calibrage en un clic en phase 5) ; T2 d'une heure 6 × `OK` ; phase 2 validée, PR #8 mergée | Phase 3 |
 | 2026-10-16 | 2→3 | PR #9 : silence comblé quand le périphérique n'envoie rien, pente A/V par régression, `av-drift.ps1`, règle des tests longs. Phase 3 : `sources`, pistes par appli, rattachement, piste Jeu, `app_track_silent`, CLI ; T3 (Zen + VLC), Discord, piste Jeu avec Palawi ; 2 fausses alertes corrigées ; phase 3 validée (PR #10) | Test de dérive Apogee, puis phase 4 |
 | 2026-10-16 | 2→4 | PR #11 : horloge audio contre QPC mesurée (0,00 ms/h Apogee), hypothèse de dérive d'appareil infirmée, AUD-08 maintenu ; règles « test en arrière-plan » et « ≤ 5 min sans accord ». PR #12 : piste Jeu = jeu en cours (ADR-019, `SetWinEventHook`), preuve Alt+Tab. PR #13 : phase 4 (moteur, replay RAM/disque, nom par jeu, redémarrage, CLI `replay`), 20 sauvegardes 146–200 ms, crash COM à la 2e capture corrigé ; Resolve n'affiche pas les noms de pistes → bloquant | Décisions de Palawi : test 2 h, noms Resolve |
+| 2026-10-16 | 4→5 | RPL-08 en test accéléré (ADR-020, corrigé : mise en régime de 10 min exclue) : 30 min, 360 sauvegardes, −1,8 Mo/h ✅ ; noms de pistes dans le fichier seulement (ADR-021) ; phase 4 validée ; `/impeccable shape` de l'écran État + shell, brief confirmé avec 7 corrections | Phase 5 : écran État + shell |

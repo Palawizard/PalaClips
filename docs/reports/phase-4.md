@@ -1,12 +1,13 @@
 # Phase 4 — Replay
 
 - Date : 2026-10-16
-- Branche : `feature/replay-engine`
+- Commit : `aa5d930` (PR #13, `feature/replay-engine`) + `409355c` (MTA COM) ; tests mémoire
+  sur `chore/replay-memory-test`
 - Machine : Windows 11 build 26200, NVIDIA GeForce RTX 4070 SUPER pilote 617.42,
   Intel Core i5-13600KF ; sortie par défaut « Voicemeeter Input »
 
-**Statut : en cours** — 4 critères sur 4 vérifiés (mémoire : ADR-020 corrigé ; Resolve :
-noms affichés hors périmètre, ADR-021) ; validation par `/valider-phase`.
+**Statut : ✅ validée** le 2026-10-16 (4 critères sur 4 ; mémoire : ADR-020 corrigé ; Resolve :
+noms affichés hors périmètre, ADR-021).
 
 ## Critères
 
@@ -35,6 +36,13 @@ pistes alignées), RPL-07 (redémarrage moteur ; message dans l'UI en phase 5), 
 STO-01 (pistes séparées et synchronisées dans Resolve), RPL-08 (test accéléré, ADR-020).
 
 ## Écarts et corrections
+
+- Vérification finale (`/valider-phase`, 2026-10-16) : `cargo fmt --check`, `cargo clippy
+  -D warnings`, `cargo test --workspace` (70 tests moteur + 2 CLI), `npm run build` verts ;
+  aucun `todo!()` ni usage de `EngineError::NotImplemented` (la variante reste déclarée, retirée
+  en phase 8). Latence revérifiée sur le code final par le test mémoire de 30 min (360
+  sauvegardes, max 182 ms).
+- Critères RPL-08 et STO-01 redéfinis par Palawi pendant la phase (ADR-020, ADR-021).
 
 - **Audio en retard sur la vidéo** (~150 ms : comblement, AAC, décalage de synchro) : au
   premier essai, pistes audio qui commençaient à +0,18 s et finissaient plus tôt. Fenêtre des

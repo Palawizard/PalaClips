@@ -78,7 +78,7 @@ Critères :
 - 👤 Test fait sur le Windows 11 à jour de Palawi : pistes non muettes (vérif `ffmpeg astats`).
 - 👤 Fermer/relancer Discord pendant la capture : la piste se rattache, fichier valide.
 
-## Phase 4 — Replay (RPL-02–05, 07, 08 ; STO-01, 03)
+## Phase 4 — Replay (RPL-02–05, 07, 08 ; STO-01, 03) ✅ ([rapport](reports/phase-4.md))
 
 - [x] `Engine` / `EngineHandle` : orchestration des threads, fan-out des paquets.
 - [x] `PacketRing` branché sur tous les flux ; stockage RAM et disque.
