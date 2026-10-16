@@ -7,7 +7,7 @@
 
 - **Phase en cours :** 4 — Replay, pas commencée. Phase 3 **validée** le 2026-10-16
   (`docs/reports/phase-3.md`).
-- **Branche :** `dev` après le merge de la PR #10 (`feature/per-app-audio`).
+- **Branche :** `fix/audio-device-clock-drift` (depuis `dev`).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -91,9 +91,7 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Test de dérive sans Voicemeeter : Palawi lance `pwsh scripts\av-drift.ps1 -Minutes 20
-   -Device Apogee` avant de partir ; lire `target\journals\av-drift-*.txt`, comparer la
-   pente avec celle du T2 Voicemeeter (−8,4 ms/h), noter la conclusion dans `RESEARCH.md`.
+1. `fix/game-track-follows-game`.
 2. Phase 4 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : `Engine`/`EngineHandle`,
    fan-out des paquets (cloner les `AVPacket`), `PacketRing` sur tous les flux, sauvegarde.
 
@@ -107,10 +105,9 @@ Aucun.
 
 ## Points d'attention
 
-- T2 : pente de −8,4 ms/h commune au mix et au micro (+4,7 → −3,7 ms), dans la tolérance.
-  Même pente sur deux périphériques, micro sans correction de dérive → plutôt côté vidéo ou
-  horloge partagée. Risque pour les enregistrements longs (≈ −25 ms à 3 h) : à mesurer sur
-  3 h en phase 4 (enregistrement) avant de conclure.
+- Horloge audio : `pu64QPCPosition` suit QPC à 0,00 ms/h (Apogee) et +0,32 ms/h
+  (Voicemeeter) sur 20 min (`clock-drift.ps1`). Les pentes d'`av-drift.ps1` (−19,4 / −2,3 /
+  −8,4 ms/h) viennent probablement du banc (non prouvé) : ne plus s'en servir pour une pente.
 - Chaîne micro de Palawi : retard de +410 à +473 ms qui change à chaque relance de
   Voicemeeter/LightHost ; pour tout test micro, calibrer puis ne plus relancer la chaîne.
 
