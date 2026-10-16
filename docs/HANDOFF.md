@@ -114,7 +114,21 @@
 
 ## Bloquants
 
-Aucun.
+- **AUD-05 / STO-01 — noms de pistes invisibles dans Resolve** (2026-10-16). Le MP4 porte le
+  nom de chaque piste aux deux endroits standard (`hdlr` et `udta/name` de la piste, vérifiés
+  par lecture des atomes), mais DaVinci Resolve (version de Palawi) affiche « Audio 1 » à
+  « Audio 4 » : ni dans la timeline, ni dans Attributs du clip → Audio, ni dans le panneau
+  Métadonnées, ni avec le même clip en MOV. Pistes séparées et alignées : ✅. Options pour
+  Palawi :
+  1. Garder les noms dans le fichier (lus par VLC, ffprobe, MPC…) et réécrire AUD-05 sans
+     « visible dans Resolve » (l'ordre fixe des pistes, `ARCHITECTURE.md` § 4, sert de repère).
+  2. Écrire à côté de chaque clip un fichier de timeline (OpenTimelineIO `.otio`, importé par
+     Resolve 18.5+) dont les pistes audio portent les noms : à vérifier sur sa version avant
+     de coder.
+  3. Option « exporter les pistes séparées » (phase 6, GAL) : un WAV par piste nommé
+     `<clip>_<piste>.wav`, que Resolve affiche par nom de fichier.
+- **RPL-08 (2 h armé, RAM stable)** : Palawi décide avec un agent superviseur de la façon de
+  faire le test de 2 h (`scripts/replay-ram.ps1` prêt) ; ne rien lancer d'ici là.
 
 ## Décisions en attente de Palawi
 
