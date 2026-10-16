@@ -1,6 +1,6 @@
 use std::io::BufRead;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use crossbeam_channel::{Receiver, select};
@@ -85,11 +85,13 @@ impl ReplayArgs {
 }
 
 pub fn run_replay(args: &ReplayArgs) -> Result<()> {
-    let engine = Engine::start(args.config()?)?;
+    let mut config = args.config()?;
+    let engine = Engine::start(config.clone())?;
     let handle = engine.handle();
     handle.arm()?;
+    let started = Instant::now();
     println!(
-        "replay de {} s ({}) : Entrée = sauvegarder, q puis Entrée (ou fin de l'entrée) = quitter",
+        "replay de {} s ({}) : Entrée = sauvegarder, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",
         args.duration,
         if args.disk { "disque" } else { "RAM" }
     );
@@ -110,6 +112,11 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
         };
         select! {
             recv(lines) -> line => match line {
+                Ok(line) if line.trim() == "r" => {
+                    config.audio.auto_game_track = !config.audio.auto_game_track;
+                    println!("sources changées : piste Jeu {}", if config.audio.auto_game_track { "ajoutée" } else { "retirée" });
+                    handle.configure(config.clone())?;
+                }
                 Ok(line) if line.trim() != "q" => {
                     requested += 1;
                     handle.save_replay()?;
@@ -128,7 +135,8 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         stats_seen += 1;
                         if stats_seen.is_multiple_of(STATS_EVERY) {
                             println!(
-                                "tampon {buffered_secs:.1} s, {:.0} Mo ; mémoire privée du processus {:.0} Mo",
+                                "[{:>6} s] tampon {buffered_secs:.1} s, {:.0} Mo ; mémoire privée du processus {:.0} Mo",
+                                started.elapsed().as_secs(),
                                 bytes as f64 / 1e6,
                                 private_bytes().unwrap_or_default() as f64 / 1e6
                             );
