@@ -131,9 +131,23 @@ tone-a.exe --app tone-b.exe` les enregistre ; `tone-b` est fermé puis relancé 
 capture.
 
 ## T4 — Replay (phase 4)
-- Latence : 20 sauvegardes, noter min/moy/max (attendu max < 500 ms).
-- Fuite : replay armé 2 h, relever la RAM à 5 min, 30 min, 1 h, 2 h (écart < 5 %).
-- Resolve : importer un replay, vérifier pistes nommées et synchro.
+
+Source vidéo des tests : `ffplay` (fourni avec FFmpeg dans `third_party`) affiche du bruit
+dans une fenêtre de 1280×720 en bas à droite de l'écran principal ; le replay capture cette
+fenêtre seule, mise à l'échelle en 1440p 60 i/s à 40 Mb/s. Pistes : mix, `tone-a.exe`
+(440 Hz) et `tone-b.exe` (880 Hz) sur la sortie Realtek (inaudible), Jeu (= ffplay, muet).
+Tout est arrêté et les clips supprimés à la fin.
+
+- Latence et durée (🤖, ~2 min 15, accord de Palawi pour la fenêtre) :
+  `pwsh scripts\replay-save.ps1` → 20 sauvegardes de 60 s toutes les 3 s ; journal
+  `target\journals\replay-save-*.txt` : latence min/moy/max (max < 500 ms), et pour chaque
+  clip durée vidéo (60 s ± 1 s), écart entre flux (≤ 50 ms), 5 flux, début à 0.
+  `-Disk` : même test avec le tampon sur disque.
+- Fuite (🤖 sans surveillance, 2 h, lancé par Palawi en partant) :
+  `pwsh scripts\replay-ram.ps1` ; journal `target\journals\replay-ram-*.txt` : mémoire privée
+  toutes les 10 min, écart entre 30 min et 2 h (< 5 %).
+- Resolve (👤) : importer un replay produit par `palaclips-cli replay`, vérifier que chaque
+  piste est séparée, nommée et alignée sur la vidéo.
 
 ## T5 — Application (phase 5)
 - Fortnite en plein écran, appuyer sur le raccourci de sauvegarde : le jeu ne perd pas le focus
