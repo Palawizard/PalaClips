@@ -48,7 +48,7 @@ Critères :
 - [x] 👤 Capture de Fortnite en fenêtre et en plein écran : image correcte, pas de saccade visible.
 - [x] 👤 Écran HDR activé : couleurs correctes (CAP-09) — sinon implémenter la conversion et refaire le test (conversion implémentée, ADR-015).
 
-## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10, 11 moteur)
+## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10, 11 moteur) ✅ ([rapport](reports/phase-2.md))
 
 - [x] Loopback du périphérique de sortie (mix complet), micro, horodatage QPC.
 - [x] Combleur de silences, gestion `AUDCLNT_BUFFERFLAGS_SILENT`, pas d'arrêt sur timeout.

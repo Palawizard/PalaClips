@@ -5,11 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 2 — Audio système + micro : code terminé, **pas validée** (T2 d'une
-  heure à faire par Palawi). Phase 1 validée ; ses suites (PR #7) mergées.
-- **Branche :** `feature/system-audio`, **PR #8 ouverte vers `dev`**, à merger seulement
-  quand le T2 est vert (critère de la tâche).
-- **Dernière mise à jour :** 2026-10-15
+- **Phase en cours :** 3 — Pistes par logiciel, pas commencée. Phase 2 **validée** le
+  2026-10-16 (T2 d'une heure : 6 × `OK`, `docs/reports/phase-2.md`).
+- **Branche :** `dev` après le merge de la PR #8 (`feature/system-audio`).
+- **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
 
@@ -78,16 +77,7 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Récupérer de Palawi la sortie de `pwsh scripts\t2-av-sync.ps1` (T2, 1 h ; voir
-   `docs/TESTING.md` § T2). Attendu : 3 × `OK` mix et 3 × `OK` micro. Si le micro « n'a
-   entendu aucun bip », lui faire coller l'écouteur au micro et relancer.
-   Ne pas relancer Voicemeeter/LightHost entre le calibrage et la fin : le retard de la
-   chaîne micro de Palawi change d'un lancement à l'autre (hors moteur, AUD-11) ; le T2 juge
-   la dérive pendant la capture.
-2. T2 vert → compléter `docs/reports/phase-2.md` (critères 1 et 2 avec la sortie), cocher
-   la phase 2 dans `docs/PLAN.md`, attendre la CI de la PR #8, merger, supprimer la branche.
-   T2 rouge → corriger sur `feature/system-audio` avant toute autre chose.
-3. Phase 3 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : process loopback
+1. Phase 3 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : process loopback
    (`AudioClient::new_application_loopback_client(pid_parent, true)`) en réutilisant
    `AudioTrack`/`GapFiller` (ajouter une variante `AudioSource::Application`), `sources`
    (sessions + crêtes), rattachement par nom d'exe, `app_track_silent`. Commencer par une
@@ -102,6 +92,13 @@ Aucun.
 - Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.
 
 ## Points d'attention
+
+- T2 : pente de −8,4 ms/h commune au mix et au micro (+4,7 → −3,7 ms), dans la tolérance.
+  Même pente sur deux périphériques, micro sans correction de dérive → plutôt côté vidéo ou
+  horloge partagée. Risque pour les enregistrements longs (≈ −25 ms à 3 h) : à mesurer sur
+  3 h en phase 4 (enregistrement) avant de conclure.
+- Chaîne micro de Palawi : retard de +410 à +473 ms qui change à chaque relance de
+  Voicemeeter/LightHost ; pour tout test micro, calibrer puis ne plus relancer la chaîne.
 
 - Retirer `third_party/rusty_ffmpeg` et le `[patch.crates-io]` dès qu'une version de rsmpeg
   dépend de `rusty_ffmpeg ≥ 0.17` (rsmpeg inactif depuis août 2025).
@@ -149,3 +146,4 @@ Aucun.
 | 2026-10-15 | 0 | Règles Git `main`/`dev` (PR #1) ; env Windows vert, rsmpeg 0.18 ↔ FFmpeg 8.1 (bindgen 0.72.1), `ffmpeg-info`, `PRODUCT.md`, direction visuelle ; phase 0 validée (PR #2) | Phase 1 |
 | 2026-10-15 | 1 | Pipeline vidéo GPU (WGC → Video Processor NV12 → NVENC/AMF/QSV), pacer CFR QPC, repli, préréglages de débit, CLI `capture-video` ; PR #5. Tests 👤 avec Palawi : Fortnite ✅, HDR délavé → correction FP16 + shader (`fix/hdr-capture`) ✅ ; phase 1 validée | Phase 2 |
 | 2026-10-15 | 1→2 | Suites phase 1 (PR #7 mergée : HDR par `activeColorMode`, atténuation des hautes lumières, horloge après le 1er encodage, 240 i/s, limite G-Sync). Phase 2 : `probe-audio`, `AudioTrack`/`GapFiller`/AAC/mux multi-pistes, `capture-av`, débranchement ✅, Voicemeeter +100 ms → AUD-11 (décalage par piste), T2 automatisé ; PR #8 ouverte | T2 1 h par Palawi, puis merge et phase 3 |
+| 2026-10-16 | 2 | CAP-11 + ADR-018 (alerte G-Sync, code en phase 7) ; chaîne micro Voicemeeter/LightHost instable d'un lancement à l'autre (hors moteur, assistant de calibrage en un clic en phase 5) ; T2 d'une heure 6 × `OK` ; phase 2 validée, PR #8 mergée | Phase 3 |
