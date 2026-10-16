@@ -66,7 +66,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 |---|---|
 | RPL-01 | Replay armé au démarrage (option), armé/désarmé par raccourci et par le menu de la zone de notification. |
 | RPL-02 | Durée réglable de 5 s à 60 min. |
-| RPL-03 | **Estimation de la RAM** affichée en direct pendant le réglage (débit × durée + audio). |
+| RPL-03 | **Estimation de la RAM** affichée en direct pendant le réglage ((débit vidéo + audio) × fenêtre du tampon, + 7 % de surcharge mesurée). |
 | RPL-04 | Stockage du buffer en **RAM** (défaut) ou sur **disque** (longues durées). |
 | RPL-05 | Sauvegarde par raccourci : fichier prêt en **< 500 ms** pour 60 s à 40 Mb/s, début sur image clé, pistes alignées. |
 | RPL-06 | La sauvegarde ne vole **jamais** le focus du jeu ; confirmation par toast Windows + son (désactivable). |
@@ -131,6 +131,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 |---|---|
 | PERF-01 | Zone de notification, replay désarmé : **< 30 Mo** de RAM, 0 % CPU au repos. |
 | PERF-02 | Replay armé : RAM du moteur hors buffer **< 150 Mo** ; taille du buffer affichée. |
+| | PERF-01 et PERF-02 : RAM = mémoire privée réellement occupée (*private working set*, ce qu'affiche le Gestionnaire des tâches), mesurée hors pression mémoire ; la mémoire engagée (*commit*) est relevée pour information (ADR-023). |
 | PERF-03 | Capture 1440p60 NVENC + 4 pistes : **< 2 % CPU** sur i5 13e gen, perte de fps en jeu ≤ 2 %. |
 | PERF-04 | Fenêtre ouverte : démarrage de l'UI **< 1 s** à chaud. |
 

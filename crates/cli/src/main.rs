@@ -14,7 +14,7 @@ use clap::{Parser, Subcommand};
 use palaclips_engine::{
     EngineConfig, VERSION,
     config::{CaptureTarget, OutputResolution, VideoCodec, VideoQuality, VideoSettings},
-    replay::estimate_buffer_bytes,
+    replay::{buffer_window, estimate_buffer_bytes},
 };
 
 #[derive(Debug, Parser)]
@@ -255,7 +255,11 @@ fn main() -> Result<()> {
             audio_tracks,
             duration,
         } => {
-            let bytes = estimate_buffer_bytes(video_kbps, audio_tracks, duration);
+            let window = buffer_window(
+                duration,
+                palaclips_engine::config::VideoSettings::default().keyframe_interval_secs,
+            );
+            let bytes = estimate_buffer_bytes(video_kbps, audio_tracks, window);
             println!("≈ {:.0} Mo", bytes as f64 / 1_000_000.0);
         }
         #[cfg(windows)]
