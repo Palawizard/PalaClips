@@ -81,7 +81,7 @@ impl VideoEncoder {
             raw.color_trc = ffi::AVCOL_TRC_BT709;
         }
         context.set_hw_frames_ctx(qsv_frames.as_ref().unwrap_or(&frames).clone());
-        set_private_options(&mut context, &settings.encoder)?;
+        set_private_options(&mut context, &settings.encoder, settings.fps)?;
         context
             .open(None)
             .map_err(|error| EngineError::Encoder(format!("{} : {error}", settings.encoder)))?;
@@ -192,9 +192,24 @@ fn map_to_qsv(frame: &AVFrame, qsv_frames: &AVHWFramesContext) -> Result<AVFrame
     Ok(mapped)
 }
 
-fn set_private_options(context: &mut AVCodecContext, encoder: &str) -> Result<()> {
+fn nvenc_pipeline_depth(fps: u32) -> (&'static CStr, &'static CStr) {
+    if fps <= 60 {
+        (c"2", c"1")
+    } else {
+        (c"4", c"3")
+    }
+}
+
+fn set_private_options(context: &mut AVCodecContext, encoder: &str, fps: u32) -> Result<()> {
     let options: &[(&CStr, &CStr)] = if encoder.ends_with("_nvenc") {
-        &[(c"preset", c"p4"), (c"rc", c"cbr")]
+        let (surfaces, delay) = nvenc_pipeline_depth(fps);
+        &[
+            (c"preset", c"p4"),
+            (c"rc", c"cbr"),
+            (c"dpb_size", c"2"),
+            (c"surfaces", surfaces),
+            (c"delay", delay),
+        ]
     } else if encoder.ends_with("_amf") {
         &[(c"rc", c"cbr"), (c"quality", c"balanced")]
     } else {
