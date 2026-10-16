@@ -1,6 +1,12 @@
 mod ring;
+#[cfg(windows)]
+mod store;
 
 pub use ring::{PacketRing, TimedPacket};
+#[cfg(windows)]
+pub use store::{PacketReader, ReplayPacket, Spool};
+
+use crate::clock::Hns;
 
 const AUDIO_KBPS_PER_TRACK: u64 = 192;
 
@@ -10,9 +16,90 @@ pub fn estimate_buffer_bytes(video_kbps: u32, audio_tracks: usize, duration_secs
     bytes + bytes / 20
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClipPlan {
+    pub start: Hns,
+    pub end: Hns,
+    pub video_from: usize,
+    pub audio_from: Vec<usize>,
+}
+
+pub fn plan_clip<P: TimedPacket>(
+    video: &PacketRing<P>,
+    audio: &[PacketRing<P>],
+    duration: Hns,
+    frame: Hns,
+    audio_packet: Hns,
+) -> Option<ClipPlan> {
+    let end = audio
+        .iter()
+        .filter_map(|ring| ring.newest())
+        .map(|newest| newest + audio_packet)
+        .fold(video.newest()? + frame, Hns::min);
+    let video_from = video.start_index(end - duration)?;
+    let start = video.get(video_from)?.pts();
+    if start >= end {
+        return None;
+    }
+    Some(ClipPlan {
+        start,
+        end,
+        video_from,
+        audio_from: audio
+            .iter()
+            .map(|ring| ring.index_at_or_before(start))
+            .collect(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[derive(Debug)]
+    struct Pkt {
+        pts: Hns,
+        key: bool,
+    }
+
+    impl TimedPacket for Pkt {
+        fn pts(&self) -> Hns {
+            self.pts
+        }
+        fn size(&self) -> usize {
+            100
+        }
+        fn is_keyframe(&self) -> bool {
+            self.key
+        }
+    }
+
+    const FRAME: Hns = Hns(166_667);
+    const AAC_PACKET: Hns = Hns(213_333);
+
+    fn rings(seconds: i64, duration: Hns) -> (PacketRing<Pkt>, Vec<PacketRing<Pkt>>) {
+        let window = duration + Hns::from_millis(3_000);
+        let mut video = PacketRing::new(window);
+        let mut audio = vec![PacketRing::new(window), PacketRing::new(window)];
+        let mut next_audio = Hns(-AAC_PACKET.0);
+        for frame in 0..seconds * 60 {
+            let pts = Hns(frame * FRAME.0);
+            while next_audio <= pts {
+                for ring in &mut audio {
+                    ring.push(Pkt {
+                        pts: next_audio,
+                        key: true,
+                    });
+                }
+                next_audio = next_audio + AAC_PACKET;
+            }
+            video.push(Pkt {
+                pts,
+                key: frame % 60 == 0,
+            });
+        }
+        (video, audio)
+    }
 
     #[test]
     fn estimates_video_only_buffer_with_margin() {
@@ -25,5 +112,63 @@ mod tests {
     #[test]
     fn audio_tracks_increase_estimate() {
         assert!(estimate_buffer_bytes(40_000, 4, 60) > estimate_buffer_bytes(40_000, 0, 60));
+    }
+
+    #[test]
+    fn clip_starts_on_a_keyframe_within_one_interval_of_the_duration() {
+        let duration = Hns::from_millis(60_000);
+        let (video, audio) = rings(120, duration);
+        let plan = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("plan");
+        let first = video.get(plan.video_from).expect("first frame");
+        assert!(first.key);
+        let length = plan.end - plan.start;
+        assert!(length >= duration, "{length:?}");
+        assert!(length <= duration + Hns::from_millis(1_000), "{length:?}");
+    }
+
+    #[test]
+    fn every_audio_track_starts_on_the_packet_covering_the_keyframe() {
+        let duration = Hns::from_millis(10_000);
+        let (video, audio) = rings(30, duration);
+        let plan = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("plan");
+        for (ring, from) in audio.iter().zip(&plan.audio_from) {
+            let first = ring.get(*from).expect("first audio packet").pts();
+            assert!(first <= plan.start);
+            assert!(plan.start < first + AAC_PACKET);
+        }
+        assert_eq!(plan.audio_from[0], plan.audio_from[1]);
+    }
+
+    #[test]
+    fn lagging_audio_ends_the_clip_where_every_track_has_data() {
+        let duration = Hns::from_millis(10_000);
+        let (mut video, audio) = rings(30, duration);
+        let audio_end = audio[0].newest().expect("audio") + AAC_PACKET;
+        let mut pts = video.newest().expect("video");
+        for _ in 0..12 {
+            pts = pts + FRAME;
+            video.push(Pkt { pts, key: false });
+        }
+        let plan = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("plan");
+        assert_eq!(plan.end, audio_end);
+        assert!(plan.end - plan.start >= duration);
+    }
+
+    #[test]
+    fn a_short_buffer_saves_everything_it_has() {
+        let (video, audio) = rings(3, Hns::from_millis(60_000));
+        let plan =
+            plan_clip(&video, &audio, Hns::from_millis(60_000), FRAME, AAC_PACKET).expect("plan");
+        assert_eq!(plan.video_from, 0);
+        assert_eq!(plan.start, Hns::ZERO);
+    }
+
+    #[test]
+    fn an_empty_buffer_has_no_clip() {
+        let video: PacketRing<Pkt> = PacketRing::new(Hns::from_millis(1_000));
+        assert_eq!(
+            plan_clip(&video, &[], Hns::from_millis(1_000), FRAME, AAC_PACKET),
+            None
+        );
     }
 }
