@@ -143,12 +143,13 @@ Tout est arrêté et les clips supprimés à la fin.
   `target\journals\replay-save-*.txt` : latence min/moy/max (max < 500 ms), et pour chaque
   clip durée vidéo (60 s ± 1 s), écart entre flux (≤ 50 ms), 5 flux, début à 0.
   `-Disk` : même test avec le tampon sur disque.
-- Mémoire (🤖, test accéléré ADR-020, ~21 min, en arrière-plan, accord de Palawi pour la
-  fenêtre) : `pwsh scripts\replay-ram.ps1` → replay de 60 s armé 20 min, une sauvegarde
-  toutes les 5 s (~240 clips, effacés au fil de l'eau, ~70 Go écrits en tout), mémoire
-  privée du processus relevée à chaque sauvegarde. Régression sur les mesures prises après
-  la première minute de tampon plein (t ≥ durée + 60 s) : pente **< 0,1 Mo par sauvegarde**
-  et **< 20 Mo/h**, aucun clip manquant. Journal `target\journals\replay-ram-*.txt`.
+- Mémoire (🤖, test accéléré ADR-020, ~31 min, en arrière-plan, accord de Palawi pour la
+  fenêtre) : `pwsh scripts\replay-ram.ps1` → replay de 60 s armé 30 min, une sauvegarde
+  toutes les 5 s (~360 clips, effacés au fil de l'eau, ~100 Go écrits en tout), mémoire
+  privée du processus relevée à chaque sauvegarde, toutes les mesures dans le journal. Les
+  10 premières minutes sont la mise en régime, exclues ; régression sur 10–30 min : pente
+  **< 20 Mo/h** et **< 0,1 Mo par sauvegarde**, aucun clip manquant. Journal
+  `target\journals\replay-ram-*.txt`.
 - Resolve (👤) : importer un replay produit par `palaclips-cli replay`, vérifier que chaque
   piste est séparée, nommée et alignée sur la vidéo.
 

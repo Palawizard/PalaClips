@@ -90,8 +90,9 @@ Critères :
 Critères :
 - 🤖 Sauvegarde < 500 ms (60 s, 40 Mb/s, 4 pistes) mesurée sur 20 sauvegardes.
 - 🤖 Durée du clip = durée demandée ± 1 intervalle d'images clés ; pistes de même durée.
-- 🤖 RAM stable (test accéléré, ADR-020) : 20 min armé, une sauvegarde toutes les 5 s ;
-  après la première minute de tampon plein, pente < 0,1 Mo par sauvegarde et < 20 Mo/h.
+- 🤖 RAM stable (test accéléré, ADR-020) : 30 min armé, une sauvegarde toutes les 5 s ;
+  10 premières minutes de mise en régime exclues ; sur 10–30 min, pente < 20 Mo/h et
+  < 0,1 Mo par sauvegarde.
 - 👤 Import dans DaVinci Resolve : pistes séparées et synchronisées (STO-01 ; noms non affichés
   par Resolve, ADR-021).
 
