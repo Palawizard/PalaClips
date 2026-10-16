@@ -108,7 +108,7 @@ pub fn probe_av_emitter(seconds: u64, device: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-pub fn play_tone(hz: f64, seconds: u64, device: Option<&str>) -> Result<()> {
+pub fn play_tone(hz: f64, amplitude: f64, seconds: u64, device: Option<&str>) -> Result<()> {
     initialize_mta()
         .ok()
         .map_err(|error| anyhow!("COM : {error}"))?;
@@ -128,7 +128,7 @@ pub fn play_tone(hz: f64, seconds: u64, device: Option<&str>) -> Result<()> {
     let event = client.set_get_eventhandle()?;
     let render = client.get_audiorenderclient()?;
     println!(
-        "sinusoïde {hz} Hz sur « {} » pendant {seconds} s (PID {})",
+        "sinusoïde {hz} Hz, amplitude {amplitude}, sur « {} » pendant {seconds} s (PID {})",
         device.get_friendlyname()?,
         std::process::id()
     );
@@ -142,7 +142,7 @@ pub fn play_tone(hz: f64, seconds: u64, device: Option<&str>) -> Result<()> {
         bytes.clear();
         for frame in position..position + frames as u64 {
             let phase = (frame as f64 * hz / SAMPLE_RATE as f64).fract();
-            let sample = (0.25 * (phase * std::f64::consts::TAU).sin()) as f32;
+            let sample = (amplitude * (phase * std::f64::consts::TAU).sin()) as f32;
             bytes.extend_from_slice(&sample.to_le_bytes());
             bytes.extend_from_slice(&sample.to_le_bytes());
         }

@@ -43,6 +43,41 @@ struct StreamTotals {
     end_qpc: Hns,
     frames: u64,
     index_jumps: u64,
+    first_received: Option<Hns>,
+    latency_fit: LineFit,
+}
+
+#[derive(Debug, Default)]
+struct LineFit {
+    n: f64,
+    sx: f64,
+    sy: f64,
+    sxx: f64,
+    sxy: f64,
+    syy: f64,
+}
+
+impl LineFit {
+    fn add(&mut self, x: f64, y: f64) {
+        self.n += 1.0;
+        self.sx += x;
+        self.sy += y;
+        self.sxx += x * x;
+        self.sxy += x * y;
+        self.syy += y * y;
+    }
+
+    fn slope_and_stderr(&self) -> Option<(f64, f64)> {
+        let sxx = self.sxx - self.sx * self.sx / self.n;
+        let sxy = self.sxy - self.sx * self.sy / self.n;
+        let syy = self.syy - self.sy * self.sy / self.n;
+        if self.n < 3.0 || sxx <= 0.0 {
+            return None;
+        }
+        let slope = sxy / sxx;
+        let residual = (syy - slope * sxy).max(0.0) / (self.n - 2.0);
+        Some((slope, (residual / sxx).sqrt()))
+    }
 }
 
 pub fn find_device(direction: Direction, name: &str) -> Result<Device> {
@@ -65,7 +100,7 @@ pub fn find_device(direction: Direction, name: &str) -> Result<Device> {
     ))
 }
 
-pub fn probe_audio(mic: bool, app: Option<&str>, seconds: u64) -> Result<()> {
+pub fn probe_audio(mic: bool, app: Option<&str>, device: Option<&str>, seconds: u64) -> Result<()> {
     initialize_mta()
         .ok()
         .map_err(|error| anyhow!("COM : {error}"))?;
@@ -105,7 +140,14 @@ pub fn probe_audio(mic: bool, app: Option<&str>, seconds: u64) -> Result<()> {
         default_changed.store(false, Ordering::Relaxed);
         let result = match app {
             Some(exe) => run_app_stream(exe, start, deadline),
-            None => run_stream(&enumerator, direction, start, deadline, &default_changed),
+            None => run_stream(
+                &enumerator,
+                direction,
+                device,
+                start,
+                deadline,
+                &default_changed,
+            ),
         };
         if let Err(error) = result {
             println!("[{:>8.3} s] flux interrompu : {error}", elapsed(start));
@@ -157,11 +199,16 @@ fn run_app_stream(exe: &str, start: Hns, deadline: Hns) -> Result<()> {
 fn run_stream(
     enumerator: &DeviceEnumerator,
     direction: Direction,
+    device: Option<&str>,
     start: Hns,
     deadline: Hns,
     default_changed: &AtomicBool,
 ) -> Result<()> {
-    let device = enumerator.get_default_device(&direction)?;
+    let fixed_device = AtomicBool::new(false);
+    let (device, default_changed) = match device {
+        Some(name) => (find_device(direction, name)?, &fixed_device),
+        None => (enumerator.get_default_device(&direction)?, default_changed),
+    };
     let mut client = device.get_iaudioclient()?;
     let mix_format = client.get_mixformat()?;
     let format = WaveFormat::new(32, 32, &SampleType::Float, SAMPLE_RATE as usize, 2, None);
@@ -291,6 +338,10 @@ fn drain(
             }
         }
         totals.first_qpc.get_or_insert(qpc);
+        let first_received = *totals.first_received.get_or_insert(received);
+        totals
+            .latency_fit
+            .add((received - first_received).as_secs_f64(), latency);
         totals.end_qpc = qpc + duration_of(read);
         totals.frames += read;
         *previous = Some(Previous {
@@ -337,6 +388,15 @@ fn print_totals(totals: &StreamTotals) {
         (totals.frames as f64 - expected) / expected.max(1.0) * 1e6,
         totals.index_jumps
     );
+    if let Some((slope, stderr)) = totals.latency_fit.slope_and_stderr() {
+        println!(
+            "PENTE réception − pu64QPCPosition : {:+.2} ± {:.2} ms/h ({:+.2} ppm) sur {:.0} paquets",
+            slope * 3_600.0,
+            stderr * 3_600.0,
+            slope * 1_000.0,
+            totals.latency_fit.n
+        );
+    }
 }
 
 fn duration_of(frames: u64) -> Hns {
