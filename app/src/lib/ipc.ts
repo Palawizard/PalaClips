@@ -103,7 +103,13 @@ export interface AppStatus {
 
 export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
-  | { type: "clip_saved"; path: string; duration_secs: number; save_latency_ms: number }
+  | {
+      type: "clip_saved";
+      path: string;
+      duration_secs: number;
+      save_latency_ms: number;
+      thumbnail: string | null;
+    }
   | { type: "audio_levels"; levels: [string, number][] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
   | { type: "alert"; severity: Severity; code: string; message: string };
