@@ -4,6 +4,8 @@ mod track;
 pub use filler::{FillStats, GapFiller};
 pub use track::{AudioStream, AudioTrack, AudioTrackStats};
 
+use crate::sources::CurrentGame;
+
 pub const SAMPLE_RATE: u32 = 48_000;
 pub const CHANNELS: usize = 2;
 
@@ -19,7 +21,7 @@ pub enum AudioSource {
     Application {
         exe_name: String,
     },
-    Foreground,
+    Game(CurrentGame),
 }
 
 impl AudioSource {
@@ -32,11 +34,11 @@ impl AudioSource {
                 .or_else(|| exe_name.strip_suffix(".EXE"))
                 .unwrap_or(exe_name)
                 .into(),
-            Self::Foreground => "Jeu".into(),
+            Self::Game(_) => "Jeu".into(),
         }
     }
 
     pub fn is_application(&self) -> bool {
-        matches!(self, Self::Application { .. } | Self::Foreground)
+        matches!(self, Self::Application { .. } | Self::Game(_))
     }
 }

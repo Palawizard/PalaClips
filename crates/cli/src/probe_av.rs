@@ -12,8 +12,8 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, DispatchMessageW, GetSystemMetrics, MSG,
     MsgWaitForMultipleObjects, PM_REMOVE, PeekMessageW, QS_ALLINPUT, RegisterClassW, SM_CXSCREEN,
-    SM_CYSCREEN, TranslateMessage, WM_ERASEBKGND, WM_PAINT, WNDCLASSW, WS_EX_TOPMOST, WS_POPUP,
-    WS_VISIBLE,
+    SM_CYSCREEN, TranslateMessage, WINDOW_EX_STYLE, WINDOW_STYLE, WM_ERASEBKGND, WM_PAINT,
+    WNDCLASSW, WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_POPUP, WS_VISIBLE,
 };
 use windows::core::w;
 
@@ -22,11 +22,17 @@ const BEEP_FRAMES: usize = SAMPLE_RATE / 20;
 
 static WHITE: AtomicBool = AtomicBool::new(false);
 
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+pub enum ToneWindow {
+    Borderless,
+    Normal,
+}
+
 pub fn probe_av_emitter(seconds: u64, device: Option<&str>) -> Result<()> {
     initialize_mta()
         .ok()
         .map_err(|error| anyhow!("COM : {error}"))?;
-    let window = create_window()?;
+    let window = create_window(WS_EX_TOPMOST, WS_POPUP, None)?;
     let device = match device {
         Some(name) => crate::probe_audio::find_device(Direction::Render, name)?,
         None => DeviceEnumerator::new()?.get_default_device(&Direction::Render)?,
@@ -108,10 +114,26 @@ pub fn probe_av_emitter(seconds: u64, device: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-pub fn play_tone(hz: f64, amplitude: f64, seconds: u64, device: Option<&str>) -> Result<()> {
+pub fn play_tone(
+    hz: f64,
+    amplitude: f64,
+    seconds: u64,
+    device: Option<&str>,
+    window: Option<ToneWindow>,
+) -> Result<()> {
     initialize_mta()
         .ok()
         .map_err(|error| anyhow!("COM : {error}"))?;
+    let window = window
+        .map(|kind| match kind {
+            ToneWindow::Borderless => create_window(WINDOW_EX_STYLE(0), WS_POPUP, None),
+            ToneWindow::Normal => create_window(
+                WINDOW_EX_STYLE(0),
+                WS_OVERLAPPEDWINDOW,
+                Some((200, 200, 640, 360)),
+            ),
+        })
+        .transpose()?;
     let device = match device {
         Some(name) => crate::probe_audio::find_device(Direction::Render, name)?,
         None => DeviceEnumerator::new()?.get_default_device(&Direction::Render)?,
@@ -137,7 +159,14 @@ pub fn play_tone(hz: f64, amplitude: f64, seconds: u64, device: Option<&str>) ->
     let mut position = 0u64;
     let mut bytes = Vec::new();
     while Hns::now() < deadline {
-        event.wait_for_event(1_000)?;
+        // SAFETY: the event handle is owned by `event`, alive for the whole loop.
+        let woken = unsafe {
+            MsgWaitForMultipleObjects(Some(&[event.as_handle()]), false, 1_000, QS_ALLINPUT)
+        };
+        if woken.0 == 1 {
+            pump_messages();
+            continue;
+        }
         let frames = client.get_available_space_in_frames()? as usize;
         bytes.clear();
         for frame in position..position + frames as u64 {
@@ -150,10 +179,18 @@ pub fn play_tone(hz: f64, amplitude: f64, seconds: u64, device: Option<&str>) ->
         position += frames as u64;
     }
     client.stop_stream()?;
+    if let Some(window) = window {
+        // SAFETY: the window was created on this thread and is destroyed once.
+        unsafe { DestroyWindow(window)? };
+    }
     Ok(())
 }
 
-fn create_window() -> Result<HWND> {
+fn create_window(
+    ex_style: WINDOW_EX_STYLE,
+    style: WINDOW_STYLE,
+    rect: Option<(i32, i32, i32, i32)>,
+) -> Result<HWND> {
     // SAFETY: plain Win32 window creation on the current thread with a static class name.
     unsafe {
         let instance = GetModuleHandleW(None)?;
@@ -164,15 +201,23 @@ fn create_window() -> Result<HWND> {
             ..Default::default()
         };
         RegisterClassW(&class);
+        let (x, y, width, height) = rect.unwrap_or_else(|| {
+            (
+                0,
+                0,
+                GetSystemMetrics(SM_CXSCREEN),
+                GetSystemMetrics(SM_CYSCREEN),
+            )
+        });
         let window = CreateWindowExW(
-            WS_EX_TOPMOST,
+            ex_style,
             w!("PalaClipsAvEmitter"),
             w!("PalaClips - émetteur A/V"),
-            WS_POPUP | WS_VISIBLE,
-            0,
-            0,
-            GetSystemMetrics(SM_CXSCREEN),
-            GetSystemMetrics(SM_CYSCREEN),
+            style | WS_VISIBLE,
+            x,
+            y,
+            width,
+            height,
             None,
             None,
             Some(instance.into()),

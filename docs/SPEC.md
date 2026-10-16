@@ -53,7 +53,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | AUD-03 | Une **piste par logiciel** choisi (jusqu'à 6 par défaut, réglable jusqu'à 12), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
 | AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (visible dans Resolve). |
-| AUD-06 | Option « Piste Jeu automatique » : l'appli au premier plan alimente une piste dédiée. |
+| AUD-06 | Option « Piste Jeu automatique » : une piste dédiée suit **le jeu**, pas le premier plan. Capture d'une fenêtre → l'appli de cette fenêtre. Capture d'un écran → la dernière appli passée au premier plan en plein écran ou en fenêtre sans bordure couvrant un écran ; un Alt+Tab vers une appli fenêtrée (Discord, navigateur, terminal…), le bureau ou PalaClips ne la change pas. L'utilisateur peut aussi la fixer sur un processus choisi dans le sélecteur AUD-04. |
 | AUD-07 | Appli fermée puis relancée : la piste se rattache seule, silence entre-temps, aucun fichier cassé. |
 | AUD-08 | Synchronisation audio/vidéo < 1 image sur **1 h**, y compris avec de longs silences. |
 | AUD-09 | Alerte si une piste reste muette alors que l'appli émet du son. |

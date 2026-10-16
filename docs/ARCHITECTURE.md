@@ -83,9 +83,13 @@ charges :
   lancée, en comblant du silence), ouvre le process loopback sur l'arbre et attend aussi le
   handle du processus (`SYNCHRONIZE`). À sa fin (le flux, lui, continue d'envoyer des zéros),
   la piste se referme et attend le retour de l'appli.
-- Piste « Jeu » (`AudioSource::Foreground`) : même mécanique, l'exe est celui de l'appli au
-  premier plan ; relu toutes les 500 ms, la piste se rouvre quand il change, et garde le
-  dernier quand le premier plan passe au shell ou à PalaClips.
+- Piste « Jeu » (`AudioSource::Game(CurrentGame)`, ADR-019) : même mécanique, l'exe est le
+  « jeu en cours » de `sources::CurrentGame` : processus fixé par l'utilisateur
+  (`AudioSettings::game_exe`), sinon l'appli de la fenêtre capturée, sinon la dernière appli
+  passée au premier plan en plein écran ou sans bordure (fenêtre qui couvre son écran, sans
+  barre de titre). `ForegroundWatch` (thread dédié, `SetWinEventHook`
+  `EVENT_SYSTEM_FOREGROUND` + `EVENT_OBJECT_LOCATIONCHANGE` de la fenêtre au premier plan)
+  réveille la piste ; elle ne se rouvre que si le jeu change.
 - Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent` :
   piste sans échantillon non nul depuis 3 s, puis crête de session de l'arbre > 0,001 à deux
   vérifications (une par seconde) → une alerte, réarmée dès que la piste reçoit du signal.
@@ -135,15 +139,16 @@ charges :
 - Sessions audio actives + crête (`get_iaudiosessionmanager` → `get_audiosessionenumerator` →
   `get_process_id`, `get_audiometerinformation`).
 - Processus (appli non lancée), résolution exe → PID parent, démarrages/arrêts.
-- Appli au premier plan (piste « Jeu », nom des clips).
+- Jeu en cours (`CurrentGame`) : piste « Jeu », nom des clips (STO-03), galerie (GAL-01/02).
 - Périphériques audio et changements du périphérique par défaut.
 - Persistance par nom d'exe / identifiant de périphérique, jamais par PID.
 - Processus par `CreateToolhelp32Snapshot` (PID, PID parent, nom d'exe), sans dépendance.
   PID racine d'une appli = processus de cet exe dont le parent n'est pas le même exe (le plus
   petit PID s'il y en a plusieurs) ; l'arbre = la racine et tous ses descendants.
-- Appli au premier plan : `GetForegroundWindow` → PID → nom d'exe ; ignorés : PalaClips
-  lui-même et le shell (`explorer.exe`, menu Démarrer, recherche, écran de verrouillage,
-  `ApplicationFrameHost.exe`).
+- Fenêtre au premier plan (`foreground_window`) : `GetForegroundWindow` → PID → nom d'exe,
+  rectangle comparé à celui de son écran (thread « per-monitor DPI aware »), style
+  `WS_CAPTION`. Jamais un jeu : PalaClips lui-même et le shell (`explorer.exe`, menu
+  Démarrer, recherche, écran de verrouillage, `ApplicationFrameHost.exe`).
 - Sessions audio de **toutes** les sorties actives (une appli peut jouer ailleurs que sur la
   sortie par défaut) : PID, exe, état, crête `IAudioMeterInformation`.
 
@@ -267,4 +272,4 @@ Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `cap
 - Pas de polling : notifications Windows (périphériques audio, fichiers). Exceptions bornées :
   une piste d'appli qui attend son appli cherche le processus chaque seconde (Toolhelp) ; une
   appli rattachée est suivie par son handle de processus (attente, pas de polling) ; la piste
-  « Jeu » relit l'appli au premier plan toutes les 500 ms pendant la capture.
+  « Jeu » est réveillée par les événements de premier plan (`SetWinEventHook`).

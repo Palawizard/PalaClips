@@ -165,6 +165,7 @@ pub struct AudioSettings {
     pub app_tracks: Vec<AppTrack>,
     pub max_app_tracks: usize,
     pub auto_game_track: bool,
+    pub game_exe: Option<String>,
 }
 
 impl Default for AudioSettings {
@@ -180,6 +181,7 @@ impl Default for AudioSettings {
             app_tracks: Vec::new(),
             max_app_tracks: 6,
             auto_game_track: true,
+            game_exe: None,
         }
     }
 }

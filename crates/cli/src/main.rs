@@ -102,8 +102,13 @@ enum Command {
             help = "Nom d'exe d'une appli (répétable), capturée avec ses processus enfants"
         )]
         apps: Vec<String>,
-        #[arg(long, help = "Ajoute la piste « Jeu » (appli au premier plan)")]
+        #[arg(
+            long,
+            help = "Ajoute la piste « Jeu » (dernière appli en plein écran ou sans bordure, ou l'appli de la fenêtre capturée)"
+        )]
         game: bool,
+        #[arg(long, help = "Fixe la piste « Jeu » sur ce nom d'exe")]
+        game_exe: Option<String>,
         #[arg(long, help = "Sans la piste mix complet")]
         no_mix: bool,
         #[arg(
@@ -178,7 +183,7 @@ enum Command {
         json: bool,
     },
     #[cfg(windows)]
-    #[command(about = "Joue une sinusoïde sur une sortie, sans fenêtre (source de test)")]
+    #[command(about = "Joue une sinusoïde sur une sortie (source de test), avec ou sans fenêtre")]
     PlayTone {
         #[arg(long, default_value_t = 440.0)]
         hz: f64,
@@ -188,6 +193,12 @@ enum Command {
             help = "Amplitude (0 = silence numérique)"
         )]
         amplitude: f64,
+        #[arg(
+            long,
+            value_enum,
+            help = "Ouvre une fenêtre noire : sans bordure plein écran (écran principal) ou normale"
+        )]
+        window: Option<probe_av::ToneWindow>,
         #[arg(long, default_value_t = 30)]
         seconds: u64,
         #[arg(
@@ -275,6 +286,7 @@ fn main() -> Result<()> {
             capture,
             apps,
             game,
+            game_exe,
             no_mix,
             mix_device,
             mic,
@@ -301,8 +313,10 @@ fn main() -> Result<()> {
             for exe_name in apps {
                 audio.push((AudioSource::Application { exe_name }, 0));
             }
-            if game {
-                audio.push((AudioSource::Foreground, 0));
+            if game || game_exe.is_some() {
+                let current =
+                    palaclips_engine::sources::CurrentGame::new(game_exe, &capture.target);
+                audio.push((AudioSource::Game(current), 0));
             }
             run_capture(&capture, audio)?
         }
@@ -333,9 +347,10 @@ fn main() -> Result<()> {
         Command::PlayTone {
             hz,
             amplitude,
+            window,
             seconds,
             device,
-        } => probe_av::play_tone(hz, amplitude, seconds, device.as_deref())?,
+        } => probe_av::play_tone(hz, amplitude, seconds, device.as_deref(), window)?,
     }
     Ok(())
 }
@@ -636,8 +651,15 @@ fn list_audio_sessions(json: bool) -> Result<()> {
             session.display_name
         );
     }
-    if let Some(app) = sources::foreground_app(&processes) {
-        println!("premier plan : {app}");
+    if let Some(window) = sources::foreground_window() {
+        println!(
+            "premier plan : {} (PID {}, couvre son écran : {}, barre de titre : {}, jeu : {})",
+            window.exe_name,
+            window.pid,
+            window.covers_monitor,
+            window.has_caption,
+            window.is_game()
+        );
     }
     Ok(())
 }

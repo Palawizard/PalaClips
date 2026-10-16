@@ -1,16 +1,31 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::thread::JoinHandle;
 
 use serde::Serialize;
 use wasapi::{DeviceEnumerator, Direction, SessionState};
-use windows::Win32::Foundation::{CloseHandle, FILETIME};
+use windows::Win32::Foundation::{CloseHandle, FILETIME, HWND, LPARAM, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{
+    GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow,
+};
 use windows::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS,
 };
 use windows::Win32::System::Threading::{
-    GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+    GetCurrentThreadId, GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
 };
-use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+use windows::Win32::UI::Accessibility::{HWINEVENTHOOK, SetWinEventHook, UnhookWinEvent};
+use windows::Win32::UI::HiDpi::{
+    DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetThreadDpiAwarenessContext,
+};
+use windows::Win32::UI::WindowsAndMessaging::{
+    CHILDID_SELF, DispatchMessageW, EVENT_OBJECT_LOCATIONCHANGE, EVENT_SYSTEM_FOREGROUND,
+    GWL_STYLE, GetForegroundWindow, GetMessageW, GetWindowLongW, GetWindowRect,
+    GetWindowThreadProcessId, MSG, OBJID_WINDOW, PM_NOREMOVE, PeekMessageW, PostThreadMessageW,
+    WINEVENT_OUTOFCONTEXT, WM_QUIT, WS_CAPTION,
+};
 
+use crate::config::CaptureTarget;
 use crate::error::{EngineError, Result};
 
 const SHELL_EXES: [&str; 7] = [
@@ -142,29 +157,240 @@ pub fn exe_name_of(processes: &[Process], pid: u32) -> Option<&str> {
         .map(|p| p.exe_name.as_str())
 }
 
-pub fn foreground_pid() -> Option<u32> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForegroundWindow {
+    pub pid: u32,
+    pub exe_name: String,
+    pub covers_monitor: bool,
+    pub has_caption: bool,
+}
+
+impl ForegroundWindow {
+    pub fn is_game(&self) -> bool {
+        self.covers_monitor
+            && !self.has_caption
+            && self.pid != std::process::id()
+            && !SHELL_EXES
+                .iter()
+                .any(|shell| self.exe_name.eq_ignore_ascii_case(shell))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct CurrentGame {
+    fixed: Option<String>,
+    last: Option<String>,
+}
+
+impl CurrentGame {
+    pub fn new(pinned: Option<String>, target: &CaptureTarget) -> Self {
+        let fixed = pinned.or_else(|| match target {
+            CaptureTarget::Window { exe_name, .. } => Some(exe_name.clone()),
+            _ => None,
+        });
+        Self { fixed, last: None }
+    }
+
+    pub fn follows_foreground(&self) -> bool {
+        self.fixed.is_none()
+    }
+
+    pub fn on_foreground(&mut self, window: &ForegroundWindow) -> bool {
+        let unchanged = self
+            .last
+            .as_ref()
+            .is_some_and(|last| last.eq_ignore_ascii_case(&window.exe_name));
+        if !self.follows_foreground() || !window.is_game() || unchanged {
+            return false;
+        }
+        self.last = Some(window.exe_name.clone());
+        true
+    }
+
+    pub fn exe_name(&self) -> Option<&str> {
+        self.fixed.as_deref().or(self.last.as_deref())
+    }
+}
+
+pub fn foreground_window() -> Option<ForegroundWindow> {
+    let mut window = foreground_geometry()?;
+    window.exe_name = exe_name_of(&processes().ok()?, window.pid)?.to_owned();
+    Some(window)
+}
+
+fn foreground_geometry() -> Option<ForegroundWindow> {
     let mut pid = 0;
-    // SAFETY: GetWindowThreadProcessId only writes the PID of the window passed in.
-    unsafe {
+    let mut rect = RECT::default();
+    let mut monitor = MONITORINFO {
+        cbSize: size_of::<MONITORINFO>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: read-only queries on the current foreground window; every out pointer is a local.
+    let style = unsafe {
         let window = GetForegroundWindow();
         if window.is_invalid() {
             return None;
         }
         GetWindowThreadProcessId(window, Some(&mut pid));
-    }
-    (pid != 0).then_some(pid)
-}
-
-pub fn foreground_app(processes: &[Process]) -> Option<String> {
-    let pid = foreground_pid()?;
-    if pid == std::process::id() {
+        GetWindowRect(window, &mut rect).ok()?;
+        let screen = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+        if !GetMonitorInfoW(screen, &mut monitor).as_bool() {
+            return None;
+        }
+        GetWindowLongW(window, GWL_STYLE) as u32
+    };
+    if pid == 0 {
         return None;
     }
-    let exe = exe_name_of(processes, pid)?;
-    (!SHELL_EXES
-        .iter()
-        .any(|shell| exe.eq_ignore_ascii_case(shell)))
-    .then(|| exe.to_owned())
+    let screen = monitor.rcMonitor;
+    Some(ForegroundWindow {
+        pid,
+        exe_name: String::new(),
+        covers_monitor: rect.left <= screen.left
+            && rect.top <= screen.top
+            && rect.right >= screen.right
+            && rect.bottom >= screen.bottom,
+        has_caption: style & WS_CAPTION.0 == WS_CAPTION.0,
+    })
+}
+
+pub struct ForegroundWatch {
+    thread_id: u32,
+    thread: Option<JoinHandle<()>>,
+}
+
+impl std::fmt::Debug for ForegroundWatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ForegroundWatch")
+            .field("thread_id", &self.thread_id)
+            .finish_non_exhaustive()
+    }
+}
+
+struct WatchState {
+    on_change: Box<dyn FnMut(ForegroundWindow)>,
+    last: Option<ForegroundWindow>,
+}
+
+thread_local! {
+    static WATCH: RefCell<Option<WatchState>> = const { RefCell::new(None) };
+}
+
+impl ForegroundWatch {
+    pub fn start(on_change: impl FnMut(ForegroundWindow) + Send + 'static) -> Result<Self> {
+        let (ready_tx, ready) = std::sync::mpsc::channel();
+        let thread = std::thread::Builder::new()
+            .name("palaclips-foreground".into())
+            .spawn(move || {
+                let mut message = MSG::default();
+                // SAFETY: per-thread DPI awareness and message queue, for this watcher thread only.
+                let thread_id = unsafe {
+                    SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+                    let _ = PeekMessageW(&mut message, None, 0, 0, PM_NOREMOVE);
+                    GetCurrentThreadId()
+                };
+                WATCH.with_borrow_mut(|state| {
+                    *state = Some(WatchState {
+                        on_change: Box::new(on_change),
+                        last: None,
+                    })
+                });
+                // SAFETY: out-of-context hooks delivered to this thread's message loop, removed below.
+                let hooks =
+                    [EVENT_SYSTEM_FOREGROUND, EVENT_OBJECT_LOCATIONCHANGE].map(|event| unsafe {
+                        SetWinEventHook(
+                            event,
+                            event,
+                            None,
+                            Some(on_win_event),
+                            0,
+                            0,
+                            WINEVENT_OUTOFCONTEXT,
+                        )
+                    });
+                report_foreground();
+                ready_tx.send(thread_id).ok();
+                // SAFETY: standard message loop on the thread that owns the hooks.
+                unsafe {
+                    while GetMessageW(&mut message, None, 0, 0).as_bool() {
+                        DispatchMessageW(&message);
+                    }
+                    for hook in hooks {
+                        let _ = UnhookWinEvent(hook);
+                    }
+                }
+                WATCH.with_borrow_mut(Option::take);
+            })?;
+        let thread_id = ready
+            .recv()
+            .map_err(|_| EngineError::Audio("suivi du premier plan impossible".into()))?;
+        Ok(Self {
+            thread_id,
+            thread: Some(thread),
+        })
+    }
+}
+
+impl Drop for ForegroundWatch {
+    fn drop(&mut self) {
+        // SAFETY: the watcher thread created its message queue before publishing its id.
+        unsafe { PostThreadMessageW(self.thread_id, WM_QUIT, WPARAM(0), LPARAM(0)) }.ok();
+        if let Some(thread) = self.thread.take() {
+            thread.join().ok();
+        }
+    }
+}
+
+extern "system" fn on_win_event(
+    _hook: HWINEVENTHOOK,
+    event: u32,
+    window: HWND,
+    object: i32,
+    child: i32,
+    _thread: u32,
+    _time: u32,
+) {
+    if event == EVENT_OBJECT_LOCATIONCHANGE
+        && (object != OBJID_WINDOW.0 || child != CHILDID_SELF as i32 || !is_foreground(window))
+    {
+        return;
+    }
+    report_foreground();
+}
+
+fn is_foreground(window: HWND) -> bool {
+    // SAFETY: GetForegroundWindow has no preconditions.
+    window == unsafe { GetForegroundWindow() }
+}
+
+fn report_foreground() {
+    let Some(mut window) = foreground_geometry() else {
+        return;
+    };
+    WATCH.with_borrow_mut(|state| {
+        let Some(state) = state else { return };
+        if let Some(last) = &state.last {
+            if (last.pid, last.covers_monitor, last.has_caption)
+                == (window.pid, window.covers_monitor, window.has_caption)
+            {
+                return;
+            }
+            if last.pid == window.pid {
+                window.exe_name = last.exe_name.clone();
+            }
+        }
+        if window.exe_name.is_empty() {
+            let Some(exe_name) = processes()
+                .ok()
+                .and_then(|list| exe_name_of(&list, window.pid).map(str::to_owned))
+            else {
+                return;
+            };
+            window.exe_name = exe_name;
+        }
+        state.last = Some(window.clone());
+        (state.on_change)(window);
+    });
 }
 
 pub fn audio_sessions(processes: &[Process]) -> Result<Vec<AudioSession>> {
@@ -304,6 +530,91 @@ mod tests {
         ];
         drop_reused_parents(&mut list);
         assert_eq!(list[1].parent_pid, 500);
+    }
+
+    fn window(exe_name: &str, covers_monitor: bool, has_caption: bool) -> ForegroundWindow {
+        ForegroundWindow {
+            pid: 4242,
+            exe_name: exe_name.into(),
+            covers_monitor,
+            has_caption,
+        }
+    }
+
+    fn monitor_capture() -> CurrentGame {
+        CurrentGame::new(None, &CaptureTarget::PrimaryMonitor)
+    }
+
+    fn window_capture(exe_name: &str) -> CaptureTarget {
+        CaptureTarget::Window {
+            exe_name: exe_name.into(),
+            title_hint: None,
+        }
+    }
+
+    #[test]
+    fn fullscreen_and_borderless_windows_become_the_game() {
+        let mut game = monitor_capture();
+        assert!(game.on_foreground(&window("FortniteClient-Win64-Shipping.exe", true, false)));
+        assert_eq!(game.exe_name(), Some("FortniteClient-Win64-Shipping.exe"));
+        assert!(game.on_foreground(&window("cs2.exe", true, false)));
+        assert_eq!(game.exe_name(), Some("cs2.exe"));
+    }
+
+    #[test]
+    fn alt_tab_to_a_windowed_or_maximized_app_keeps_the_game() {
+        let mut game = monitor_capture();
+        game.on_foreground(&window("cs2.exe", true, false));
+        assert!(!game.on_foreground(&window("Discord.exe", false, true)));
+        assert!(!game.on_foreground(&window("chrome.exe", true, true)));
+        assert!(!game.on_foreground(&window("WindowsTerminal.exe", false, true)));
+        assert_eq!(game.exe_name(), Some("cs2.exe"));
+    }
+
+    #[test]
+    fn a_windowed_app_is_never_the_game() {
+        let mut game = monitor_capture();
+        assert!(!game.on_foreground(&window("Discord.exe", false, true)));
+        assert!(!game.on_foreground(&window("popup.exe", false, false)));
+        assert_eq!(game.exe_name(), None);
+    }
+
+    #[test]
+    fn desktop_shell_and_palaclips_never_become_the_game() {
+        let mut game = monitor_capture();
+        assert!(!game.on_foreground(&window("explorer.exe", true, false)));
+        assert!(!game.on_foreground(&window("SearchHost.exe", true, false)));
+        let own = ForegroundWindow {
+            pid: std::process::id(),
+            ..window("palaclips.exe", true, false)
+        };
+        assert!(!game.on_foreground(&own));
+        assert_eq!(game.exe_name(), None);
+    }
+
+    #[test]
+    fn the_same_game_in_another_case_is_not_a_change() {
+        let mut game = monitor_capture();
+        game.on_foreground(&window("cs2.exe", true, false));
+        assert!(!game.on_foreground(&window("CS2.EXE", true, false)));
+    }
+
+    #[test]
+    fn a_window_capture_follows_the_captured_app() {
+        let mut game = CurrentGame::new(None, &window_capture("Minecraft.Windows.exe"));
+        assert!(!game.follows_foreground());
+        assert!(!game.on_foreground(&window("cs2.exe", true, false)));
+        assert_eq!(game.exe_name(), Some("Minecraft.Windows.exe"));
+    }
+
+    #[test]
+    fn a_pinned_process_wins_over_everything() {
+        let target = window_capture("Minecraft.Windows.exe");
+        let mut game = CurrentGame::new(Some("javaw.exe".into()), &target);
+        assert!(!game.on_foreground(&window("cs2.exe", true, false)));
+        assert_eq!(game.exe_name(), Some("javaw.exe"));
+        let pinned = CurrentGame::new(Some("javaw.exe".into()), &CaptureTarget::PrimaryMonitor);
+        assert_eq!(pinned.exe_name(), Some("javaw.exe"));
     }
 
     #[test]
