@@ -81,7 +81,13 @@ parce que le test de 30 min montrait ~650 Mo privés pour ~300 Mo de tampon.
   ~175 Mo (DPB auto + surfaces), ramenée à ~63 Mo par ADR-022 ; premier périphérique D3D11
   +52 Mo ; réserve système que le pilote NVIDIA engage pour chaque texture (~22 Mo) ; 4 pistes
   audio +30 Mo (WASAPI surtout) ; processus à vide 17 Mo.
-- **❌ en mémoire engagée** : la part du pilote (~136 Mo) plus le processus à vide (17 Mo)
-  dépasse déjà 150 Mo → bloquant dans `HANDOFF.md`, décision de Palawi sur la mesure.
+- **✅ en working set privé (ADR-023, décision de Palawi)** : 102 Mo pour le replay de 5 s,
+  61 Mo sans son tampon (seuil 150). Pour information, en mémoire engagée : 213 Mo, 172 Mo
+  sans le tampon (la part du pilote, ~136 Mo, et le processus à vide, 17 Mo, dépassent déjà
+  150 Mo).
+- Qualité d'ADR-022 vérifiée sur 30 s de Fortnite : VMAF 99,37 des deux côtés, PSNR −0,01 dB ;
+  retard max d'encodage 0,79 ms jeu en charge (`phase-4/nvenc-quality-fortnite.txt`).
+- RPL-03 : l'estimation de RAM couvre la fenêtre réelle du tampon (durée + intervalle d'images
+  clés + 2 s) et la surcharge mesurée (+7 %).
 - Journaux : `docs/reports/phase-4/engine-memory-before.txt`, `engine-memory-after.txt` ;
   détail et sources dans `RESEARCH.md` § Mémoire du pipeline.

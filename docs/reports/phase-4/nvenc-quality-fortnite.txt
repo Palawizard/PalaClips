@@ -1,0 +1,7 @@
+2026-10-16T23:18:47 nvenc-quality : window:FortniteClient-Win64-Shipping.exe, 30 s à 60 i/s, référence 150 Mb/s (réglages PalaClips), puis réencodage à 40 Mb/s : défauts FFmpeg contre ADR-022
+h264_nvenc → 2560x1440 @ 60 i/s, 30 s, 0 piste(s) audio
+INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=3053 duplicated=4 max_lateness_ms=0.7911
+défauts FFmpeg                               VMAF  99,37 | PSNR moy  40,44 dB, min  33,55 dB | SSIM 0,97115 |  151,8 Mo
+ADR-022 (dpb_size=2, surfaces=2, delay=1)    VMAF  99,37 | PSNR moy  40,43 dB, min  33,54 dB | SSIM 0,97112 |  151,8 Mo
+ÉCART ADR-022 − défauts : VMAF +0,00, PSNR -0,01 dB, SSIM -0,00003
+2026-10-16T23:21:27 fin : vidéos supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\nvenc-quality-2026-10-16_23-18.txt

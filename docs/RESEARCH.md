@@ -295,6 +295,9 @@ privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cl
 - Qualité (PSNR moyen, zoom de Mandelbrot 2560×1440 à 60 i/s, 40 Mb/s CBR p4, 8 s) : DPB auto
   41,03 dB, `dpb_size=2` 40,72 dB (−0,3), `dpb_size=1` 40,24 dB (−0,8). SSIM 0,9909 / 0,9904 /
   0,9896.
+  Sur une vraie partie de Fortnite (30 s 1440p60, référence 150 Mb/s, `nvenc-quality.ps1`) :
+  défauts VMAF 99,37 / PSNR 40,44 dB / SSIM 0,97115, ADR-022 99,37 / 40,43 / 0,97112 : la
+  source synthétique exagérait l'écart. Retard max d'encodage jeu en charge : 0,79 ms.
 - Pipeline court (`surfaces=2`, `delay=1`) : retard max des ticks 3,7 ms à 60 i/s (budget
   16,7 ms) mais 7,6–15,8 ms à 240 i/s contre 1,3–1,4 ms avec les défauts (toutes les images
   produites dans les deux cas). `surfaces=3,delay=2` : 3,3–4,6 ms à 240 i/s.
@@ -309,7 +312,8 @@ privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cl
   (−110 Mo). Hors tampon : 172 Mo engagés, dont ~136 Mo pour le pilote (périphérique 52 +
   session NVENC 63 + réserve des textures ~22) ; **61 Mo de RAM réellement occupée** (working
   set privé de (c) moins le tampon). Avec 17 Mo pour le processus à vide, 150 Mo engagés sont
-  hors d'atteinte quoi qu'on fasse de notre côté (`HANDOFF.md` § Bloquants).
+  hors d'atteinte quoi qu'on fasse de notre côté : PERF-01/02 se mesurent en working set
+  privé (ADR-023).
 
 ## UI (Tauri 2)
 

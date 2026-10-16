@@ -9,7 +9,7 @@
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
 - **Branche :** `feature/app-shell` (depuis `dev`, brief commité ; à rebaser sur `dev` après
-  la PR `fix/engine-memory-overhead`).
+  la PR `fix/memory-metric-and-quality`).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -111,7 +111,9 @@
   `VirtualAlloc`, image, blocs qui grandissent), `replay --no-arm` ; script
   `scripts/engine-memory.ps1` (étapes (a)–(d) de PERF-02, ~3 min, fenêtre ffplay et sons de
   test). PERF-02 mesuré : `docs/reports/phase-4.md` § PERF-02, `RESEARCH.md` § Mémoire du
-  pipeline.
+  pipeline. PERF-01/02 en working set privé (ADR-023) ; qualité d'ADR-022 vérifiée sur
+  Fortnite (`scripts/nvenc-quality.ps1`) ; estimation RAM (RPL-03) = fenêtre du tampon + 7 %
+  (`replay::buffer_window`, `estimate_buffer_bytes`).
 
 ## Prochaines actions (dans l'ordre)
 
@@ -133,24 +135,9 @@
 
 ## Bloquants
 
-- **PERF-02 (moteur hors tampon < 150 Mo) impossible en mémoire privée engagée** (mesuré le
-  2026-10-16, 1440p60 NVENC 40 Mb/s, 4 pistes, `scripts/engine-memory.ps1`) :
-  - après réduction de notre part (ADR-022) : replay 5 s = 213 Mo engagés, dont 41 Mo de
-    tampon → **172 Mo hors tampon** (321 / 276 Mo avant) ;
-  - part du pilote NVIDIA seule ≈ **136 Mo** : premier périphérique D3D11 52 Mo, session NVENC
-    1440p 63 Mo (déjà réglée au minimum raisonnable), réserve système engagée pour chaque
-    texture ~22 Mo. Avec le processus à vide (17 Mo), on est à 153 Mo avant l'audio
-    (4 pistes : +30 Mo, surtout WASAPI) ;
-  - mais ces réserves du pilote ne sont jamais touchées : **RAM réellement occupée hors tampon
-    = 61 Mo** (working set privé, ce qu'affiche la colonne « Mémoire » du Gestionnaire des
-    tâches).
-  - Options : (1) mesurer PERF-02 en working set privé (61 Mo ✅) — recommandé, c'est la RAM
-    que le moteur prend vraiment ; (2) garder la mémoire engagée et relever le seuil (~200 Mo) ;
-    (3) `dpb_size=1` en plus (−7 Mo, −0,8 dB) : ne suffit pas (~165 Mo).
+Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-023.)
 
 ## Décisions en attente de Palawi
-
-- PERF-02 : mesure (mémoire engagée ou working set privé) et seuil, voir « Bloquants ».
 
 - Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.
 
