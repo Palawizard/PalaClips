@@ -1,0 +1,116 @@
+h264_nvenc → 640x360 @ 60 i/s, 30 s, 3 piste(s) audio
+2026-10-16T11:10:39.393410Z  INFO palaclips_engine::audio::track: application rattachée track=zen app=zen.exe (PID 12752)
+2026-10-16T11:10:39.393410Z  INFO palaclips_engine::audio::track: application rattachée track=vlc app=vlc.exe (PID 4308)
+2026-10-16T11:10:39.394004Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-16T11:11:09.380186Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=644 duplicated=1164 max_lateness_ms=0.824
+2026-10-16T11:11:09.384755Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=vlc packets=2998 silence_ms=21 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.007862172089517117
+2026-10-16T11:11:09.384829Z  INFO ffmpeg: [aac @ 000001e932a89500] Qavg: 59335.750
+2026-10-16T11:11:09.387160Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=zen packets=2998 silence_ms=21 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.20000000298023224
+2026-10-16T11:11:09.387234Z  INFO ffmpeg: [aac @ 000001e932d10e80] Qavg: 62573.352
+2026-10-16T11:11:09.388000Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=3000 silence_ms=0 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.20209121704101563
+2026-10-16T11:11:09.388100Z  INFO ffmpeg: [aac @ 000001e932c70d80] Qavg: 890.455
+1800 images écrites (644 reçues de Windows, 1164 dupliquées, 0 changements de résolution, retard max 0.82 ms) → target\clips\t3.mp4
+piste « Mix complet » : 3000 paquets WASAPI, silence comblé 0 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.202, écart max entre paquets AAC reçus 31 ms
+piste « zen » : 2998 paquets WASAPI, silence comblé 21 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.200, écart max entre paquets AAC reçus 31 ms
+piste « vlc » : 2998 paquets WASAPI, silence comblé 21 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.008, écart max entre paquets AAC reçus 31 ms
+
+stream|index=0|codec_type=video|duration=30.000000|tag:handler_name=VideoHandler
+stream|index=1|codec_type=audio|duration=30.000000|tag:handler_name=Mix complet
+stream|index=2|codec_type=audio|duration=30.000000|tag:handler_name=zen
+stream|index=3|codec_type=audio|duration=30.000000|tag:handler_name=vlc
+piste audio 0 : Peak level dB: -13.536327, RMS level dB: -16.988793
+piste audio 1 : Peak level dB: -13.920615, RMS level dB: -17.001589
+piste audio 2 : Peak level dB: -41.534906, RMS level dB: -45.117331
+piste audio 0 « Mix complet » (dBFS, vide = rien)
+     0 s  440.0 Hz   -11  880.0 Hz   -39
+     1 s  440.0 Hz   -11  880.0 Hz   -39
+     2 s  440.0 Hz   -11  880.0 Hz   -39
+     3 s  440.0 Hz   -11  880.0 Hz   -39
+     4 s  440.0 Hz   -11  880.0 Hz   -39
+     5 s  440.0 Hz   -11  880.0 Hz   -39
+     6 s  440.0 Hz   -11  880.0 Hz   -39
+     7 s  440.0 Hz   -11  880.0 Hz   -39
+     8 s  440.0 Hz   -11  880.0 Hz   -39
+     9 s  440.0 Hz   -11  880.0 Hz   -39
+    10 s  440.0 Hz   -11  880.0 Hz   -39
+    11 s  440.0 Hz   -11  880.0 Hz   -39
+    12 s  440.0 Hz   -11  880.0 Hz   -39
+    13 s  440.0 Hz   -11  880.0 Hz   -39
+    14 s  440.0 Hz   -11  880.0 Hz   -39
+    15 s  440.0 Hz   -11  880.0 Hz   -39
+    16 s  440.0 Hz   -11  880.0 Hz   -39
+    17 s  440.0 Hz   -11  880.0 Hz   -39
+    18 s  440.0 Hz   -11  880.0 Hz   -39
+    19 s  440.0 Hz   -11  880.0 Hz   -39
+    20 s  440.0 Hz   -11  880.0 Hz   -39
+    21 s  440.0 Hz   -11  880.0 Hz   -39
+    22 s  440.0 Hz   -11  880.0 Hz   -39
+    23 s  440.0 Hz   -11  880.0 Hz   -39
+    24 s  440.0 Hz   -11  880.0 Hz   -39
+    25 s  440.0 Hz   -11  880.0 Hz   -39
+    26 s  440.0 Hz   -11  880.0 Hz   -39
+    27 s  440.0 Hz   -11  880.0 Hz   -39
+    28 s  440.0 Hz   -11  880.0 Hz   -39
+    29 s  440.0 Hz   -11  880.0 Hz   -39
+piste audio 1 « zen » (dBFS, vide = rien)
+     0 s  440.0 Hz   -11  880.0 Hz   -83
+     1 s  440.0 Hz   -11  880.0 Hz      
+     2 s  440.0 Hz   -11  880.0 Hz      
+     3 s  440.0 Hz   -11  880.0 Hz      
+     4 s  440.0 Hz   -11  880.0 Hz      
+     5 s  440.0 Hz   -11  880.0 Hz      
+     6 s  440.0 Hz   -11  880.0 Hz      
+     7 s  440.0 Hz   -11  880.0 Hz      
+     8 s  440.0 Hz   -11  880.0 Hz      
+     9 s  440.0 Hz   -11  880.0 Hz      
+    10 s  440.0 Hz   -11  880.0 Hz      
+    11 s  440.0 Hz   -11  880.0 Hz      
+    12 s  440.0 Hz   -11  880.0 Hz      
+    13 s  440.0 Hz   -11  880.0 Hz      
+    14 s  440.0 Hz   -11  880.0 Hz      
+    15 s  440.0 Hz   -11  880.0 Hz      
+    16 s  440.0 Hz   -11  880.0 Hz      
+    17 s  440.0 Hz   -11  880.0 Hz      
+    18 s  440.0 Hz   -11  880.0 Hz      
+    19 s  440.0 Hz   -11  880.0 Hz      
+    20 s  440.0 Hz   -11  880.0 Hz      
+    21 s  440.0 Hz   -11  880.0 Hz      
+    22 s  440.0 Hz   -11  880.0 Hz      
+    23 s  440.0 Hz   -11  880.0 Hz      
+    24 s  440.0 Hz   -11  880.0 Hz      
+    25 s  440.0 Hz   -11  880.0 Hz      
+    26 s  440.0 Hz   -11  880.0 Hz      
+    27 s  440.0 Hz   -11  880.0 Hz      
+    28 s  440.0 Hz   -11  880.0 Hz      
+    29 s  440.0 Hz   -11  880.0 Hz  -117
+piste audio 2 « vlc » (dBFS, vide = rien)
+     0 s  440.0 Hz  -110  880.0 Hz   -40
+     1 s  440.0 Hz        880.0 Hz   -39
+     2 s  440.0 Hz        880.0 Hz   -39
+     3 s  440.0 Hz        880.0 Hz   -39
+     4 s  440.0 Hz        880.0 Hz   -39
+     5 s  440.0 Hz        880.0 Hz   -39
+     6 s  440.0 Hz        880.0 Hz   -39
+     7 s  440.0 Hz        880.0 Hz   -39
+     8 s  440.0 Hz        880.0 Hz   -39
+     9 s  440.0 Hz        880.0 Hz   -39
+    10 s  440.0 Hz        880.0 Hz   -39
+    11 s  440.0 Hz        880.0 Hz   -39
+    12 s  440.0 Hz        880.0 Hz   -39
+    13 s  440.0 Hz        880.0 Hz   -39
+    14 s  440.0 Hz        880.0 Hz   -39
+    15 s  440.0 Hz        880.0 Hz   -39
+    16 s  440.0 Hz        880.0 Hz   -39
+    17 s  440.0 Hz        880.0 Hz   -39
+    18 s  440.0 Hz        880.0 Hz   -39
+    19 s  440.0 Hz        880.0 Hz   -39
+    20 s  440.0 Hz        880.0 Hz   -39
+    21 s  440.0 Hz        880.0 Hz   -39
+    22 s  440.0 Hz        880.0 Hz   -39
+    23 s  440.0 Hz        880.0 Hz   -39
+    24 s  440.0 Hz        880.0 Hz   -39
+    25 s  440.0 Hz        880.0 Hz   -39
+    26 s  440.0 Hz        880.0 Hz   -39
+    27 s  440.0 Hz        880.0 Hz   -39
+    28 s  440.0 Hz        880.0 Hz   -39
+    29 s  440.0 Hz        880.0 Hz   -39

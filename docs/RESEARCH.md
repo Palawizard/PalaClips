@@ -120,6 +120,13 @@
   - Après un rattachement, ~100 à 150 corrections de dérive d'un échantillon sur la piste
     (≈ 2 à 3 ms rattrapés en quelques secondes) ; aucune sur une piste ouverte une seule fois.
     Inaudible ; à surveiller si un rattachement produit un décalage durable.
+  - Un client de capture **loopback** crée une session « active » sur la sortie capturée, et
+    son `IAudioMeterInformation` reproduit la crête de la sortie (constaté sur
+    `palaclips-cli.exe`, Wallpaper Engine et FluentFlyout : 0,200 sans rien jouer). Les
+    crêtes de session ne prouvent donc pas qu'une appli joue : PalaClips ignore ses propres
+    sessions pour `app_track_silent`.
+  - Toolhelp ne donne que le PID du parent, qui peut avoir été réattribué : un lien parent →
+    enfant n'est gardé que si le parent a été créé avant l'enfant (`GetProcessTimes`).
 - Mesuré le 2026-10-15 avec `palaclips-cli probe-audio` (`wasapi` 0.26, flux partagé piloté
   par événement, 48 kHz stéréo f32 `autoconvert`, tampon 200 ms ; journaux bruts dans
   `docs/reports/phase-2/`), machine de Palawi (sortie par défaut « Voicemeeter Input »,
