@@ -8,9 +8,9 @@
 - **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `feature/app-shell` (depuis `dev`, brief commité ; à rebaser sur `dev` après
-  la PR `fix/memory-metric-and-quality`).
-- **Dernière mise à jour :** 2026-10-16
+- **Branche :** `feature/app-shell` (à jour sur `dev`) : socle Tauri ↔ moteur de l'écran État
+  fait, PR vers `dev` ouverte et **laissée ouverte** (l'écran lui-même reste à construire).
+- **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
 
@@ -106,6 +106,28 @@
   privée), `StorageSettings::clips_dir`, `EngineError::{Stopped, NothingToSave}`, CLI
   `replay`, scripts `replay-save.ps1` (20 sauvegardes) et `replay-ram.ps1` (2 h).
   `VideoCapture::start` maintient le MTA COM (`keep_mta_alive`).
+- **Phase 5, socle (`feature/app-shell`)** :
+  - Tauri (`app/src-tauri/src/lib.rs`, `commands.rs`) : `EngineSlot` (config, `Engine`,
+    `EngineHandle`, `AppStatus`) géré par l'app ; fil `palaclips-events` qui relaie chaque
+    `EngineEvent` sur l'événement `engine-event` et tient `AppStatus` (état, secondes/octets du
+    tampon, alertes actives une par code) ; commandes `get_state`, `replay_arm`,
+    `replay_disarm`, `replay_save`, `list_recent_clips { limit }`, `storage_status` ; replay
+    armé au démarrage si `arm_on_startup` (config par défaut pour l'instant, pas encore de
+    persistance) ; `Alt+F10` global (`tauri-plugin-global-shortcut` 2.4) → `save_replay`,
+    alerte `hotkey_unavailable` citant l'overlay NVIDIA ; zone de notification (Ouvrir,
+    Sauvegarder le replay, Quitter ; clic gauche = ouvrir) ; instance unique
+    (`tauri-plugin-single-instance` 2.5) ; fermer la fenêtre la détruit, seul « Quitter »
+    sort (`prevent_exit` si `code: None`) ; niveaux audio pilotés par la fenêtre (focus 20 Hz,
+    sans focus 10 Hz, réduite/détruite : coupés).
+  - Moteur : `audio::PeakMeter` (crête sans verrou), `AudioTrack::meter()`,
+    `engine::LevelRate` + `EngineHandle::set_level_rate`, échéances stats/niveaux vérifiées en
+    tête de boucle ; `encode::write_thumbnail` (dernière image clé → JPEG 480 px dans
+    `%LOCALAPPDATA%\PalaClips\cache\thumbnails\<clip>.jpg`, après fermeture du MP4) ;
+    `clip_saved.thumbnail` ; `library` : `probe_clip` (durée, titres des pistes audio lus dans le
+    fichier), `recent_clips(root, limit)`, `disk_space` ; `paths::thumbnail_path` ;
+    `EngineState: Default`.
+  - CLI : `recent-clips [--clips-dir] [--limit]` (JSON), `replay --levels`.
+  - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés.
 - **Mémoire (PR `fix/engine-memory-overhead`)** : NVENC `dpb_size=2`, `surfaces=2`/`delay=1`
   jusqu'à 60 i/s (ADR-022, −110 Mo) ; CLI `probe-memory` (mémoire étape par étape : tas,
   `VirtualAlloc`, image, blocs qui grandissent), `replay --no-arm` ; script
@@ -117,17 +139,16 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 5 sur `feature/app-shell`, écran État + shell (brief confirmé, `/design` : impeccable
-   new-work/build dans la direction ADR-014, puis `emil-design-eng`, critique, audit, polish,
-   et `DESIGN.md` par le documenteur impeccable) :
-   - Tauri : `Engine` dans l'état de l'app, commandes `get_state`, `replay_arm`,
-     `replay_disarm`, `replay_save`, `record_start`/`record_stop` (branchées en phase 6),
-     liste des clips récents ; événements moteur relayés ; raccourci global `Alt+F10` (alerte
-     actionnable citant l'overlay NVIDIA s'il est pris) ;
-   - moteur : `audio_levels` (~20 Hz, crête par piste), coupé quand la fenêtre est cachée,
-     réduite ou fermée, ~10 i/s sans focus ; miniature JPEG à la sauvegarde ; espace disque ;
-   - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés ; mesure CPU fenêtre ouverte non
-     focalisée pendant une capture (PERF-03).
+1. Phase 5 sur `feature/app-shell`, écran État + shell (brief confirmé) :
+   - miniatures dans la WebView : `convertFileSrc` + `assetProtocol` limité au dossier
+     `cache\thumbnails` (`tauri.conf.json`, CSP déjà ouverte à `asset:`) ;
+   - `/design` État + shell : impeccable build dans la direction ADR-014, `emil-design-eng`,
+     critique, audit, polish, puis `DESIGN.md` (documenteur impeccable) ;
+   - `record_start`/`record_stop` : boutons présents, branchés en phase 6 ;
+   - critères : un seul processus fenêtre fermée (aucun `msedgewebview2.exe`), CPU fenêtre
+     ouverte non focalisée pendant une capture (PERF-03), navigation clavier.
+   - ⚠️ L'app arme le replay au démarrage (écran principal, micro, piste Jeu) : demander à
+     Palawi avant tout `npm run tauri dev`.
 2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
    dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
 3. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
@@ -207,6 +228,8 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 - Tests audio sans déranger Palawi : copies de la CLI (`target\tone-a.exe`, `tone-b.exe`)
   qui jouent `play-tone` vers `--device Realtek` (sortie sans haut-parleurs).
 - Discord a été lancé pendant le test de rattachement (il ne tournait pas avant).
+- L'app (`tauri dev`) arme le replay dès le démarrage avec la config par défaut : écran
+  principal, micro par défaut, mix et piste Jeu. Toujours prévenir Palawi avant de la lancer.
 - Tauri 3 est en alpha sur crates.io : ne pas suivre les suggestions de mise à jour vers 3.x.
 - Fin de tâche : merger soi-même la PR vers `dev` quand la CI est verte, puis supprimer la
   branche (`CLAUDE.md` § 4 Git, « Merge et ménage »).
@@ -223,4 +246,5 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-16 | 2→3 | PR #9 : silence comblé quand le périphérique n'envoie rien, pente A/V par régression, `av-drift.ps1`, règle des tests longs. Phase 3 : `sources`, pistes par appli, rattachement, piste Jeu, `app_track_silent`, CLI ; T3 (Zen + VLC), Discord, piste Jeu avec Palawi ; 2 fausses alertes corrigées ; phase 3 validée (PR #10) | Test de dérive Apogee, puis phase 4 |
 | 2026-10-16 | 2→4 | PR #11 : horloge audio contre QPC mesurée (0,00 ms/h Apogee), hypothèse de dérive d'appareil infirmée, AUD-08 maintenu ; règles « test en arrière-plan » et « ≤ 5 min sans accord ». PR #12 : piste Jeu = jeu en cours (ADR-019, `SetWinEventHook`), preuve Alt+Tab. PR #13 : phase 4 (moteur, replay RAM/disque, nom par jeu, redémarrage, CLI `replay`), 20 sauvegardes 146–200 ms, crash COM à la 2e capture corrigé ; Resolve n'affiche pas les noms de pistes → bloquant | Décisions de Palawi : test 2 h, noms Resolve |
 | 2026-10-16 | 4→5 | RPL-08 en test accéléré (ADR-020, corrigé : mise en régime de 10 min exclue) : 30 min, 360 sauvegardes, −1,8 Mo/h ✅ ; noms de pistes dans le fichier seulement (ADR-021) ; phase 4 validée ; `/impeccable shape` de l'écran État + shell, brief confirmé avec 7 corrections | Phase 5 : écran État + shell |
+| 2026-10-16/17 | 4→5 | PERF-02 mesuré (a–d) : NVENC défauts ~175 Mo → ADR-022 (`dpb_size=2`, pipeline court ≤ 60 i/s, −110 Mo, qualité identique sur Fortnite) ; PERF-01/02 en working set privé (ADR-023, 61 Mo hors tampon) ; RPL-03 = fenêtre + 7 % ; PR #16, #17. Perte de 50–100 i/s dans Fortnite pendant une capture → `fps-impact.ps1` (PR #18), test en attente. Phase 5 : socle Tauri (événements, commandes replay, `Alt+F10`, zone de notification, instance unique), niveaux audio, miniatures, derniers clips, espace disque | Test fps avec Palawi ; écran État (`/design`) |
 | 2026-10-17 | 5 | `fps-impact.ps1` lancé par Palawi (avec et sans G-Sync) : aucune perte de fps, Independent Flip conservé ; script corrigé (mise en route non comptée, GPU relevé) ; PERF-03 GPU-bound ajouté au PLAN | Écran État (`/design`) |
