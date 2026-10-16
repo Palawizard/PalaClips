@@ -5,9 +5,9 @@
 
 ## État actuel
 
-- **Phase en cours :** 3 — Pistes par logiciel, pas commencée. Phase 2 **validée** le
-  2026-10-16 (T2 d'une heure : 6 × `OK`, `docs/reports/phase-2.md`).
-- **Branche :** `dev` après le merge de la PR #8 (`feature/system-audio`).
+- **Phase en cours :** 4 — Replay, pas commencée. Phase 3 **validée** le 2026-10-16
+  (`docs/reports/phase-3.md`).
+- **Branche :** `dev` après le merge de la PR #10 (`feature/per-app-audio`).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -74,14 +74,28 @@
     `scripts/measure-av-sync.py` (Python 3, flashs ↔ bips).
   - Preuves : `docs/reports/phase-2/` (journaux `probe-audio`, débranchement), rapport
     `docs/reports/phase-2.md`.
+- **Avant phase 3 (PR #9)** : la piste comble le silence toutes les 50 ms quand le
+  périphérique n'envoie rien ; `capture-av --mix-device/--mic-device`, `probe-av-emitter
+  --device` ; `measure-av-sync.py` donne la pente (ms/h) par régression ; test sans
+  surveillance `scripts/av-drift.ps1` ; règle « tests longs sans surveillance » (`CLAUDE.md`).
+- **Phase 3 (`feature/per-app-audio`, PR #10)** :
+  - `sources` : `processes()` (Toolhelp + dates de création, liens parent réattribués
+    retirés), `root_pid`, `process_tree`, `foreground_pid`/`foreground_app`,
+    `audio_sessions` (toutes les sorties), `session_peak(root)` (sans les sessions de
+    PalaClips).
+  - `AudioSource::Application { exe_name }` (process loopback de l'arbre, rattachement par
+    nom d'exe, fin suivie par handle de processus) et `AudioSource::Foreground` (piste « Jeu ») ;
+    `app_track_silent` (`SilenceWatch`) ; `AudioTrackStats::silent_alerts`.
+  - CLI : `list-audio-sessions`, `capture-apps`, `probe-audio --app`, `play-tone` ; script
+    `measure-tones.py`. Preuves `docs/reports/phase-3/`.
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 3 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : process loopback
-   (`AudioClient::new_application_loopback_client(pid_parent, true)`) en réutilisant
-   `AudioTrack`/`GapFiller` (ajouter une variante `AudioSource::Application`), `sources`
-   (sessions + crêtes), rattachement par nom d'exe, `app_track_silent`. Commencer par une
-   sonde CLI sur la piste muette signalée sous build 26200.
+1. Test de dérive sans Voicemeeter : Palawi lance `pwsh scripts\av-drift.ps1 -Minutes 20
+   -Device Apogee` avant de partir ; lire `target\journals\av-drift-*.txt`, comparer la
+   pente avec celle du T2 Voicemeeter (−8,4 ms/h), noter la conclusion dans `RESEARCH.md`.
+2. Phase 4 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : `Engine`/`EngineHandle`,
+   fan-out des paquets (cloner les `AVPacket`), `PacketRing` sur tous les flux, sauvegarde.
 
 ## Bloquants
 
@@ -132,8 +146,13 @@ Aucun.
   en phase 7, robustesse).
 - Phase 4 : le replay devra cloner les `AVPacket` (refcount) pour le fan-out, et utiliser
   `VideoStream::origin` comme `t0` commun avec l'audio.
-- La capture audio par appli a un rapport de piste muette sur Windows 11 build 26200 (avec
-  NAudio, cause non établie) : à tester dès la phase 3 sur la machine de Palawi.
+- Process loopback testé sur build 26200 : pas de piste muette. Le flux d'une appli fermée
+  continue d'envoyer des zéros (fin suivie par handle de processus).
+- Une capture loopback crée une session « active » dont le vumètre reproduit la sortie : ne
+  jamais conclure qu'une appli joue d'après sa seule crête de session.
+- Tests audio sans déranger Palawi : copies de la CLI (`target\tone-a.exe`, `tone-b.exe`)
+  qui jouent `play-tone` vers `--device Realtek` (sortie sans haut-parleurs).
+- Discord a été lancé pendant le test de rattachement (il ne tournait pas avant).
 - Tauri 3 est en alpha sur crates.io : ne pas suivre les suggestions de mise à jour vers 3.x.
 - Fin de tâche : merger soi-même la PR vers `dev` quand la CI est verte, puis supprimer la
   branche (`CLAUDE.md` § 4 Git, « Merge et ménage »).
@@ -147,3 +166,4 @@ Aucun.
 | 2026-10-15 | 1 | Pipeline vidéo GPU (WGC → Video Processor NV12 → NVENC/AMF/QSV), pacer CFR QPC, repli, préréglages de débit, CLI `capture-video` ; PR #5. Tests 👤 avec Palawi : Fortnite ✅, HDR délavé → correction FP16 + shader (`fix/hdr-capture`) ✅ ; phase 1 validée | Phase 2 |
 | 2026-10-15 | 1→2 | Suites phase 1 (PR #7 mergée : HDR par `activeColorMode`, atténuation des hautes lumières, horloge après le 1er encodage, 240 i/s, limite G-Sync). Phase 2 : `probe-audio`, `AudioTrack`/`GapFiller`/AAC/mux multi-pistes, `capture-av`, débranchement ✅, Voicemeeter +100 ms → AUD-11 (décalage par piste), T2 automatisé ; PR #8 ouverte | T2 1 h par Palawi, puis merge et phase 3 |
 | 2026-10-16 | 2 | CAP-11 + ADR-018 (alerte G-Sync, code en phase 7) ; chaîne micro Voicemeeter/LightHost instable d'un lancement à l'autre (hors moteur, assistant de calibrage en un clic en phase 5) ; T2 d'une heure 6 × `OK` ; phase 2 validée, PR #8 mergée | Phase 3 |
+| 2026-10-16 | 2→3 | PR #9 : silence comblé quand le périphérique n'envoie rien, pente A/V par régression, `av-drift.ps1`, règle des tests longs. Phase 3 : `sources`, pistes par appli, rattachement, piste Jeu, `app_track_silent`, CLI ; T3 (Zen + VLC), Discord, piste Jeu avec Palawi ; 2 fausses alertes corrigées ; phase 3 validée (PR #10) | Test de dérive Apogee, puis phase 4 |

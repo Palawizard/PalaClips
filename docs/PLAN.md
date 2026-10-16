@@ -63,14 +63,14 @@ Critères :
 - 👤 Silence de 2 min au milieu : synchro intacte.
 - 👤 Débrancher/rebrancher le casque pendant la capture : pas de crash, la piste continue.
 
-## Phase 3 — Pistes par logiciel (AUD-03, 05–07, 09)
+## Phase 3 — Pistes par logiciel (AUD-03, 05–07, 09) ✅ ([rapport](reports/phase-3.md))
 
-- [ ] `sources` : sessions audio actives + crêtes, processus, appli au premier plan.
-- [ ] Process loopback sur PID parent, `include_tree = true`, une piste par appli.
-- [ ] Rattachement automatique par nom d'exe (attente → silence → reprise).
-- [ ] Piste « Jeu » automatique.
-- [ ] Détection piste muette anormale (`app_track_silent`).
-- [ ] CLI `list-audio-sessions` et `capture-apps --app discord.exe --app chrome.exe ...`.
+- [x] `sources` : sessions audio actives + crêtes, processus, appli au premier plan.
+- [x] Process loopback sur PID parent, `include_tree = true`, une piste par appli.
+- [x] Rattachement automatique par nom d'exe (attente → silence → reprise).
+- [x] Piste « Jeu » automatique.
+- [x] Détection piste muette anormale (`app_track_silent`).
+- [x] CLI `list-audio-sessions` et `capture-apps --app discord.exe --app chrome.exe ...`.
 
 Critères :
 - 👤 Test d'isolation (§ T3) : deux applis jouent deux sons différents → chacun sur sa piste,
