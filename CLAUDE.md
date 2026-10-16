@@ -35,8 +35,11 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
-6. **Tests longs sans surveillance.** Tout test de plus de 10 min tourne sans Palawi : il le
-   lance seulement (la nuit ou en partant), avec une seule commande. Le script :
+6. **Tests longs sans surveillance.** Aucun test de plus de 5 min sans l'accord de Palawi. Un
+   test en arrière-plan ne bloque jamais le travail : tu le lances et tu avances pendant ce
+   temps sur la tâche suivante indépendante, sans attendre. Tout test de plus de 10 min
+   tourne sans Palawi : il le lance seulement (la nuit ou en partant), avec une seule
+   commande. Le script :
    - empêche la mise en veille (`SetThreadExecutionState`) et la rétablit à la fin ;
    - capture en débit et résolution bas ;
    - n'utilise que l'écran principal pour l'émetteur, sans autre fenêtre de Palawi ;
