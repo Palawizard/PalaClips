@@ -115,7 +115,9 @@
   - Musique en pause : le flux continue avec des paquets de **zéros sans
     `AUDCLNT_BUFFERFLAGS_SILENT`** (Voicemeeter comme Apogee) ; aucun réveil manqué. Le cas
     « aucun paquet quand rien ne joue » ne s'est pas produit ici (les applis gardent leur flux
-    ouvert), mais reste possible : le combleur ne doit pas en dépendre.
+    ouvert), mais reste possible : le combleur ne doit pas en dépendre. Constaté le
+    2026-10-16 sur « Realtek Digital Output » (rien ne joue) : **zéro paquet** en 20 s ; la
+    piste se comble désormais toutes les 50 ms (`docs/reports/phase-2/silent-device-fill.txt`).
   - Zéros sans drapeau aussi sur un micro virtuel muet : la détection de piste muette ne peut
     pas se fier au drapeau SILENT.
   - Changement du périphérique par défaut : `OnDefaultDeviceChanged` (Console puis
@@ -150,6 +152,13 @@
     l'entrée micro seule n'est pas isolée.
   - Le retard dépasse ±400 ms : `measure-av-sync.py` apparie désormais chaque flash au
     premier bip entre −200 et +800 ms.
+- T2 d'une heure (2026-10-16, `t2-av-sync.ps1`, sortie « Voicemeeter Input », décalages
+  calibrés, émetteur 20 s à 0, 30 et 60 min, journal `docs/reports/phase-2/t2-av-sync-1h.txt`) :
+  pente par régression **mix −8,4 ms/h** (+4,6 ms à 0 s), **micro −8,8 ms/h**. Calculée sur les
+  3 moyennes de fenêtres : `t2.mp4` avait déjà été supprimé (17,8 Go) avant que
+  `measure-av-sync.py` fasse la régression sur tous les bips. Incertitude estimée ±1,5 ms/h :
+  l'écart d'un bip est quantifié par l'image (±8,3 ms à 60 i/s, dispersion ≈ 4,8 ms), et
+  l'erreur-type de la pente vaut dispersion / √Σ(t − t̄)².
 - Les noms GDI `\\.\DISPLAYn` changent d'un moment à l'autre de la session (constaté le
   2026-10-15 : l'écran principal est passé de `DISPLAY2` à `DISPLAY1`) : ils ne suffisent pas
   à mémoriser un écran (CAP-03).
