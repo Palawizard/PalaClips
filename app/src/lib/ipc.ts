@@ -27,6 +27,14 @@ export function replaySave(): Promise<void> {
   return invoke("replay_save");
 }
 
+export function listRecentClips(limit: number): Promise<ClipSummary[]> {
+  return invoke<ClipSummary[]>("list_recent_clips", { limit });
+}
+
+export function storageStatus(): Promise<StorageStatus> {
+  return invoke<StorageStatus>("storage_status");
+}
+
 export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<UnlistenFn> {
   return listen<EngineEvent>(ENGINE_EVENT, (message) => handler(message.payload));
 }
@@ -87,6 +95,22 @@ export interface EngineConfig {
 
 export type EngineState = "idle" | "replay_armed" | "recording";
 export type Severity = "info" | "warning" | "error";
+
+export interface ClipSummary {
+  path: string;
+  game: string;
+  modified_ms: number;
+  size_bytes: number;
+  duration_secs: number;
+  tracks: string[];
+  thumbnail: string | null;
+}
+
+export interface StorageStatus {
+  clips_dir: string;
+  free_bytes: number;
+  total_bytes: number;
+}
 
 export interface ActiveAlert {
   severity: Severity;
