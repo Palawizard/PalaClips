@@ -35,6 +35,14 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
+6. **Tests longs sans surveillance.** Tout test de plus de 10 min tourne sans Palawi : il le
+   lance seulement (la nuit ou en partant), avec une seule commande. Le script :
+   - empêche la mise en veille (`SetThreadExecutionState`) et la rétablit à la fin ;
+   - capture en débit et résolution bas ;
+   - n'utilise que l'écran principal pour l'émetteur, sans autre fenêtre de Palawi ;
+   - supprime les fichiers vidéo après la mesure ;
+   - écrit le résultat dans un journal (`target/journals/`) que tu lis ensuite.
+   Modèle : `scripts/av-drift.ps1`. Ne demande jamais à Palawi de rester devant un test.
 
 ## 2. Front : skills de design obligatoires
 

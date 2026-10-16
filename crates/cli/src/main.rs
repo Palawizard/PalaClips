@@ -63,6 +63,13 @@ enum Command {
         no_mic: bool,
         #[arg(
             long,
+            help = "Sortie à enregistrer en loopback (partie du nom) ; absente = sortie par défaut"
+        )]
+        mix_device: Option<String>,
+        #[arg(long, help = "Micro (partie du nom) ; absent = micro par défaut")]
+        mic_device: Option<String>,
+        #[arg(
+            long,
             default_value_t = 0.0,
             allow_hyphen_values = true,
             help = "Gain du micro en dB (-20 à +20)"
@@ -122,6 +129,11 @@ enum Command {
     ProbeAvEmitter {
         #[arg(long, default_value_t = 30)]
         seconds: u64,
+        #[arg(
+            long,
+            help = "Sortie à utiliser (partie du nom) ; absente = sortie par défaut"
+        )]
+        device: Option<String>,
     },
     #[cfg(windows)]
     #[command(about = "Montre ce qu'une cible désigne (écran ou fenêtre retrouvée par nom d'exe)")]
@@ -165,19 +177,31 @@ fn main() -> Result<()> {
             capture,
             no_mix,
             no_mic,
+            mix_device,
+            mic_device,
             mic_gain_db,
             mix_offset_ms,
             mic_offset_ms,
         } => {
             use palaclips_engine::audio::AudioSource;
+            use wasapi::Direction;
+            let device_id = |direction, name: Option<String>| -> Result<Option<String>> {
+                name.map(|name| Ok(probe_audio::find_device(direction, &name)?.get_id()?))
+                    .transpose()
+            };
             let mut audio = Vec::new();
             if !no_mix {
-                audio.push((AudioSource::SystemMix { device_id: None }, mix_offset_ms));
+                audio.push((
+                    AudioSource::SystemMix {
+                        device_id: device_id(Direction::Render, mix_device)?,
+                    },
+                    mix_offset_ms,
+                ));
             }
             if !no_mic {
                 audio.push((
                     AudioSource::Microphone {
-                        device_id: None,
+                        device_id: device_id(Direction::Capture, mic_device)?,
                         gain_db: mic_gain_db,
                     },
                     mic_offset_ms,
@@ -196,7 +220,9 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::ProbeAudio { mic, seconds } => probe_audio::probe_audio(mic, seconds)?,
         #[cfg(windows)]
-        Command::ProbeAvEmitter { seconds } => probe_av::probe_av_emitter(seconds)?,
+        Command::ProbeAvEmitter { seconds, device } => {
+            probe_av::probe_av_emitter(seconds, device.as_deref())?
+        }
         #[cfg(windows)]
         Command::ResolveTarget { target } => resolve_target(&target)?,
     }
@@ -390,7 +416,9 @@ fn run_capture(
         receivers.push(track.packets().clone());
     }
     let mut writer = Mp4Writer::create(&args.out, &specs)?;
-    let writer_thread = std::thread::spawn(move || -> Result<Mp4Writer> {
+    let writer_thread = std::thread::spawn(move || -> Result<(Mp4Writer, Vec<Hns>)> {
+        let mut last_arrival = vec![None::<Hns>; receivers.len()];
+        let mut max_arrival_gap = vec![Hns(0); receivers.len()];
         let mut select = crossbeam_channel::Select::new();
         for receiver in &receivers {
             select.recv(receiver);
@@ -400,14 +428,21 @@ fn run_capture(
             let operation = select.select();
             let index = operation.index();
             match operation.recv(&receivers[index]) {
-                Ok(packet) => writer.write(index, packet)?,
+                Ok(packet) => {
+                    let now = Hns::now();
+                    if let Some(last) = last_arrival[index] {
+                        max_arrival_gap[index] = max_arrival_gap[index].max(now - last);
+                    }
+                    last_arrival[index] = Some(now);
+                    writer.write(index, packet)?
+                }
                 Err(_) => {
                     select.remove(index);
                     open -= 1;
                 }
             }
         }
-        Ok(writer)
+        Ok((writer, max_arrival_gap))
     });
 
     let half_frame = Hns(HNS_PER_SECOND / stream.fps as i64 / 2);
@@ -428,10 +463,10 @@ fn run_capture(
         let track_stats = track.stop(end)?;
         track_reports.push((title, track_stats, alerts.try_iter().collect::<Vec<_>>()));
     }
-    writer_thread
+    let (writer, max_arrival_gap) = writer_thread
         .join()
-        .map_err(|_| anyhow::anyhow!("le fil d'écriture a paniqué"))??
-        .finish()?;
+        .map_err(|_| anyhow::anyhow!("le fil d'écriture a paniqué"))??;
+    writer.finish()?;
     println!(
         "{} images écrites ({} reçues de Windows, {} dupliquées, {} changements de résolution, retard max {:.2} ms) → {}",
         stats.frames,
@@ -442,15 +477,18 @@ fn run_capture(
         args.out.display()
     );
     let ms = |frames: u64| frames * 1_000 / u64::from(SAMPLE_RATE);
-    for (title, track, alerts) in track_reports {
+    for ((title, track, alerts), arrival_gap) in
+        track_reports.into_iter().zip(&max_arrival_gap[1..])
+    {
         println!(
-            "piste « {title} » : {} paquets WASAPI, silence comblé {} ms, chevauchement coupé {} ms, {} corrections de dérive, {} changements de périphérique, crête {:.3}",
+            "piste « {title} » : {} paquets WASAPI, silence comblé {} ms, chevauchement coupé {} ms, {} corrections de dérive, {} changements de périphérique, crête {:.3}, écart max entre paquets AAC reçus {:.0} ms",
             track.packets,
             ms(track.fill.silence_frames),
             ms(track.fill.dropped_frames),
             track.fill.drift_corrections,
             track.device_switches,
-            track.peak
+            track.peak,
+            arrival_gap.0 as f64 / 10_000.0
         );
         for alert in alerts {
             if let EngineEvent::Alert { message, .. } = alert {

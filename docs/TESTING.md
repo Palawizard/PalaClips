@@ -83,6 +83,22 @@ fichier de 3640 s, pistes de même durée. Variante courte pour vérifier l'inst
 `pwsh scripts\t2-av-sync.ps1 -Minutes 2`. Calibrage seul (35 s, décalages mesurés sans
 capture longue) : `pwsh scripts\t2-av-sync.ps1 -CalibrateOnly`.
 
+
+## Dérive A/V sans surveillance (`av-drift.ps1`)
+
+Mesure la pente de la synchro (ms/h) par régression sur un bip par seconde pendant toute la
+durée. Palawi lance la commande et part ; rien d'autre à faire, aucun réglage Windows changé :
+l'émetteur et la capture visent la sortie donnée explicitement (`-Device`, partie du nom).
+
+```powershell
+pwsh scripts\av-drift.ps1 -Minutes 20 -Device Apogee
+```
+
+Le script empêche la mise en veille, compile la CLI, lance `capture-av --no-mic --mix-device`
+(360p, 2 Mb/s) et `probe-av-emitter --device` sur l'écran principal, mesure avec
+`measure-av-sync.py`, supprime la vidéo et écrit tout dans
+`target\journals\av-drift-<date>.txt` (ligne `RÉSULTAT` : pente ± erreur-type, dispersion).
+Le son des bips sort sur le périphérique choisi pendant toute la durée.
 ## Débranchement du périphérique audio (phase 2)
 
 Sortie par défaut sur un périphérique USB débranchable (chez Palawi : « Haut-parleurs

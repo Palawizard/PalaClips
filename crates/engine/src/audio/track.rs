@@ -9,9 +9,9 @@ use wasapi::{
     AudioCaptureClient, AudioClient, DeviceEnumerator, DeviceEventCallbacks, Direction, Handle,
     Role, SampleType, StreamMode, WasapiError, WaveFormat, initialize_mta,
 };
-use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0};
+use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT};
 use windows::Win32::Media::Audio::AUDCLNT_E_DEVICE_IN_USE;
-use windows::Win32::System::Threading::{CreateEventW, INFINITE, SetEvent, WaitForMultipleObjects};
+use windows::Win32::System::Threading::{CreateEventW, SetEvent, WaitForMultipleObjects};
 
 use super::filler::{FillStats, GapFiller};
 use super::{AudioSource, CHANNELS, SAMPLE_RATE};
@@ -24,6 +24,8 @@ const BUFFER_DURATION_HNS: i64 = 2_000_000;
 const BYTES_PER_FRAME: usize = CHANNELS * size_of::<f32>();
 const EXCLUSIVE_RETRY_MS: u32 = 1_000;
 const END_GRACE_MS: i64 = 250;
+const SILENCE_WAKE_MS: u32 = 50;
+const SILENCE_LAG_MS: i64 = 100;
 const PACKET_QUEUE: usize = 256;
 const ALERT_QUEUE: usize = 32;
 
@@ -216,8 +218,7 @@ impl Worker {
                         unavailable_reported = true;
                         self.alert_unavailable(&error, in_use);
                     }
-                    let timeout = in_use.then_some(EXCLUSIVE_RETRY_MS);
-                    if wait(&waits_for_device, timeout) == Some(0) {
+                    if self.idle(&waits_for_device, in_use.then_some(EXCLUSIVE_RETRY_MS))? {
                         break;
                     }
                     continue;
@@ -245,11 +246,19 @@ impl Worker {
                 handles.push(default_changed.handle());
             }
             let outcome = loop {
-                match wait(&handles, None) {
-                    Some(0) => break Ok(Wake::Stop),
-                    Some(2) => break Ok(Wake::DefaultChanged),
-                    Some(_) => {}
-                    None => break Err(EngineError::Audio("attente WASAPI impossible".into())),
+                match wait(&handles, SILENCE_WAKE_MS) {
+                    Waited::Handle(0) => break Ok(Wake::Stop),
+                    Waited::Handle(2) => break Ok(Wake::DefaultChanged),
+                    Waited::Handle(_) => {}
+                    Waited::Timeout => {
+                        if let Err(error) = self.fill_silence() {
+                            break Err(error);
+                        }
+                        continue;
+                    }
+                    Waited::Failed => {
+                        break Err(EngineError::Audio("attente WASAPI impossible".into()));
+                    }
                 }
                 if let Err(error) = stream.drain(&mut buffer, &mut samples, |qpc, data| {
                     self.on_packet(qpc, data)
@@ -266,7 +275,7 @@ impl Worker {
                 Err(error) => {
                     drop(stream);
                     tracing::warn!(track = %self.title, %error, "flux audio interrompu");
-                    if wait(&waits_for_device, Some(EXCLUSIVE_RETRY_MS)) == Some(0) {
+                    if self.idle(&waits_for_device, Some(EXCLUSIVE_RETRY_MS))? {
                         break;
                     }
                 }
@@ -308,12 +317,43 @@ impl Worker {
         let handles = [stream.event.as_handle()];
         while !self.filler.reached_end() {
             let remaining_ms = (deadline - Hns::now()).0 / 10_000;
-            if remaining_ms <= 0 || wait(&handles, Some(remaining_ms as u32)).is_none() {
+            if remaining_ms <= 0 {
                 break;
             }
-            stream.drain(buffer, samples, |qpc, data| self.on_packet(qpc, data))?;
+            match wait(&handles, (remaining_ms as u32).min(SILENCE_WAKE_MS)) {
+                Waited::Handle(_) => {
+                    stream.drain(buffer, samples, |qpc, data| self.on_packet(qpc, data))?
+                }
+                Waited::Timeout => self.fill_silence()?,
+                Waited::Failed => break,
+            }
         }
         Ok(())
+    }
+
+    fn idle(&mut self, handles: &[HANDLE], timeout_ms: Option<u32>) -> Result<bool> {
+        let deadline = timeout_ms.map(|ms| Hns::now() + Hns::from_millis(ms.into()));
+        loop {
+            let remaining_ms = deadline.map_or(SILENCE_WAKE_MS, |deadline| {
+                ((deadline - Hns::now()).0 / 10_000).clamp(0, SILENCE_WAKE_MS.into()) as u32
+            });
+            match wait(handles, remaining_ms) {
+                Waited::Handle(index) => return Ok(index == 0),
+                Waited::Failed => return Ok(false),
+                Waited::Timeout => self.fill_silence()?,
+            }
+            if deadline.is_some_and(|deadline| Hns::now() >= deadline) {
+                return Ok(false);
+            }
+        }
+    }
+
+    fn fill_silence(&mut self) -> Result<()> {
+        self.filler.fill_until(
+            silence_horizon(Hns::now(), self.sync_offset),
+            &mut self.filled,
+        );
+        self.flush()
     }
 
     fn on_packet(&mut self, qpc: Hns, data: &mut [f32]) -> Result<()> {
@@ -484,11 +524,27 @@ fn send(packets: &Sender<AVPacket>, packet: AVPacket) -> Result<()> {
         .map_err(|_| EngineError::Audio("plus personne ne lit les paquets audio".into()))
 }
 
-fn wait(handles: &[HANDLE], timeout_ms: Option<u32>) -> Option<usize> {
+fn silence_horizon(now: Hns, sync_offset: Hns) -> Hns {
+    now + sync_offset - Hns::from_millis(SILENCE_LAG_MS)
+}
+
+enum Waited {
+    Handle(usize),
+    Timeout,
+    Failed,
+}
+
+fn wait(handles: &[HANDLE], timeout_ms: u32) -> Waited {
     // SAFETY: every handle is a live event owned by the caller for the duration of the wait.
-    let result = unsafe { WaitForMultipleObjects(handles, false, timeout_ms.unwrap_or(INFINITE)) };
+    let result = unsafe { WaitForMultipleObjects(handles, false, timeout_ms) };
     let index = result.0.wrapping_sub(WAIT_OBJECT_0.0) as usize;
-    (index < handles.len()).then_some(index)
+    if index < handles.len() {
+        Waited::Handle(index)
+    } else if result == WAIT_TIMEOUT {
+        Waited::Timeout
+    } else {
+        Waited::Failed
+    }
 }
 
 fn audio_error(error: WasapiError) -> EngineError {
@@ -525,5 +581,58 @@ impl Drop for Event {
     fn drop(&mut self) {
         // SAFETY: the handle was created by CreateEventW and is closed exactly once.
         unsafe { CloseHandle(self.0) }.ok();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ORIGIN: Hns = Hns(5_000_000_000);
+    const PACKET_FRAMES: i64 = 480;
+
+    fn push_packet(filler: &mut GapFiller, qpc: Hns, sync_offset: Hns, out: &mut Vec<f32>) {
+        filler.push(
+            qpc + sync_offset,
+            &[0.5; PACKET_FRAMES as usize * CHANNELS],
+            out,
+        );
+    }
+
+    fn frame_at(qpc: Hns) -> i64 {
+        (qpc - ORIGIN).to_samples(SAMPLE_RATE)
+    }
+
+    #[test]
+    fn silent_device_keeps_the_track_growing_and_resumes_without_trimming() {
+        for sync_offset in [Hns::from_millis(-120), Hns(0), Hns::from_millis(450)] {
+            let mut filler = GapFiller::new(ORIGIN);
+            let mut out = Vec::new();
+            let mut now = ORIGIN + Hns::from_millis(1_000);
+            push_packet(
+                &mut filler,
+                now - Hns::from_millis(10),
+                sync_offset,
+                &mut out,
+            );
+            for _ in 0..200 {
+                now = now + Hns::from_millis(SILENCE_WAKE_MS.into());
+                filler.fill_until(silence_horizon(now, sync_offset), &mut out);
+            }
+            assert_eq!(
+                filler.written_frames(),
+                frame_at(now + sync_offset - Hns::from_millis(SILENCE_LAG_MS)),
+                "{sync_offset:?}"
+            );
+            let resumed = now - Hns::from_millis(10);
+            push_packet(&mut filler, resumed, sync_offset, &mut out);
+            assert_eq!(filler.stats().dropped_frames, 0, "{sync_offset:?}");
+            assert_eq!(
+                filler.written_frames(),
+                frame_at(resumed + sync_offset) + PACKET_FRAMES,
+                "{sync_offset:?}"
+            );
+            assert_eq!(out.len() as i64, filler.written_frames() * CHANNELS as i64);
+        }
     }
 }
