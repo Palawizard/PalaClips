@@ -138,6 +138,18 @@
     Voicemeeter avec `--mix-offset-ms -100` : +10 à +27 ms (moy. +16,9). Le loopback de
     « Voicemeeter Input » reçoit le son ~100 ms plus tard ; `GetStreamLatency` vaut 0 sur un
     client loopback et ne permet pas de le deviner (ADR-017).
+- Retard de la chaîne micro de Palawi d'un lancement à l'autre (2026-10-16,
+  `t2-av-sync.ps1 -CalibrateOnly`, `probe-av-emitter` 20 s, écouteur collé au micro physique ;
+  chaîne micro physique → Voicemeeter → LightHost (VST) → VB-Cable → « CABLE Output ») :
+  - lancement 1 : micro +473,3 ms (+457,8 à +477,0 sur 19 bips), mix +146,2 ms ;
+  - après fermeture et relance de LightHost et Voicemeeter : micro +409,9 ms (+396,7 à
+    +415,1 sur 19 bips), mix +148,3 ms.
+  - **Pas stable** : −63 ms d'un lancement à l'autre, alors qu'il est stable à ±10 ms pendant
+    un lancement et que le mix ne bouge que de 2 ms. La valeur mesurée contient aussi la
+    sortie de Voicemeeter vers le casque (le bip passe par l'air) : la part qui vient de
+    l'entrée micro seule n'est pas isolée.
+  - Le retard dépasse ±400 ms : `measure-av-sync.py` apparie désormais chaque flash au
+    premier bip entre −200 et +800 ms.
 - Les noms GDI `\\.\DISPLAYn` changent d'un moment à l'autre de la session (constaté le
   2026-10-15 : l'écran principal est passé de `DISPLAY2` à `DISPLAY1`) : ils ne suffisent pas
   à mémoriser un écran (CAP-03).
