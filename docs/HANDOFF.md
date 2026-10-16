@@ -17,7 +17,8 @@
 
 - Workspace Cargo (`crates/engine`, `crates/cli`, `app/src-tauri`), edition 2024.
 - Moteur : `clock` (`Hns`), `config` (`EngineConfig`), `events` (`EngineEvent`), `error`,
-  `replay` (`PacketRing`, estimation RAM), et `encode` (Windows) :
+  `replay` (`PacketRing`, estimation RAM, `plan_clip`, `ReplayPacket`/`Spool`), `engine`,
+  `paths`, et `encode` (Windows) :
   `ffmpeg_version()`, `hardware_video_encoders()` (liste les encodeurs matériels/hybrides et
   tente de les ouvrir en NV12 720p60).
 - FFmpeg : `rsmpeg 0.18` + DLL BtbN LGPL n8.1 dans `third_party/ffmpeg/` (gitignoré,
@@ -109,10 +110,15 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 4 : lire `target\journals\replay-ram-*.txt` (Palawi lance `pwsh
-   scripts\replay-ram.ps1` en partant) et faire l'import Resolve avec Palawi, puis
-   `/valider-phase`.
-2. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front.
+1. Attendre la décision de Palawi (avec son agent superviseur) sur les deux bloquants de la
+   phase 4 : façon de faire RPL-08 (2 h) et option pour AUD-05/STO-01 (noms dans Resolve).
+   Ne lancer aucun test long d'ici là.
+2. Appliquer la décision : test 2 h → lire `target\journals\replay-ram-*.txt` et le reporter
+   dans `docs/reports/phase-4.md` ; option Resolve choisie → l'implémenter ou réécrire
+   AUD-05 dans la SPEC (ADR), puis refaire l'import Resolve avec Palawi.
+3. `/valider-phase` pour la phase 4.
+4. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front ; réutiliser
+   `Engine`/`EngineHandle` côté Tauri, `CurrentGame` pour le nom des clips.
 
 ## Bloquants
 
@@ -174,8 +180,19 @@
   physiques et son avis visuel, via le widget de questions.
 - HDR basculé pendant une capture : pris en compte seulement au démarrage suivant (à traiter
   en phase 7, robustesse).
-- Phase 4 : le replay devra cloner les `AVPacket` (refcount) pour le fan-out, et utiliser
-  `VideoStream::origin` comme `t0` commun avec l'audio.
+- Replay : mémoire privée +~1 Mo par sauvegarde pendant 20 sauvegardes (612 → 633 Mo) ; à
+  surveiller (test de 2 h, ou une boucle de sauvegardes) avant de conclure à une fuite.
+- Plusieurs sessions WGC dans un processus : `keep_mta_alive` (`CoIncrementMTAUsage`) est
+  indispensable ; sans lui, crash à la 2e session après des pistes audio.
+- TranslucentFlyouts et un mod Windhawk sont injectés dans nos processus chez Palawi : un
+  « blocage » peut être un crash intercepté (boîte de TF + minidump dans
+  `E:\Autre\Downloads\TranslucentFlyouts.Win32.V3.x64\dumps`). Analyse :
+  `cdb -z <dump> -c ".ecxr; kn; lmu; q"` (cdb installé dans Windows Kits\10\Debuggers\x64).
+- Fenêtres de test : `ffplay` de `third_party\ffmpeg\bin` (bruit `geq=random(1)` ou mire
+  `testsrc2`) dans une fenêtre 1280×720 en bas à droite, capturée en `window:ffplay.exe`.
+  `Start-Process -ArgumentList` ne met pas d'arguments entre guillemets : pas d'espaces.
+- Suivi de la CI : `gh pr checks --watch` peut rendre la main avant que la CI du dernier push
+  existe ; attendre le run du commit (`gh run list --commit <sha>`) puis `gh run watch`.
 - Process loopback testé sur build 26200 : pas de piste muette. Le flux d'une appli fermée
   continue d'envoyer des zéros (fin suivie par handle de processus).
 - Une capture loopback crée une session « active » dont le vumètre reproduit la sortie : ne
@@ -197,3 +214,4 @@
 | 2026-10-15 | 1→2 | Suites phase 1 (PR #7 mergée : HDR par `activeColorMode`, atténuation des hautes lumières, horloge après le 1er encodage, 240 i/s, limite G-Sync). Phase 2 : `probe-audio`, `AudioTrack`/`GapFiller`/AAC/mux multi-pistes, `capture-av`, débranchement ✅, Voicemeeter +100 ms → AUD-11 (décalage par piste), T2 automatisé ; PR #8 ouverte | T2 1 h par Palawi, puis merge et phase 3 |
 | 2026-10-16 | 2 | CAP-11 + ADR-018 (alerte G-Sync, code en phase 7) ; chaîne micro Voicemeeter/LightHost instable d'un lancement à l'autre (hors moteur, assistant de calibrage en un clic en phase 5) ; T2 d'une heure 6 × `OK` ; phase 2 validée, PR #8 mergée | Phase 3 |
 | 2026-10-16 | 2→3 | PR #9 : silence comblé quand le périphérique n'envoie rien, pente A/V par régression, `av-drift.ps1`, règle des tests longs. Phase 3 : `sources`, pistes par appli, rattachement, piste Jeu, `app_track_silent`, CLI ; T3 (Zen + VLC), Discord, piste Jeu avec Palawi ; 2 fausses alertes corrigées ; phase 3 validée (PR #10) | Test de dérive Apogee, puis phase 4 |
+| 2026-10-16 | 2→4 | PR #11 : horloge audio contre QPC mesurée (0,00 ms/h Apogee), hypothèse de dérive d'appareil infirmée, AUD-08 maintenu ; règles « test en arrière-plan » et « ≤ 5 min sans accord ». PR #12 : piste Jeu = jeu en cours (ADR-019, `SetWinEventHook`), preuve Alt+Tab. PR #13 : phase 4 (moteur, replay RAM/disque, nom par jeu, redémarrage, CLI `replay`), 20 sauvegardes 146–200 ms, crash COM à la 2e capture corrigé ; Resolve n'affiche pas les noms de pistes → bloquant | Décisions de Palawi : test 2 h, noms Resolve |

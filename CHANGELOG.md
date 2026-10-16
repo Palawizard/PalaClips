@@ -46,6 +46,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - CLI : `replay` (Entrée = sauvegarder, affiche la mémoire et la latence).
 
 ### Corrigé
+- Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
 - Piste « Jeu » : elle suit le jeu (dernière appli en plein écran ou sans bordure, l'appli de
   la fenêtre capturée, ou le processus choisi) au lieu de passer sur Discord, le navigateur
   ou le terminal à chaque Alt+Tab.
