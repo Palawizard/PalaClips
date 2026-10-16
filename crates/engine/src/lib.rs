@@ -6,10 +6,14 @@ pub mod clock;
 pub mod config;
 #[cfg(windows)]
 pub mod encode;
+#[cfg(windows)]
+pub mod engine;
 pub mod error;
 pub mod events;
 #[cfg(windows)]
 pub mod mux;
+#[cfg(windows)]
+pub mod paths;
 pub mod replay;
 #[cfg(windows)]
 pub mod sources;

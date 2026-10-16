@@ -57,6 +57,9 @@ export interface EngineConfig {
     duration_secs: number;
     storage: ReplayStorage;
   };
+  storage: {
+    clips_dir: string | null;
+  };
 }
 
 export type EngineState = "idle" | "replay_armed" | "recording";
