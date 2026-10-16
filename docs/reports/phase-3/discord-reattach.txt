@@ -1,0 +1,26 @@
+Starting Update.exe
+19712> 2026-10-16 13:11:27> Program: Starting Squirrel Updater: --processStart Discord.exe
+19712> 2026-10-16 13:11:27> Program: About to launch: 'C:\Users\super\AppData\Local\Discord\app-1.0.9261\Discord.exe': 
+13:11:32 Discord lancé : 7 processus
+13:11:42 Discord tué
+13:11:52 Discord relancé
+Starting Update.exe
+30028> 2026-10-16 13:11:52> Program: Starting Squirrel Updater: --processStart Discord.exe
+30028> 2026-10-16 13:11:52> Program: About to launch: 'C:\Users\super\AppData\Local\Discord\app-1.0.9262\Discord.exe': 
+h264_nvenc → 640x360 @ 60 i/s, 45 s, 2 piste(s) audio
+2026-10-16T11:11:33.869463Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-16T11:11:33.870690Z  INFO palaclips_engine::audio::track: application rattachée track=Discord app=Discord.exe (PID 27164)
+2026-10-16T11:11:53.878154Z  INFO palaclips_engine::audio::track: application rattachée track=Discord app=Discord.exe (PID 32712)
+2026-10-16T11:12:18.854143Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=2700 captured=1447 duplicated=1471 max_lateness_ms=0.9426
+2026-10-16T11:12:18.860192Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Discord packets=3387 silence_ms=11130 dropped_ms=0 drift_corrections=79 device_switches=1 peak=0.0
+2026-10-16T11:12:18.860347Z  INFO ffmpeg: [aac @ 000001e094f930c0] Qavg: 65536.000
+2026-10-16T11:12:18.869796Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=4500 silence_ms=5 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.20000076293945313
+2026-10-16T11:12:18.869958Z  INFO ffmpeg: [aac @ 000001e094f92d00] Qavg: 9611.570
+2700 images écrites (1447 reçues de Windows, 1471 dupliquées, 0 changements de résolution, retard max 0.94 ms) → target\clips\discord.mp4
+piste « Mix complet » : 4500 paquets WASAPI, silence comblé 5 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.200, écart max entre paquets AAC reçus 31 ms
+piste « Discord » : 3387 paquets WASAPI, silence comblé 11130 ms, chevauchement coupé 0 ms, 79 corrections de dérive, 1 changements de périphérique ou rattachements, crête 0.000, écart max entre paquets AAC reçus 120 ms
+
+stream|index=0|codec_type=video|duration=45.000000|tag:handler_name=VideoHandler
+stream|index=1|codec_type=audio|duration=45.000000|tag:handler_name=Mix complet
+stream|index=2|codec_type=audio|duration=45.000000|tag:handler_name=Discord
+erreurs de décodage : aucune

@@ -11,7 +11,9 @@ use wasapi::{
 };
 use windows::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT};
 use windows::Win32::Media::Audio::AUDCLNT_E_DEVICE_IN_USE;
-use windows::Win32::System::Threading::{CreateEventW, SetEvent, WaitForMultipleObjects};
+use windows::Win32::System::Threading::{
+    CreateEventW, OpenProcess, PROCESS_SYNCHRONIZE, SetEvent, WaitForMultipleObjects,
+};
 
 use super::filler::{FillStats, GapFiller};
 use super::{AudioSource, CHANNELS, SAMPLE_RATE};
@@ -19,6 +21,7 @@ use crate::clock::Hns;
 use crate::encode::AacEncoder;
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Severity};
+use crate::sources;
 
 const BUFFER_DURATION_HNS: i64 = 2_000_000;
 const BYTES_PER_FRAME: usize = CHANNELS * size_of::<f32>();
@@ -26,6 +29,12 @@ const EXCLUSIVE_RETRY_MS: u32 = 1_000;
 const END_GRACE_MS: i64 = 250;
 const SILENCE_WAKE_MS: u32 = 50;
 const SILENCE_LAG_MS: i64 = 100;
+const APP_RETRY_MS: u32 = 1_000;
+const FOREGROUND_CHECK_MS: i64 = 500;
+const SILENT_CHECK_MS: i64 = 1_000;
+const SILENT_AFTER_MS: i64 = 3_000;
+const SILENT_CHECKS_BEFORE_ALERT: u32 = 2;
+const SESSION_SIGNAL_PEAK: f32 = 0.001;
 const PACKET_QUEUE: usize = 256;
 const ALERT_QUEUE: usize = 32;
 
@@ -42,13 +51,14 @@ pub struct AudioTrackStats {
     pub fill: FillStats,
     pub peak: f32,
     pub device_switches: u64,
+    pub silent_alerts: u64,
 }
 
 pub struct AudioTrack {
     stream: AudioStream,
     packets: Receiver<AVPacket>,
     alerts: Receiver<EngineEvent>,
-    stop: Arc<Event>,
+    stop: Arc<Waitable>,
     end: Arc<AtomicI64>,
     thread: Option<JoinHandle<Result<AudioTrackStats>>>,
 }
@@ -77,7 +87,7 @@ impl AudioTrack {
         };
         let (packet_tx, packets) = bounded(PACKET_QUEUE);
         let (alert_tx, alerts) = bounded(ALERT_QUEUE);
-        let stop = Arc::new(Event::new()?);
+        let stop = Arc::new(Waitable::event()?);
         let end = Arc::new(AtomicI64::new(i64::MIN));
         let worker = Worker {
             source,
@@ -91,6 +101,11 @@ impl AudioTrack {
             alerts: alert_tx,
             stop: stop.clone(),
             end: end.clone(),
+            app: None,
+            game_exe: None,
+            foreground_pid: None,
+            next_foreground_check: Hns(0),
+            silence: SilenceWatch::default(),
         };
         let thread = std::thread::Builder::new()
             .name(format!("palaclips-audio-{}", worker.title))
@@ -159,13 +174,67 @@ struct Worker {
     encoder: AacEncoder,
     packets: Sender<AVPacket>,
     alerts: Sender<EngineEvent>,
-    stop: Arc<Event>,
+    stop: Arc<Waitable>,
     end: Arc<AtomicI64>,
+    app: Option<AttachedApp>,
+    game_exe: Option<String>,
+    foreground_pid: Option<u32>,
+    next_foreground_check: Hns,
+    silence: SilenceWatch,
+}
+
+#[derive(Clone)]
+struct AttachedApp {
+    exe_name: String,
+    pid: u32,
+}
+
+#[derive(Debug, Default)]
+struct SilenceWatch {
+    last_signal: Hns,
+    next_check: Hns,
+    signal_checks: u32,
+    reported: bool,
+}
+
+impl SilenceWatch {
+    fn new(now: Hns) -> Self {
+        Self {
+            last_signal: now,
+            ..Self::default()
+        }
+    }
+
+    fn on_signal(&mut self, now: Hns) {
+        self.last_signal = now;
+        self.signal_checks = 0;
+        self.reported = false;
+    }
+
+    fn check_due(&mut self, now: Hns) -> bool {
+        if now < self.next_check || now - self.last_signal < Hns::from_millis(SILENT_AFTER_MS) {
+            return false;
+        }
+        self.next_check = now + Hns::from_millis(SILENT_CHECK_MS);
+        true
+    }
+
+    fn should_alert(&mut self, session_peak: f32) -> bool {
+        if session_peak <= SESSION_SIGNAL_PEAK {
+            return false;
+        }
+        self.signal_checks += 1;
+        if self.signal_checks < SILENT_CHECKS_BEFORE_ALERT || self.reported {
+            return false;
+        }
+        self.reported = true;
+        true
+    }
 }
 
 enum Wake {
     Stop,
-    DefaultChanged,
+    Reopen,
 }
 
 impl Worker {
@@ -174,10 +243,10 @@ impl Worker {
             .ok()
             .map_err(|error| EngineError::Audio(error.message()))?;
         let enumerator = DeviceEnumerator::new().map_err(audio_error)?;
-        let default_changed = Arc::new(Event::new()?);
-        let devices_changed = Arc::new(Event::new()?);
+        let default_changed = Arc::new(Waitable::event()?);
+        let devices_changed = Arc::new(Waitable::event()?);
         let direction = self.direction();
-        let follows_default = self.device_id().is_none();
+        let follows_default = !self.source.is_application() && self.device_id().is_none();
         let mut callbacks = DeviceEventCallbacks::new();
         callbacks.set_default_device_callback({
             let default_changed = default_changed.clone();
@@ -210,7 +279,20 @@ impl Worker {
         ];
 
         loop {
-            let stream = match open_stream(&enumerator, &self.source) {
+            let opened = if self.source.is_application() {
+                match self.attach() {
+                    Some(app) => open_app_stream(&app),
+                    None => {
+                        if self.idle(&waits_for_device, Some(APP_RETRY_MS))? {
+                            break;
+                        }
+                        continue;
+                    }
+                }
+            } else {
+                open_stream(&enumerator, &self.source)
+            };
+            let stream = match opened {
                 Ok(stream) => stream,
                 Err(error) => {
                     let in_use = is_device_in_use(&error);
@@ -225,7 +307,14 @@ impl Worker {
                 }
             };
             unavailable_reported = false;
-            if current_device.as_ref() != Some(&stream.name) {
+            if self.source.is_application() {
+                tracing::info!(track = %self.title, app = %stream.name, "application rattachée");
+                if current_device.is_some() {
+                    self.stats.device_switches += 1;
+                }
+                current_device = Some(stream.name.clone());
+                self.silence = SilenceWatch::new(Hns::now());
+            } else if current_device.as_ref() != Some(&stream.name) {
                 tracing::info!(track = %self.title, device = %stream.name, "périphérique audio ouvert");
                 if current_device.is_some() {
                     self.stats.device_switches += 1;
@@ -242,28 +331,33 @@ impl Worker {
             }
 
             let mut handles = vec![self.stop.handle(), stream.event.as_handle()];
-            if follows_default {
+            if let Some(process) = &stream.process {
+                handles.push(process.handle());
+            } else if follows_default {
                 handles.push(default_changed.handle());
             }
             let outcome = loop {
                 match wait(&handles, SILENCE_WAKE_MS) {
                     Waited::Handle(0) => break Ok(Wake::Stop),
-                    Waited::Handle(2) => break Ok(Wake::DefaultChanged),
-                    Waited::Handle(_) => {}
+                    Waited::Handle(2) => break Ok(Wake::Reopen),
+                    Waited::Handle(_) => {
+                        if let Err(error) = stream.drain(&mut buffer, &mut samples, |qpc, data| {
+                            self.on_packet(qpc, data)
+                        }) {
+                            break Err(error);
+                        }
+                    }
                     Waited::Timeout => {
                         if let Err(error) = self.fill_silence() {
                             break Err(error);
                         }
-                        continue;
                     }
                     Waited::Failed => {
                         break Err(EngineError::Audio("attente WASAPI impossible".into()));
                     }
                 }
-                if let Err(error) = stream.drain(&mut buffer, &mut samples, |qpc, data| {
-                    self.on_packet(qpc, data)
-                }) {
-                    break Err(error);
+                if self.source.is_application() && self.app_needs_reopen() {
+                    break Ok(Wake::Reopen);
                 }
             };
             match outcome {
@@ -271,7 +365,7 @@ impl Worker {
                     self.read_until_end(&stream, &mut buffer, &mut samples)?;
                     break;
                 }
-                Ok(Wake::DefaultChanged) => {}
+                Ok(Wake::Reopen) => {}
                 Err(error) => {
                     drop(stream);
                     tracing::warn!(track = %self.title, %error, "flux audio interrompu");
@@ -356,8 +450,69 @@ impl Worker {
         self.flush()
     }
 
+    fn attach(&mut self) -> Option<AttachedApp> {
+        let processes = sources::processes().ok()?;
+        let exe_name = match &self.source {
+            AudioSource::Application { exe_name } => exe_name.clone(),
+            _ => {
+                if let Some(foreground) = sources::foreground_app(&processes) {
+                    self.game_exe = Some(foreground);
+                }
+                self.next_foreground_check = Hns::now() + Hns::from_millis(FOREGROUND_CHECK_MS);
+                self.game_exe.clone()?
+            }
+        };
+        let pid = sources::root_pid(&processes, &exe_name)?;
+        self.app = Some(AttachedApp { exe_name, pid });
+        self.app.clone()
+    }
+
+    fn app_needs_reopen(&mut self) -> bool {
+        let now = Hns::now();
+        if matches!(self.source, AudioSource::Foreground) && now >= self.next_foreground_check {
+            self.next_foreground_check = now + Hns::from_millis(FOREGROUND_CHECK_MS);
+            let foreground_pid = sources::foreground_pid();
+            if foreground_pid == self.foreground_pid {
+                return false;
+            }
+            self.foreground_pid = foreground_pid;
+            let foreground = sources::processes()
+                .ok()
+                .and_then(|processes| sources::foreground_app(&processes));
+            if let Some(foreground) = foreground
+                && self.game_exe.as_ref() != Some(&foreground)
+            {
+                tracing::info!(track = %self.title, from = ?self.game_exe, to = %foreground, "la piste Jeu suit l'appli au premier plan");
+                self.game_exe = Some(foreground);
+                return true;
+            }
+        }
+        if self.silence.check_due(now) {
+            self.check_silent_track();
+        }
+        false
+    }
+
+    fn check_silent_track(&mut self) {
+        let Some(app) = &self.app else { return };
+        let session_peak = sources::session_peak(app.pid).unwrap_or(0.0);
+        if !self.silence.should_alert(session_peak) {
+            return;
+        }
+        self.stats.silent_alerts += 1;
+        tracing::warn!(track = %self.title, app = %app.exe_name, pid = app.pid, session_peak, "piste d'application muette alors que l'appli émet du son");
+        let message = format!(
+            "Piste « {} » : {} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
+            self.title, app.exe_name
+        );
+        self.alert(Severity::Warning, "app_track_silent", message);
+    }
+
     fn on_packet(&mut self, qpc: Hns, data: &mut [f32]) -> Result<()> {
         self.stats.packets += 1;
+        if data.iter().any(|sample| *sample != 0.0) {
+            self.silence.on_signal(Hns::now());
+        }
         let gain = self.gain();
         for sample in data.iter_mut() {
             *sample *= gain;
@@ -379,8 +534,8 @@ impl Worker {
 
     fn direction(&self) -> Direction {
         match self.source {
-            AudioSource::SystemMix { .. } => Direction::Render,
             AudioSource::Microphone { .. } => Direction::Capture,
+            _ => Direction::Render,
         }
     }
 
@@ -389,13 +544,14 @@ impl Worker {
             AudioSource::SystemMix { device_id } | AudioSource::Microphone { device_id, .. } => {
                 device_id.as_deref()
             }
+            _ => None,
         }
     }
 
     fn gain(&self) -> f32 {
         match self.source {
-            AudioSource::SystemMix { .. } => 1.0,
             AudioSource::Microphone { gain_db, .. } => 10f32.powf(gain_db / 20.0),
+            _ => 1.0,
         }
     }
 
@@ -431,6 +587,7 @@ struct CaptureStream {
     capture: AudioCaptureClient,
     event: Handle,
     name: String,
+    process: Option<Waitable>,
 }
 
 impl CaptureStream {
@@ -478,15 +635,33 @@ fn open_stream(
     source: &AudioSource,
 ) -> std::result::Result<CaptureStream, WasapiError> {
     let (direction, device_id) = match source {
-        AudioSource::SystemMix { device_id } => (Direction::Render, device_id),
         AudioSource::Microphone { device_id, .. } => (Direction::Capture, device_id),
+        AudioSource::SystemMix { device_id } => (Direction::Render, device_id),
+        AudioSource::Application { .. } | AudioSource::Foreground => (Direction::Render, &None),
     };
     let device = match device_id {
         Some(id) => enumerator.get_device(id)?,
         None => enumerator.get_default_device(&direction)?,
     };
     let name = device.get_friendlyname()?;
-    let mut client = device.get_iaudioclient()?;
+    start_capture(device.get_iaudioclient()?, name, None)
+}
+
+fn open_app_stream(app: &AttachedApp) -> std::result::Result<CaptureStream, WasapiError> {
+    let process = Waitable::process(app.pid);
+    let client = AudioClient::new_application_loopback_client(app.pid, true)?;
+    start_capture(
+        client,
+        format!("{} (PID {})", app.exe_name, app.pid),
+        process,
+    )
+}
+
+fn start_capture(
+    mut client: AudioClient,
+    name: String,
+    process: Option<Waitable>,
+) -> std::result::Result<CaptureStream, WasapiError> {
     let format = WaveFormat::new(
         32,
         32,
@@ -511,6 +686,7 @@ fn open_stream(
         capture,
         event,
         name,
+        process,
     })
 }
 
@@ -551,16 +727,23 @@ fn audio_error(error: WasapiError) -> EngineError {
     EngineError::Audio(error.to_string())
 }
 
-struct Event(HANDLE);
+struct Waitable(HANDLE);
 
-// SAFETY: Win32 event handles may be signaled and waited on from any thread.
-unsafe impl Send for Event {}
+// SAFETY: Win32 event and process handles may be signaled and waited on from any thread.
+unsafe impl Send for Waitable {}
 
 // SAFETY: SetEvent and waits are thread-safe kernel operations on the same handle.
-unsafe impl Sync for Event {}
+unsafe impl Sync for Waitable {}
 
-impl Event {
-    fn new() -> Result<Self> {
+impl Waitable {
+    fn process(pid: u32) -> Option<Self> {
+        // SAFETY: SYNCHRONIZE only allows waiting for the process to exit; the handle is closed on Drop.
+        unsafe { OpenProcess(PROCESS_SYNCHRONIZE, false, pid) }
+            .ok()
+            .map(Self)
+    }
+
+    fn event() -> Result<Self> {
         // SAFETY: creates an unnamed auto-reset event with default security.
         unsafe { CreateEventW(None, false, false, None) }
             .map(Self)
@@ -577,7 +760,7 @@ impl Event {
     }
 }
 
-impl Drop for Event {
+impl Drop for Waitable {
     fn drop(&mut self) {
         // SAFETY: the handle was created by CreateEventW and is closed exactly once.
         unsafe { CloseHandle(self.0) }.ok();
@@ -601,6 +784,46 @@ mod tests {
 
     fn frame_at(qpc: Hns) -> i64 {
         (qpc - ORIGIN).to_samples(SAMPLE_RATE)
+    }
+
+    fn alerts_over(watch: &mut SilenceWatch, start: Hns, seconds: i64, session_peak: f32) -> u32 {
+        let mut alerts = 0;
+        for tick in 0..seconds * 20 {
+            let now = start + Hns::from_millis(tick * i64::from(SILENCE_WAKE_MS));
+            if watch.check_due(now) && watch.should_alert(session_peak) {
+                alerts += 1;
+            }
+        }
+        alerts
+    }
+
+    #[test]
+    fn zero_track_with_a_loud_session_alerts_once() {
+        let mut watch = SilenceWatch::new(ORIGIN);
+        assert_eq!(alerts_over(&mut watch, ORIGIN, 2, 0.5), 0);
+        assert_eq!(
+            alerts_over(&mut watch, ORIGIN + Hns::from_millis(2_000), 60, 0.5),
+            1
+        );
+    }
+
+    #[test]
+    fn zero_track_with_a_quiet_session_never_alerts() {
+        let mut watch = SilenceWatch::new(ORIGIN);
+        assert_eq!(alerts_over(&mut watch, ORIGIN, 60, SESSION_SIGNAL_PEAK), 0);
+    }
+
+    #[test]
+    fn signal_on_the_track_rearms_the_alert() {
+        let mut watch = SilenceWatch::new(ORIGIN);
+        assert_eq!(alerts_over(&mut watch, ORIGIN, 10, 0.5), 1);
+        let later = ORIGIN + Hns::from_millis(20_000);
+        watch.on_signal(later);
+        assert_eq!(alerts_over(&mut watch, later, 2, 0.5), 0);
+        assert_eq!(
+            alerts_over(&mut watch, later + Hns::from_millis(2_000), 10, 0.5),
+            1
+        );
     }
 
     #[test]
