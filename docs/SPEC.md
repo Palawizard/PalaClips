@@ -52,7 +52,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
 | AUD-03 | Une **piste par logiciel** choisi (jusqu'à 6 par défaut, réglable jusqu'à 12), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
-| AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (visible dans Resolve). |
+| AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (lu par VLC, ffprobe… ; DaVinci Resolve ne l'affiche pas, ADR-021). |
 | AUD-06 | Option « Piste Jeu automatique » : une piste dédiée suit **le jeu**, pas le premier plan. Capture d'une fenêtre → l'appli de cette fenêtre. Capture d'un écran → la dernière appli passée au premier plan en plein écran ou en fenêtre sans bordure couvrant un écran ; un Alt+Tab vers une appli fenêtrée (Discord, navigateur, terminal…), le bureau ou PalaClips ne la change pas. L'utilisateur peut aussi la fixer sur un processus choisi dans le sélecteur AUD-04. |
 | AUD-07 | Appli fermée puis relancée : la piste se rattache seule, silence entre-temps, aucun fichier cassé. |
 | AUD-08 | Synchronisation audio/vidéo < 1 image sur **1 h**, y compris avec de longs silences. |
@@ -71,7 +71,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | RPL-05 | Sauvegarde par raccourci : fichier prêt en **< 500 ms** pour 60 s à 40 Mb/s, début sur image clé, pistes alignées. |
 | RPL-06 | La sauvegarde ne vole **jamais** le focus du jeu ; confirmation par toast Windows + son (désactivable). |
 | RPL-07 | Changer de sources ou de zone redémarre le buffer ; l'UI le dit avant d'appliquer. |
-| RPL-08 | RAM stable sur 2 h de replay armé (pas de fuite). |
+| RPL-08 | RAM stable en replay armé : pas de croissance avec le temps ni avec le nombre de sauvegardes. |
 
 ### 2.5 Enregistrement manuel (REC)
 

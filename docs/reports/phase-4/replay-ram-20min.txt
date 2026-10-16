@@ -1,0 +1,26 @@
+2026-10-16T16:50:08 replay-ram : replay 60 s armé 20 min, une sauvegarde toutes les 5 s (240), 40 Mb/s 1440p60, 4 pistes (mix, tone-a, tone-b, Jeu), fenêtre de bruit ffplay ; clips effacés au fil de l'eau
+replay de 60 s (RAM) : Entrée = sauvegarder, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+RÉSUMÉ : 240 clips sur 240 demandés, latence min 12 ms, moy 154 ms, max 175 ms
+    59 s, sauvegarde   12 :   596,3 Mo
+   119 s, sauvegarde   24 :   625,9 Mo
+   180 s, sauvegarde   36 :   630,8 Mo
+   240 s, sauvegarde   48 :   633,3 Mo
+   300 s, sauvegarde   60 :   636,8 Mo
+   361 s, sauvegarde   72 :   635,9 Mo
+   421 s, sauvegarde   84 :   637,1 Mo
+   481 s, sauvegarde   96 :   639,8 Mo
+   542 s, sauvegarde  108 :   641,9 Mo
+   602 s, sauvegarde  120 :   640,8 Mo
+   662 s, sauvegarde  132 :   641,6 Mo
+   722 s, sauvegarde  144 :   643,6 Mo
+   783 s, sauvegarde  156 :   643,2 Mo
+   843 s, sauvegarde  168 :   643,2 Mo
+   903 s, sauvegarde  180 :   640,5 Mo
+   964 s, sauvegarde  192 :   642,1 Mo
+  1024 s, sauvegarde  204 :   640,0 Mo
+  1084 s, sauvegarde  216 :   640,0 Mo
+  1145 s, sauvegarde  228 :   640,0 Mo
+  1205 s, sauvegarde  240 :   642,3 Mo
+
+RÉSULTAT : 240 clips sur 240, 216 mesures après 120 s ; pente +0,045 ± 0,003 Mo par sauvegarde (seuil 0,1), +32,0 ± 2,1 Mo/h (seuil 20) → ÉCHEC
+2026-10-16T17:10:22 fin : ffplay, sons de test et replay arrêtés, clips supprimés, veille rétablie, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\replay-ram-2026-10-16_16-50.txt

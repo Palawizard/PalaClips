@@ -78,7 +78,7 @@ Critères :
 - 👤 Test fait sur le Windows 11 à jour de Palawi : pistes non muettes (vérif `ffmpeg astats`).
 - 👤 Fermer/relancer Discord pendant la capture : la piste se rattache, fichier valide.
 
-## Phase 4 — Replay (RPL-02–05, 07, 08 ; STO-01, 03)
+## Phase 4 — Replay (RPL-02–05, 07, 08 ; STO-01, 03) ✅ ([rapport](reports/phase-4.md))
 
 - [x] `Engine` / `EngineHandle` : orchestration des threads, fan-out des paquets.
 - [x] `PacketRing` branché sur tous les flux ; stockage RAM et disque.
@@ -90,8 +90,11 @@ Critères :
 Critères :
 - 🤖 Sauvegarde < 500 ms (60 s, 40 Mb/s, 4 pistes) mesurée sur 20 sauvegardes.
 - 🤖 Durée du clip = durée demandée ± 1 intervalle d'images clés ; pistes de même durée.
-- 🤖 2 h armé : RAM stable (écart < 5 % entre 30 min et 2 h).
-- 👤 Import dans DaVinci Resolve : pistes séparées, nommées, synchronisées (STO-01).
+- 🤖 RAM stable (test accéléré, ADR-020) : 30 min armé, une sauvegarde toutes les 5 s ;
+  10 premières minutes de mise en régime exclues ; sur 10–30 min, pente < 20 Mo/h et
+  < 0,1 Mo par sauvegarde.
+- 👤 Import dans DaVinci Resolve : pistes séparées et synchronisées (STO-01 ; noms non affichés
+  par Resolve, ADR-021).
 
 ## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04, 11 ; RPL-01, 03, 06)
 
