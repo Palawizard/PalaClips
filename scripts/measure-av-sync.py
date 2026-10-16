@@ -41,8 +41,8 @@ for index, value in enumerate(samples):
 
 pairs = []
 for flash in flashes:
-    beep = min(beeps, key=lambda beep: abs(beep - flash), default=None)
-    if beep is not None and abs(beep - flash) < 0.4:
+    beep = next((beep for beep in beeps if -0.2 <= beep - flash < 0.8), None)
+    if beep is not None:
         pairs.append((flash, (beep - flash) * 1_000))
 
 windows = []
