@@ -53,3 +53,37 @@ FINISH : unreviewed and undocumented is unfinished; this build ends with the fin
 
 - Polices embarquées (workhorse UI à chiffres tabulaires) : à choisir au premier build.
 - Thème clair complet : dérivé du même système au premier build.
+
+## Brief confirmé par Palawi (shape, 2026-10-16) — prioritaire sur le contrat ci-dessus
+
+- Rail : **État / Galerie / Réglages** ; Réglages en sous-sections Capture, Audio, Replay &
+  qualité, Raccourcis, Stockage, Général.
+- Bandeau d'état pleine largeur :
+  - replay : armé / désarmé / armement / erreur, « En mémoire 00:47 / 01:00 », RAM du
+    tampon, raccourci de sauvegarde (`Alt+F10` par défaut), Armer/Désarmer. Replay armé =
+    témoin discret ;
+  - enregistrement manuel : état, durée, taille, raccourci, Démarrer/Arrêter. **Rouge plein
+    réservé à l'enregistrement en cours** : replay armé et enregistrement se distinguent d'un
+    coup d'œil ;
+  - source capturée : écran ou fenêtre, résolution, i/s ; repli fenêtre → écran signalé ;
+  - espace disque restant.
+- Zone d'alertes générales sous le bandeau : CAP-11 (G-Sync), périphérique audio changé,
+  encodeur, raccourci indisponible, disque presque plein. Si `Alt+F10` ne peut pas être
+  enregistré : alerte actionnable qui cite l'overlay NVIDIA comme cause probable.
+- Roster au centre : une ligne par piste dans l'ordre du fichier (Mix, Micro, applis, Jeu),
+  numéro, bande de couleur fixe, icône, nom, vumètre vivant, crête en dB, état (en attente de
+  l'appli, `app_track_silent`). 1 à 14 pistes.
+- Colonne droite « Derniers clips » : les 5 clips les plus récents du dossier, miniature JPEG
+  écrite par le moteur à la sauvegarde (réutilisée par la galerie en phase 6) ; état vide qui
+  renvoie au raccourci. Sous ~1000 px de large, la colonne passe sous le roster.
+- Moment fort : **pas de gel des vumètres** ; bref surlignage des lignes du roster et carte
+  du clip qui arrive dans « Derniers clips ».
+- Vumètres : `audio_levels` ~20 Hz interpolé à 60 fps ; ~10 i/s quand la fenêtre n'a pas le
+  focus ; flux coupé côté moteur quand la fenêtre est cachée, réduite ou fermée. Mesurer le
+  CPU fenêtre ouverte non focalisée pendant une capture (PERF-03).
+- États : aucun encodeur (armement impossible, expliqué), erreur du replay (message
+  actionnable), FR plus long que EN, 900×600 à 1180×760+, mise à l'échelle 100–200 %,
+  clavier complet, `prefers-reduced-motion` → changements instantanés.
+- Moteur/IPC à ajouter : `get_state`, `replay_arm`/`replay_disarm`/`replay_save`,
+  `record_start`/`record_stop`, `audio_levels`, liste des clips récents, miniature à la
+  sauvegarde, raccourci global ; `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés.
