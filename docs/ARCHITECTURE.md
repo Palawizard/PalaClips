@@ -89,6 +89,10 @@ charges :
 - Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent` :
   piste sans échantillon non nul depuis 3 s, puis crête de session de l'arbre > 0,001 à deux
   vérifications (une par seconde) → une alerte, réarmée dès que la piste reçoit du signal.
+  Les sessions de PalaClips sont ignorées : une capture loopback crée une session de rendu
+  « active » dont le vumètre reproduit la sortie. Limite connue : une appli suivie qui
+  enregistre elle-même la sortie en loopback (OBS, fond d'écran réactif au son) peut déclencher
+  l'alerte alors qu'elle ne joue rien.
 - Capture en 48 kHz, stéréo, f32, `autoconvert = true` (le rééchantillonnage et le mixage
   des canaux sont faits par Windows).
 - `GapFiller` : position cible = `(qpc + décalage − t0)` en échantillons ; écart > 5 ms →
