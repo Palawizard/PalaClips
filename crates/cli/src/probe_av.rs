@@ -22,12 +22,15 @@ const BEEP_FRAMES: usize = SAMPLE_RATE / 20;
 
 static WHITE: AtomicBool = AtomicBool::new(false);
 
-pub fn probe_av_emitter(seconds: u64) -> Result<()> {
+pub fn probe_av_emitter(seconds: u64, device: Option<&str>) -> Result<()> {
     initialize_mta()
         .ok()
         .map_err(|error| anyhow!("COM : {error}"))?;
     let window = create_window()?;
-    let device = DeviceEnumerator::new()?.get_default_device(&Direction::Render)?;
+    let device = match device {
+        Some(name) => crate::probe_audio::find_device(Direction::Render, name)?,
+        None => DeviceEnumerator::new()?.get_default_device(&Direction::Render)?,
+    };
     let mut client = device.get_iaudioclient()?;
     let (default_period, _) = client.get_device_period()?;
     client.initialize_client(
