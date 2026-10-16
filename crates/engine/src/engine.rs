@@ -18,14 +18,15 @@ use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::paths;
-use crate::replay::{PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, plan_clip};
+use crate::replay::{
+    PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, plan_clip,
+};
 use crate::sources::{CurrentGame, ForegroundWatch};
 
 const COMMAND_QUEUE: usize = 16;
 const EVENT_QUEUE: usize = 256;
 const STATS_INTERVAL: Hns = Hns::from_millis(1_000);
 const AAC_PACKET: Hns = Hns(1_024 * HNS_PER_SECOND / SAMPLE_RATE as i64);
-const AUDIO_LAG_MARGIN: Hns = Hns::from_millis(2_000);
 
 enum Command {
     Arm,
@@ -167,9 +168,10 @@ fn current_game(config: &EngineConfig) -> CurrentGame {
 }
 
 fn ring_window(config: &EngineConfig) -> Hns {
-    Hns(i64::from(config.replay.duration_secs) * HNS_PER_SECOND)
-        + Hns::from_secs_f64(f64::from(config.video.keyframe_interval_secs))
-        + AUDIO_LAG_MARGIN
+    buffer_window(
+        config.replay.duration_secs,
+        config.video.keyframe_interval_secs,
+    )
 }
 
 fn needs_restart(old: &EngineConfig, new: &EngineConfig) -> bool {
