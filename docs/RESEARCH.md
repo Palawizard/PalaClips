@@ -206,6 +206,20 @@
 - Jeux qui ouvrent le périphérique en mode exclusif : la capture loopback échoue
   (`AUDCLNT_E_DEVICE_IN_USE`), il faut réessayer et le signaler. — [ClipFlow CHANGELOG](https://github.com/jaimitus/ClipFlow/blob/main/CHANGELOG.md)
 
+- Deuxième session WGC dans le même processus (2026-10-16, redémarrage du replay) : crash
+  (violation d'accès) dans `start_free_threaded`, sur un appel de méthode dont la table est
+  dans `WinTypes.dll` **déchargée**. windows-rs garde les fabriques WinRT en cache pour tout
+  le processus ; quand la première session et les pistes audio s'arrêtent, plus aucun thread
+  n'est dans le MTA, COM le démonte et décharge `WinTypes.dll`. Seulement après une piste
+  audio (capture vidéo seule : 3 sessions d'affilée sans souci). Correctif :
+  `CoIncrementMTAUsage` une fois pour toute la vie du processus (`keep_mta_alive`). —
+  [Microsoft](https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-coincrementmtausage)
+- Machine de Palawi : TranslucentFlyouts (`TFMain64.dll`, `dbghelp-for-tf.dll`) et un mod
+  Windhawk (`translucent-windows`) sont injectés dans les processus PalaClips. Le gestionnaire
+  de TF transforme un crash en boîte « this application has thrown an uncaught exception »
+  et écrit un minidump dans son dossier `dumps` : un processus qui semble bloqué peut être un
+  crash en attente de réponse. Lire ces dumps avec `cdb -z <dump> -c ".ecxr; kn; lmu; q"`.
+
 ## Encodage et fichiers
 
 - `ffmpeg-next` est en mode maintenance seulement ; `rsmpeg` suit FFmpeg 6/7/8 mais à rythme
