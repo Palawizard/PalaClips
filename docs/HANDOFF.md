@@ -7,7 +7,7 @@
 
 - **Phase en cours :** 4 — Replay, pas commencée. Phase 3 **validée** le 2026-10-16
   (`docs/reports/phase-3.md`).
-- **Branche :** `fix/audio-device-clock-drift` (depuis `dev`).
+- **Branche :** `fix/game-track-follows-game` (PR #12), puis phase 4 depuis `dev`.
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -89,10 +89,17 @@
   - CLI : `list-audio-sessions`, `capture-apps`, `probe-audio --app`, `play-tone` ; script
     `measure-tones.py`. Preuves `docs/reports/phase-3/`.
 
+- **Piste Jeu redéfinie (PR #12, ADR-019)** : `sources::CurrentGame` (processus fixé >
+  fenêtre capturée > dernière appli plein écran ou sans bordure), `ForegroundWatch`
+  (`SetWinEventHook`), `AudioSource::Game(CurrentGame)`, `AudioSettings::game_exe`,
+  `capture-apps --game-exe`, `play-tone --window`, `scripts/game-track.ps1` (40 s). Réutiliser
+  `CurrentGame` pour le nom des clips (STO-03) en phase 4.
+- Mesures : `probe-audio --device` (pente réception − `pu64QPCPosition`), `play-tone
+  --amplitude`, `scripts/clock-drift.ps1` (PR #11).
+
 ## Prochaines actions (dans l'ordre)
 
-1. `fix/game-track-follows-game`.
-2. Phase 4 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : `Engine`/`EngineHandle`,
+1. Phase 4 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : `Engine`/`EngineHandle`,
    fan-out des paquets (cloner les `AVPacket`), `PacketRing` sur tous les flux, sauvegarde.
 
 ## Bloquants

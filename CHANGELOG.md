@@ -35,12 +35,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   heure (`scripts/t2-av-sync.ps1`).
 
 - Une piste par logiciel (capture de l'appli et de ses processus enfants), retrouvée par nom
-  d'exe et rattachée seule quand l'appli est fermée puis relancée ; piste « Jeu » qui suit
-  l'appli au premier plan ; alerte si une piste d'appli reste muette alors que l'appli émet du
+  d'exe et rattachée seule quand l'appli est fermée puis relancée ; piste « Jeu » ; alerte si une piste d'appli reste muette alors que l'appli émet du
   son.
 - CLI : `list-audio-sessions`, `capture-apps`, `probe-audio --app`, `play-tone`.
 
 ### Corrigé
+- Piste « Jeu » : elle suit le jeu (dernière appli en plein écran ou sans bordure, l'appli de
+  la fenêtre capturée, ou le processus choisi) au lieu de passer sur Discord, le navigateur
+  ou le terminal à chaque Alt+Tab.
 - Écran SDR avec gestion automatique des couleurs : il n'est plus pris pour un écran HDR.
 - Écran HDR : les hautes lumières (ciel, soleil, explosions) gardent leurs détails et leur
   couleur au lieu de virer au blanc uniforme.

@@ -190,3 +190,24 @@
 - Écarté : déclenchement sur le nombre d'images reçues par WGC, qui alerterait à tort pour un
   jeu plafonné, une scène statique ou un menu.
 - Code en phase 7.
+
+## ADR-019 — La piste Jeu suit le jeu, pas le premier plan (AUD-06)
+**Statut :** acceptée (2026-10-16, décision de Palawi) ; remplace la piste Jeu « appli au
+premier plan » de la phase 3.
+- Contexte : la piste Jeu suivait toute appli au premier plan. Un Alt+Tab vers Discord ou le
+  navigateur pendant une partie rouvrait la piste sur cette appli : le son du jeu
+  disparaissait de sa piste.
+- Décision : une seule notion de « jeu en cours » (`sources::CurrentGame`), réutilisée pour
+  la piste Jeu, le nom des fichiers (STO-03) et la galerie (GAL-01/02) :
+  - processus fixé par l'utilisateur (sélecteur AUD-04) ;
+  - sinon, capture d'une fenêtre → l'appli de cette fenêtre ;
+  - sinon, la dernière appli passée au premier plan en plein écran ou sans bordure couvrant
+    un écran (fenêtre qui recouvre tout son écran et n'a pas de barre de titre). Fenêtres
+    normales ou agrandies, bureau, shell et PalaClips ne la changent pas.
+  - Premier plan suivi par événement (`SetWinEventHook` : `EVENT_SYSTEM_FOREGROUND`, et
+    `EVENT_OBJECT_LOCATIONCHANGE` de la fenêtre au premier plan pour un passage en plein
+    écran sans changement de premier plan), plus de vérification toutes les 500 ms.
+- Écarté : liste de jeux connus (jamais complète) ; détection par l'usage GPU (coûteuse,
+  pas fiable) ; garder le premier plan avec une liste d'applis exclues (Discord, navigateurs…),
+  jamais complète non plus.
+- Limite : une vidéo en plein écran dans le navigateur (F11) compte comme un jeu.
