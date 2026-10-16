@@ -48,13 +48,14 @@ Critères :
 - [x] 👤 Capture de Fortnite en fenêtre et en plein écran : image correcte, pas de saccade visible.
 - [x] 👤 Écran HDR activé : couleurs correctes (CAP-09) — sinon implémenter la conversion et refaire le test (conversion implémentée, ADR-015).
 
-## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10)
+## Phase 2 — Audio système + micro (AUD-01, 02, 08, 10, 11 moteur) ✅ ([rapport](reports/phase-2.md))
 
-- [ ] Loopback du périphérique de sortie (mix complet), micro, horodatage QPC.
-- [ ] Combleur de silences, gestion `AUDCLNT_BUFFERFLAGS_SILENT`, pas d'arrêt sur timeout.
-- [ ] Encodeurs AAC par piste, gestion du délai d'amorçage, titres des pistes.
-- [ ] Suivi du périphérique par défaut à chaud.
-- [ ] CLI `capture-av --seconds N --out f.mp4`.
+- [x] Loopback du périphérique de sortie (mix complet), micro, horodatage QPC.
+- [x] Combleur de silences, gestion `AUDCLNT_BUFFERFLAGS_SILENT`, pas d'arrêt sur timeout.
+- [x] Encodeurs AAC par piste, gestion du délai d'amorçage, titres des pistes.
+- [x] Suivi du périphérique par défaut à chaud.
+- [x] CLI `capture-av --seconds N --out f.mp4`.
+- [x] Décalage de synchro par piste (AUD-11) dans la config et le moteur, options CLI.
 
 Critères :
 - 👤 Test du clap (`docs/TESTING.md` § T2) sur **1 h** : décalage < 1 image au début, au
@@ -92,7 +93,7 @@ Critères :
 - 🤖 2 h armé : RAM stable (écart < 5 % entre 30 min et 2 h).
 - 👤 Import dans DaVinci Resolve : pistes séparées, nommées, synchronisées (STO-01).
 
-## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04 ; RPL-01, 03, 06)
+## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04, 11 ; RPL-01, 03, 06)
 
 Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 
@@ -106,6 +107,10 @@ Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
       (vumètres, recherche, appli non lancée, renommage), Replay & qualité (estimation RAM
       en direct), Raccourcis, Stockage, Général.
 - [ ] Contrat IPC complet pour ces écrans (`ipc.ts` à jour).
+- [ ] Assistant de calibrage de la synchro (AUD-11) dans Sources audio : émetteur flash + bip
+      (logique de `probe-av-emitter`), capture de test, mesure automatique du décalage par
+      piste, valeur proposée puis enregistrée ; relançable en un clic, car le retard d'une
+      chaîne Voicemeeter/VST change à chaque lancement (`RESEARCH.md` § Audio).
 
 Critères :
 - 🤖 Fenêtre fermée : un seul processus PalaClips (aucun `msedgewebview2.exe` enfant).
@@ -128,10 +133,11 @@ Critères :
 - 🤖 5 000 clips factices : défilement à 60 fps, ouverture de la galerie < 500 ms.
 - 👤 Glisser un clip copié dans Discord : envoi OK, son = mix.
 
-## Phase 7 — Robustesse et performances (CAP-08, 09 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
+## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
 
 - [ ] Changement de résolution, alt-tab, plein écran exclusif, casque débranché, appli qui
       crashe, disque plein, redémarrage du pilote GPU (TDR) : jamais de crash, alerte claire.
+- [ ] Alerte `capture_source_rate_limited` sur la cadence de composition DWM (CAP-11, ADR-018).
 - [ ] Panneau de performances.
 - [ ] Mesures PERF sur build release installée.
 

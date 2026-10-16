@@ -1,4 +1,6 @@
 #[cfg(windows)]
+pub mod audio;
+#[cfg(windows)]
 pub mod capture;
 pub mod clock;
 pub mod config;

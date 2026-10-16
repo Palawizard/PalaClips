@@ -80,7 +80,13 @@ charges :
 - Mode exclusif d'un jeu (`AUDCLNT_E_DEVICE_IN_USE`) : réessayer chaque seconde et le signaler.
 - Rattachement automatique d'une piste à son appli (suivi par nom d'exe).
 - Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent`.
-- Capture en 48 kHz, stéréo, f32, `autoconvert = true`.
+- Capture en 48 kHz, stéréo, f32, `autoconvert = true` (le rééchantillonnage et le mixage
+  des canaux sont faits par Windows).
+- `GapFiller` : position cible = `(qpc + décalage − t0)` en échantillons ; écart > 5 ms →
+  silence inséré ou chevauchement coupé ; en dessous, la dérive lissée est corrigée d'une
+  image à la fois (au-delà de 1 ms). Fin exacte : `finish_at(fin)`, la piste lit jusqu'à la
+  fin (250 ms de grâce + décalage négatif) puis comble.
+- Décalage de synchro par piste (AUD-11, ADR-017), positif = son retardé.
 
 **`encode`**
 - Encodeurs `h264/hevc/av1` × `nvenc/amf/qsv`, détectés par un encodage de test réel.
@@ -91,7 +97,9 @@ charges :
 - Écran HDR : capture FP16 scRGB → `HdrToSdr` (pixel shader : ÷ blanc SDR, sRGB) → BGRA8 →
   même chemin (ADR-015).
 - CBR pour le replay, intervalle d'images clés configurable.
-- AAC-LC 48 kHz stéréo, un encodeur par piste, délai d'amorçage (priming) géré.
+- AAC-LC 48 kHz stéréo, 192 kb/s, un encodeur par piste ; PTS = numéro d'échantillon, le
+  premier paquet a un PTS négatif (amorçage de 1024 échantillons) que la liste d'édition MP4
+  compense (`start_time = 0`).
 - Une seule session matérielle partagée par le replay et l'enregistrement.
 
 **`mux`**
@@ -138,8 +146,7 @@ tenu pendant un appel système bloquant.
 |---|---|---|---|
 | Capture (callback WGC) | images WGC | « dernière image » (texture GPU) | un `CopyResource`, jamais de travail lourd |
 | Vidéo (`palaclips-video`) | dernière image | `AVPacket` vidéo (canal borné) | pacer CFR sur QPC + conversion GPU + encodeur : une seule session matérielle |
-| Audio × N (un par source) | WASAPI | `PcmChunk { samples, qpc }` | 48 kHz stéréo f32, événementiel |
-| Combleur + encodeur AAC × N | `PcmChunk` | `EncodedPacket` audio | insère le silence d'après les écarts QPC |
+| Audio × N (`palaclips-audio-<piste>`, un par source) | WASAPI | `AVPacket` AAC (canal borné) | 48 kHz stéréo f32, `WaitForMultipleObjects` (arrêt, données, défaut changé) sans délai ; gain, décalage de synchro, `GapFiller`, AAC dans le même fil |
 | Fan-out | paquets | replay + enregistreur | `Arc<[u8]>` : pas de copie entre les deux |
 | Écriture replay | instantané du `PacketRing` | MP4 | lancée à la sauvegarde, n'arrête pas la capture |
 | Enregistreur | paquets | MP4 hybride | écriture continue |
@@ -213,8 +220,8 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 `state_changed`, `clip_saved`, `audio_levels` (~20 Hz, seulement fenêtre ouverte),
 `replay_stats`, `alert { severity, code, message }`.
 
-Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `app_track_silent`,
-`audio_device_changed`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`.
+Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
+`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`.
 
 ## 7. Données sur le disque
 

@@ -103,6 +103,56 @@
 - Navigateurs multi-processus : cibler le bon arbre. — [LiveTranscriber #2](https://github.com/avysotsky/LiveTranscriber/issues/2)
 - Piste process loopback **entièrement à zéro** sur Windows 11 build 26200 avec NAudio 3.1.0 ;
   cause non établie (wrapper ou Windows), une seule machine. — [MeetCap #38](https://github.com/lybym/MeetCap/issues/38)
+- Mesuré le 2026-10-15 avec `palaclips-cli probe-audio` (`wasapi` 0.26, flux partagé piloté
+  par événement, 48 kHz stéréo f32 `autoconvert`, tampon 200 ms ; journaux bruts dans
+  `docs/reports/phase-2/`), machine de Palawi (sortie par défaut « Voicemeeter Input »,
+  interface USB Apogee BOOM, micro par défaut « CABLE Output ») :
+  - Un paquet de 480 images toutes les 10 ms ; `pu64QPCPosition` tremble de ±1,5 à 2 ms
+    d'un paquet à l'autre (Voicemeeter), ±0,55 ms (Apogee), sans dérive cumulée : sur 176 s,
+    nombre d'images = durée QPC × 48 000 à 0 ppm. Ne jamais recaler paquet par paquet.
+  - Latence réception − QPC : ~17 ms (Voicemeeter), **−10 à 0 ms** sur l'Apogee (horodatage
+    en avance sur la réception), ~20 ms (micro virtuel).
+  - Musique en pause : le flux continue avec des paquets de **zéros sans
+    `AUDCLNT_BUFFERFLAGS_SILENT`** (Voicemeeter comme Apogee) ; aucun réveil manqué. Le cas
+    « aucun paquet quand rien ne joue » ne s'est pas produit ici (les applis gardent leur flux
+    ouvert), mais reste possible : le combleur ne doit pas en dépendre.
+  - Zéros sans drapeau aussi sur un micro virtuel muet : la détection de piste muette ne peut
+    pas se fier au drapeau SILENT.
+  - Changement du périphérique par défaut : `OnDefaultDeviceChanged` (Console puis
+    Multimedia) ; l'ancien flux continue de recevoir des données, c'est à nous de rouvrir
+    (~210 ms sans audio). Débranchement USB du périphérique ouvert : `OnDeviceStateChanged
+    → NotPresent`, puis `GetBuffer` → `AUDCLNT_E_DEVICE_INVALIDATED` (`0x88890004`) 12 ms
+    plus tard, puis Windows bascule seul le défaut. Les premiers paquets d'un flux rouvert
+    peuvent **chevaucher** la fin du précédent (jusqu'à 20 ms) : à couper.
+  - Une seule `DATA_DISCONTINUITY`, sur le premier paquet de chaque flux ; jamais de
+    `TIMESTAMP_ERROR`.
+  - `read_from_device_to_deque` fait un `unwrap()` sur `ReleaseBuffer` (panique si le
+    périphérique disparaît) : utiliser `read_from_device`.
+- Synchro A/V mesurée le 2026-10-15 (`capture-av` 60 i/s, écran principal ; détection des
+  flashs dans la vidéo et des bips dans la piste mix, script `av_sync.py` de la session) :
+  - Vidéo de test lue par VLC (qui compense la latence annoncée du périphérique), sortie
+    Voicemeeter, 160 s dont 60 s sans son : +103,7 ms constant (±0,2 ms), aucune dérive,
+    synchro intacte après le silence. Même vidéo, sortie Apogee : +1,2 ms en moyenne.
+  - Source « comme un jeu » (`probe-av-emitter`, flash et bip émis ensemble, tampon de rendu
+    1056 images) : Apogee +15,7 ms constant ; Voicemeeter +103 à +136 ms (moy. +117) ;
+    Voicemeeter avec `--mix-offset-ms -100` : +10 à +27 ms (moy. +16,9). Le loopback de
+    « Voicemeeter Input » reçoit le son ~100 ms plus tard ; `GetStreamLatency` vaut 0 sur un
+    client loopback et ne permet pas de le deviner (ADR-017).
+- Retard de la chaîne micro de Palawi d'un lancement à l'autre (2026-10-16,
+  `t2-av-sync.ps1 -CalibrateOnly`, `probe-av-emitter` 20 s, écouteur collé au micro physique ;
+  chaîne micro physique → Voicemeeter → LightHost (VST) → VB-Cable → « CABLE Output ») :
+  - lancement 1 : micro +473,3 ms (+457,8 à +477,0 sur 19 bips), mix +146,2 ms ;
+  - après fermeture et relance de LightHost et Voicemeeter : micro +409,9 ms (+396,7 à
+    +415,1 sur 19 bips), mix +148,3 ms.
+  - **Pas stable** : −63 ms d'un lancement à l'autre, alors qu'il est stable à ±10 ms pendant
+    un lancement et que le mix ne bouge que de 2 ms. La valeur mesurée contient aussi la
+    sortie de Voicemeeter vers le casque (le bip passe par l'air) : la part qui vient de
+    l'entrée micro seule n'est pas isolée.
+  - Le retard dépasse ±400 ms : `measure-av-sync.py` apparie désormais chaque flash au
+    premier bip entre −200 et +800 ms.
+- Les noms GDI `\\.\DISPLAYn` changent d'un moment à l'autre de la session (constaté le
+  2026-10-15 : l'écran principal est passé de `DISPLAY2` à `DISPLAY1`) : ils ne suffisent pas
+  à mémoriser un écran (CAP-03).
 - Jeux qui ouvrent le périphérique en mode exclusif : la capture loopback échoue
   (`AUDCLNT_E_DEVICE_IN_USE`), il faut réessayer et le signaler. — [ClipFlow CHANGELOG](https://github.com/jaimitus/ClipFlow/blob/main/CHANGELOG.md)
 
