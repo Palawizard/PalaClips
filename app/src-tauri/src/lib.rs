@@ -6,6 +6,8 @@ use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle};
 use palaclips_engine::events::{EngineEvent, EngineState, Severity};
 use serde::Serialize;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
@@ -112,6 +114,11 @@ impl EngineSlot {
 
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Err(error) = open_main_window(app) {
+                tracing::warn!(%error, "ouverture de la fenêtre impossible");
+            }
+        }))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
@@ -140,6 +147,7 @@ pub fn run() {
                 slot.publish(app.handle(), hotkey_unavailable_alert("Alt+F10"));
             }
             app.manage(slot);
+            build_tray(app.handle())?;
             open_main_window(app.handle())?;
             Ok(())
         })
@@ -148,13 +156,55 @@ pub fn run() {
             eprintln!("PalaClips n'a pas pu démarrer : {err}");
             std::process::exit(1);
         });
-    app.run(|app, event| {
-        if let RunEvent::Exit = event
-            && let Some(slot) = app.try_state::<EngineSlot>()
-        {
-            slot.shutdown();
+    app.run(|app, event| match event {
+        RunEvent::ExitRequested {
+            code: None, api, ..
+        } => api.prevent_exit(),
+        RunEvent::Exit => {
+            if let Some(slot) = app.try_state::<EngineSlot>() {
+                slot.shutdown();
+            }
         }
+        _ => {}
     });
+}
+
+fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
+    let open = MenuItem::with_id(app, "open", "Ouvrir PalaClips", true, None::<&str>)?;
+    let save = MenuItem::with_id(app, "save", "Sauvegarder le replay", true, Some("Alt+F10"))?;
+    let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open, &save, &quit])?;
+    let mut tray = TrayIconBuilder::with_id("main")
+        .tooltip("PalaClips")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => {
+                open_main_window(app).ok();
+            }
+            "save" => {
+                if let Some(slot) = app.try_state::<EngineSlot>() {
+                    slot.handle.save_replay().ok();
+                }
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                open_main_window(tray.app_handle()).ok();
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
 }
 
 fn save_replay_shortcut() -> Shortcut {
