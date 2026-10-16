@@ -78,11 +78,12 @@
 
 ## Prochaines actions (dans l'ordre)
 
-0. **T2 suspendu** : décision de Palawi sur le retard du micro (« Décisions en attente »).
-   Mesure courte : `pwsh scripts\t2-av-sync.ps1 -CalibrateOnly -OutDir target\clips\mic-N`.
 1. Récupérer de Palawi la sortie de `pwsh scripts\t2-av-sync.ps1` (T2, 1 h ; voir
    `docs/TESTING.md` § T2). Attendu : 3 × `OK` mix et 3 × `OK` micro. Si le micro « n'a
    entendu aucun bip », lui faire coller l'écouteur au micro et relancer.
+   Ne pas relancer Voicemeeter/LightHost entre le calibrage et la fin : le retard de la
+   chaîne micro de Palawi change d'un lancement à l'autre (hors moteur, AUD-11) ; le T2 juge
+   la dérive pendant la capture.
 2. T2 vert → compléter `docs/reports/phase-2.md` (critères 1 et 2 avec la sortie), cocher
    la phase 2 dans `docs/PLAN.md`, attendre la CI de la PR #8, merger, supprimer la branche.
    T2 rouge → corriger sur `feature/system-audio` avant toute autre chose.
@@ -98,24 +99,6 @@ Aucun.
 
 ## Décisions en attente de Palawi
 
-- **Retard de la chaîne micro instable d'un lancement à l'autre (2026-10-16, bloque le T2)** :
-  micro +473 ms puis +410 ms après relance de LightHost et Voicemeeter (−63 ms ; tolérance
-  du T2 : 16,7 ms), mix stable (+146 / +148 ms). Détails dans `RESEARCH.md` § Audio. Un
-  décalage fixe (AUD-11) ne peut pas garder la piste micro synchro d'un lancement à l'autre.
-  Options :
-  1. **Recalibrer à chaque lancement de la chaîne** : AUD-11 inchangé ; l'assistant de
-     calibrage (phase 5) se relance à la main après chaque démarrage de Voicemeeter/LightHost.
-     Le T2 se fait en une session (calibrage puis capture sans relancer la chaîne) et reste
-     valide pour le moteur. Inconvénient : un oubli = micro décalé de plusieurs dizaines de ms.
-  2. **Capturer le micro physique direct** dans PalaClips (périphérique d'entrée physique au
-     lieu de « CABLE Output ») : plus de retard Voicemeeter/LightHost à l'enregistrement,
-     mais la voix enregistrée n'a pas le traitement VST (la chaîne reste pour Discord).
-  3. **Isoler d'abord la cause** : une mesure de 35 s avec le micro physique comme micro par
-     défaut dit si la variation vient de l'entrée (Voicemeeter/LightHost/VB-Cable) ou de la
-     sortie de Voicemeeter vers le casque. La sortie compte dans la mesure (le bip passe par
-     l'air) mais pas dans l'usage réel (la voix ne passe pas par la sortie) : si elle explique
-     la variation, le vrai retard du micro est peut-être stable.
-  Recommandation de Claude : 3, puis 1 ou 2 selon le résultat.
 - Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.
 
 ## Points d'attention

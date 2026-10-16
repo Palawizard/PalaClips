@@ -109,7 +109,8 @@ Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 - [ ] Contrat IPC complet pour ces écrans (`ipc.ts` à jour).
 - [ ] Assistant de calibrage de la synchro (AUD-11) dans Sources audio : émetteur flash + bip
       (logique de `probe-av-emitter`), capture de test, mesure automatique du décalage par
-      piste, valeur proposée puis enregistrée.
+      piste, valeur proposée puis enregistrée ; relançable en un clic, car le retard d'une
+      chaîne Voicemeeter/VST change à chaque lancement (`RESEARCH.md` § Audio).
 
 Critères :
 - 🤖 Fenêtre fermée : un seul processus PalaClips (aucun `msedgewebview2.exe` enfant).
