@@ -246,7 +246,7 @@ impl Spool {
     }
 }
 
-fn packet_data(packet: &AVPacket) -> &[u8] {
+pub(crate) fn packet_data(packet: &AVPacket) -> &[u8] {
     if packet.data.is_null() || packet.size <= 0 {
         return &[];
     }
@@ -254,7 +254,7 @@ fn packet_data(packet: &AVPacket) -> &[u8] {
     unsafe { std::slice::from_raw_parts(packet.data, packet.size as usize) }
 }
 
-fn share_packet(packet: &AVPacket) -> Result<AVPacket> {
+pub(crate) fn share_packet(packet: &AVPacket) -> Result<AVPacket> {
     // SAFETY: av_packet_clone returns a new packet that references the same refcounted buffer.
     let cloned = unsafe { ffi::av_packet_clone(packet.as_ptr()) };
     NonNull::new(cloned)

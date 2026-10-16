@@ -142,7 +142,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
             recv(engine.events()) -> event => {
                 let Ok(event) = event else { break };
                 match event {
-                    EngineEvent::ClipSaved { path, duration_secs, save_latency_ms } => {
+                    EngineEvent::ClipSaved { path, duration_secs, save_latency_ms, .. } => {
                         finished += 1;
                         latencies.push(save_latency_ms);
                         println!(

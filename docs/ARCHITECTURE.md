@@ -286,7 +286,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 | Réglages (`settings.json`, versionné) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
-| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` |
+| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |
 | Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | DLL FFmpeg (LGPL) | à côté de `palaclips.exe` (ressources du bundle) |

@@ -3,6 +3,7 @@ mod convert;
 mod d3d11;
 mod hdr;
 mod log;
+mod thumbnail;
 mod video;
 
 use std::ffi::CStr;
@@ -17,6 +18,7 @@ pub use convert::{GpuConverter, Size, fit_rect, output_size};
 pub use d3d11::{create_device, frame_texture, render_texture};
 pub use hdr::HdrToSdr;
 pub use log::route_ffmpeg_logs;
+pub use thumbnail::{THUMBNAIL_WIDTH, write_thumbnail};
 pub use video::{VideoEncoder, VideoEncoderSettings};
 
 use crate::config::VideoCodec;

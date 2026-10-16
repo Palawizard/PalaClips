@@ -13,13 +13,14 @@ use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
 use crate::capture::{VideoCapture, VideoStream};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{EngineConfig, ReplayStorage};
-use crate::encode::{hardware_video_encoders, pick_encoder};
+use crate::encode::{hardware_video_encoders, pick_encoder, write_thumbnail};
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::paths;
 use crate::replay::{
     PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, plan_clip,
+    share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 
@@ -656,8 +657,13 @@ impl SaveJob {
         }
         let mut writer = Mp4Writer::create(&self.path, &self.specs)?;
         let mut reader = PacketReader::default();
+        let mut last_keyframe = None;
         for (_, stream, packet) in self.packets {
+            let keyframe = stream == 0 && packet.is_keyframe();
             let mut packet = reader.read(packet)?;
+            if keyframe {
+                last_keyframe = Some(share_packet(&packet)?);
+            }
             let shift = self.shifts[stream];
             packet.set_pts(packet.pts - shift);
             packet.set_dts(packet.dts - shift);
@@ -665,6 +671,16 @@ impl SaveJob {
         }
         writer.finish()?;
         let latency = Hns::now() - self.requested;
+        let thumbnail = last_keyframe.and_then(|keyframe| {
+            let path = paths::thumbnail_path(&self.path).ok()?;
+            match write_thumbnail(&self.specs[0].codec_parameters, &keyframe, &path) {
+                Ok(()) => Some(path.to_string_lossy().into_owned()),
+                Err(error) => {
+                    tracing::warn!(%error, "miniature du clip impossible");
+                    None
+                }
+            }
+        });
         tracing::info!(
             path = %self.path.display(),
             duration_s = self.duration.as_secs_f64(),
@@ -675,6 +691,7 @@ impl SaveJob {
             path: self.path.to_string_lossy().into_owned(),
             duration_secs: self.duration.as_secs_f64(),
             save_latency_ms: (latency.0 / 10_000) as u64,
+            thumbnail,
         })
     }
 }

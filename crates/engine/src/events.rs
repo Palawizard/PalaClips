@@ -27,6 +27,7 @@ pub enum EngineEvent {
         path: String,
         duration_secs: f64,
         save_latency_ms: u64,
+        thumbnail: Option<String>,
     },
     AudioLevels {
         levels: Vec<(String, f32)>,
