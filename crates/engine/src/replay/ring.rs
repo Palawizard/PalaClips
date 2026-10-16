@@ -75,8 +75,22 @@ impl<P: TimedPacket> PacketRing<P> {
         candidate
     }
 
+    pub fn index_at_or_before(&self, at: Hns) -> usize {
+        self.packets
+            .partition_point(|p| p.pts() <= at)
+            .saturating_sub(1)
+    }
+
     pub fn iter_from(&self, index: usize) -> impl Iterator<Item = &P> {
         self.packets.iter().skip(index)
+    }
+
+    pub fn get(&self, index: usize) -> Option<&P> {
+        self.packets.get(index)
+    }
+
+    pub fn newest(&self) -> Option<Hns> {
+        self.packets.back().map(TimedPacket::pts)
     }
 
     pub fn bytes(&self) -> usize {
