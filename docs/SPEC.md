@@ -32,6 +32,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | CAP-08 | Multi-écrans et mise à l'échelle Windows (100–200 %) gérés ; changement de résolution à chaud géré. |
 | CAP-09 | Écran HDR : la vidéo SDR produite a des couleurs correctes (pas délavées ni sombres). |
 | CAP-10 | Aucune injection dans le processus capturé ; compatible Easy Anti-Cheat / BattlEye / Vanguard (capture via API Windows uniquement). |
+| CAP-11 | Alerte quand l'écran capturé est composé par Windows (cadence DWM) moins vite que le fps demandé, cas typique de G-Sync avec des écrans à fréquences différentes : message en français qui donne la cadence réelle et la marche à suivre. Un jeu plafonné sous le fps demandé ne la déclenche pas. |
 
 ### 2.2 Encodage (ENC)
 

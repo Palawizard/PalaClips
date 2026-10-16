@@ -173,3 +173,20 @@
 - Écarté : compensation automatique d'après la latence annoncée par Windows (nulle, donc
   inexploitable) ; capture d'un autre point de la chaîne Voicemeeter (sorties ASIO/KS hors
   du moteur audio de Windows).
+
+## ADR-018 — Alerte de cadence limitée sur l'horloge de composition DWM (CAP-11)
+**Statut :** acceptée (2026-10-16, décision de Palawi)
+- Contexte : avec G-Sync et des écrans à fréquences différentes, DWM se cale sur un autre
+  écran et WGC ne livre qu'une image par composition (Fortnite à 225 i/s → 165 i/s reçus,
+  horloge DWM 164,9 Hz ; `RESEARCH.md` § Capture vidéo). La sortie CFR reste juste mais
+  duplique des images, sans que l'utilisateur sache pourquoi. Aucun contournement sans
+  injection.
+- Décision : alerte `capture_source_rate_limited` (avertissement) quand la cadence de
+  composition DWM (`DwmGetCompositionTimingInfo`, `rateCompose`, comme `probe-wgc`) est
+  inférieure de plus de 2 % au fps demandé pendant 5 s ; une seule fois par capture, et de
+  nouveau seulement si la cadence change. Message : « Windows ne compose ton écran qu'à
+  N Hz alors que tu enregistres à M i/s : la vidéo répétera des images. Désactive G-Sync
+  pour cet écran, ou passe tes autres écrans à au moins M Hz. »
+- Écarté : déclenchement sur le nombre d'images reçues par WGC, qui alerterait à tort pour un
+  jeu plafonné, une scène statique ou un menu.
+- Code en phase 7.

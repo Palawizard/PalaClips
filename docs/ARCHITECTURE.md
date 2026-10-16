@@ -220,7 +220,7 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 `state_changed`, `clip_saved`, `audio_levels` (~20 Hz, seulement fenêtre ouverte),
 `replay_stats`, `alert { severity, code, message }`.
 
-Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `app_track_silent`,
+Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`.
 
 ## 7. Données sur le disque
