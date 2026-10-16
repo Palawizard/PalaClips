@@ -6,14 +6,22 @@ pub use ring::{PacketRing, TimedPacket};
 #[cfg(windows)]
 pub use store::{PacketReader, ReplayPacket, Spool};
 
-use crate::clock::Hns;
+use crate::clock::{HNS_PER_SECOND, Hns};
 
 const AUDIO_KBPS_PER_TRACK: u64 = 192;
+const AUDIO_LAG_MARGIN: Hns = Hns::from_millis(2_000);
+const BUFFER_OVERHEAD_PERCENT: u64 = 7;
 
-pub fn estimate_buffer_bytes(video_kbps: u32, audio_tracks: usize, duration_secs: u32) -> u64 {
+pub fn buffer_window(duration_secs: u32, keyframe_interval_secs: f32) -> Hns {
+    Hns(i64::from(duration_secs) * HNS_PER_SECOND)
+        + Hns::from_secs_f64(f64::from(keyframe_interval_secs))
+        + AUDIO_LAG_MARGIN
+}
+
+pub fn estimate_buffer_bytes(video_kbps: u32, audio_tracks: usize, window: Hns) -> u64 {
     let total_kbps = video_kbps as u64 + AUDIO_KBPS_PER_TRACK * audio_tracks as u64;
-    let bytes = total_kbps * 1_000 / 8 * duration_secs as u64;
-    bytes + bytes / 20
+    let bytes = total_kbps * 1_000 / 8 * window.0.max(0) as u64 / HNS_PER_SECOND as u64;
+    bytes * (100 + BUFFER_OVERHEAD_PERCENT) / 100
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -102,16 +110,19 @@ mod tests {
     }
 
     #[test]
-    fn estimates_video_only_buffer_with_margin() {
+    fn estimate_covers_the_whole_window_with_measured_overhead() {
         assert_eq!(
-            estimate_buffer_bytes(50_000, 0, 60),
-            375_000_000 + 18_750_000
+            estimate_buffer_bytes(50_000, 0, buffer_window(60, 1.0)),
+            393_750_000 * 107 / 100
         );
     }
 
     #[test]
     fn audio_tracks_increase_estimate() {
-        assert!(estimate_buffer_bytes(40_000, 4, 60) > estimate_buffer_bytes(40_000, 0, 60));
+        let window = buffer_window(60, 1.0);
+        assert!(
+            estimate_buffer_bytes(40_000, 4, window) > estimate_buffer_bytes(40_000, 0, window)
+        );
     }
 
     #[test]

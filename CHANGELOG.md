@@ -48,7 +48,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
 - Replay : ~110 Mo de mémoire en moins (encodeur NVIDIA réglé plus sobrement, qualité
-  quasi identique).
+  identique sur une partie de Fortnite).
+- Estimation de la RAM du replay plus juste : elle compte les secondes de marge du tampon et
+  sa surcharge réelle.
 - Piste « Jeu » : elle suit le jeu (dernière appli en plein écran ou sans bordure, l'appli de
   la fenêtre capturée, ou le processus choisi) au lieu de passer sur Discord, le navigateur
   ou le terminal à chaque Alt+Tab.
