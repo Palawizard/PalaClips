@@ -80,12 +80,12 @@ Critères :
 
 ## Phase 4 — Replay (RPL-02–05, 07, 08 ; STO-01, 03)
 
-- [ ] `Engine` / `EngineHandle` : orchestration des threads, fan-out des paquets.
-- [ ] `PacketRing` branché sur tous les flux ; stockage RAM et disque.
-- [ ] Sauvegarde : début sur image clé, alignement audio, écriture dans un thread dédié,
+- [x] `Engine` / `EngineHandle` : orchestration des threads, fan-out des paquets.
+- [x] `PacketRing` branché sur tous les flux ; stockage RAM et disque.
+- [x] Sauvegarde : début sur image clé, alignement audio, écriture dans un thread dédié,
       nommage par jeu.
-- [ ] Redémarrage propre du buffer quand sources/zone changent.
-- [ ] CLI `replay --duration 60` (touche Entrée = sauvegarder, affiche RAM et latence).
+- [x] Redémarrage propre du buffer quand sources/zone changent.
+- [x] CLI `replay --duration 60` (touche Entrée = sauvegarder, affiche RAM et latence).
 
 Critères :
 - 🤖 Sauvegarde < 500 ms (60 s, 40 Mb/s, 4 pistes) mesurée sur 20 sauvegardes.
