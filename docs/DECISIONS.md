@@ -250,3 +250,16 @@ premier plan » de la phase 3.
 - Écarté : fichier de timeline OpenTimelineIO à côté de chaque clip (Resolve en garde les noms
   de pistes, d'après Palawi) et export d'un WAV par piste : du travail et des fichiers en plus
   pour un confort que Palawi juge inutile.
+
+## ADR-022 — Réglages NVENC pour la mémoire (PERF-02)
+**Statut :** acceptée (2026-10-16) ; le seuil de PERF-02 reste à trancher (`HANDOFF.md`).
+- Contexte : avec les réglages par défaut de FFmpeg, une session `*_nvenc` 1440p engage
+  ~175 Mo de mémoire système (DPB auto, 4 surfaces, `delay` 3) : la moitié du moteur hors
+  tampon (`RESEARCH.md` § Mémoire du pipeline).
+- Décision : `dpb_size=2` pour tous les encodeurs NVENC ; `surfaces=2` et `delay=1` jusqu'à
+  60 i/s, défauts de FFmpeg (`surfaces=4`, `delay=3`) au-delà (`nvenc_pipeline_depth`).
+- Pourquoi : −110 Mo engagés pour −0,3 dB de PSNR à 40 Mb/s ; le pipeline court tient à
+  60 i/s (retard max 3,7 ms) mais pas à 240 i/s (jusqu'à 15,8 ms), d'où le seuil.
+- Écarté : `dpb_size=1` (−7 Mo de plus pour −0,8 dB) ; `tune=ll`/`ull` (aucun effet mémoire).
+- Limite : 120 et 144 i/s prennent les défauts sans mesure du pipeline court ; AMF et QSV ne
+  sont pas réglés (pas de matériel pour mesurer).
