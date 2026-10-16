@@ -1,7 +1,10 @@
 param(
-    [int]$Minutes = 120,
+    [int]$Minutes = 20,
+    [int]$SaveEverySeconds = 5,
     [int]$Duration = 60,
     [int]$BitrateMbps = 40,
+    [double]$MaxMbPerSave = 0.1,
+    [double]$MaxMbPerHour = 20,
     [string]$ToneDevice = "Realtek",
     [string]$Name = "replay-ram"
 )
@@ -19,6 +22,24 @@ function Write-Journal([string]$Line) {
     $Line | Tee-Object -FilePath $journal -Append | Write-Host
 }
 
+function Get-Slope($Points) {
+    $n = $Points.Count
+    $mx = ($Points | Measure-Object -Property X -Average).Average
+    $my = ($Points | Measure-Object -Property Y -Average).Average
+    $sxx = 0.0; $sxy = 0.0
+    foreach ($p in $Points) { $sxx += ($p.X - $mx) * ($p.X - $mx); $sxy += ($p.X - $mx) * ($p.Y - $my) }
+    $slope = $sxy / $sxx
+    $residual = 0.0
+    foreach ($p in $Points) { $r = $p.Y - $my - $slope * ($p.X - $mx); $residual += $r * $r }
+    [pscustomobject]@{ Slope = $slope; StdErr = [math]::Sqrt($residual / ($n - 2) / $sxx) }
+}
+
+function Remove-FinishedClips {
+    Get-ChildItem $clips -Recurse -Filter *.mp4 -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -lt (Get-Date).AddSeconds(-3) } |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -Namespace PalaClips -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags);'
 $continuous = [uint32]2147483648
@@ -34,7 +55,8 @@ try {
     Copy-Item $cli $toneA -Force
     Copy-Item $cli $toneB -Force
     $seconds = $Minutes * 60
-    Write-Journal "$(Get-Date -Format s) $Name : replay $Duration s armé pendant $Minutes min, $BitrateMbps Mb/s 1440p60, 4 pistes (mix, tone-a, tone-b, Jeu), fenêtre de bruit ffplay"
+    $saves = [int]($seconds / $SaveEverySeconds)
+    Write-Journal "$(Get-Date -Format s) $Name : replay $Duration s armé $Minutes min, une sauvegarde toutes les $SaveEverySeconds s ($saves), $BitrateMbps Mb/s 1440p60, 4 pistes (mix, tone-a, tone-b, Jeu), fenêtre de bruit ffplay ; clips effacés au fil de l'eau"
     $area = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $started += Start-Process (Join-Path $root "third_party\ffmpeg\bin\ffplay.exe") -ArgumentList @(
         "-hide_banner", "-loglevel", "error", "-an",
@@ -64,31 +86,36 @@ try {
     $stderr = $replay.StandardError.ReadToEndAsync()
     Start-Sleep -Seconds 5
     if ($replay.HasExited) { throw "replay non armé : $($stdout.Result.Trim()) $($stderr.Result.Trim())" }
-    Start-Sleep -Seconds $seconds
-    $replay.StandardInput.WriteLine("")
-    Start-Sleep -Seconds 5
+    for ($i = 0; $i -lt $saves; $i++) {
+        $replay.StandardInput.WriteLine("")
+        Start-Sleep -Seconds $SaveEverySeconds
+        Remove-FinishedClips
+    }
     $replay.StandardInput.WriteLine("q")
     if (-not $replay.WaitForExit(60000)) { throw "le replay ne s'est pas arrêté" }
+    Remove-FinishedClips
+
     $lines = $stdout.Result -split "`r?`n"
     $samples = foreach ($line in $lines) {
-        if ($line -match '^\[\s*(\d+) s\].*mémoire privée du processus (\d+) Mo') {
-            [pscustomobject]@{ Seconds = [int]$Matches[1]; Mb = [int]$Matches[2] }
+        if ($line -match '^\[\s*(\d+) s\] clip (\d+) :.*mémoire privée ([\d.]+) Mo') {
+            [pscustomobject]@{ Seconds = [int]$Matches[1]; Save = [int]$Matches[2]; Mb = [double]$Matches[3] }
         }
     }
-    $lines | Where-Object { $_ -match 'replay de|état|clip|alerte|RÉSUMÉ' } | ForEach-Object { Write-Journal $_ }
-    $samples | Where-Object { $_.Seconds % 600 -lt 5 } | ForEach-Object { Write-Journal ("{0,6} s : {1} Mo" -f $_.Seconds, $_.Mb) }
+    $lines | Where-Object { $_ -match 'replay de|état|alerte|RÉSUMÉ' } | ForEach-Object { Write-Journal $_ }
+    $samples | Where-Object { $_.Save % 12 -eq 0 } | ForEach-Object { Write-Journal ("{0,6} s, sauvegarde {1,4} : {2,7:N1} Mo" -f $_.Seconds, $_.Save, $_.Mb) }
     Write-Journal ($stderr.Result -split "`n" | Select-String "WARN|ERROR" | Out-String).TrimEnd()
-    $atHalfHour = $samples | Where-Object { $_.Seconds -ge 1800 } | Select-Object -First 1
-    $atEnd = $samples | Select-Object -Last 1
-    if (-not $atHalfHour -or -not $atEnd) { throw "pas assez de mesures de mémoire" }
-    $change = ($atEnd.Mb - $atHalfHour.Mb) / $atHalfHour.Mb * 100
-    $verdict = if ([math]::Abs($change) -lt 5) { "OK" } else { "ÉCHEC" }
-    Write-Journal ("RÉSULTAT : mémoire privée {0} Mo à {1} s, {2} Mo à {3} s, écart {4:+0.0;-0.0} % → {5} (critère < 5 %)" -f $atHalfHour.Mb, $atHalfHour.Seconds, $atEnd.Mb, $atEnd.Seconds, $change, $verdict)
+    $steady = @($samples | Where-Object { $_.Seconds -ge $Duration + 60 })
+    if ($steady.Count -lt 10) { throw "pas assez de sauvegardes après la mise en régime ($($steady.Count))" }
+    $perSave = Get-Slope ($steady | ForEach-Object { [pscustomobject]@{ X = $_.Save; Y = $_.Mb } })
+    $perHour = Get-Slope ($steady | ForEach-Object { [pscustomobject]@{ X = $_.Seconds / 3600; Y = $_.Mb } })
+    $missing = $saves - $samples.Count
+    $ok = ($perSave.Slope -lt $MaxMbPerSave) -and ($perHour.Slope -lt $MaxMbPerHour) -and ($missing -eq 0)
+    Write-Journal ("RÉSULTAT : {0} clips sur {1}, {2} mesures après {3} s ; pente {4:+0.000;-0.000} ± {5:0.000} Mo par sauvegarde (seuil {6}), {7:+0.0;-0.0} ± {8:0.0} Mo/h (seuil {9}) → {10}" -f $samples.Count, $saves, $steady.Count, ($Duration + 60), $perSave.Slope, $perSave.StdErr, $MaxMbPerSave, $perHour.Slope, $perHour.StdErr, $MaxMbPerHour, $(if ($ok) { "OK" } else { "ÉCHEC" }))
 } catch {
     Write-Journal "ÉCHEC : $_"
 } finally {
     $started | Where-Object { $_ -and -not $_.HasExited } | Stop-Process -Force -ErrorAction SilentlyContinue
     Remove-Item $clips -Recurse -Force -ErrorAction SilentlyContinue
     [PalaClips.Power]::SetThreadExecutionState($continuous) | Out-Null
-    Write-Journal "$(Get-Date -Format s) fin : ffplay, sons de test et replay arrêtés, clip supprimé, veille rétablie, journal $journal"
+    Write-Journal "$(Get-Date -Format s) fin : ffplay, sons de test et replay arrêtés, clips supprimés, veille rétablie, journal $journal"
 }
