@@ -9,7 +9,7 @@
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
 - **Branche :** `feature/app-shell` (à jour sur `dev`) : socle Tauri ↔ moteur de l'écran État
-  fait, PR vers `dev` ouverte et **laissée ouverte** (l'écran lui-même reste à construire).
+  fait, PR #19 (brouillon) vers `dev` **laissée ouverte** (l'écran lui-même reste à construire).
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
