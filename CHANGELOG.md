@@ -44,6 +44,16 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   `Vidéos\PalaClips\<Jeu>\` sous le nom `<Jeu>_<date>_<heure>_replay.mp4`.
 - Changer de zone de capture ou de sources redémarre le tampon de replay proprement.
 - CLI : `replay` (Entrée = sauvegarder, affiche la mémoire et la latence).
+- Application (phase 5, socle) : icône dans la zone de notification (Ouvrir, Sauvegarder le
+  replay, Quitter), une seule instance, fermer la fenêtre ne coupe pas le replay ; `Alt+F10`
+  sauvegarde le replay depuis n'importe quel jeu, avec une alerte qui explique quoi faire si
+  le raccourci est déjà pris (overlay NVIDIA).
+- Chaque clip sauvegardé a sa miniature ; la liste des derniers clips donne leur durée et le
+  nom de leurs pistes lu dans le fichier ; espace disque restant.
+- Niveaux audio de chaque piste en direct quand la fenêtre est ouverte (moins souvent sans
+  focus, rien quand elle est réduite ou fermée).
+- CLI : `probe-memory`, `recent-clips`, `replay --levels`, `replay --no-arm` ; scripts
+  `engine-memory.ps1`, `nvenc-quality.ps1`.
 
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
