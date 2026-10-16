@@ -96,11 +96,7 @@ Aucun.
 
 ## Décisions en attente de Palawi
 
-- **Alerte « images de la source limitées »** (proposée le 2026-10-15, à la demande de
-  Palawi) : quand WGC livre durablement moins d'images que le fps demandé alors que la source
-  est active (cas G-Sync ci-dessous), émettre une alerte `capture_source_rate_limited` avec un
-  message actionnable (« désactive G-Sync ou passe tes autres écrans à ≥ N Hz »). Pas dans la
-  SPEC : à ajouter (exigence CAP-xx, phase 7 robustesse) si Palawi la valide.
+Aucune. (Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.)
 
 ## Points d'attention
 

@@ -132,10 +132,11 @@ Critères :
 - 🤖 5 000 clips factices : défilement à 60 fps, ouverture de la galerie < 500 ms.
 - 👤 Glisser un clip copié dans Discord : envoi OK, son = mix.
 
-## Phase 7 — Robustesse et performances (CAP-08, 09 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
+## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
 
 - [ ] Changement de résolution, alt-tab, plein écran exclusif, casque débranché, appli qui
       crashe, disque plein, redémarrage du pilote GPU (TDR) : jamais de crash, alerte claire.
+- [ ] Alerte `capture_source_rate_limited` sur la cadence de composition DWM (CAP-11, ADR-018).
 - [ ] Panneau de performances.
 - [ ] Mesures PERF sur build release installée.
 
