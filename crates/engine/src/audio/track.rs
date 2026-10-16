@@ -16,7 +16,7 @@ use windows::Win32::System::Threading::{
 };
 
 use super::filler::{FillStats, GapFiller};
-use super::{AudioSource, CHANNELS, SAMPLE_RATE};
+use super::{AudioSource, CHANNELS, PeakMeter, SAMPLE_RATE};
 use crate::clock::Hns;
 use crate::encode::AacEncoder;
 use crate::error::{EngineError, Result};
@@ -58,6 +58,7 @@ pub struct AudioTrack {
     stream: AudioStream,
     packets: Receiver<AVPacket>,
     alerts: Receiver<EngineEvent>,
+    meter: PeakMeter,
     stop: Arc<Waitable>,
     end: Arc<AtomicI64>,
     thread: Option<JoinHandle<Result<AudioTrackStats>>>,
@@ -89,7 +90,9 @@ impl AudioTrack {
         let (alert_tx, alerts) = bounded(ALERT_QUEUE);
         let stop = Arc::new(Waitable::event()?);
         let end = Arc::new(AtomicI64::new(i64::MIN));
+        let meter = PeakMeter::default();
         let worker = Worker {
+            meter: meter.clone(),
             source,
             title,
             filler: GapFiller::new(origin),
@@ -112,6 +115,7 @@ impl AudioTrack {
             stream,
             packets,
             alerts,
+            meter,
             stop,
             end,
             thread: Some(thread),
@@ -128,6 +132,10 @@ impl AudioTrack {
 
     pub fn alerts(&self) -> &Receiver<EngineEvent> {
         &self.alerts
+    }
+
+    pub fn meter(&self) -> &PeakMeter {
+        &self.meter
     }
 
     pub fn finish_at(&self, until: Hns) {
@@ -163,6 +171,7 @@ impl Drop for AudioTrack {
 }
 
 struct Worker {
+    meter: PeakMeter,
     source: AudioSource,
     title: String,
     filler: GapFiller,
@@ -543,10 +552,13 @@ impl Worker {
             self.silence.on_signal(Hns::now());
         }
         let gain = self.gain();
+        let mut peak = 0.0f32;
         for sample in data.iter_mut() {
             *sample *= gain;
-            self.stats.peak = self.stats.peak.max(sample.abs());
+            peak = peak.max(sample.abs());
         }
+        self.stats.peak = self.stats.peak.max(peak);
+        self.meter.record(peak);
         self.filler
             .push(qpc + self.sync_offset, data, &mut self.filled);
         self.flush()

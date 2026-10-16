@@ -1,7 +1,9 @@
 mod filler;
+mod meter;
 mod track;
 
 pub use filler::{FillStats, GapFiller};
+pub use meter::PeakMeter;
 pub use track::{AudioStream, AudioTrack, AudioTrackStats};
 
 use crate::sources::CurrentGame;

@@ -3,12 +3,12 @@ mod commands;
 use std::sync::{Arc, Mutex};
 
 use palaclips_engine::EngineConfig;
-use palaclips_engine::engine::{Engine, EngineHandle};
+use palaclips_engine::engine::{Engine, EngineHandle, LevelRate};
 use palaclips_engine::events::{EngineEvent, EngineState, Severity};
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 pub const MAIN_WINDOW: &str = "main";
@@ -227,12 +227,32 @@ pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         window.set_focus()?;
         return Ok(());
     }
-    WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
+    let window = WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
         .title("PalaClips")
         .inner_size(1180.0, 760.0)
         .min_inner_size(900.0, 600.0)
         .build()?;
+    set_level_rate(app, LevelRate::Focused);
+    let watched = window.clone();
+    window.on_window_event(move |event| {
+        let rate = match event {
+            WindowEvent::Focused(true) => LevelRate::Focused,
+            WindowEvent::Focused(false) => LevelRate::Background,
+            WindowEvent::Resized(_) if watched.is_minimized().unwrap_or(false) => LevelRate::Off,
+            WindowEvent::Destroyed => LevelRate::Off,
+            _ => return,
+        };
+        set_level_rate(watched.app_handle(), rate);
+    });
     Ok(())
+}
+
+fn set_level_rate(app: &tauri::AppHandle, rate: LevelRate) {
+    if let Some(slot) = app.try_state::<EngineSlot>()
+        && let Err(error) = slot.handle.set_level_rate(rate)
+    {
+        tracing::warn!(%error, "niveaux audio non transmis");
+    }
 }
 
 #[cfg(test)]

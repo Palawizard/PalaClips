@@ -266,7 +266,10 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 Émis tels quels sur l'événement Tauri `engine-event` par le fil `palaclips-events`, qui tient
 aussi l'`AppStatus` renvoyé par `get_state`.
 
-`state_changed`, `clip_saved`, `audio_levels` (~20 Hz, seulement fenêtre ouverte),
+`state_changed`, `clip_saved`, `audio_levels` (crête linéaire 0–1 de chaque piste depuis le
+relevé précédent, dans l'ordre des pistes ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
+fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
+fenêtre),
 `replay_stats`, `alert { severity, code, message }`.
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
