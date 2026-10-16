@@ -6,7 +6,7 @@ use anyhow::Result;
 use crossbeam_channel::{Receiver, select};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::config::{AppTrack, AudioSettings, ReplaySettings, ReplayStorage};
-use palaclips_engine::engine::Engine;
+use palaclips_engine::engine::{Engine, LevelRate};
 use palaclips_engine::events::{EngineEvent, EngineState};
 use palaclips_engine::paths::private_bytes;
 
@@ -39,6 +39,11 @@ pub struct ReplayArgs {
     pub mix_device: Option<String>,
     #[arg(long, help = "Démarre le moteur sans armer le replay (mesure mémoire)")]
     pub no_arm: bool,
+    #[arg(
+        long,
+        help = "Demande les niveaux audio (20 i/s) et affiche leur cadence"
+    )]
+    pub levels: bool,
 }
 
 impl ReplayArgs {
@@ -91,6 +96,9 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let mut config = args.config()?;
     let engine = Engine::start(config.clone())?;
     let handle = engine.handle();
+    if args.levels {
+        handle.set_level_rate(LevelRate::Focused)?;
+    }
     if !args.no_arm {
         handle.arm()?;
         wait_until_armed(engine.events())?;
@@ -106,6 +114,8 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let mut finished = 0u32;
     let mut latencies = Vec::new();
     let mut stats_seen = 0u32;
+    let mut level_events = 0u32;
+    let mut last_levels = Vec::new();
     let mut quitting = false;
     loop {
         if quitting && finished >= requested {
@@ -144,6 +154,18 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     EngineEvent::ReplayStats { buffered_secs, bytes } => {
                         stats_seen += 1;
                         if stats_seen.is_multiple_of(STATS_EVERY) {
+                            if args.levels {
+                                let peaks: Vec<String> = last_levels
+                                    .iter()
+                                    .map(|(title, peak): &(String, f32)| format!("{title} {:.1} dB", 20.0 * peak.max(1e-6).log10()))
+                                    .collect();
+                                println!(
+                                    "niveaux : {:.1} par seconde ; {}",
+                                    f64::from(level_events) / f64::from(STATS_EVERY),
+                                    peaks.join(", ")
+                                );
+                                level_events = 0;
+                            }
                             println!(
                                 "[{:>6} s] tampon {buffered_secs:.1} s, {:.0} Mo ; mémoire privée du processus {:.0} Mo",
                                 started.elapsed().as_secs(),
@@ -161,7 +183,10 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         println!("alerte {severity:?} {code} : {message}");
                     }
                     EngineEvent::StateChanged { state } => println!("état : {state:?}"),
-                    EngineEvent::AudioLevels { .. } => {}
+                    EngineEvent::AudioLevels { levels } => {
+                        level_events += 1;
+                        last_levels = levels;
+                    }
                 }
             },
             default(timeout) => break,
