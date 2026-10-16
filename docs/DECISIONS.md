@@ -230,6 +230,14 @@ premier plan » de la phase 3.
   viennent des mêmes mesures (20 Mo/h ≈ 0,028 Mo par sauvegarde à une toutes les 5 s), le
   seuil horaire est donc le plus strict.
 - Écarté : test de 2 h armé sans sauvegarde (long, sans surveillance, peu informatif).
+- **Correction du 2026-10-16 (décision de Palawi)** : le premier essai (20 min) a donné
+  +0,045 Mo par sauvegarde mais +32 Mo/h, avec une montée de 626 à 642 Mo jusqu'à 9 min puis
+  un palier plat de 10 à 20 min. Le critère incluait la mise en régime du tas : c'était une
+  erreur de conception du test, pas un échec du code. Critère corrigé, fixé avant de relancer :
+  30 min armé, une sauvegarde toutes les 5 s ; les 10 premières minutes (mise en régime) sont
+  exclues ; sur 10–30 min, pente dans le temps < 20 Mo/h et pente par sauvegarde < 0,1 Mo ;
+  toutes les mesures gardées dans le journal. La cause des ~16 Mo de mise en régime n'est
+  cherchée que si le nouveau test montre encore une pente.
 
 ## ADR-021 — Noms de pistes : métadonnées du fichier seulement (AUD-05)
 **Statut :** acceptée (2026-10-16, décision de Palawi).
