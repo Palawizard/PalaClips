@@ -42,6 +42,16 @@ enum Command {
         duration: u32,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Derniers clips du dossier : durée, pistes lues dans le fichier, miniature (JSON)"
+    )]
+    RecentClips {
+        #[arg(long, help = "Dossier des clips ; absent = Vidéos\\PalaClips")]
+        clips_dir: Option<std::path::PathBuf>,
+        #[arg(long, default_value_t = 5)]
+        limit: usize,
+    },
+    #[cfg(windows)]
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
     #[cfg(windows)]
@@ -261,6 +271,21 @@ fn main() -> Result<()> {
             );
             let bytes = estimate_buffer_bytes(video_kbps, audio_tracks, window);
             println!("≈ {:.0} Mo", bytes as f64 / 1_000_000.0);
+        }
+        #[cfg(windows)]
+        Command::RecentClips { clips_dir, limit } => {
+            let root = match clips_dir {
+                Some(dir) => dir,
+                None => palaclips_engine::paths::default_clips_dir()?,
+            };
+            let clips = palaclips_engine::library::recent_clips(&root, limit);
+            let space = palaclips_engine::library::disk_space(&root)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &serde_json::json!({ "clips": clips, "disk": space })
+                )?
+            );
         }
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,

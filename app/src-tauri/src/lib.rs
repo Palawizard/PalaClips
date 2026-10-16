@@ -65,6 +65,7 @@ impl AppStatus {
 
 #[derive(Debug)]
 pub struct EngineSlot {
+    config: Mutex<EngineConfig>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
     status: Arc<Mutex<AppStatus>>,
@@ -73,7 +74,7 @@ pub struct EngineSlot {
 impl EngineSlot {
     fn start(app: &tauri::AppHandle, config: EngineConfig) -> palaclips_engine::Result<Self> {
         let arm = config.replay.arm_on_startup;
-        let engine = Engine::start(config)?;
+        let engine = Engine::start(config.clone())?;
         let handle = engine.handle();
         let status = Arc::new(Mutex::new(AppStatus::default()));
         let events = engine.events().clone();
@@ -93,10 +94,23 @@ impl EngineSlot {
             handle.arm()?;
         }
         Ok(Self {
+            config: Mutex::new(config),
             engine: Mutex::new(Some(engine)),
             handle,
             status,
         })
+    }
+
+    fn clips_root(&self) -> palaclips_engine::Result<std::path::PathBuf> {
+        let configured = self
+            .config
+            .lock()
+            .ok()
+            .and_then(|config| config.storage.clips_dir.clone());
+        match configured {
+            Some(dir) => Ok(dir),
+            None => palaclips_engine::paths::default_clips_dir(),
+        }
     }
 
     fn publish(&self, app: &tauri::AppHandle, event: EngineEvent) {
@@ -139,6 +153,8 @@ pub fn run() {
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
+            commands::list_recent_clips,
+            commands::storage_status,
         ])
         .setup(|app| {
             let slot = EngineSlot::start(app.handle(), EngineConfig::default())?;

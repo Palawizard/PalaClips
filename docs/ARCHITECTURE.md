@@ -256,6 +256,8 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `list_audio_sources` | 5 | sessions audio, processus, périphériques |
 | `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = message français) |
 | `record_start` / `record_stop` | 6 | enregistrement |
+| `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
+| `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
 | `list_clips` / `clip_*` | 6 | galerie : renommer, favori, supprimer, copier, exporter |
 | `get_hotkeys` / `set_hotkeys` | 5 | raccourcis, avec conflits |
 | `performance_snapshot` | 7 | panneau de performances |
