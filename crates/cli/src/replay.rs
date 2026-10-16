@@ -37,6 +37,8 @@ pub struct ReplayArgs {
         help = "Sortie à enregistrer en loopback pour la piste mix (partie du nom) ; absente = sortie par défaut"
     )]
     pub mix_device: Option<String>,
+    #[arg(long, help = "Démarre le moteur sans armer le replay (mesure mémoire)")]
+    pub no_arm: bool,
 }
 
 impl ReplayArgs {
@@ -89,8 +91,10 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let mut config = args.config()?;
     let engine = Engine::start(config.clone())?;
     let handle = engine.handle();
-    handle.arm()?;
-    wait_until_armed(engine.events())?;
+    if !args.no_arm {
+        handle.arm()?;
+        wait_until_armed(engine.events())?;
+    }
     let started = Instant::now();
     println!(
         "replay de {} s ({}) : Entrée = sauvegarder, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",

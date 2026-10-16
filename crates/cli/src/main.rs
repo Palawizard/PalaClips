@@ -5,6 +5,8 @@ mod probe_audio;
 #[cfg(windows)]
 mod probe_av;
 #[cfg(windows)]
+mod probe_memory;
+#[cfg(windows)]
 mod replay;
 
 use anyhow::Result;
@@ -55,6 +57,14 @@ enum Command {
     Replay {
         #[command(flatten)]
         replay: replay::ReplayArgs,
+    },
+    #[cfg(windows)]
+    #[command(
+        about = "Mémoire du processus étape par étape : D3D11, sondage des encodeurs, capture + encodeur, pistes audio"
+    )]
+    ProbeMemory {
+        #[command(flatten)]
+        probe: probe_memory::ProbeMemoryArgs,
     },
     #[cfg(windows)]
     #[command(about = "Capture la vidéo d'une cible et l'encode sur le GPU dans un MP4")]
@@ -256,6 +266,8 @@ fn main() -> Result<()> {
         Command::CaptureVideo { capture } => run_capture(&capture, Vec::new())?,
         #[cfg(windows)]
         Command::Replay { replay } => replay::run_replay(&replay)?,
+        #[cfg(windows)]
+        Command::ProbeMemory { probe } => probe_memory::probe_memory(&probe)?,
         #[cfg(windows)]
         Command::CaptureAv {
             capture,
