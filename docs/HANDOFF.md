@@ -5,9 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 4 — Replay, pas commencée. Phase 3 **validée** le 2026-10-16
+- **Phase en cours :** 4 — Replay, code fait, 2 critères sur 4 (`docs/reports/phase-4.md`) ;
+  restent le test RAM de 2 h et l'import dans Resolve. Phase 3 **validée** le 2026-10-16
   (`docs/reports/phase-3.md`).
-- **Branche :** `fix/game-track-follows-game` (PR #12), puis phase 4 depuis `dev`.
+- **Branche :** `feature/replay-engine` (PR vers `dev`).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -97,10 +98,19 @@
 - Mesures : `probe-audio --device` (pente réception − `pu64QPCPosition`), `play-tone
   --amplitude`, `scripts/clock-drift.ps1` (PR #11).
 
+- **Phase 4 (`feature/replay-engine`)** : `engine` (`Engine`, `EngineHandle` : `arm`,
+  `disarm`, `save_replay`, `configure`), `replay::plan_clip`, `ReplayPacket` / `Spool` /
+  `PacketReader` (RAM ou segments disque), `paths` (dossiers connus, nom des clips, mémoire
+  privée), `StorageSettings::clips_dir`, `EngineError::{Stopped, NothingToSave}`, CLI
+  `replay`, scripts `replay-save.ps1` (20 sauvegardes) et `replay-ram.ps1` (2 h).
+  `VideoCapture::start` maintient le MTA COM (`keep_mta_alive`).
+
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 4 (`docs/PLAN.md`) sur une nouvelle branche depuis `dev` : `Engine`/`EngineHandle`,
-   fan-out des paquets (cloner les `AVPacket`), `PacketRing` sur tous les flux, sauvegarde.
+1. Phase 4 : lire `target\journals\replay-ram-*.txt` (Palawi lance `pwsh
+   scripts\replay-ram.ps1` en partant) et faire l'import Resolve avec Palawi, puis
+   `/valider-phase`.
+2. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front.
 
 ## Bloquants
 
