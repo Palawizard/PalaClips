@@ -21,7 +21,7 @@ use crate::clock::Hns;
 use crate::encode::AacEncoder;
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Severity};
-use crate::sources;
+use crate::sources::{self, ForegroundWatch, ForegroundWindow};
 
 const BUFFER_DURATION_HNS: i64 = 2_000_000;
 const BYTES_PER_FRAME: usize = CHANNELS * size_of::<f32>();
@@ -30,7 +30,7 @@ const END_GRACE_MS: i64 = 250;
 const SILENCE_WAKE_MS: u32 = 50;
 const SILENCE_LAG_MS: i64 = 100;
 const APP_RETRY_MS: u32 = 1_000;
-const FOREGROUND_CHECK_MS: i64 = 500;
+const FOREGROUND_QUEUE: usize = 16;
 const SILENT_CHECK_MS: i64 = 1_000;
 const SILENT_AFTER_MS: i64 = 3_000;
 const SILENT_CHECKS_BEFORE_ALERT: u32 = 2;
@@ -102,9 +102,7 @@ impl AudioTrack {
             stop: stop.clone(),
             end: end.clone(),
             app: None,
-            game_exe: None,
-            foreground_pid: None,
-            next_foreground_check: Hns(0),
+            foreground: None,
             silence: SilenceWatch::default(),
         };
         let thread = std::thread::Builder::new()
@@ -177,9 +175,7 @@ struct Worker {
     stop: Arc<Waitable>,
     end: Arc<AtomicI64>,
     app: Option<AttachedApp>,
-    game_exe: Option<String>,
-    foreground_pid: Option<u32>,
-    next_foreground_check: Hns,
+    foreground: Option<ForegroundSignal>,
     silence: SilenceWatch,
 }
 
@@ -187,6 +183,12 @@ struct Worker {
 struct AttachedApp {
     exe_name: String,
     pid: u32,
+}
+
+struct ForegroundSignal {
+    _watch: ForegroundWatch,
+    changed: Arc<Waitable>,
+    windows: Receiver<ForegroundWindow>,
 }
 
 #[derive(Debug, Default)]
@@ -272,11 +274,15 @@ impl Worker {
         let mut samples = Vec::new();
         let mut current_device: Option<String> = None;
         let mut unavailable_reported = false;
-        let waits_for_device = [
+        self.foreground = self.watch_foreground()?;
+        let mut waits_for_device = vec![
             self.stop.handle(),
             default_changed.handle(),
             devices_changed.handle(),
         ];
+        if let Some(foreground) = &self.foreground {
+            waits_for_device.push(foreground.changed.handle());
+        }
 
         loop {
             let opened = if self.source.is_application() {
@@ -336,17 +342,26 @@ impl Worker {
             } else if follows_default {
                 handles.push(default_changed.handle());
             }
+            let foreground_index = self.foreground.as_ref().map(|foreground| {
+                handles.push(foreground.changed.handle());
+                handles.len() - 1
+            });
             let outcome = loop {
                 match wait(&handles, SILENCE_WAKE_MS) {
                     Waited::Handle(0) => break Ok(Wake::Stop),
-                    Waited::Handle(2) => break Ok(Wake::Reopen),
-                    Waited::Handle(_) => {
+                    Waited::Handle(1) => {
                         if let Err(error) = stream.drain(&mut buffer, &mut samples, |qpc, data| {
                             self.on_packet(qpc, data)
                         }) {
                             break Err(error);
                         }
                     }
+                    Waited::Handle(index) if Some(index) == foreground_index => {
+                        if self.update_game() {
+                            break Ok(Wake::Reopen);
+                        }
+                    }
+                    Waited::Handle(_) => break Ok(Wake::Reopen),
                     Waited::Timeout => {
                         if let Err(error) = self.fill_silence() {
                             break Err(error);
@@ -356,8 +371,8 @@ impl Worker {
                         break Err(EngineError::Audio("attente WASAPI impossible".into()));
                     }
                 }
-                if self.source.is_application() && self.app_needs_reopen() {
-                    break Ok(Wake::Reopen);
+                if self.source.is_application() {
+                    self.check_app_silence();
                 }
             };
             match outcome {
@@ -451,46 +466,60 @@ impl Worker {
     }
 
     fn attach(&mut self) -> Option<AttachedApp> {
-        let processes = sources::processes().ok()?;
+        self.update_game();
         let exe_name = match &self.source {
             AudioSource::Application { exe_name } => exe_name.clone(),
-            _ => {
-                if let Some(foreground) = sources::foreground_app(&processes) {
-                    self.game_exe = Some(foreground);
-                }
-                self.next_foreground_check = Hns::now() + Hns::from_millis(FOREGROUND_CHECK_MS);
-                self.game_exe.clone()?
-            }
+            AudioSource::Game(game) => game.exe_name()?.to_owned(),
+            _ => return None,
         };
-        let pid = sources::root_pid(&processes, &exe_name)?;
+        let pid = sources::root_pid(&sources::processes().ok()?, &exe_name)?;
         self.app = Some(AttachedApp { exe_name, pid });
         self.app.clone()
     }
 
-    fn app_needs_reopen(&mut self) -> bool {
-        let now = Hns::now();
-        if matches!(self.source, AudioSource::Foreground) && now >= self.next_foreground_check {
-            self.next_foreground_check = now + Hns::from_millis(FOREGROUND_CHECK_MS);
-            let foreground_pid = sources::foreground_pid();
-            if foreground_pid == self.foreground_pid {
-                return false;
+    fn watch_foreground(&self) -> Result<Option<ForegroundSignal>> {
+        let AudioSource::Game(game) = &self.source else {
+            return Ok(None);
+        };
+        if !game.follows_foreground() {
+            return Ok(None);
+        }
+        let changed = Arc::new(Waitable::event()?);
+        let (sender, windows) = bounded(FOREGROUND_QUEUE);
+        let watch = ForegroundWatch::start({
+            let changed = changed.clone();
+            move |window| {
+                sender.try_send(window).ok();
+                changed.set();
             }
-            self.foreground_pid = foreground_pid;
-            let foreground = sources::processes()
-                .ok()
-                .and_then(|processes| sources::foreground_app(&processes));
-            if let Some(foreground) = foreground
-                && self.game_exe.as_ref() != Some(&foreground)
-            {
-                tracing::info!(track = %self.title, from = ?self.game_exe, to = %foreground, "la piste Jeu suit l'appli au premier plan");
-                self.game_exe = Some(foreground);
-                return true;
+        })?;
+        Ok(Some(ForegroundSignal {
+            _watch: watch,
+            changed,
+            windows,
+        }))
+    }
+
+    fn update_game(&mut self) -> bool {
+        let (Some(foreground), AudioSource::Game(game)) = (&self.foreground, &mut self.source)
+        else {
+            return false;
+        };
+        let mut changed = false;
+        for window in foreground.windows.try_iter() {
+            let from = game.exe_name().map(str::to_owned);
+            if game.on_foreground(&window) {
+                tracing::info!(track = %self.title, ?from, to = %window.exe_name, "la piste Jeu suit le nouveau jeu");
+                changed = true;
             }
         }
-        if self.silence.check_due(now) {
+        changed
+    }
+
+    fn check_app_silence(&mut self) {
+        if self.silence.check_due(Hns::now()) {
             self.check_silent_track();
         }
-        false
     }
 
     fn check_silent_track(&mut self) {
@@ -637,7 +666,7 @@ fn open_stream(
     let (direction, device_id) = match source {
         AudioSource::Microphone { device_id, .. } => (Direction::Capture, device_id),
         AudioSource::SystemMix { device_id } => (Direction::Render, device_id),
-        AudioSource::Application { .. } | AudioSource::Foreground => (Direction::Render, &None),
+        AudioSource::Application { .. } | AudioSource::Game(_) => (Direction::Render, &None),
     };
     let device = match device_id {
         Some(id) => enumerator.get_device(id)?,

@@ -50,6 +50,7 @@ export interface EngineConfig {
     app_tracks: AppTrack[];
     max_app_tracks: number;
     auto_game_track: boolean;
+    game_exe: string | null;
   };
   replay: {
     arm_on_startup: boolean;
