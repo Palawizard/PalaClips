@@ -148,6 +148,11 @@ enum Command {
             help = "Process loopback de cette appli (nom d'exe, arbre de processus) au lieu du loopback de la sortie"
         )]
         app: Option<String>,
+        #[arg(
+            long,
+            help = "Loopback de cette sortie (partie du nom) au lieu de la sortie par défaut"
+        )]
+        device: Option<String>,
         #[arg(long, default_value_t = 10)]
         seconds: u64,
     },
@@ -177,6 +182,12 @@ enum Command {
     PlayTone {
         #[arg(long, default_value_t = 440.0)]
         hz: f64,
+        #[arg(
+            long,
+            default_value_t = 0.25,
+            help = "Amplitude (0 = silence numérique)"
+        )]
+        amplitude: f64,
         #[arg(long, default_value_t = 30)]
         seconds: u64,
         #[arg(
@@ -304,9 +315,12 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
         #[cfg(windows)]
-        Command::ProbeAudio { mic, app, seconds } => {
-            probe_audio::probe_audio(mic, app.as_deref(), seconds)?
-        }
+        Command::ProbeAudio {
+            mic,
+            app,
+            device,
+            seconds,
+        } => probe_audio::probe_audio(mic, app.as_deref(), device.as_deref(), seconds)?,
         #[cfg(windows)]
         Command::ProbeAvEmitter { seconds, device } => {
             probe_av::probe_av_emitter(seconds, device.as_deref())?
@@ -318,9 +332,10 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::PlayTone {
             hz,
+            amplitude,
             seconds,
             device,
-        } => probe_av::play_tone(hz, seconds, device.as_deref())?,
+        } => probe_av::play_tone(hz, amplitude, seconds, device.as_deref())?,
     }
     Ok(())
 }
