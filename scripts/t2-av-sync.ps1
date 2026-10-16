@@ -75,4 +75,7 @@ foreach ($track in 0, 1) {
         $verdict = if ([math]::Abs($window.mean_ms) -lt 16.7) { "OK" } else { "HORS TOLÉRANCE" }
         Write-Host ("{0,-5} {1,6} s : {2,3} paires, min {3,7:+0.0;-0.0} ms, moy {4,7:+0.0;-0.0} ms, max {5,7:+0.0;-0.0} ms  {6}" -f $name, $window.start_s, $window.pairs, $window.min_ms, $window.mean_ms, $window.max_ms, $verdict)
     }
+    if ($result.fit) {
+        Write-Host ("{0,-5} pente {1:+0.00;-0.00} ± {2:0.00} ms/h, dispersion {3:0.0} ms" -f $name, $result.fit.slope_ms_per_h, $result.fit.slope_stderr_ms_per_h, $result.fit.dispersion_ms)
+    }
 }
