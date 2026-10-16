@@ -117,6 +117,13 @@
 
 ## Prochaines actions (dans l'ordre)
 
+0. **Test 👤 en attente (Palawi, quand il est dispo)** : pendant la capture de qualité NVENC,
+   Fortnite a perdu 50 à 100 i/s (PERF-03 exige ≤ 2 %). Script prêt sur `chore/fps-impact-test` :
+   Fortnite en Créatif immobile, puis dans un PowerShell **admin**
+   `pwsh -File scriptsps-impact.ps1` (~3 min, PresentMon de CapFrameX, 6 essais de 20 s :
+   sans capture, fenêtre 60, écran 60, fenêtre 30, WGC seul, sans capture). Lire
+   `target/journals/fps-impact-*.txt` : perte par essai et mode de présentation (composition
+   DWM forcée ?). Si la perte vient de WGC, c'est un risque pour la règle n°8 → Palawi décide.
 1. Phase 5 sur `feature/app-shell`, écran État + shell (brief confirmé, `/design` : impeccable
    new-work/build dans la direction ADR-014, puis `emil-design-eng`, critique, audit, polish,
    et `DESIGN.md` par le documenteur impeccable) :
