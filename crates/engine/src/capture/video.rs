@@ -8,6 +8,7 @@ use parking_lot::Mutex;
 use rsmpeg::avcodec::{AVCodecParameters, AVPacket};
 use rsmpeg::avutil::AVRational;
 use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11Multithread, ID3D11Texture2D};
+use windows::Win32::System::Com::CoIncrementMTAUsage;
 use windows::core::Interface;
 use windows_capture::capture::{CaptureControl, Context, GraphicsCaptureApiHandler};
 use windows_capture::frame::Frame;
@@ -62,6 +63,7 @@ pub struct VideoCapture {
 impl VideoCapture {
     pub fn start(target: &CaptureTarget, settings: &VideoSettings, encoder: &str) -> Result<Self> {
         settings.validate()?;
+        keep_mta_alive();
         let resolved = resolve_target(target)?;
         let hdr_white = resolved
             .monitor()
@@ -202,6 +204,18 @@ impl Drop for VideoCapture {
             tracing::warn!(%error, "arrêt de la capture vidéo");
         }
     }
+}
+
+fn keep_mta_alive() {
+    static MTA: std::sync::Once = std::sync::Once::new();
+    MTA.call_once(|| {
+        // windows-rs caches WinRT factories for the whole process; once the MTA is torn down
+        // between two sessions, WinTypes.dll unloads under them (https://learn.microsoft.com/windows/win32/api/combaseapi/nf-combaseapi-coincrementmtausage).
+        // SAFETY: the usage cookie is deliberately never released so the MTA lives as long as the process.
+        if let Err(error) = unsafe { CoIncrementMTAUsage() } {
+            tracing::warn!(%error, "MTA COM non maintenu");
+        }
+    });
 }
 
 struct SendCom<T>(T);

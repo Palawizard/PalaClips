@@ -38,6 +38,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   d'exe et rattachée seule quand l'appli est fermée puis relancée ; piste « Jeu » ; alerte si une piste d'appli reste muette alors que l'appli émet du
   son.
 - CLI : `list-audio-sessions`, `capture-apps`, `probe-audio --app`, `play-tone`.
+- Replay instantané (phase 4) : les dernières secondes (5 s à 60 min) gardées en RAM ou sur
+  disque ; une sauvegarde écrit le clip en quelques millisecondes sans arrêter la capture, à
+  partir d'une image clé, toutes les pistes alignées et de même durée, rangé dans
+  `Vidéos\PalaClips\<Jeu>\` sous le nom `<Jeu>_<date>_<heure>_replay.mp4`.
+- Changer de zone de capture ou de sources redémarre le tampon de replay proprement.
+- CLI : `replay` (Entrée = sauvegarder, affiche la mémoire et la latence).
 
 ### Corrigé
 - Piste « Jeu » : elle suit le jeu (dernière appli en plein écran ou sans bordure, l'appli de

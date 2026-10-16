@@ -1,0 +1,106 @@
+2026-10-16T15:46:35 replay-save : replay 60 s (RAM), 40 Mb/s 1440p60, 4 pistes (mix, tone-a, tone-b, Jeu), 20 sauvegardes toutes les 3 s
+2026-10-16T13:46:38.643403Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=2454 height=1440 fps=60 tracks=4 duration_s=60 storage=Ram
+replay de 60 s (RAM) : Entrée = sauvegarder, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+2026-10-16T13:46:38.655541Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-16T13:46:38.658892Z  INFO palaclips_engine::audio::track: application rattachée track=Jeu app=ffplay.exe (PID 31144)
+2026-10-16T13:46:38.658891Z  INFO palaclips_engine::audio::track: application rattachée track=tone-b app=tone-b.exe (PID 13976)
+2026-10-16T13:46:38.658893Z  INFO palaclips_engine::audio::track: application rattachée track=tone-a app=tone-a.exe (PID 14488)
+[     5 s] tampon 5.0 s, 26 Mo ; mémoire privée du processus 300 Mo
+[    10 s] tampon 10.0 s, 51 Mo ; mémoire privée du processus 326 Mo
+[    15 s] tampon 15.0 s, 76 Mo ; mémoire privée du processus 353 Mo
+[    20 s] tampon 20.0 s, 101 Mo ; mémoire privée du processus 379 Mo
+[    25 s] tampon 25.0 s, 126 Mo ; mémoire privée du processus 406 Mo
+[    30 s] tampon 30.0 s, 152 Mo ; mémoire privée du processus 432 Mo
+[    35 s] tampon 35.0 s, 177 Mo ; mémoire privée du processus 459 Mo
+[    40 s] tampon 40.0 s, 202 Mo ; mémoire privée du processus 485 Mo
+[    45 s] tampon 45.0 s, 227 Mo ; mémoire privée du processus 512 Mo
+[    50 s] tampon 50.0 s, 253 Mo ; mémoire privée du processus 538 Mo
+[    55 s] tampon 55.0 s, 278 Mo ; mémoire privée du processus 565 Mo
+[    60 s] tampon 60.0 s, 303 Mo ; mémoire privée du processus 591 Mo
+[    65 s] tampon 63.0 s, 317 Mo ; mémoire privée du processus 612 Mo
+2026-10-16T13:47:48.099065Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-47_replay.mp4 duration_s=60.2479999 latency_ms=149
+clip 1 : 60.248 s, prêt en 149 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-47_replay.mp4
+[    70 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 616 Mo
+2026-10-16T13:47:51.096461Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-50_replay.mp4 duration_s=60.2559999 latency_ms=146
+clip 2 : 60.256 s, prêt en 146 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-50_replay.mp4
+[    75 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 618 Mo
+2026-10-16T13:47:54.105880Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-53_replay.mp4 duration_s=60.2426666 latency_ms=155
+clip 3 : 60.243 s, prêt en 155 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-53_replay.mp4
+2026-10-16T13:47:57.106638Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-56_replay.mp4 duration_s=60.2506666 latency_ms=156
+clip 4 : 60.251 s, prêt en 156 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-56_replay.mp4
+[    80 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 620 Mo
+2026-10-16T13:48:00.110471Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-59_replay.mp4 duration_s=60.2373333 latency_ms=159
+clip 5 : 60.237 s, prêt en 159 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-47-59_replay.mp4
+2026-10-16T13:48:03.105182Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-02_replay.mp4 duration_s=60.2453333 latency_ms=154
+clip 6 : 60.245 s, prêt en 154 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-02_replay.mp4
+[    85 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 621 Mo
+2026-10-16T13:48:06.102078Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-05_replay.mp4 duration_s=60.2533333 latency_ms=150
+clip 7 : 60.253 s, prêt en 150 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-05_replay.mp4
+[    90 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 623 Mo
+2026-10-16T13:48:09.114491Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-08_replay.mp4 duration_s=60.2399999 latency_ms=162
+clip 8 : 60.240 s, prêt en 162 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-08_replay.mp4
+2026-10-16T13:48:12.112497Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-11_replay.mp4 duration_s=60.2479999 latency_ms=159
+clip 9 : 60.248 s, prêt en 159 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-11_replay.mp4
+[    95 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 624 Mo
+2026-10-16T13:48:15.153514Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-14_replay.mp4 duration_s=60.2559999 latency_ms=200
+clip 10 : 60.256 s, prêt en 200 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-14_replay.mp4
+2026-10-16T13:48:18.112085Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-17_replay.mp4 duration_s=60.2426666 latency_ms=157
+clip 11 : 60.243 s, prêt en 157 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-17_replay.mp4
+[   100 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 626 Mo
+2026-10-16T13:48:21.111692Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-20_replay.mp4 duration_s=60.2506666 latency_ms=154
+clip 12 : 60.251 s, prêt en 154 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-20_replay.mp4
+[   105 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 628 Mo
+2026-10-16T13:48:24.144250Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-23_replay.mp4 duration_s=60.2586666 latency_ms=187
+clip 13 : 60.259 s, prêt en 187 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-23_replay.mp4
+2026-10-16T13:48:27.105349Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-26_replay.mp4 duration_s=60.2453333 latency_ms=147
+clip 14 : 60.245 s, prêt en 147 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-26_replay.mp4
+[   110 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 630 Mo
+2026-10-16T13:48:30.108691Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-29_replay.mp4 duration_s=60.2533333 latency_ms=150
+clip 15 : 60.253 s, prêt en 150 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-29_replay.mp4
+2026-10-16T13:48:33.121108Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-32_replay.mp4 duration_s=60.2613333 latency_ms=163
+clip 16 : 60.261 s, prêt en 163 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-32_replay.mp4
+[   115 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 631 Mo
+2026-10-16T13:48:36.108277Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-35_replay.mp4 duration_s=60.2479999 latency_ms=150
+clip 17 : 60.248 s, prêt en 150 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-35_replay.mp4
+[   120 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 632 Mo
+2026-10-16T13:48:39.106407Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-38_replay.mp4 duration_s=60.2559999 latency_ms=148
+clip 18 : 60.256 s, prêt en 148 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-38_replay.mp4
+2026-10-16T13:48:42.112131Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-41_replay.mp4 duration_s=60.2639999 latency_ms=153
+clip 19 : 60.264 s, prêt en 153 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-41_replay.mp4
+[   125 s] tampon 63.0 s, 318 Mo ; mémoire privée du processus 633 Mo
+2026-10-16T13:48:45.115366Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-44_replay.mp4 duration_s=60.2506666 latency_ms=156
+clip 20 : 60.251 s, prêt en 156 ms → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\replay-save\ffplay\ffplay_2026-10-16_15-48-44_replay.mp4
+2026-10-16T13:48:47.975954Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=7760 captured=7353 duplicated=1079 max_lateness_ms=4.1472
+2026-10-16T13:48:48.084838Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=12943 silence_ms=9 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0
+2026-10-16T13:48:48.084886Z  INFO ffmpeg: [aac @ 00000263221a8800] Qavg: 65536.000
+2026-10-16T13:48:48.090421Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone-a packets=12942 silence_ms=22 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.25
+2026-10-16T13:48:48.090454Z  INFO ffmpeg: [aac @ 000002631fe96900] Qavg: 6737.587
+2026-10-16T13:48:48.093508Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone-b packets=12942 silence_ms=20 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.25
+2026-10-16T13:48:48.093539Z  INFO ffmpeg: [aac @ 000002632251c040] Qavg: 65275.809
+2026-10-16T13:48:48.094000Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Jeu packets=12943 silence_ms=18 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0
+2026-10-16T13:48:48.094081Z  INFO ffmpeg: [aac @ 00000263225d58c0] Qavg: 65536.000
+2026-10-16T13:48:48.095314Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 20 clips sur 20 demandés, latence min 146 ms, moy 158 ms, max 200 ms
+
+ffplay_2026-10-16_15-47-47_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,002 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-47-50_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,011 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-47-53_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,007 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-47-56_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,016 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-47-59_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,012 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-02_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,005 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-05_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,014 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-08_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,010 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-11_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,002 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-14_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,011 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-17_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,007 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-20_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,016 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-23_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,008 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-26_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,005 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-29_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,014 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-32_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,006 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-35_replay.mp4 : 290 Mo, 5 flux, vidéo 60,250 s, écart entre flux 0,002 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-38_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,011 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-41_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,003 s, débuts 0/0/0/0/0 → OK
+ffplay_2026-10-16_15-48-44_replay.mp4 : 290 Mo, 5 flux, vidéo 60,267 s, écart entre flux 0,016 s, débuts 0/0/0/0/0 → OK
+RÉSULTAT : 20 clips sur 20, 0 hors critères (durée 60 s +/- 1 intervalle d'images clés, pistes de même durée, 5 flux, début à 0)
+2026-10-16T15:48:50 fin : ffplay, sons de test et replay arrêtés, clips supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\replay-save-2026-10-16_15-46.txt
