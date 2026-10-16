@@ -7,11 +7,12 @@ use crossbeam_channel::{Receiver, select};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::config::{AppTrack, AudioSettings, ReplaySettings, ReplayStorage};
 use palaclips_engine::engine::Engine;
-use palaclips_engine::events::EngineEvent;
+use palaclips_engine::events::{EngineEvent, EngineState};
 use palaclips_engine::paths::private_bytes;
 
 const STATS_EVERY: u32 = 5;
 const PENDING_SAVES_TIMEOUT: Duration = Duration::from_secs(20);
+const ARM_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, clap::Args)]
 pub struct ReplayArgs {
@@ -89,6 +90,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let engine = Engine::start(config.clone())?;
     let handle = engine.handle();
     handle.arm()?;
+    wait_until_armed(engine.events())?;
     let started = Instant::now();
     println!(
         "replay de {} s ({}) : Entrée = sauvegarder, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",
@@ -143,8 +145,10 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         }
                     }
                     EngineEvent::Alert { severity, code, message } => {
-                        if code == "clip_save_failed" {
-                            finished += 1;
+                        match code.as_str() {
+                            "clip_save_failed" => finished += 1,
+                            "replay_stopped" | "replay_arm_failed" => quitting = true,
+                            _ => {}
                         }
                         println!("alerte {severity:?} {code} : {message}");
                     }
@@ -165,6 +169,21 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
         );
     }
     Ok(())
+}
+
+fn wait_until_armed(events: &Receiver<EngineEvent>) -> Result<()> {
+    loop {
+        match events.recv_timeout(ARM_TIMEOUT)? {
+            EngineEvent::StateChanged {
+                state: EngineState::ReplayArmed,
+            } => return Ok(()),
+            EngineEvent::Alert { code, message, .. } if code == "replay_arm_failed" => {
+                anyhow::bail!(message)
+            }
+            EngineEvent::Alert { message, .. } => println!("alerte : {message}"),
+            _ => {}
+        }
+    }
 }
 
 fn spawn_stdin_reader() -> Receiver<String> {
