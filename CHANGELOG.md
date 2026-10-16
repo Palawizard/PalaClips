@@ -40,3 +40,5 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   couleur au lieu de virer au blanc uniforme.
 - Capture à 240 i/s : plus de retard au démarrage (première image encodée avant le départ de
   l'horloge).
+- Audio : une sortie sur laquelle rien ne joue (Windows n'envoie alors aucune donnée) produit
+  quand même une piste continue de silence, au lieu d'attendre la fin de la capture.
