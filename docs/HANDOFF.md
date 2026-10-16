@@ -8,7 +8,8 @@
 - **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `feature/app-shell` (depuis `dev`, brief commité).
+- **Branche :** `feature/app-shell` (depuis `dev`, brief commité ; à rebaser sur `dev` après
+  la PR `fix/engine-memory-overhead`).
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
@@ -105,6 +106,12 @@
   privée), `StorageSettings::clips_dir`, `EngineError::{Stopped, NothingToSave}`, CLI
   `replay`, scripts `replay-save.ps1` (20 sauvegardes) et `replay-ram.ps1` (2 h).
   `VideoCapture::start` maintient le MTA COM (`keep_mta_alive`).
+- **Mémoire (PR `fix/engine-memory-overhead`)** : NVENC `dpb_size=2`, `surfaces=2`/`delay=1`
+  jusqu'à 60 i/s (ADR-022, −110 Mo) ; CLI `probe-memory` (mémoire étape par étape : tas,
+  `VirtualAlloc`, image, blocs qui grandissent), `replay --no-arm` ; script
+  `scripts/engine-memory.ps1` (étapes (a)–(d) de PERF-02, ~3 min, fenêtre ffplay et sons de
+  test). PERF-02 mesuré : `docs/reports/phase-4.md` § PERF-02, `RESEARCH.md` § Mémoire du
+  pipeline.
 
 ## Prochaines actions (dans l'ordre)
 
@@ -119,14 +126,31 @@
      réduite ou fermée, ~10 i/s sans focus ; miniature JPEG à la sauvegarde ; espace disque ;
    - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés ; mesure CPU fenêtre ouverte non
      focalisée pendant une capture (PERF-03).
-2. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
+2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
+   dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
+3. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
    Replay & qualité, Raccourcis, Stockage, Général ; assistant de calibrage AUD-11).
 
 ## Bloquants
 
-Aucun.
+- **PERF-02 (moteur hors tampon < 150 Mo) impossible en mémoire privée engagée** (mesuré le
+  2026-10-16, 1440p60 NVENC 40 Mb/s, 4 pistes, `scripts/engine-memory.ps1`) :
+  - après réduction de notre part (ADR-022) : replay 5 s = 213 Mo engagés, dont 41 Mo de
+    tampon → **172 Mo hors tampon** (321 / 276 Mo avant) ;
+  - part du pilote NVIDIA seule ≈ **136 Mo** : premier périphérique D3D11 52 Mo, session NVENC
+    1440p 63 Mo (déjà réglée au minimum raisonnable), réserve système engagée pour chaque
+    texture ~22 Mo. Avec le processus à vide (17 Mo), on est à 153 Mo avant l'audio
+    (4 pistes : +30 Mo, surtout WASAPI) ;
+  - mais ces réserves du pilote ne sont jamais touchées : **RAM réellement occupée hors tampon
+    = 61 Mo** (working set privé, ce qu'affiche la colonne « Mémoire » du Gestionnaire des
+    tâches).
+  - Options : (1) mesurer PERF-02 en working set privé (61 Mo ✅) — recommandé, c'est la RAM
+    que le moteur prend vraiment ; (2) garder la mémoire engagée et relever le seuil (~200 Mo) ;
+    (3) `dpb_size=1` en plus (−7 Mo, −0,8 dB) : ne suffit pas (~165 Mo).
 
 ## Décisions en attente de Palawi
+
+- PERF-02 : mesure (mémoire engagée ou working set privé) et seuil, voir « Bloquants ».
 
 - Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.
 

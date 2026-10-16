@@ -272,6 +272,45 @@
   — [OBS, même article](https://obsproject.com/blog/obs-studio-hybrid-mp4)
 - DaVinci Resolve gère mal le framerate variable : sortir en CFR. — [forum Blackmagic](https://forum.blackmagicdesign.com/viewtopic.php?p=474782)
 
+### Mémoire du pipeline (PERF-02, mesuré le 2026-10-16)
+
+Machine de Palawi, pilote NVIDIA 617.42, 1440p60 `h264_nvenc` 40 Mb/s, 4 pistes ; mémoire
+privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cli probe-memory`
+(étape par étape, tas / `VirtualAlloc` / image) et `scripts/engine-memory.ps1` (étapes (a)–(d)).
+
+- **Le pilote NVIDIA engage en mémoire système la taille de chaque texture D3D11**, sans la
+  toucher : 10 textures NV12 2458×1440 = +55 Mo de mémoire privée, +1,2 Mo de working set.
+  Toute texture (pool WGC, copie de l'image, pool NV12 de FFmpeg) se paie donc deux fois en
+  mémoire engagée (VRAM + réserve système), mais pas en RAM occupée.
+- Premier périphérique D3D11 du processus : +52 Mo (DLL du pilote copiées à l'écriture, tas et
+  blocs du pilote). Le sondage des encodeurs laisse ~+40 Mo après libération de son
+  périphérique ; le supprimer ne fait gagner que ~5 Mo au régime (183 au lieu de 188 Mo) : le
+  pilote reste chargé de toute façon.
+- **Session NVENC 1440p avec les réglages par défaut de FFmpeg : +155 Mo à l'ouverture**, dont
+  21 blocs de 5,4 Mo (taille d'une image NV12) ; +19 Mo de plus en régime (textures en vol).
+  La taille du DPB (images de référence) domine : `dpb_size=1` → +78 Mo, `dpb_size=2` → +85 Mo.
+  `surfaces` (défaut 4) et `delay` (défaut 3, `async_depth`) ajoutent ~2 blocs par surface.
+  `tune=ll`/`ull` ne changent rien. Le Video Processor (conversion + mise à l'échelle) et les
+  encodeurs AAC (0,75 Mo chacun) sont négligeables.
+- Qualité (PSNR moyen, zoom de Mandelbrot 2560×1440 à 60 i/s, 40 Mb/s CBR p4, 8 s) : DPB auto
+  41,03 dB, `dpb_size=2` 40,72 dB (−0,3), `dpb_size=1` 40,24 dB (−0,8). SSIM 0,9909 / 0,9904 /
+  0,9896.
+- Pipeline court (`surfaces=2`, `delay=1`) : retard max des ticks 3,7 ms à 60 i/s (budget
+  16,7 ms) mais 7,6–15,8 ms à 240 i/s contre 1,3–1,4 ms avec les défauts (toutes les images
+  produites dans les deux cas). `surfaces=3,delay=2` : 3,3–4,6 ms à 240 i/s.
+  → ADR-022 : `dpb_size=2` partout, `surfaces=2,delay=1` jusqu'à 60 i/s, défauts au-delà.
+- 4 pistes audio : +30 Mo, surtout côté WASAPI/AudioSes (nos tampons < 1 Mo par piste, AAC
+  0,75 Mo).
+- Tampon du replay : la mémoire réelle dépasse de ~7 % le total des paquets journalisé
+  (297 Mo contre 276–279 Mo pour 55 s de plus) : en-têtes, arrondis et fragmentation du tas.
+  Les paquets ne sont jamais copiés : la sauvegarde les partage par refcount
+  (`av_packet_clone`).
+- Résultat ((c) = replay 5 s, (d) = replay 60 s) : (c) 321 → 213 Mo, (d) 616 → 510 Mo
+  (−110 Mo). Hors tampon : 172 Mo engagés, dont ~136 Mo pour le pilote (périphérique 52 +
+  session NVENC 63 + réserve des textures ~22) ; **61 Mo de RAM réellement occupée** (working
+  set privé de (c) moins le tampon). Avec 17 Mo pour le processus à vide, 150 Mo engagés sont
+  hors d'atteinte quoi qu'on fasse de notre côté (`HANDOFF.md` § Bloquants).
+
 ## UI (Tauri 2)
 
 - Versions stables au 2026-10-15 : `tauri` 2.12.4, `tauri-build` 2.7.3, CLI npm 2.12.3 ;

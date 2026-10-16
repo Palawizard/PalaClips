@@ -150,6 +150,12 @@ Tout est arrêté et les clips supprimés à la fin.
   10 premières minutes sont la mise en régime, exclues ; régression sur 10–30 min : pente
   **< 20 Mo/h** et **< 0,1 Mo par sauvegarde**, aucun clip manquant. Journal
   `target\journals\replay-ram-*.txt`.
+- Mémoire hors tampon, PERF-02 (🤖, ~3 min, fenêtre ffplay en bas à droite et sons de test sur
+  `Realtek`) : `pwsh scripts\engine-memory.ps1` → mémoire privée, working set et working set
+  privé (médianes) pour (a) moteur sans capture (`replay --no-arm`), (b) capture sans replay
+  (`capture-apps`), (c) replay 5 s, (d) replay 60 s ; tampon réel = (d) − (c), comparé au
+  tampon journalisé. Détail par étape (D3D11, sondage, NVENC, pistes) :
+  `palaclips-cli probe-memory --target window:ffplay.exe --height 1440 --app tone-a.exe`.
 - Resolve (👤) : importer un replay produit par `palaclips-cli replay`, vérifier que chaque
   piste est séparée, nommée et alignée sur la vidéo.
 

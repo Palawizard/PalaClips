@@ -129,6 +129,8 @@ Critères :
 - [ ] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
 - [ ] Découpe rapide / précise, export pistes choisies ou mixées, copier dans le presse-papiers.
 - [ ] Galerie fluide (virtualisation) avec 5 000 clips.
+- [ ] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
+      montre pas, ADR-021).
 
 Critères :
 - 👤 Tuer le processus pendant un enregistrement : fichier lisible, finalisé au redémarrage.
