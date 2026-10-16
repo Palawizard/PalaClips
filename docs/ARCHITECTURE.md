@@ -250,10 +250,11 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 |---|---|---|
 | `engine_version` | 0 ✅ | version du moteur |
 | `default_config` | 0 ✅ | configuration par défaut |
+| `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon) |
 | `get_config` / `set_config` | 5 | lire / valider + appliquer + persister |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
 | `list_audio_sources` | 5 | sessions audio, processus, périphériques |
-| `replay_arm` / `replay_disarm` / `replay_save` | 5 | contrôle du replay |
+| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = message français) |
 | `record_start` / `record_stop` | 6 | enregistrement |
 | `list_clips` / `clip_*` | 6 | galerie : renommer, favori, supprimer, copier, exporter |
 | `get_hotkeys` / `set_hotkeys` | 5 | raccourcis, avec conflits |
@@ -261,6 +262,9 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `export_diagnostics` | 8 | archive zip |
 
 ### Événements (app → front) : `EngineEvent`
+
+Émis tels quels sur l'événement Tauri `engine-event` par le fil `palaclips-events`, qui tient
+aussi l'`AppStatus` renvoyé par `get_state`.
 
 `state_changed`, `clip_saved`, `audio_levels` (~20 Hz, seulement fenêtre ouverte),
 `replay_stats`, `alert { severity, code, message }`.

@@ -1,4 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+
+export const ENGINE_EVENT = "engine-event";
 
 export function engineVersion(): Promise<string> {
   return invoke<string>("engine_version");
@@ -6,6 +9,26 @@ export function engineVersion(): Promise<string> {
 
 export function defaultConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("default_config");
+}
+
+export function getState(): Promise<AppStatus> {
+  return invoke<AppStatus>("get_state");
+}
+
+export function replayArm(): Promise<void> {
+  return invoke("replay_arm");
+}
+
+export function replayDisarm(): Promise<void> {
+  return invoke("replay_disarm");
+}
+
+export function replaySave(): Promise<void> {
+  return invoke("replay_save");
+}
+
+export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<UnlistenFn> {
+  return listen<EngineEvent>(ENGINE_EVENT, (message) => handler(message.payload));
 }
 
 export type VideoCodec = "h264" | "hevc" | "av1";
@@ -64,6 +87,12 @@ export interface EngineConfig {
 
 export type EngineState = "idle" | "replay_armed" | "recording";
 export type Severity = "info" | "warning" | "error";
+
+export interface AppStatus {
+  state: EngineState;
+  buffered_secs: number;
+  buffer_bytes: number;
+}
 
 export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
