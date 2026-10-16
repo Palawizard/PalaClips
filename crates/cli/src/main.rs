@@ -91,6 +91,30 @@ enum Command {
         mic_offset_ms: i32,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Capture vidéo + une piste par appli (piste 1 = mix complet, puis micro en option, puis les applis)"
+    )]
+    CaptureApps {
+        #[command(flatten)]
+        capture: CaptureArgs,
+        #[arg(
+            long = "app",
+            help = "Nom d'exe d'une appli (répétable), capturée avec ses processus enfants"
+        )]
+        apps: Vec<String>,
+        #[arg(long, help = "Ajoute la piste « Jeu » (appli au premier plan)")]
+        game: bool,
+        #[arg(long, help = "Sans la piste mix complet")]
+        no_mix: bool,
+        #[arg(
+            long,
+            help = "Sortie à enregistrer en loopback pour la piste mix (partie du nom) ; absente = sortie par défaut"
+        )]
+        mix_device: Option<String>,
+        #[arg(long, help = "Ajoute la piste micro (micro par défaut)")]
+        mic: bool,
+    },
+    #[cfg(windows)]
     #[command(about = "Test WGC : Video Processor sur le périphérique, cadence et horodatages QPC")]
     ProbeWgc {
         #[arg(long, value_parser = parse_target, default_value = "primary")]
@@ -119,6 +143,11 @@ enum Command {
     ProbeAudio {
         #[arg(long, help = "Micro par défaut au lieu du loopback de la sortie")]
         mic: bool,
+        #[arg(
+            long,
+            help = "Process loopback de cette appli (nom d'exe, arbre de processus) au lieu du loopback de la sortie"
+        )]
+        app: Option<String>,
         #[arg(long, default_value_t = 10)]
         seconds: u64,
     },
@@ -127,6 +156,27 @@ enum Command {
         about = "Émetteur de test A/V : fenêtre plein écran qui flashe en même temps qu'un bip WASAPI, chaque seconde, sans compensation de latence (comme un jeu)"
     )]
     ProbeAvEmitter {
+        #[arg(long, default_value_t = 30)]
+        seconds: u64,
+        #[arg(
+            long,
+            help = "Sortie à utiliser (partie du nom) ; absente = sortie par défaut"
+        )]
+        device: Option<String>,
+    },
+    #[cfg(windows)]
+    #[command(
+        about = "Liste les sessions audio de toutes les sorties : appli, PID racine, crête instantanée"
+    )]
+    ListAudioSessions {
+        #[arg(long, help = "Sortie JSON")]
+        json: bool,
+    },
+    #[cfg(windows)]
+    #[command(about = "Joue une sinusoïde sur une sortie, sans fenêtre (source de test)")]
+    PlayTone {
+        #[arg(long, default_value_t = 440.0)]
+        hz: f64,
         #[arg(long, default_value_t = 30)]
         seconds: u64,
         #[arg(
@@ -210,6 +260,42 @@ fn main() -> Result<()> {
             run_capture(&capture, audio)?
         }
         #[cfg(windows)]
+        Command::CaptureApps {
+            capture,
+            apps,
+            game,
+            no_mix,
+            mix_device,
+            mic,
+        } => {
+            use palaclips_engine::audio::AudioSource;
+            let mut audio = Vec::new();
+            if !no_mix {
+                let device_id = mix_device
+                    .map(|name| -> Result<String> {
+                        Ok(probe_audio::find_device(wasapi::Direction::Render, &name)?.get_id()?)
+                    })
+                    .transpose()?;
+                audio.push((AudioSource::SystemMix { device_id }, 0));
+            }
+            if mic {
+                audio.push((
+                    AudioSource::Microphone {
+                        device_id: None,
+                        gain_db: 0.0,
+                    },
+                    0,
+                ));
+            }
+            for exe_name in apps {
+                audio.push((AudioSource::Application { exe_name }, 0));
+            }
+            if game {
+                audio.push((AudioSource::Foreground, 0));
+            }
+            run_capture(&capture, audio)?
+        }
+        #[cfg(windows)]
         Command::ProbeWgc {
             target,
             seconds,
@@ -218,13 +304,23 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
         #[cfg(windows)]
-        Command::ProbeAudio { mic, seconds } => probe_audio::probe_audio(mic, seconds)?,
+        Command::ProbeAudio { mic, app, seconds } => {
+            probe_audio::probe_audio(mic, app.as_deref(), seconds)?
+        }
         #[cfg(windows)]
         Command::ProbeAvEmitter { seconds, device } => {
             probe_av::probe_av_emitter(seconds, device.as_deref())?
         }
         #[cfg(windows)]
         Command::ResolveTarget { target } => resolve_target(&target)?,
+        #[cfg(windows)]
+        Command::ListAudioSessions { json } => list_audio_sessions(json)?,
+        #[cfg(windows)]
+        Command::PlayTone {
+            hz,
+            seconds,
+            device,
+        } => probe_av::play_tone(hz, seconds, device.as_deref())?,
     }
     Ok(())
 }
@@ -481,7 +577,7 @@ fn run_capture(
         track_reports.into_iter().zip(&max_arrival_gap[1..])
     {
         println!(
-            "piste « {title} » : {} paquets WASAPI, silence comblé {} ms, chevauchement coupé {} ms, {} corrections de dérive, {} changements de périphérique, crête {:.3}, écart max entre paquets AAC reçus {:.0} ms",
+            "piste « {title} » : {} paquets WASAPI, silence comblé {} ms, chevauchement coupé {} ms, {} corrections de dérive, {} changements de périphérique ou rattachements, crête {:.3}, écart max entre paquets AAC reçus {:.0} ms",
             track.packets,
             ms(track.fill.silence_frames),
             ms(track.fill.dropped_frames),
@@ -495,6 +591,38 @@ fn run_capture(
                 println!("  alerte : {message}");
             }
         }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn list_audio_sessions(json: bool) -> Result<()> {
+    use palaclips_engine::sources;
+    wasapi::initialize_mta()
+        .ok()
+        .map_err(|error| anyhow::anyhow!("COM : {error}"))?;
+    let processes = sources::processes()?;
+    let sessions = sources::audio_sessions(&processes)?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&sessions)?);
+        return Ok(());
+    }
+    for session in &sessions {
+        let exe = session.exe_name.as_deref().unwrap_or("?");
+        let root = sources::root_pid(&processes, exe).unwrap_or(session.pid);
+        println!(
+            "{:<28} PID {:>6} (racine {:>6})  {:<8} crête {:.3}  {}  {}",
+            exe,
+            session.pid,
+            root,
+            if session.active { "active" } else { "inactive" },
+            session.peak,
+            session.device,
+            session.display_name
+        );
+    }
+    if let Some(app) = sources::foreground_app(&processes) {
+        println!("premier plan : {app}");
     }
     Ok(())
 }
