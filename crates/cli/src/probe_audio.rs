@@ -5,8 +5,8 @@ use std::time::Duration;
 use anyhow::{Result, anyhow};
 use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
 use wasapi::{
-    Device, DeviceEnumerator, DeviceEventCallbacks, Direction, Role, SampleType, StreamMode,
-    WasapiError, WaveFormat, initialize_mta,
+    AudioClient, Device, DeviceEnumerator, DeviceEventCallbacks, Direction, Role, SampleType,
+    StreamMode, WasapiError, WaveFormat, initialize_mta,
 };
 
 const SAMPLE_RATE: i64 = 48_000;
@@ -27,6 +27,7 @@ struct Second {
     max_overlap_ms: f64,
     min_latency_ms: Option<f64>,
     max_latency_ms: f64,
+    session_peak: Option<f32>,
 }
 
 #[derive(Debug)]
@@ -64,7 +65,7 @@ pub fn find_device(direction: Direction, name: &str) -> Result<Device> {
     ))
 }
 
-pub fn probe_audio(mic: bool, seconds: u64) -> Result<()> {
+pub fn probe_audio(mic: bool, app: Option<&str>, seconds: u64) -> Result<()> {
     initialize_mta()
         .ok()
         .map_err(|error| anyhow!("COM : {error}"))?;
@@ -102,12 +103,55 @@ pub fn probe_audio(mic: bool, seconds: u64) -> Result<()> {
 
     while Hns::now() < deadline {
         default_changed.store(false, Ordering::Relaxed);
-        if let Err(error) = run_stream(&enumerator, direction, start, deadline, &default_changed) {
+        let result = match app {
+            Some(exe) => run_app_stream(exe, start, deadline),
+            None => run_stream(&enumerator, direction, start, deadline, &default_changed),
+        };
+        if let Err(error) = result {
             println!("[{:>8.3} s] flux interrompu : {error}", elapsed(start));
             std::thread::sleep(Duration::from_millis(200));
         }
     }
     Ok(())
+}
+
+fn run_app_stream(exe: &str, start: Hns, deadline: Hns) -> Result<()> {
+    use palaclips_engine::sources;
+    let processes = sources::processes()?;
+    let root =
+        sources::root_pid(&processes, exe).ok_or_else(|| anyhow!("{exe} n'est pas lancé"))?;
+    let tree = sources::process_tree(&processes, root);
+    let mut client = AudioClient::new_application_loopback_client(root, true)?;
+    client.initialize_client(
+        &WaveFormat::new(32, 32, &SampleType::Float, SAMPLE_RATE as usize, 2, None),
+        &Direction::Capture,
+        &StreamMode::EventsShared {
+            autoconvert: true,
+            buffer_duration_hns: 2_000_000,
+        },
+    )?;
+    let event = client.set_get_eventhandle()?;
+    let capture = client.get_audiocaptureclient()?;
+    println!(
+        "[{:>8.3} s] ouvert : process loopback de {exe} (PID racine {root}, {} processus dans l'arbre), tampon {}",
+        elapsed(start),
+        tree.len(),
+        client.get_buffer_size().map_or_else(
+            |error| format!("inconnu ({error})"),
+            |frames| format!("{frames} images")
+        )
+    );
+    client.start_stream()?;
+    let result = read_loop(
+        &capture,
+        &event,
+        start,
+        deadline,
+        &AtomicBool::new(false),
+        || sources::session_peak(&sources::processes().unwrap_or_default(), root).ok(),
+    );
+    client.stop_stream().ok();
+    result
 }
 
 fn run_stream(
@@ -150,7 +194,19 @@ fn run_stream(
         client.get_buffer_size()?
     );
     client.start_stream()?;
+    let result = read_loop(&capture, &event, start, deadline, default_changed, || None);
+    client.stop_stream().ok();
+    result
+}
 
+fn read_loop(
+    capture: &wasapi::AudioCaptureClient,
+    event: &wasapi::Handle,
+    start: Hns,
+    deadline: Hns,
+    default_changed: &AtomicBool,
+    session_peak: impl Fn() -> Option<f32>,
+) -> Result<()> {
     let mut buffer = Vec::new();
     let mut second = Second::default();
     let mut second_index = (Hns::now() - start).0 / HNS_PER_SECOND;
@@ -169,7 +225,7 @@ fn run_stream(
             Err(error) => break Err(error.into()),
         }
         if let Err(error) = drain(
-            &capture,
+            capture,
             &mut buffer,
             &mut second,
             &mut previous,
@@ -179,6 +235,7 @@ fn run_stream(
         }
         let now_index = (Hns::now() - start).0 / HNS_PER_SECOND;
         if now_index != second_index {
+            second.session_peak = session_peak();
             print_second(second_index, &second);
             second = Second::default();
             second_index = now_index;
@@ -186,7 +243,6 @@ fn run_stream(
     };
     print_second(second_index, &second);
     print_totals(&totals);
-    client.stop_stream().ok();
     result
 }
 
@@ -248,7 +304,7 @@ fn drain(
 
 fn print_second(index: i64, second: &Second) {
     println!(
-        "[{index:>6} s] paquets {:>4}  images {:>6}  SILENT {:>4}  zéro sans drapeau {:>3}  discont. {}  err. horodatage {}  attentes vides {}  crête {:.3}  trou max {:.2} ms  chevauchement max {:.2} ms  latence {:.1} à {:.1} ms",
+        "[{index:>6} s] paquets {:>4}  images {:>6}  SILENT {:>4}  zéro sans drapeau {:>3}  discont. {}  err. horodatage {}  attentes vides {}  crête {:.3}{}  trou max {:.2} ms  chevauchement max {:.2} ms  latence {:.1} à {:.1} ms",
         second.packets,
         second.frames,
         second.silent,
@@ -257,6 +313,9 @@ fn print_second(index: i64, second: &Second) {
         second.timestamp_errors,
         second.timeouts,
         second.peak,
+        second
+            .session_peak
+            .map_or(String::new(), |peak| format!(" (session {peak:.3})")),
         second.max_hole_ms,
         second.max_overlap_ms,
         second.min_latency_ms.unwrap_or_default(),
