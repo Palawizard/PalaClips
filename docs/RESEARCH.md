@@ -183,6 +183,23 @@
   `measure-av-sync.py` fasse la régression sur tous les bips. Incertitude estimée ±1,5 ms/h :
   l'écart d'un bip est quantifié par l'image (±8,3 ms à 60 i/s, dispersion ≈ 4,8 ms), et
   l'erreur-type de la pente vaut dispersion / √Σ(t − t̄)².
+- Horloge audio contre QPC (2026-10-16, `scripts/clock-drift.ps1 -Minutes 20`, silence
+  numérique joué par `play-tone --amplitude 0` et `probe-audio --device` sur la même sortie ;
+  pente de la régression heure de réception − `pu64QPCPosition` sur tous les paquets, journal
+  `target/journals/clock-drift-2026-10-16_14-31.txt`) :
+  - **Apogee BOOM en direct : −0,01 ± 0,00 ms/h** (120 001 paquets), nombre d'images =
+    durée QPC × 48 000 à moins d'un paquet près ;
+  - **Voicemeeter Input : +0,32 ± 0,01 ms/h** (120 000 paquets), 0 ppm.
+  - `pu64QPCPosition` suit donc le temps réel, pas une horloge d'appareil qui dériverait :
+    aucune correction d'horloge à ajouter. La vidéo est exacte contre QPC par construction
+    (`CfrClock`, nombres d'images exacts). AUD-08 tient par cette composition et par le T2
+    d'une heure vert.
+- Pentes de `av-drift.ps1` (2026-10-16, 20 min, émetteur et loopback sur la même sortie) :
+  Apogee directe −19,4 ± 0,7 ms/h, Voicemeeter Input −2,3 ± 2,0 ms/h, et −8,4 ms/h au T2.
+  Différentes à chaque essai alors que l'audio et la vidéo suivent QPC : elles viennent
+  probablement du banc (battement entre le rafraîchissement de l'écran et QPC, écart borné
+  qui ressemble à une pente sur 20 min). **Hypothèse non prouvée.** `av-drift.ps1` ne sert
+  plus à mesurer une pente ; utiliser `clock-drift.ps1`.
 - Les noms GDI `\\.\DISPLAYn` changent d'un moment à l'autre de la session (constaté le
   2026-10-15 : l'écran principal est passé de `DISPLAY2` à `DISPLAY1`) : ils ne suffisent pas
   à mémoriser un écran (CAP-03).
