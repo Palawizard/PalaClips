@@ -211,3 +211,22 @@ premier plan » de la phase 3.
   pas fiable) ; garder le premier plan avec une liste d'applis exclues (Discord, navigateurs…),
   jamais complète non plus.
 - Limite : une vidéo en plein écran dans le navigateur (F11) compte comme un jeu.
+
+## ADR-020 — Mémoire du replay vérifiée par un test accéléré (RPL-08)
+**Statut :** acceptée (2026-10-16, décision de Palawi) ; remplace le test de 2 h armé.
+- Contexte : RPL-08 demandait une RAM stable sur 2 h de replay armé, mesurée entre 30 min et
+  2 h. Un tel test ne voit presque rien : sans sauvegarde, le tampon est purgé à taille
+  constante et rien d'autre n'alloue. Pendant 20 sauvegardes, la mémoire privée est montée de
+  ~1 Mo par sauvegarde (612 → 633 Mo) : c'est la sauvegarde qui peut fuir, pas le temps.
+- Décision : RPL-08 devient « pas de croissance avec le temps ni avec le nombre de
+  sauvegardes ». Test : 20 min armé (60 s, 40 Mb/s, 4 pistes), une sauvegarde toutes les
+  5 s (~240), mémoire privée relevée à chaque sauvegarde ; après la première minute de
+  tampon plein, pente < 0,1 Mo par sauvegarde et < 20 Mo/h (régression linéaire).
+- Pourquoi : 240 sauvegardes couvrent bien plus d'usage réel qu'une soirée de jeu ; une fuite
+  par sauvegarde de 0,1 Mo se voit (24 Mo sur le test) alors qu'un test de 2 h sans sauvegarde
+  ne la verrait jamais. Une fuite lente avec le temps sous 20 Mo/h reste sans effet réel
+  (< 100 Mo sur une soirée de 5 h).
+- Limite : à cadence fixe, nombre de sauvegardes et temps avancent ensemble ; les deux pentes
+  viennent des mêmes mesures (20 Mo/h ≈ 0,028 Mo par sauvegarde à une toutes les 5 s), le
+  seuil horaire est donc le plus strict.
+- Écarté : test de 2 h armé sans sauvegarde (long, sans surveillance, peu informatif).

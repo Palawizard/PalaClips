@@ -6,7 +6,7 @@
 ## État actuel
 
 - **Phase en cours :** 4 — Replay. Code mergé dans `dev` (PR #13), 2 critères sur 4
-  vérifiés (`docs/reports/phase-4.md`) ; RPL-08 (2 h) en attente de la décision de Palawi,
+  vérifiés (`docs/reports/phase-4.md`) ; RPL-08 passé en test accéléré (ADR-020), à lancer,
   STO-01 partiel (noms de pistes invisibles dans Resolve) : voir « Bloquants ». Phase 3
   **validée** le 2026-10-16 (`docs/reports/phase-3.md`).
 - **Branche :** `chore/resolve-track-names-blocker` (docs du bloquant, PR vers `dev`), puis
@@ -110,12 +110,12 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Attendre la décision de Palawi (avec son agent superviseur) sur les deux bloquants de la
-   phase 4 : façon de faire RPL-08 (2 h) et option pour AUD-05/STO-01 (noms dans Resolve).
-   Ne lancer aucun test long d'ici là.
-2. Appliquer la décision : test 2 h → lire `target\journals\replay-ram-*.txt` et le reporter
-   dans `docs/reports/phase-4.md` ; option Resolve choisie → l'implémenter ou réécrire
-   AUD-05 dans la SPEC (ADR), puis refaire l'import Resolve avec Palawi.
+1. RPL-08 (ADR-020) : sur le feu vert de Palawi, lancer `pwsh scripts\replay-ram.ps1` en
+   arrière-plan (~21 min) et avancer sur autre chose ; lire `target\journals\replay-ram-*.txt`.
+   Si la pente par sauvegarde dépasse 0,1 Mo : trouver la cause (tampons du mux, `AVPacket`
+   partagés, fichiers non fermés) et corriger avant `/valider-phase`.
+2. AUD-05/STO-01 : attendre l'option choisie par Palawi (bloquant), l'appliquer, puis refaire
+   l'import Resolve avec lui.
 3. `/valider-phase` pour la phase 4.
 4. Phase 5 (`docs/PLAN.md`), workflow `/design` obligatoire pour le front ; réutiliser
    `Engine`/`EngineHandle` côté Tauri, `CurrentGame` pour le nom des clips.
@@ -135,8 +135,6 @@
      de coder.
   3. Option « exporter les pistes séparées » (phase 6, GAL) : un WAV par piste nommé
      `<clip>_<piste>.wav`, que Resolve affiche par nom de fichier.
-- **RPL-08 (2 h armé, RAM stable)** : Palawi décide avec un agent superviseur de la façon de
-  faire le test de 2 h (`scripts/replay-ram.ps1` prêt) ; ne rien lancer d'ici là.
 
 ## Décisions en attente de Palawi
 
