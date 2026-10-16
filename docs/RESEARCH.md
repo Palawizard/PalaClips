@@ -103,6 +103,23 @@
 - Navigateurs multi-processus : cibler le bon arbre. — [LiveTranscriber #2](https://github.com/avysotsky/LiveTranscriber/issues/2)
 - Piste process loopback **entièrement à zéro** sur Windows 11 build 26200 avec NAudio 3.1.0 ;
   cause non établie (wrapper ou Windows), une seule machine. — [MeetCap #38](https://github.com/lybym/MeetCap/issues/38)
+- Mesuré le 2026-10-16 sur la machine de Palawi (Windows 11 build 26200, `wasapi` 0.26,
+  `probe-audio --app` et `capture-apps`, sources `play-tone` 440/880 Hz lancées depuis des
+  copies de la CLI vers « Realtek Digital Output », sortie qui n'est pas celle par défaut) :
+  - Process loopback **non muet** : crête de la piste = crête de la session (0,250) ; le
+    problème de MeetCap #38 ne se reproduit pas ici avec `wasapi`.
+  - Capte l'appli quelle que soit la sortie qu'elle utilise (pas seulement la sortie par
+    défaut). Isolation : l'autre fréquence est sous −70 dB, et seulement aux transitions.
+  - Paquets de 480 images toutes les 10 ms, `pu64QPCPosition` valide, latence
+    réception − QPC 10 à 15 ms ; `GetBufferSize` vaut 480 images ; index de position non
+    contigu (un saut par paquet) : ne pas s'en servir.
+  - **L'appli fermée, le flux continue** et envoie des zéros sans drapeau : la fin de l'appli
+    se détecte par son handle de processus, pas par le flux.
+  - Appli fermée puis relancée pendant la capture : nouveau PID retrouvé en ≤ 1 s, piste
+    continue (30,000 s) avec le silence entre-temps.
+  - Après un rattachement, ~100 à 150 corrections de dérive d'un échantillon sur la piste
+    (≈ 2 à 3 ms rattrapés en quelques secondes) ; aucune sur une piste ouverte une seule fois.
+    Inaudible ; à surveiller si un rattachement produit un décalage durable.
 - Mesuré le 2026-10-15 avec `palaclips-cli probe-audio` (`wasapi` 0.26, flux partagé piloté
   par événement, 48 kHz stéréo f32 `autoconvert`, tampon 200 ms ; journaux bruts dans
   `docs/reports/phase-2/`), machine de Palawi (sortie par défaut « Voicemeeter Input »,

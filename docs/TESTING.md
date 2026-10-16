@@ -118,9 +118,17 @@ durée.
 ## T3 — Isolation par logiciel (phase 3)
 1. Navigateur : jouer une sinusoïde 440 Hz en boucle. Lecteur audio : 880 Hz en boucle.
 2. `capture-apps --app chrome.exe --app <lecteur>.exe --seconds 30 --out t3.mp4`
-3. Spectre de chaque piste (`ffmpeg -i t3.mp4 -map 0:a:2 -lavfi showspectrumpic=s=800x300 a2.png`).
+3. Niveau de chaque fréquence, seconde par seconde, sur chaque piste :
+   `python scripts\measure-tones.py t3.mp4 --hz 440 --hz 880` (ou le spectre :
+   `ffmpeg -i t3.mp4 -map 0:a:2 -lavfi showspectrumpic=s=800x300 a2.png`).
 4. Attendu : 440 Hz seul sur la piste du navigateur, 880 Hz seul sur l'autre, les deux sur la piste 1.
 5. Rattachement : fermer puis rouvrir le lecteur pendant la capture → silence puis reprise.
+
+Variante sans personne (sources de test qui ne s'entendent pas) : deux copies de la CLI,
+`target\tone-a.exe` et `target\tone-b.exe`, jouent `play-tone --hz 440` / `--hz 880` sur
+`--device Realtek` (sortie sans haut-parleurs), et `capture-apps --mix-device Realtek --app
+tone-a.exe --app tone-b.exe` les enregistre ; `tone-b` est fermé puis relancé pendant la
+capture.
 
 ## T4 — Replay (phase 4)
 - Latence : 20 sauvegardes, noter min/moy/max (attendu max < 500 ms).
