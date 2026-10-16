@@ -220,6 +220,12 @@
   et écrit un minidump dans son dossier `dumps` : un processus qui semble bloqué peut être un
   crash en attente de réponse. Lire ces dumps avec `cdb -z <dump> -c ".ecxr; kn; lmu; q"`.
 
+- DaVinci Resolve (machine de Palawi, 2026-10-16) n'affiche pas les noms de pistes audio
+  d'un MP4 ni d'un MOV, même présents dans `hdlr` et `udta/name` de chaque piste : « Audio 1 »
+  à « Audio N » dans la timeline, les attributs du clip et les métadonnées. Pistes séparées et
+  alignées. Un fil de 2018 (Resolve 15.3) les voyait dans la colonne de métadonnées ; plus le
+  cas ici. — [forum Blackmagic](https://forum.blackmagicdesign.com/viewtopic.php?p=413159)
+
 ## Encodage et fichiers
 
 - `ffmpeg-next` est en mode maintenance seulement ; `rsmpeg` suit FFmpeg 6/7/8 mais à rythme
