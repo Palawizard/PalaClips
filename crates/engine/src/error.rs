@@ -37,6 +37,12 @@ pub enum EngineError {
     #[error("erreur disque : {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("le moteur PalaClips est arrêté")]
+    Stopped,
+
+    #[error("aucun replay à sauvegarder : {0}")]
+    NothingToSave(&'static str),
+
     #[error("fonctionnalité pas encore implémentée : {0}")]
     NotImplemented(&'static str),
 }

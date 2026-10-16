@@ -12,6 +12,7 @@ pub struct EngineConfig {
     pub video: VideoSettings,
     pub audio: AudioSettings,
     pub replay: ReplaySettings,
+    pub storage: StorageSettings,
 }
 
 impl Default for EngineConfig {
@@ -22,6 +23,7 @@ impl Default for EngineConfig {
             video: VideoSettings::default(),
             audio: AudioSettings::default(),
             replay: ReplaySettings::default(),
+            storage: StorageSettings::default(),
         }
     }
 }
@@ -268,6 +270,12 @@ impl ReplaySettings {
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct StorageSettings {
+    pub clips_dir: Option<std::path::PathBuf>,
 }
 
 #[cfg(test)]

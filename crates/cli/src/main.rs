@@ -4,6 +4,8 @@ mod probe;
 mod probe_audio;
 #[cfg(windows)]
 mod probe_av;
+#[cfg(windows)]
+mod replay;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -45,6 +47,14 @@ enum Command {
     ListTargets {
         #[arg(long, help = "Sortie JSON")]
         json: bool,
+    },
+    #[cfg(windows)]
+    #[command(
+        about = "Replay armé : Entrée sauvegarde les dernières secondes (début sur image clé), q quitte ; affiche la RAM et la latence"
+    )]
+    Replay {
+        #[command(flatten)]
+        replay: replay::ReplayArgs,
     },
     #[cfg(windows)]
     #[command(about = "Capture la vidéo d'une cible et l'encode sur le GPU dans un MP4")]
@@ -245,6 +255,8 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::CaptureVideo { capture } => run_capture(&capture, Vec::new())?,
         #[cfg(windows)]
+        Command::Replay { replay } => replay::run_replay(&replay)?,
+        #[cfg(windows)]
         Command::CaptureAv {
             capture,
             no_mix,
@@ -315,7 +327,7 @@ fn main() -> Result<()> {
             }
             if game || game_exe.is_some() {
                 let current =
-                    palaclips_engine::sources::CurrentGame::new(game_exe, &capture.target);
+                    palaclips_engine::sources::CurrentGame::new(game_exe, &capture.video.target);
                 audio.push((AudioSource::Game(current), 0));
             }
             run_capture(&capture, audio)?
@@ -434,14 +446,21 @@ fn resolve_target(target: &CaptureTarget) -> Result<()> {
 #[cfg(windows)]
 #[derive(Debug, clap::Args)]
 struct CaptureArgs {
-    #[arg(long, value_parser = parse_target, default_value = "primary")]
-    target: CaptureTarget,
-    #[arg(long, default_value_t = 60)]
-    fps: u32,
+    #[command(flatten)]
+    video: VideoArgs,
     #[arg(long, default_value_t = 10)]
     seconds: u64,
     #[arg(long)]
     out: std::path::PathBuf,
+}
+
+#[cfg(windows)]
+#[derive(Debug, clap::Args)]
+struct VideoArgs {
+    #[arg(long, value_parser = parse_target, default_value = "primary")]
+    target: CaptureTarget,
+    #[arg(long, default_value_t = 60)]
+    fps: u32,
     #[arg(long, value_parser = parse_codec, default_value = "h264")]
     codec: VideoCodec,
     #[arg(
@@ -460,7 +479,7 @@ struct CaptureArgs {
 }
 
 #[cfg(windows)]
-impl CaptureArgs {
+impl VideoArgs {
     fn video_settings(&self) -> VideoSettings {
         VideoSettings {
             fps: self.fps,
@@ -495,10 +514,10 @@ fn run_capture(
     use palaclips_engine::events::EngineEvent;
     use palaclips_engine::mux::{Mp4Writer, MuxStream};
 
-    let video = args.video_settings();
+    let video = args.video.video_settings();
     let encoders = hardware_video_encoders()?;
     let encoder = pick_encoder(&encoders, video.codec)?;
-    let capture = VideoCapture::start(&args.target, &video, &encoder.name)?;
+    let capture = VideoCapture::start(&args.video.target, &video, &encoder.name)?;
     if let Some(EngineEvent::Alert { message, .. }) = capture.alert() {
         println!("{message}");
     }
