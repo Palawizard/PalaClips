@@ -79,7 +79,10 @@ impl GapFiller {
     }
 
     pub fn fill_until(&mut self, qpc: Hns, out: &mut Vec<f32>) {
-        let missing = self.frame_at(qpc) - self.written;
+        let target = self
+            .end
+            .map_or(self.frame_at(qpc), |end| end.min(self.frame_at(qpc)));
+        let missing = target - self.written;
         if missing > 0 {
             self.silence(missing, out);
         }
@@ -193,6 +196,7 @@ mod tests {
         assert_eq!(out.len(), 700 * CHANNELS);
         filler.fill_until(at_frame(2_000), &mut out);
         assert_eq!(out.len(), 700 * CHANNELS);
+        assert_eq!(filler.stats().silence_frames, 0);
     }
 
     #[test]

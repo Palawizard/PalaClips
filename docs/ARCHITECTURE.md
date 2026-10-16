@@ -86,6 +86,10 @@ charges :
   silence inséré ou chevauchement coupé ; en dessous, la dérive lissée est corrigée d'une
   image à la fois (au-delà de 1 ms). Fin exacte : `finish_at(fin)`, la piste lit jusqu'à la
   fin (250 ms de grâce + décalage négatif) puis comble.
+- Périphérique muet (Windows n'envoie aucun paquet quand rien ne joue) : après 50 ms sans
+  paquet, la piste se réveille et comble jusqu'à `maintenant + décalage − 100 ms`, puis
+  encode. Elle produit donc des paquets en continu ; aucun réveil quand les données arrivent.
+  Même chose pendant l'attente d'un périphérique indisponible.
 - Décalage de synchro par piste (AUD-11, ADR-017), positif = son retardé.
 
 **`encode`**
@@ -146,7 +150,7 @@ tenu pendant un appel système bloquant.
 |---|---|---|---|
 | Capture (callback WGC) | images WGC | « dernière image » (texture GPU) | un `CopyResource`, jamais de travail lourd |
 | Vidéo (`palaclips-video`) | dernière image | `AVPacket` vidéo (canal borné) | pacer CFR sur QPC + conversion GPU + encodeur : une seule session matérielle |
-| Audio × N (`palaclips-audio-<piste>`, un par source) | WASAPI | `AVPacket` AAC (canal borné) | 48 kHz stéréo f32, `WaitForMultipleObjects` (arrêt, données, défaut changé) sans délai ; gain, décalage de synchro, `GapFiller`, AAC dans le même fil |
+| Audio × N (`palaclips-audio-<piste>`, un par source) | WASAPI | `AVPacket` AAC (canal borné) | 48 kHz stéréo f32, `WaitForMultipleObjects` (arrêt, données, défaut changé), réveil après 50 ms sans paquet pour combler ; gain, décalage de synchro, `GapFiller`, AAC dans le même fil |
 | Fan-out | paquets | replay + enregistreur | `Arc<[u8]>` : pas de copie entre les deux |
 | Écriture replay | instantané du `PacketRing` | MP4 | lancée à la sauvegarde, n'arrête pas la capture |
 | Enregistreur | paquets | MP4 hybride | écriture continue |
