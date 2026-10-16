@@ -230,3 +230,15 @@ premier plan » de la phase 3.
   viennent des mêmes mesures (20 Mo/h ≈ 0,028 Mo par sauvegarde à une toutes les 5 s), le
   seuil horaire est donc le plus strict.
 - Écarté : test de 2 h armé sans sauvegarde (long, sans surveillance, peu informatif).
+
+## ADR-021 — Noms de pistes : métadonnées du fichier seulement (AUD-05)
+**Statut :** acceptée (2026-10-16, décision de Palawi).
+- Contexte : AUD-05 demandait que le nom de chaque piste soit visible dans Resolve. Le MP4 le
+  porte aux deux endroits standard (`hdlr` et `udta/name` de chaque piste), mais Resolve
+  affiche « Audio 1 » à « Audio N » partout, en MP4 comme en MOV (`RESEARCH.md`).
+- Décision : les noms restent écrits dans le fichier (VLC, ffprobe, MPC les lisent) ; Resolve
+  n'est pas tenu de les afficher. L'ordre fixe des pistes (mix, micro, applis, Jeu,
+  `ARCHITECTURE.md` § 4) et l'écoute suffisent à les reconnaître en quelques secondes.
+- Écarté : fichier de timeline OpenTimelineIO à côté de chaque clip (Resolve en garde les noms
+  de pistes, d'après Palawi) et export d'un WAV par piste : du travail et des fichiers en plus
+  pour un confort que Palawi juge inutile.
