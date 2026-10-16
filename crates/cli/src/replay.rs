@@ -131,7 +131,11 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     EngineEvent::ClipSaved { path, duration_secs, save_latency_ms } => {
                         finished += 1;
                         latencies.push(save_latency_ms);
-                        println!("clip {finished} : {duration_secs:.3} s, prêt en {save_latency_ms} ms → {path}");
+                        println!(
+                            "[{:>6} s] clip {finished} : {duration_secs:.3} s, prêt en {save_latency_ms} ms ; mémoire privée {:.1} Mo → {path}",
+                            started.elapsed().as_secs(),
+                            private_bytes().unwrap_or_default() as f64 / 1e6
+                        );
                     }
                     EngineEvent::ReplayStats { buffered_secs, bytes } => {
                         stats_seen += 1;

@@ -211,3 +211,42 @@ premier plan » de la phase 3.
   pas fiable) ; garder le premier plan avec une liste d'applis exclues (Discord, navigateurs…),
   jamais complète non plus.
 - Limite : une vidéo en plein écran dans le navigateur (F11) compte comme un jeu.
+
+## ADR-020 — Mémoire du replay vérifiée par un test accéléré (RPL-08)
+**Statut :** acceptée (2026-10-16, décision de Palawi) ; remplace le test de 2 h armé.
+- Contexte : RPL-08 demandait une RAM stable sur 2 h de replay armé, mesurée entre 30 min et
+  2 h. Un tel test ne voit presque rien : sans sauvegarde, le tampon est purgé à taille
+  constante et rien d'autre n'alloue. Pendant 20 sauvegardes, la mémoire privée est montée de
+  ~1 Mo par sauvegarde (612 → 633 Mo) : c'est la sauvegarde qui peut fuir, pas le temps.
+- Décision : RPL-08 devient « pas de croissance avec le temps ni avec le nombre de
+  sauvegardes ». Test : 20 min armé (60 s, 40 Mb/s, 4 pistes), une sauvegarde toutes les
+  5 s (~240), mémoire privée relevée à chaque sauvegarde ; après la première minute de
+  tampon plein, pente < 0,1 Mo par sauvegarde et < 20 Mo/h (régression linéaire).
+- Pourquoi : 240 sauvegardes couvrent bien plus d'usage réel qu'une soirée de jeu ; une fuite
+  par sauvegarde de 0,1 Mo se voit (24 Mo sur le test) alors qu'un test de 2 h sans sauvegarde
+  ne la verrait jamais. Une fuite lente avec le temps sous 20 Mo/h reste sans effet réel
+  (< 100 Mo sur une soirée de 5 h).
+- Limite : à cadence fixe, nombre de sauvegardes et temps avancent ensemble ; les deux pentes
+  viennent des mêmes mesures (20 Mo/h ≈ 0,028 Mo par sauvegarde à une toutes les 5 s), le
+  seuil horaire est donc le plus strict.
+- Écarté : test de 2 h armé sans sauvegarde (long, sans surveillance, peu informatif).
+- **Correction du 2026-10-16 (décision de Palawi)** : le premier essai (20 min) a donné
+  +0,045 Mo par sauvegarde mais +32 Mo/h, avec une montée de 626 à 642 Mo jusqu'à 9 min puis
+  un palier plat de 10 à 20 min. Le critère incluait la mise en régime du tas : c'était une
+  erreur de conception du test, pas un échec du code. Critère corrigé, fixé avant de relancer :
+  30 min armé, une sauvegarde toutes les 5 s ; les 10 premières minutes (mise en régime) sont
+  exclues ; sur 10–30 min, pente dans le temps < 20 Mo/h et pente par sauvegarde < 0,1 Mo ;
+  toutes les mesures gardées dans le journal. La cause des ~16 Mo de mise en régime n'est
+  cherchée que si le nouveau test montre encore une pente.
+
+## ADR-021 — Noms de pistes : métadonnées du fichier seulement (AUD-05)
+**Statut :** acceptée (2026-10-16, décision de Palawi).
+- Contexte : AUD-05 demandait que le nom de chaque piste soit visible dans Resolve. Le MP4 le
+  porte aux deux endroits standard (`hdlr` et `udta/name` de chaque piste), mais Resolve
+  affiche « Audio 1 » à « Audio N » partout, en MP4 comme en MOV (`RESEARCH.md`).
+- Décision : les noms restent écrits dans le fichier (VLC, ffprobe, MPC les lisent) ; Resolve
+  n'est pas tenu de les afficher. L'ordre fixe des pistes (mix, micro, applis, Jeu,
+  `ARCHITECTURE.md` § 4) et l'écoute suffisent à les reconnaître en quelques secondes.
+- Écarté : fichier de timeline OpenTimelineIO à côté de chaque clip (Resolve en garde les noms
+  de pistes, d'après Palawi) et export d'un WAV par piste : du travail et des fichiers en plus
+  pour un confort que Palawi juge inutile.
