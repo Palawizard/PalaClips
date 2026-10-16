@@ -5,10 +5,12 @@
 
 ## État actuel
 
-- **Phase en cours :** 4 — Replay, code fait, 2 critères sur 4 (`docs/reports/phase-4.md`) ;
-  restent le test RAM de 2 h et l'import dans Resolve. Phase 3 **validée** le 2026-10-16
-  (`docs/reports/phase-3.md`).
-- **Branche :** `feature/replay-engine` (PR vers `dev`).
+- **Phase en cours :** 4 — Replay. Code mergé dans `dev` (PR #13), 2 critères sur 4
+  vérifiés (`docs/reports/phase-4.md`) ; RPL-08 (2 h) en attente de la décision de Palawi,
+  STO-01 partiel (noms de pistes invisibles dans Resolve) : voir « Bloquants ». Phase 3
+  **validée** le 2026-10-16 (`docs/reports/phase-3.md`).
+- **Branche :** `chore/resolve-track-names-blocker` (docs du bloquant, PR vers `dev`), puis
+  `dev`.
 - **Dernière mise à jour :** 2026-10-16
 
 ## Ce qui existe
