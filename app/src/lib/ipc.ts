@@ -88,10 +88,17 @@ export interface EngineConfig {
 export type EngineState = "idle" | "replay_armed" | "recording";
 export type Severity = "info" | "warning" | "error";
 
+export interface ActiveAlert {
+  severity: Severity;
+  code: string;
+  message: string;
+}
+
 export interface AppStatus {
   state: EngineState;
   buffered_secs: number;
   buffer_bytes: number;
+  alerts: ActiveAlert[];
 }
 
 export type EngineEvent =
