@@ -1,5 +1,6 @@
 param(
-    [int]$Minutes = 20,
+    [int]$Minutes = 30,
+    [int]$WarmupMinutes = 10,
     [int]$SaveEverySeconds = 5,
     [int]$Duration = 60,
     [int]$BitrateMbps = 40,
@@ -102,15 +103,16 @@ try {
         }
     }
     $lines | Where-Object { $_ -match 'replay de|état|alerte|RÉSUMÉ' } | ForEach-Object { Write-Journal $_ }
-    $samples | Where-Object { $_.Save % 12 -eq 0 } | ForEach-Object { Write-Journal ("{0,6} s, sauvegarde {1,4} : {2,7:N1} Mo" -f $_.Seconds, $_.Save, $_.Mb) }
+    $samples | ForEach-Object { Write-Journal ("{0,6} s, sauvegarde {1,4} : {2,7:N1} Mo" -f $_.Seconds, $_.Save, $_.Mb) }
     Write-Journal ($stderr.Result -split "`n" | Select-String "WARN|ERROR" | Out-String).TrimEnd()
-    $steady = @($samples | Where-Object { $_.Seconds -ge $Duration + 60 })
+    $warmupSeconds = $WarmupMinutes * 60
+    $steady = @($samples | Where-Object { $_.Seconds -ge $warmupSeconds })
     if ($steady.Count -lt 10) { throw "pas assez de sauvegardes après la mise en régime ($($steady.Count))" }
     $perSave = Get-Slope ($steady | ForEach-Object { [pscustomobject]@{ X = $_.Save; Y = $_.Mb } })
     $perHour = Get-Slope ($steady | ForEach-Object { [pscustomobject]@{ X = $_.Seconds / 3600; Y = $_.Mb } })
     $missing = $saves - $samples.Count
     $ok = ($perSave.Slope -lt $MaxMbPerSave) -and ($perHour.Slope -lt $MaxMbPerHour) -and ($missing -eq 0)
-    Write-Journal ("RÉSULTAT : {0} clips sur {1}, {2} mesures après {3} s ; pente {4:+0.000;-0.000} ± {5:0.000} Mo par sauvegarde (seuil {6}), {7:+0.0;-0.0} ± {8:0.0} Mo/h (seuil {9}) → {10}" -f $samples.Count, $saves, $steady.Count, ($Duration + 60), $perSave.Slope, $perSave.StdErr, $MaxMbPerSave, $perHour.Slope, $perHour.StdErr, $MaxMbPerHour, $(if ($ok) { "OK" } else { "ÉCHEC" }))
+    Write-Journal ("RÉSULTAT : {0} clips sur {1}, {2} mesures après {3} s de mise en régime ; pente {4:+0.000;-0.000} ± {5:0.000} Mo par sauvegarde (seuil {6}), {7:+0.0;-0.0} ± {8:0.0} Mo/h (seuil {9}) → {10}" -f $samples.Count, $saves, $steady.Count, $warmupSeconds, $perSave.Slope, $perSave.StdErr, $MaxMbPerSave, $perHour.Slope, $perHour.StdErr, $MaxMbPerHour, $(if ($ok) { "OK" } else { "ÉCHEC" }))
 } catch {
     Write-Journal "ÉCHEC : $_"
 } finally {
