@@ -16,13 +16,27 @@ pub enum AudioSource {
         device_id: Option<String>,
         gain_db: f32,
     },
+    Application {
+        exe_name: String,
+    },
+    Foreground,
 }
 
 impl AudioSource {
-    pub fn label(&self) -> &'static str {
+    pub fn label(&self) -> String {
         match self {
-            Self::SystemMix { .. } => "Mix complet",
-            Self::Microphone { .. } => "Micro",
+            Self::SystemMix { .. } => "Mix complet".into(),
+            Self::Microphone { .. } => "Micro".into(),
+            Self::Application { exe_name } => exe_name
+                .strip_suffix(".exe")
+                .or_else(|| exe_name.strip_suffix(".EXE"))
+                .unwrap_or(exe_name)
+                .into(),
+            Self::Foreground => "Jeu".into(),
         }
+    }
+
+    pub fn is_application(&self) -> bool {
+        matches!(self, Self::Application { .. } | Self::Foreground)
     }
 }
