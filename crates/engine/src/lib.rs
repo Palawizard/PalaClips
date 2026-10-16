@@ -11,6 +11,8 @@ pub mod events;
 #[cfg(windows)]
 pub mod mux;
 pub mod replay;
+#[cfg(windows)]
+pub mod sources;
 
 pub use config::EngineConfig;
 pub use error::{EngineError, Result};

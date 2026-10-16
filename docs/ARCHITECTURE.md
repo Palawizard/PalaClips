@@ -78,8 +78,21 @@ charges :
 - Combler les trous par du silence d'après les écarts QPC ; `AUDCLNT_BUFFERFLAGS_SILENT` =
   silence ; jamais d'arrêt sur timeout.
 - Mode exclusif d'un jeu (`AUDCLNT_E_DEVICE_IN_USE`) : réessayer chaque seconde et le signaler.
-- Rattachement automatique d'une piste à son appli (suivi par nom d'exe).
-- Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent`.
+- Rattachement automatique d'une piste à son appli (suivi par nom d'exe) : `AudioSource::
+  Application { exe_name }` cherche le PID racine (chaque seconde tant que l'appli n'est pas
+  lancée, en comblant du silence), ouvre le process loopback sur l'arbre et attend aussi le
+  handle du processus (`SYNCHRONIZE`). À sa fin (le flux, lui, continue d'envoyer des zéros),
+  la piste se referme et attend le retour de l'appli.
+- Piste « Jeu » (`AudioSource::Foreground`) : même mécanique, l'exe est celui de l'appli au
+  premier plan ; relu toutes les 500 ms, la piste se rouvre quand il change, et garde le
+  dernier quand le premier plan passe au shell ou à PalaClips.
+- Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent` :
+  piste sans échantillon non nul depuis 3 s, puis crête de session de l'arbre > 0,001 à deux
+  vérifications (une par seconde) → une alerte, réarmée dès que la piste reçoit du signal.
+  Les sessions de PalaClips sont ignorées : une capture loopback crée une session de rendu
+  « active » dont le vumètre reproduit la sortie. Limite connue : une appli suivie qui
+  enregistre elle-même la sortie en loopback (OBS, fond d'écran réactif au son) peut déclencher
+  l'alerte alors qu'elle ne joue rien.
 - Capture en 48 kHz, stéréo, f32, `autoconvert = true` (le rééchantillonnage et le mixage
   des canaux sont faits par Windows).
 - `GapFiller` : position cible = `(qpc + décalage − t0)` en échantillons ; écart > 5 ms →
@@ -125,6 +138,14 @@ charges :
 - Appli au premier plan (piste « Jeu », nom des clips).
 - Périphériques audio et changements du périphérique par défaut.
 - Persistance par nom d'exe / identifiant de périphérique, jamais par PID.
+- Processus par `CreateToolhelp32Snapshot` (PID, PID parent, nom d'exe), sans dépendance.
+  PID racine d'une appli = processus de cet exe dont le parent n'est pas le même exe (le plus
+  petit PID s'il y en a plusieurs) ; l'arbre = la racine et tous ses descendants.
+- Appli au premier plan : `GetForegroundWindow` → PID → nom d'exe ; ignorés : PalaClips
+  lui-même et le shell (`explorer.exe`, menu Démarrer, recherche, écran de verrouillage,
+  `ApplicationFrameHost.exe`).
+- Sessions audio de **toutes** les sorties actives (une appli peut jouer ailleurs que sur la
+  sortie par défaut) : PID, exe, état, crête `IAudioMeterInformation`.
 
 **`library`**
 - Index SQLite, miniatures, surveillance du dossier, quota, pistes extraites, proxys H.264.
@@ -137,7 +158,6 @@ charges :
 | `windows` | 0.62 | capture, audio, sources | 1 |
 | `rsmpeg` | 0.18 (FFmpeg 8.x, ADR-004) | encode, mux | 0–1 |
 | `wasapi` | 0.26 | audio, sources | 2 |
-| `sysinfo` | 0.39 | sources | 3 |
 | `rusqlite` (feature `bundled`) | dernière stable | library | 6 |
 | `tauri-plugin-*` | voir `docs/RESEARCH.md` § UI | app | 5–8 |
 
@@ -244,5 +264,7 @@ Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `cap
 - WebView détruit à la fermeture ; `RunEvent::ExitRequested` → `prevent_exit()` ; sortie via
   « Quitter » uniquement.
 - Sondes (sessions audio, crêtes) arrêtées quand l'UI est fermée, sauf rattachement en attente.
-- Pas de polling : notifications Windows (périphériques audio, fichiers, processus via WMI ou
-  `sysinfo` à faible fréquence seulement si une piste attend son appli).
+- Pas de polling : notifications Windows (périphériques audio, fichiers). Exceptions bornées :
+  une piste d'appli qui attend son appli cherche le processus chaque seconde (Toolhelp) ; une
+  appli rattachée est suivie par son handle de processus (attente, pas de polling) ; la piste
+  « Jeu » relit l'appli au premier plan toutes les 500 ms pendant la capture.

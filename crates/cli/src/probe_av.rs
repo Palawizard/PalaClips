@@ -108,6 +108,51 @@ pub fn probe_av_emitter(seconds: u64, device: Option<&str>) -> Result<()> {
     Ok(())
 }
 
+pub fn play_tone(hz: f64, seconds: u64, device: Option<&str>) -> Result<()> {
+    initialize_mta()
+        .ok()
+        .map_err(|error| anyhow!("COM : {error}"))?;
+    let device = match device {
+        Some(name) => crate::probe_audio::find_device(Direction::Render, name)?,
+        None => DeviceEnumerator::new()?.get_default_device(&Direction::Render)?,
+    };
+    let mut client = device.get_iaudioclient()?;
+    client.initialize_client(
+        &WaveFormat::new(32, 32, &SampleType::Float, SAMPLE_RATE, 2, None),
+        &Direction::Render,
+        &StreamMode::EventsShared {
+            autoconvert: true,
+            buffer_duration_hns: 200_000,
+        },
+    )?;
+    let event = client.set_get_eventhandle()?;
+    let render = client.get_audiorenderclient()?;
+    println!(
+        "sinusoïde {hz} Hz sur « {} » pendant {seconds} s (PID {})",
+        device.get_friendlyname()?,
+        std::process::id()
+    );
+    client.start_stream()?;
+    let deadline = Hns::now() + Hns(seconds as i64 * HNS_PER_SECOND);
+    let mut position = 0u64;
+    let mut bytes = Vec::new();
+    while Hns::now() < deadline {
+        event.wait_for_event(1_000)?;
+        let frames = client.get_available_space_in_frames()? as usize;
+        bytes.clear();
+        for frame in position..position + frames as u64 {
+            let phase = (frame as f64 * hz / SAMPLE_RATE as f64).fract();
+            let sample = (0.25 * (phase * std::f64::consts::TAU).sin()) as f32;
+            bytes.extend_from_slice(&sample.to_le_bytes());
+            bytes.extend_from_slice(&sample.to_le_bytes());
+        }
+        render.write_to_device(frames, &bytes, None)?;
+        position += frames as u64;
+    }
+    client.stop_stream()?;
+    Ok(())
+}
+
 fn create_window() -> Result<HWND> {
     // SAFETY: plain Win32 window creation on the current thread with a static class name.
     unsafe {
