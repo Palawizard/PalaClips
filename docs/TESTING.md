@@ -80,7 +80,8 @@ Le script, sans autre intervention :
 
 Rapporter toute la sortie du script. Attendu : 3 × `OK` sur le mix et 3 × `OK` sur le micro,
 fichier de 3640 s, pistes de même durée. Variante courte pour vérifier l'installation :
-`pwsh scripts\t2-av-sync.ps1 -Minutes 2`.
+`pwsh scripts\t2-av-sync.ps1 -Minutes 2`. Calibrage seul (35 s, décalages mesurés sans
+capture longue) : `pwsh scripts\t2-av-sync.ps1 -CalibrateOnly`.
 
 ## Débranchement du périphérique audio (phase 2)
 
