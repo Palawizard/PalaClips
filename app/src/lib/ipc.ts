@@ -19,6 +19,38 @@ export function setConfig(config: EngineConfig): Promise<void> {
   return invoke("set_config", { config });
 }
 
+export interface HardwareEncoder {
+  name: string;
+  description: string;
+  codec: VideoCodec;
+  failure: string | null;
+}
+
+export function listEncoders(): Promise<HardwareEncoder[]> {
+  return invoke<HardwareEncoder[]>("list_encoders");
+}
+
+export interface MemoryStatus {
+  total_bytes: number;
+  available_bytes: number;
+}
+
+export function memoryStatus(): Promise<MemoryStatus> {
+  return invoke<MemoryStatus>("memory_status");
+}
+
+export interface ReplayEstimate {
+  width: number;
+  height: number;
+  video_kbps: number;
+  audio_tracks: number;
+  bytes: number;
+}
+
+export function estimateReplay(config: EngineConfig): Promise<ReplayEstimate> {
+  return invoke<ReplayEstimate>("estimate_replay", { config });
+}
+
 export function resetSettings(): Promise<void> {
   return invoke("reset_settings");
 }

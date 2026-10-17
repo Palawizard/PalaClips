@@ -141,6 +141,7 @@ pub struct EngineSlot {
     settings_writable: bool,
     settings: Mutex<settings::Settings>,
     shortcuts: Mutex<Vec<(HotkeyAction, Shortcut)>>,
+    encoders: Mutex<Option<Vec<palaclips_engine::encode::HardwareEncoder>>>,
     unavailable: Mutex<Vec<HotkeyAction>>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
@@ -189,6 +190,7 @@ impl EngineSlot {
             settings_writable,
             settings: Mutex::new(settings),
             shortcuts: Mutex::new(Vec::new()),
+            encoders: Mutex::new(None),
             unavailable: Mutex::new(Vec::new()),
             engine: Mutex::new(Some(engine)),
             handle,
@@ -473,6 +475,9 @@ pub fn run() {
             commands::replay_disarm,
             commands::replay_save,
             commands::list_recent_clips,
+            commands::list_encoders,
+            commands::memory_status,
+            commands::estimate_replay,
             commands::storage_status,
         ])
         .setup(|app| {
