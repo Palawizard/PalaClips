@@ -1,5 +1,7 @@
-import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { GeneralSection } from "./GeneralSection.tsx";
+import type { AppStatus } from "../../lib/ipc.ts";
+import { AudioSection } from "./AudioSection.tsx";
 import { CaptureSection } from "./CaptureSection.tsx";
 import { HotkeysSection } from "./HotkeysSection.tsx";
 import { ReplaySection } from "./ReplaySection.tsx";
@@ -135,11 +137,13 @@ export function Select<T extends string | number>({
   options,
   label,
   onChange,
+  className = "min-w-40",
 }: {
   value: T;
   options: { value: T; label: string }[];
   label: string;
   onChange: (value: T) => void;
+  className?: string;
 }) {
   return (
     <select
@@ -149,7 +153,7 @@ export function Select<T extends string | number>({
         const picked = options.find((option) => String(option.value) === event.target.value);
         if (picked) onChange(picked.value);
       }}
-      className="pressable h-9 min-w-40 rounded-md border border-line-strong bg-surface px-2.5 text-[14px] text-ink hover:border-ink-3"
+      className={`pressable h-9 rounded-md border border-line-strong bg-surface px-2.5 text-[14px] text-ink hover:border-ink-3 ${className}`}
     >
       {options.map((option) => (
         <option key={String(option.value)} value={String(option.value)}>
@@ -160,22 +164,55 @@ export function Select<T extends string | number>({
   );
 }
 
-function Pending({ title }: { title: string }) {
+export function NumberField({
+  value,
+  min,
+  max,
+  unit,
+  label,
+  onCommit,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
+  label: string;
+  onCommit: (value: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => setText(String(value)), [value]);
+  const commit = () => {
+    const parsed = Math.round(Number(text));
+    const next = Number.isFinite(parsed) && text.trim() !== "" ? Math.min(max, Math.max(min, parsed)) : value;
+    setText(String(next));
+    if (next !== value) onCommit(next);
+  };
   return (
-    <div className="px-5 py-5 text-ink-2">
-      <p>Section en préparation.</p>
-      <p className="sr-only">{title}</p>
-    </div>
+    <label className="flex items-center gap-1.5 text-[13px] text-ink-2">
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => event.key === "Enter" && commit()}
+        className="score h-9 w-20 rounded-md border border-line-strong bg-surface px-2 text-right text-[15px] text-ink"
+        aria-label={label}
+      />
+      {unit}
+    </label>
   );
 }
 
-export function Settings() {
+export function Settings({ status }: { status: AppStatus | null }) {
   const [section, setSection] = useState<SectionId>("hotkeys");
   const label = SECTIONS.find((item) => item.id === section)?.label ?? "";
 
   return (
     <div className="grid min-h-full grid-cols-[200px_minmax(0,1fr)]">
-      <nav aria-label="Sections des réglages" className="border-r border-line bg-surface py-4">
+      <nav aria-label="Sections des réglages" className="border-r border-line bg-surface">
+        <div className="sticky top-0 py-4">
         <h1 className="px-5 pb-3 text-[17px] font-semibold">Réglages</h1>
         <ul className="flex flex-col gap-0.5 px-2">
           {SECTIONS.map((item) => {
@@ -196,6 +233,7 @@ export function Settings() {
             );
           })}
         </ul>
+        </div>
       </nav>
       <section aria-labelledby="settings-section-title" className="min-w-0">
         <h2 id="settings-section-title" className="border-b border-line px-5 pt-6 pb-4 text-[22px] font-semibold">
@@ -206,7 +244,7 @@ export function Settings() {
         {section === "replay" && <ReplaySection />}
         {section === "storage" && <StorageSection />}
         {section === "capture" && <CaptureSection />}
-        {section === "audio" && <Pending title={label} />}
+        {section === "audio" && <AudioSection status={status} />}
       </section>
     </div>
   );
