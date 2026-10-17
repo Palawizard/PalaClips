@@ -5,13 +5,13 @@
 
 ## État actuel
 
-- **Phase en cours :** 5 — Application et sélecteurs. Tout est livré et validé
-  (`docs/reports/phase-5.md`) sauf un critère 👤 : Palawi valide le ressenti des sélecteurs
-  (Capture, Audio) dans l'app isolée. Puis phase 6.
-- **Socle i18n (APP-08, ADR-028)** fait avant la phase 6 : clés `app/src/locales/fr.json` /
-  `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et erreurs Rust en
-  `Localized { code, params }`, langue dans Réglages > Général, `npm test` refuse les chaînes
-  en dur. Branche `feature/i18n-foundation`.
+- **Phase en cours :** 6 — Enregistrement, galerie, lecteur. Phase 5 **validée** le
+  2026-10-17 (`docs/reports/phase-5.md`, dernier critère : ressenti des sélecteurs, « Tout est
+  bon » de Palawi).
+- **Socle i18n (APP-08, ADR-028)** mergé (#37) avant la phase 6 : clés
+  `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
+  erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
+  refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
@@ -186,13 +186,14 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Merger la PR `feature/i18n-foundation` (CI verte) ; montrer l'anglais à Palawi dans l'app
-   isolée (`pwsh scripts/app-isolated.ps1 -Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`), en même temps que
-   la revue des sélecteurs (Réglages > Capture et Audio).
-2. Sur son « OK » : critère coché dans `docs/reports/phase-5.md`, phase 5 close.
-3. Phase 6 (PLAN) : tout texte visible directement en clé (ADR-028) ; la galerie affiche la
-   liste des pistes de chaque clip, noms lus dans le fichier (ADR-021) ; le dossier « Bureau »
-   s'affiche par sa clé.
+1. Phase 6 (PLAN), une branche par tâche depuis `dev` : enregistrement manuel (encodeur
+   partagé, MP4 hybride, récupération), disque plein propre (STO-05), quota (STO-04),
+   bibliothèque SQLite, protocole `palaclips://` avec `Range`, lecteur multi-pistes, découpe et
+   export, galerie virtualisée. Tout texte visible directement en clé (ADR-028) ; la galerie
+   affiche la liste des pistes de chaque clip, noms lus dans le fichier (ADR-021) ; le dossier
+   « Bureau » s'affiche par sa clé. Écrans : `/design` (impeccable shape avant chaque écran).
+2. Essai visuel : `pwsh scripts/app-isolated.ps1 -Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`
+   (langue et replay au choix).
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
   Palawi).
