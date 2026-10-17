@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 export const ENGINE_EVENT = "engine-event";
@@ -160,6 +160,51 @@ export type CaptureTarget =
   | { kind: "primary_monitor" }
   | { kind: "monitor"; device_name: string }
   | { kind: "window"; exe_name: string; title_hint: string | null };
+
+export type TargetInfo =
+  | {
+      kind: "monitor";
+      device_name: string;
+      name: string;
+      width: number;
+      height: number;
+      refresh_rate: number;
+      primary: boolean;
+    }
+  | {
+      kind: "window";
+      exe_name: string;
+      title: string;
+      process_id: number;
+      width: number;
+      height: number;
+      minimized: boolean;
+    };
+
+export function listCaptureTargets(): Promise<TargetInfo[]> {
+  return invoke<TargetInfo[]>("list_capture_targets");
+}
+
+export function appIcon(processId: number): Promise<ArrayBuffer> {
+  return invoke<ArrayBuffer>("app_icon", { processId });
+}
+
+export async function startPreview(
+  target: CaptureTarget,
+  onFrame: (jpeg: ArrayBuffer) => void,
+): Promise<number> {
+  const channel = new Channel<ArrayBuffer>();
+  channel.onmessage = onFrame;
+  return invoke<number>("start_preview", { target, channel });
+}
+
+export function stopPreview(id: number): Promise<void> {
+  return invoke("stop_preview", { id });
+}
+
+export function stopPreviews(): Promise<void> {
+  return invoke("stop_previews");
+}
 
 export type OutputResolution = { kind: "native" } | { kind: "height"; height: number };
 
