@@ -25,6 +25,7 @@ pub enum TargetInfo {
     },
     Window {
         exe_name: String,
+        app_name: String,
         title: String,
         process_id: u32,
         width: i32,
@@ -82,8 +83,11 @@ pub fn list_targets() -> Result<Vec<TargetInfo>> {
             if !minimized && (width < MIN_WINDOW_WIDTH || height < MIN_WINDOW_HEIGHT) {
                 return None;
             }
+            let path = exe_path(process_id)?;
+            let exe_name = path.file_name()?.to_string_lossy().into_owned();
             Some(TargetInfo::Window {
-                exe_name: exe_name(process_id)?,
+                app_name: crate::games::app_name(&path, &exe_name),
+                exe_name,
                 title,
                 process_id,
                 width,
