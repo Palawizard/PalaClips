@@ -98,6 +98,12 @@
   compté ajouté au script. Limite : jeu sous son plafond, GPU non saturé ; la marge peut
   masquer le coût de la capture (PERF-03 à valider GPU-bound, PLAN phase 7). Journaux :
   `docs/reports/phase-7/fps-impact-2026-10-17_10-54.txt` et `_10-58.txt`.
+- Métadonnées des exe de jeux (2026-10-17, `palaclips-cli game-name`) :
+  `FortniteClient-Win64-Shipping.exe` (et `_EAC_EOS`) n'ont **ni ProductName ni
+  FileDescription** ; Terraria : « Terraria » ; Rocket League : `Launcher.exe` « Launcher ».
+  `QueryFullProcessImageNameW` (PROCESS_QUERY_LIMITED_INFORMATION) lit le chemin de Fortnite
+  sous EAC alors que `Get-Process .Path` le refuse. La `ProductName` d'`explorer.exe` contient
+  littéralement `&apos;` (« Système d&apos;exploitation ») : entités XML à décoder.
 - Hypothèse non vérifiée : la perte de 50–100 i/s vue le 2026-10-16 pendant
   `nvenc-quality.ps1` venait d'autre chose que la capture (réencodages et VMAF lancés en
   parallèle du jeu, CPU et GPU chargés).
