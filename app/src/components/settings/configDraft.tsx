@@ -20,6 +20,7 @@ export interface ConfigDraft {
   error: string | null;
   notice: string | null;
   change: (next: EngineConfig) => void;
+  commit: (next: EngineConfig) => void;
   apply: () => void;
   cancel: () => void;
 }
@@ -83,6 +84,11 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
         setNotice(null);
         setDraft(next);
         if (!armed || !restartsReplay(saved, next)) save(next);
+      },
+      commit: (next) => {
+        setNotice(null);
+        setDraft(next);
+        save(next);
       },
       apply: () => save(draft),
       cancel: () => setDraft(saved),

@@ -192,6 +192,24 @@ export function listAudioDevices(input: boolean): Promise<AudioDevice[]> {
   return invoke<AudioDevice[]>("list_audio_devices", { input });
 }
 
+export interface Measurement {
+  pairs: number;
+  late_ms: number;
+  spread_ms: number;
+}
+
+export interface Calibration {
+  tracks: { kind: TrackKind; title: string; measurement: Measurement | null }[];
+  mix_ms: number | null;
+  microphone_ms: number | null;
+  game_ms: number | null;
+  apps: { exe_name: string; offset_ms: number }[];
+}
+
+export function calibrateAudio(): Promise<Calibration> {
+  return invoke<Calibration>("calibrate_audio");
+}
+
 export interface AppSession {
   exe_name: string;
   app_name: string;

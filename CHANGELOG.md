@@ -74,6 +74,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   message clair en cas de refus, par exemple 5120×1440 en H.264. « Réglages appliqués »
   s'affiche quand un changement en attente part au désarmement du replay.
 - `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
+- Assistant de calibrage de la synchro (Réglages > Audio) : flash + bip sur l'écran principal
+  pendant 10 s, mesure de chaque piste dans PalaClips même (sans Python ni FFmpeg externe),
+  décalage proposé par piste à appliquer d'un clic. CLI `palaclips-cli calibrate`.
 - Réglages > Audio : pistes dans l'ordre du fichier avec vumètre, nom modifiable (Mix, Micro
   et Jeu compris), décalage de synchro par piste, sortie et micro au choix, gain du micro,
   piste Jeu automatique, nombre maximal de pistes d'applis ; ajout d'une appli parmi celles

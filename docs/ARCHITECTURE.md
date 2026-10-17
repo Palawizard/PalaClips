@@ -259,6 +259,7 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `get_theme` / `set_theme { theme }` | 5 ✅ | `system` / `dark` / `light` ; le front pose `data-theme` sur `<html>` (système suivi par `matchMedia`) |
 | `suspend_hotkeys` / `resume_hotkeys` | 5 ✅ | pendant la saisie d'un raccourci : sinon `RegisterHotKey` intercepte la combinaison avant la fenêtre |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
+| `calibrate_audio` | 5 ✅ | assistant de calibrage (AUD-11, ADR-026) : capture temporaire de l'écran principal, flash + bip 10 s, mesure par piste, replay réarmé ; renvoie mesures et décalages proposés (rien n'est appliqué) |
 | `list_audio_devices { input }` | 5 ✅ | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
 | `list_app_sessions` | 5 ✅ | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
 | `pick_app_exe` | 5 ✅ | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
@@ -297,7 +298,8 @@ fenêtre),
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
 `hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `clip_too_short` (info :
-moins de 3 s à sauvegarder, aucun clip ; pas de notification), `settings_reset` (réglages
+moins de 3 s à sauvegarder, aucun clip ; pas de notification), `calibration_running` (info :
+sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_reset` (réglages
 illisibles mis de côté en `settings.json.bak`, ou venant d'une version plus récente).
 
 Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
