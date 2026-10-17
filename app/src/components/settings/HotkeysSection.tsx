@@ -40,7 +40,7 @@ function Keys({ keys }: { keys: string }) {
       {keys.split("+").map((part) => (
         <kbd
           key={part}
-          className="score min-w-7 rounded-[4px] border border-line-strong bg-surface-2 px-1.5 py-0.5 text-center text-[15px] font-semibold text-ink"
+          className="score min-w-7 rounded-[4px] bg-surface-2 px-1.5 py-1 text-center text-[13px] font-semibold text-ink"
         >
           {displayKey(part)}
         </kbd>
@@ -53,6 +53,7 @@ function HotkeyField({
   label,
   keys,
   listening,
+  faulty,
   onListen,
   onCapture,
   onClear,
@@ -61,6 +62,7 @@ function HotkeyField({
   label: string;
   keys: string | null;
   listening: boolean;
+  faulty: boolean;
   onListen: () => void;
   onCapture: (keys: string) => void;
   onClear: () => void;
@@ -85,7 +87,9 @@ function HotkeyField({
       onKeyDown={handleKey}
       onBlur={listening ? onCancel : undefined}
       data-listening={listening}
-      className="hotkey-field pressable flex h-10 min-w-56 items-center justify-center rounded-md border border-line-strong bg-surface px-3 hover:border-ink-3"
+      className={`hotkey-field pressable flex h-10 min-w-56 items-center justify-end rounded-md border bg-surface px-2 ${
+        faulty ? "border-warn" : "border-line hover:border-line-strong"
+      }`}
     >
       {listening ? (
         <span className="text-[13px] font-medium text-ink">Appuie sur la combinaison…</span>
@@ -158,6 +162,7 @@ export function HotkeysSection() {
               label={label}
               keys={view.hotkeys[action]}
               listening={listening === action}
+              faulty={unavailable || Boolean(errors[action])}
               onListen={() => listen(action)}
               onCapture={(keys) => save(action, keys)}
               onClear={() => save(action, null)}
@@ -166,12 +171,12 @@ export function HotkeysSection() {
           </SettingRow>
         );
       })}
-      <div className="max-w-[78ch] px-6 py-5 text-[13px] text-ink-2">
+      <div className="max-w-[78ch] px-5 py-4 text-[13px] text-ink-2">
         <p className={`font-semibold ${conflicts ? "text-warn" : "text-ink"}`}>
           {conflicts ? "Conflit détecté avec une autre application." : "Aucun conflit détecté."}
         </p>
         <p className="mt-1">
-          Discord et l'overlay NVIDIA lisent le clavier sans déclarer leurs raccourcis à Windows : vérifie-les
+          Discord et l'overlay NVIDIA lisent le clavier sans déclarer leurs raccourcis à Windows : vérifie‑les
           (Discord : Paramètres → Raccourcis ; NVIDIA : Alt+Z → Paramètres → Raccourcis clavier).
         </p>
       </div>
