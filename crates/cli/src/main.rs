@@ -565,9 +565,11 @@ fn run_capture(
     let stream = capture.stream().clone();
     let tracks = audio
         .into_iter()
-        .map(|(source, offset_ms)| {
+        .enumerate()
+        .map(|(index, (source, offset_ms))| {
             let title = source.label();
             AudioTrack::start(
+                index,
                 source,
                 title,
                 stream.origin,

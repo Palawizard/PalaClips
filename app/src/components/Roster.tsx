@@ -40,8 +40,8 @@ function TrackRow({
 
   useEffect(() => {
     if (!fill.current || !hold.current || !peak.current) return;
-    return registerMeter(track.title, fill.current, hold.current, peak.current);
-  }, [track.title]);
+    return registerMeter(index, fill.current, hold.current, peak.current);
+  }, [index]);
 
   return (
     <div
@@ -151,7 +151,7 @@ export function Roster({
         )}
         {tracks.map((track, index) => (
           <TrackRow
-            key={track.title}
+            key={index}
             track={track}
             index={index}
             color={trackColor(track.title, appOrder)}

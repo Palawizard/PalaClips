@@ -74,6 +74,7 @@ impl std::fmt::Debug for AudioTrack {
 
 impl AudioTrack {
     pub fn start(
+        index: usize,
         source: AudioSource,
         title: impl Into<String>,
         origin: Hns,
@@ -92,6 +93,7 @@ impl AudioTrack {
         let end = Arc::new(AtomicI64::new(i64::MIN));
         let meter = PeakMeter::default();
         let worker = Worker {
+            index,
             meter: meter.clone(),
             source,
             title,
@@ -172,6 +174,7 @@ impl Drop for AudioTrack {
 }
 
 struct Worker {
+    index: usize,
     meter: PeakMeter,
     source: AudioSource,
     title: String,
@@ -561,6 +564,7 @@ impl Worker {
         self.reported = reported;
         self.alerts
             .try_send(EngineEvent::TrackChanged {
+                track: self.index,
                 title: self.title.clone(),
                 state,
                 source,

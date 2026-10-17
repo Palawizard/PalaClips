@@ -92,11 +92,12 @@ impl AppStatus {
                 self.tracks = tracks.iter().cloned().map(TrackInfo::named).collect();
             }
             EngineEvent::TrackChanged {
-                title,
+                track,
                 state,
                 source,
+                ..
             } => {
-                if let Some(track) = self.tracks.iter_mut().find(|track| track.title == *title) {
+                if let Some(track) = self.tracks.get_mut(*track) {
                     track.state = Some(*state);
                     track.source = source.clone();
                 }
@@ -383,6 +384,7 @@ mod tests {
             tracks: vec!["Mix complet".into(), "Discord".into()],
         });
         status.apply(&EngineEvent::TrackChanged {
+            track: 1,
             title: "Discord".into(),
             state: TrackState::Waiting,
             source: None,
@@ -394,6 +396,26 @@ mod tests {
         assert!(status.capture.is_none());
         assert_eq!(status.tracks.len(), 2);
         assert_eq!(status.tracks[1].state, None);
+    }
+
+    #[test]
+    fn tracks_with_the_same_title_keep_separate_states() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::CaptureStarted {
+            source: "Écran principal".into(),
+            width: 1920,
+            height: 1080,
+            fps: 60,
+            tracks: vec!["Jeu".into(), "Jeu".into()],
+        });
+        status.apply(&EngineEvent::TrackChanged {
+            track: 1,
+            title: "Jeu".into(),
+            state: TrackState::Capturing,
+            source: Some("game.exe".into()),
+        });
+        assert_eq!(status.tracks[0].state, None);
+        assert_eq!(status.tracks[1].state, Some(TrackState::Capturing));
     }
 
     #[test]
