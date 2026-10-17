@@ -308,7 +308,10 @@ affiché, `message` en français pour les journaux et la CLI).
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
 `hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `recording_failed { reason }`
-(écriture impossible : l'enregistrement s'arrête, les fichiers déjà écrits restent lisibles), `clip_too_short` (info :
+(écriture impossible ou disque plein : l'enregistrement s'arrête, les fichiers déjà écrits
+restent lisibles), `disk_almost_full { free_mb }` (moins de 2 Go libres pendant un
+enregistrement, une fois), `recording_recovered { name }` (enregistrement interrompu remuxé au
+démarrage, REC-06), `clip_too_short` (info :
 moins de 3 s à sauvegarder, aucun clip ; pas de notification), `calibration_running` (info :
 sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_unreadable` /
 `settings_unreadable_kept` (réglages illisibles, mis de côté en `settings.json.bak`),
@@ -331,6 +334,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |
 | Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
+| Enregistrements en cours (`recordings.txt` : `PID<tab>chemin`, une ligne par fichier ouvert ; au démarrage, ceux d'un processus mort sont remuxés en MP4 classique) | à côté de `settings.json` |
 | DLL FFmpeg (LGPL) | à côté de `palaclips.exe` (ressources du bundle) |
 
 ## 8. Légèreté

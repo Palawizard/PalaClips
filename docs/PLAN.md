@@ -125,8 +125,9 @@ Critères :
 
 - [ ] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
       Fait : enregistrement (bouton, raccourci, zone de notification), MP4 hybride relisible
-      après un arrêt brutal (test unitaire), replay au début, découpage. Reste : récupération
-      au démarrage (REC-06), essai réel avec Palawi (TESTING § T6).
+      après un arrêt brutal (test unitaire), replay au début, découpage, récupération au
+      démarrage (REC-06, journal `recordings.txt`). Reste : essai réel avec Palawi
+      (TESTING § T6).
 - [ ] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
       fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi). Tests unitaires
       par injection d'erreur dans l'écriture, puis vrai test sur un petit disque virtuel

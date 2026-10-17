@@ -117,6 +117,7 @@ export function useEngine(): Engine {
         case "alert":
           if (event.code === "replay_arm_failed") setPending(null);
           if (event.code === "recording_failed" || event.code === "replay_arm_failed") setRecordPending(false);
+          if (event.code === "recording_recovered") refreshLibrary();
           refreshState();
           break;
         default:
