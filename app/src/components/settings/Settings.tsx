@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
 import { GeneralSection } from "./GeneralSection.tsx";
+import { CaptureSection } from "./CaptureSection.tsx";
 import { HotkeysSection } from "./HotkeysSection.tsx";
 import { ReplaySection } from "./ReplaySection.tsx";
 import { StorageSection } from "./StorageSection.tsx";
@@ -204,7 +205,8 @@ export function Settings() {
         {section === "general" && <GeneralSection />}
         {section === "replay" && <ReplaySection />}
         {section === "storage" && <StorageSection />}
-        {(section === "capture" || section === "audio") && <Pending title={label} />}
+        {section === "capture" && <CaptureSection />}
+        {section === "audio" && <Pending title={label} />}
       </section>
     </div>
   );

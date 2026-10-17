@@ -174,6 +174,7 @@ export type TargetInfo =
   | {
       kind: "window";
       exe_name: string;
+      app_name: string;
       title: string;
       process_id: number;
       width: number;

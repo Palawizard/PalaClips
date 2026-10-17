@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { bytes } from "../../lib/format.ts";
 import {
   type EngineConfig,
@@ -10,14 +10,11 @@ import {
   type VideoCodec,
   type VideoQuality,
   estimateReplay,
-  getConfig,
-  getState,
   listEncoders,
   memoryStatus,
-  onEngineEvent,
-  setConfig,
 } from "../../lib/ipc.ts";
 import { Segmented, Select, SettingRow } from "./Settings.tsx";
+import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
 const RAM_SHARE_LIMIT = 0.4;
 
@@ -43,13 +40,6 @@ function durationLabel(seconds: number): string {
   if (seconds < 60) return `${seconds} s`;
   const minutes = seconds / 60;
   return Number.isInteger(minutes) ? `${minutes} min` : `${Math.floor(minutes)} min ${seconds % 60} s`;
-}
-
-function restarts(before: EngineConfig, after: EngineConfig): boolean {
-  return (
-    JSON.stringify(before.video) !== JSON.stringify(after.video) ||
-    before.replay.storage !== after.replay.storage
-  );
 }
 
 function withCurrent(presets: number[], current: number): number[] {
@@ -103,30 +93,16 @@ function NumberField({
 }
 
 export function ReplaySection() {
-  const [saved, setSaved] = useState<EngineConfig | null>(null);
-  const [draft, setDraft] = useState<EngineConfig | null>(null);
-  const [armed, setArmed] = useState(false);
+  const { config, loadError } = useConfigDraft();
   const [encoders, setEncoders] = useState<HardwareEncoder[]>([]);
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
   const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const estimateRef = useRef<HTMLElement>(null);
+  const draft = config?.draft ?? null;
 
   useEffect(() => {
-    getConfig().then((config) => {
-      setSaved(config);
-      setDraft(config);
-    }, (failure) => setError(String(failure)));
-    getState().then((status) => setArmed(status.state !== "idle"), () => setArmed(false));
     listEncoders().then(setEncoders, () => setEncoders([]));
     memoryStatus().then(setMemory, () => setMemory(null));
-    const unlisten = onEngineEvent((event) => {
-      if (event.type === "state_changed") setArmed(event.state !== "idle");
-    });
-    return () => {
-      unlisten.then((stop) => stop());
-    };
   }, []);
 
   useEffect(() => {
@@ -141,37 +117,8 @@ export function ReplaySection() {
     };
   }, [draft]);
 
-  const pendingRestart = useMemo(
-    () => Boolean(saved && draft && armed && restarts(saved, draft)),
-    [saved, draft, armed],
-  );
-
-  useEffect(() => {
-    if (!armed && saved && draft && restarts(saved, draft)) apply(draft, "Réglages appliqués");
-  }, [armed]);
-
-  if (!saved || !draft) return null;
-
-  function apply(next: EngineConfig, appliedNotice?: string) {
-    setError(null);
-    setConfig(next).then(
-      () => {
-        setSaved(next);
-        setDraft(next);
-        if (appliedNotice) setNotice(appliedNotice);
-      },
-      (failure) => {
-        setDraft(saved);
-        setError(String(failure));
-      },
-    );
-  }
-
-  const change = (next: EngineConfig) => {
-    setNotice(null);
-    setDraft(next);
-    if (!armed || !restarts(saved, next)) apply(next);
-  };
+  if (!config || !draft) return <LoadError message={loadError} />;
+  const change = config.change;
 
   const video = (patch: Partial<EngineConfig["video"]>) => change({ ...draft, video: { ...draft.video, ...patch } });
   const replay = (patch: Partial<EngineConfig["replay"]>) => change({ ...draft, replay: { ...draft.replay, ...patch } });
@@ -326,45 +273,7 @@ export function ReplaySection() {
           onChange={(keyframe_interval_secs) => video({ keyframe_interval_secs })}
         />
       </SettingRow>
-      <div className="sticky bottom-0 z-10">
-        {error && (
-          <p role="alert" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-warn">
-            {error}
-          </p>
-        )}
-        {pendingRestart && (
-          <div role="alert" className="flex flex-wrap items-center gap-3 border-t border-line bg-surface-2 px-5 py-3">
-            <p className="flex-1 text-[13px] text-ink">
-              Appliquer redémarre le replay : les secondes en mémoire seront perdues.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                estimateRef.current?.focus();
-                apply(draft);
-              }}
-              className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
-            >
-              Appliquer
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(saved);
-                estimateRef.current?.focus();
-              }}
-              className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
-            >
-              Annuler
-            </button>
-          </div>
-        )}
-        {notice && !pendingRestart && (
-          <p role="status" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-ink">
-            {notice}
-          </p>
-        )}
-      </div>
+      <ConfigFooter config={config} focusAfter={estimateRef} />
     </>
   );
 }
