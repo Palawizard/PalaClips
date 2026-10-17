@@ -100,7 +100,7 @@ Critères :
 
 Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 
-- [ ] Premier écran construit selon la direction de `.impeccable/surfaces/`, puis `DESIGN.md`
+- [x] Premier écran construit selon la direction de `.impeccable/surfaces/`, puis `DESIGN.md`
       (et `.impeccable/design.json`) produits par le documenteur impeccable, commités.
 - [ ] Shell Tauri : zone de notification + menu, instance unique, fenêtre créée/détruite,
       `prevent_exit`, raccourcis globaux personnalisables avec conflits.

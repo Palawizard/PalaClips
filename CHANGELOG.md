@@ -52,6 +52,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   nom de leurs pistes lu dans le fichier ; espace disque restant.
 - Niveaux audio de chaque piste en direct quand la fenêtre est ouverte (moins souvent sans
   focus, rien quand elle est réduite ou fermée).
+- Écran État : le replay (armé ou non, secondes en mémoire, RAM utilisée, Sauvegarder,
+  Armer/Désarmer), la source capturée, l'espace disque, les alertes, chaque piste audio dans
+  l'ordre du fichier avec sa couleur, son vumètre, sa crête et son état (en attente de l'appli,
+  muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
+- Menu de la zone de notification : armer et désarmer le replay.
 - CLI : `probe-memory`, `recent-clips`, `replay --levels`, `replay --no-arm` ; scripts
   `engine-memory.ps1`, `nvenc-quality.ps1`.
 

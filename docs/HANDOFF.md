@@ -8,8 +8,9 @@
 - **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `feature/app-shell` (à jour sur `dev`) : socle Tauri ↔ moteur de l'écran État
-  fait, PR #19 (brouillon) vers `dev` **laissée ouverte** (l'écran lui-même reste à construire).
+- **Branche :** `feature/app-shell` (à jour sur `dev`) : écran État + shell construits, revus
+  (verdict impeccable « ship ») et documentés (`DESIGN.md`) ; PR #19 (brouillon) vers `dev`
+  **laissée ouverte** (reste de la phase 5).
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
@@ -128,6 +129,20 @@
     `EngineState: Default`.
   - CLI : `recent-clips [--clips-dir] [--limit]` (JSON), `replay --levels`.
   - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés.
+- **Écran État + shell (front, `feature/app-shell`)** : `app/src/App.tsx` (rail État / Galerie
+  / Réglages ; Galerie et Réglages = textes d'attente), `components/` : `StatusBanner` (replay :
+  état, chrono « en mémoire », RAM, Sauvegarder + Armer/Désarmer ; enregistrement désactivé
+  jusqu'à la phase 6 ; source ; disque), `Alerts` (alertes actives, masquables), `Roster`
+  (plaque numérotée à la couleur de la piste, vumètre, crête, état), `RecentClips` (5 derniers,
+  miniature par `convertFileSrc`), `Rail` (logo en encre) ; `lib/useEngine.ts` (état +
+  événements + actions), `lib/levels.ts` (vumètres : une boucle rAF partagée), `lib/tracks.ts`
+  (couleur fixe par piste), `lib/format.ts`. Polices Barlow / Barlow Condensed (`@fontsource`,
+  hors ligne), icônes `lucide-react` 1.52.0. Système documenté : `DESIGN.md` +
+  `.impeccable/design.json`. Thème clair sous `prefers-color-scheme` (réglage Général à venir).
+  Moteur : événements `capture_started` et `track_changed` (`TrackState`), `get_config` ;
+  `AppStatus` porte la source et les pistes ; alertes d'échec du replay effacées au
+  réarmement ; menu de la zone de notification avec Armer / Désarmer ; protocole `asset`
+  limité à `cache\thumbnails`.
 - **Mémoire (PR `fix/engine-memory-overhead`)** : NVENC `dpb_size=2`, `surfaces=2`/`delay=1`
   jusqu'à 60 i/s (ADR-022, −110 Mo) ; CLI `probe-memory` (mémoire étape par étape : tas,
   `VirtualAlloc`, image, blocs qui grandissent), `replay --no-arm` ; script
@@ -139,16 +154,20 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 5 sur `feature/app-shell`, écran État + shell (brief confirmé) :
-   - miniatures dans la WebView : `convertFileSrc` + `assetProtocol` limité au dossier
-     `cache\thumbnails` (`tauri.conf.json`, CSP déjà ouverte à `asset:`) ;
-   - `/design` État + shell : impeccable build dans la direction ADR-014, `emil-design-eng`,
-     critique, audit, polish, puis `DESIGN.md` (documenteur impeccable) ;
-   - `record_start`/`record_stop` : boutons présents, branchés en phase 6 ;
-   - critères : un seul processus fenêtre fermée (aucun `msedgewebview2.exe`), CPU fenêtre
-     ouverte non focalisée pendant une capture (PERF-03), navigation clavier.
+1. Phase 5, suite (sur `feature/app-shell`) :
+   - 👤 montrer l'écran État à Palawi (ressenti ; moment de sauvegarde : surlignage des pistes
+     + carte qui arrive, jamais capturé ; la revue n'a pas vu la zone d'alertes) ;
+   - persistance des réglages (`settings.json` versionné, migration, réinitialisation,
+     `set_config`), prérequis des écrans Réglages ;
+   - toasts sans vol de focus + son à la sauvegarde (RPL-06, critère 👤 Fortnite) ;
+   - raccourcis personnalisables avec conflits (APP-05), démarrage avec Windows (APP-04) ;
+   - écrans Réglages (Capture avec miniatures en direct, Audio avec vumètres et assistant de
+     calibrage AUD-11, Replay & qualité avec estimation RAM, Raccourcis, Stockage, Général dont
+     le thème) via `/design` dans le système `DESIGN.md` ;
+   - CPU fenêtre ouverte non focalisée pendant une capture (PERF-03), en build release.
    - ⚠️ L'app arme le replay au démarrage (écran principal, micro, piste Jeu) : demander à
-     Palawi avant tout `npm run tauri dev`.
+     Palawi avant tout `npm run tauri dev` ; une sauvegarde de test écrit un vrai clip
+     (`Vidéos\PalaClips\<Jeu>`) et sa miniature : les supprimer après.
 2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
    dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
 3. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
@@ -248,3 +267,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-16 | 4→5 | RPL-08 en test accéléré (ADR-020, corrigé : mise en régime de 10 min exclue) : 30 min, 360 sauvegardes, −1,8 Mo/h ✅ ; noms de pistes dans le fichier seulement (ADR-021) ; phase 4 validée ; `/impeccable shape` de l'écran État + shell, brief confirmé avec 7 corrections | Phase 5 : écran État + shell |
 | 2026-10-16/17 | 4→5 | PERF-02 mesuré (a–d) : NVENC défauts ~175 Mo → ADR-022 (`dpb_size=2`, pipeline court ≤ 60 i/s, −110 Mo, qualité identique sur Fortnite) ; PERF-01/02 en working set privé (ADR-023, 61 Mo hors tampon) ; RPL-03 = fenêtre + 7 % ; PR #16, #17. Perte de 50–100 i/s dans Fortnite pendant une capture → `fps-impact.ps1` (PR #18), test en attente. Phase 5 : socle Tauri (événements, commandes replay, `Alt+F10`, zone de notification, instance unique), niveaux audio, miniatures, derniers clips, espace disque | Test fps avec Palawi ; écran État (`/design`) |
 | 2026-10-17 | 5 | `fps-impact.ps1` lancé par Palawi (avec et sans G-Sync) : aucune perte de fps, Independent Flip conservé ; script corrigé (mise en route non comptée, GPU relevé) ; PERF-03 GPU-bound ajouté au PLAN | Écran État (`/design`) |
+| 2026-10-17 | 5 | `track_changed` / `capture_started`, `get_config` ; écran État + shell (Barlow, roster à plaques de couleur, vumètres 20 Hz interpolés, derniers clips avec miniatures) ; revue impeccable : recapture, 8 correctifs + logo, verdict « ship » ; `DESIGN.md` par le documenteur ; vérifié en vrai : 1180×760, 900×600, thème clair, sauvegarde, 0 WebView2 fenêtre fermée, instance unique | Montrer l'écran à Palawi ; persistance des réglages, toasts, écrans Réglages |
