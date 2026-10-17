@@ -40,6 +40,8 @@ export function memoryStatus(): Promise<MemoryStatus> {
 }
 
 export interface ReplayEstimate {
+  source_width: number;
+  source_height: number;
   width: number;
   height: number;
   video_kbps: number;

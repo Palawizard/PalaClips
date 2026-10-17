@@ -110,6 +110,7 @@ export function ReplaySection() {
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
   const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const estimateRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -146,17 +147,18 @@ export function ReplaySection() {
   );
 
   useEffect(() => {
-    if (!armed && saved && draft && restarts(saved, draft)) apply(draft);
+    if (!armed && saved && draft && restarts(saved, draft)) apply(draft, "Réglages appliqués");
   }, [armed]);
 
   if (!saved || !draft) return null;
 
-  function apply(next: EngineConfig) {
+  function apply(next: EngineConfig, appliedNotice?: string) {
     setError(null);
     setConfig(next).then(
       () => {
         setSaved(next);
         setDraft(next);
+        if (appliedNotice) setNotice(appliedNotice);
       },
       (failure) => {
         setDraft(saved);
@@ -166,6 +168,7 @@ export function ReplaySection() {
   }
 
   const change = (next: EngineConfig) => {
+    setNotice(null);
     setDraft(next);
     if (!armed || !restarts(saved, next)) apply(next);
   };
@@ -179,14 +182,12 @@ export function ReplaySection() {
   ).map((codec) => codec.label);
   const ramShare = estimate && memory ? estimate.bytes / memory.available_bytes : 0;
   const tooMuchRam = draft.replay.storage === "ram" && ramShare > RAM_SHARE_LIMIT;
+  const sourceHeight = estimate?.source_height ?? 4320;
+  const currentHeight = draft.video.resolution.kind === "height" ? draft.video.resolution.height : null;
+  const heights = HEIGHTS.filter((height) => height < sourceHeight || height === currentHeight);
 
   return (
     <>
-      {error && (
-        <p role="alert" className="border-b border-line bg-surface-2 px-5 py-3 text-[13px] text-warn">
-          {error}
-        </p>
-      )}
       <section ref={estimateRef} tabIndex={-1} aria-label="Estimation du tampon" className="border-b border-line px-5 py-4">
         <p className="flex flex-wrap items-baseline gap-x-2">
           <span className="score text-[28px] leading-none font-semibold">
@@ -293,7 +294,7 @@ export function ReplaySection() {
             value={resolutionKey(draft.video.resolution)}
             options={[
               { value: "native", label: "Native" },
-              ...HEIGHTS.map((height) => ({ value: String(height), label: `${height}p` })),
+              ...heights.map((height) => ({ value: String(height), label: `${height}p` })),
               { value: "free", label: "Libre" },
             ]}
             onChange={(key) =>
@@ -301,15 +302,15 @@ export function ReplaySection() {
                 resolution:
                   key === "native"
                     ? { kind: "native" }
-                    : { kind: "height", height: key === "free" ? 900 : Number(key) },
+                    : { kind: "height", height: key === "free" ? Math.min(900, sourceHeight) : Number(key) },
               })
             }
           />
           {resolutionKey(draft.video.resolution) === "free" && draft.video.resolution.kind === "height" && (
             <NumberField
               value={draft.video.resolution.height}
-              min={360}
-              max={4320}
+              min={Math.min(360, sourceHeight)}
+              max={sourceHeight}
               unit="p"
               label="Hauteur de sortie, valeur libre"
               onCommit={(height) => video({ resolution: { kind: "height", height } })}
@@ -325,33 +326,45 @@ export function ReplaySection() {
           onChange={(keyframe_interval_secs) => video({ keyframe_interval_secs })}
         />
       </SettingRow>
-      {pendingRestart && (
-        <div role="alert" className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-line bg-surface-2 px-5 py-3">
-          <p className="flex-1 text-[13px] text-ink">
-            Appliquer redémarre le replay : les secondes en mémoire seront perdues.
+      <div className="sticky bottom-0 z-10">
+        {error && (
+          <p role="alert" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-warn">
+            {error}
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              estimateRef.current?.focus();
-              apply(draft);
-            }}
-            className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
-          >
-            Appliquer
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(saved);
-              estimateRef.current?.focus();
-            }}
-            className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
-          >
-            Annuler
-          </button>
-        </div>
-      )}
+        )}
+        {pendingRestart && (
+          <div role="alert" className="flex flex-wrap items-center gap-3 border-t border-line bg-surface-2 px-5 py-3">
+            <p className="flex-1 text-[13px] text-ink">
+              Appliquer redémarre le replay : les secondes en mémoire seront perdues.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                estimateRef.current?.focus();
+                apply(draft);
+              }}
+              className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
+            >
+              Appliquer
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(saved);
+                estimateRef.current?.focus();
+              }}
+              className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+            >
+              Annuler
+            </button>
+          </div>
+        )}
+        {notice && !pendingRestart && (
+          <p role="status" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-ink">
+            {notice}
+          </p>
+        )}
+      </div>
     </>
   );
 }

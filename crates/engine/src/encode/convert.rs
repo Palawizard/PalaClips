@@ -46,6 +46,7 @@ pub fn output_size(input: Size, resolution: OutputResolution) -> Size {
     match resolution {
         OutputResolution::Native => Size::new(even(input.width as f64), even(input.height as f64)),
         OutputResolution::Height { height } => {
+            let height = height.min(input.height.max(1));
             let width = input.width as f64 * height as f64 / input.height.max(1) as f64;
             Size::new(even(width), even(height as f64))
         }
@@ -276,6 +277,31 @@ mod tests {
                 OutputResolution::Height { height: 720 }
             ),
             Size::new(1720, 720)
+        );
+    }
+
+    #[test]
+    fn scaled_output_never_exceeds_the_source() {
+        assert_eq!(
+            output_size(
+                Size::new(2560, 1440),
+                OutputResolution::Height { height: 2160 }
+            ),
+            Size::new(2560, 1440)
+        );
+        assert_eq!(
+            output_size(
+                Size::new(1920, 1080),
+                OutputResolution::Height { height: 1081 }
+            ),
+            Size::new(1920, 1080)
+        );
+        assert_eq!(
+            output_size(
+                Size::new(2560, 1440),
+                OutputResolution::Height { height: 1439 }
+            ),
+            Size::new(2558, 1440)
         );
     }
 

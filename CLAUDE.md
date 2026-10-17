@@ -51,6 +51,11 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
    lancé et fermé par le script). Tout processus, onglet, fenêtre ou son lancé par un test est
    arrêté à la fin, même en cas d'échec. Si un test a besoin d'une appli de Palawi, demande-lui
    avant et dis-lui exactement quoi refermer après.
+8. **Un test ne touche jamais à la configuration de Palawi.** Toute capture d'écran ou tout
+   essai de l'app passe par `pwsh scripts/app-isolated.ps1 [-Settings '<json partiel>']` :
+   build release lancée avec `PALACLIPS_CONFIG_DIR=target/test-config` (settings.json et
+   clips du test dans ce dossier, recréé à chaque lancement). Le `settings.json` de Palawi
+   (`%APPDATA%\PalaClips\`) n'est jamais modifié, même temporairement.
 
 ## 2. Front : skills de design obligatoires
 

@@ -292,6 +292,22 @@
   — [OBS, même article](https://obsproject.com/blog/obs-studio-hybrid-mp4)
 - DaVinci Resolve gère mal le framerate variable : sortir en CFR. — [forum Blackmagic](https://forum.blackmagicdesign.com/viewtopic.php?p=474782)
 
+### Taille de sortie acceptée par NVENC (mesuré le 2026-10-17, RTX 4070 Super)
+
+`palaclips-cli try-output --codec <c> --width <l> --height <h> [--fps <n>] [--skip-limit]`
+ouvre réellement l'encodeur et encode 5 images :
+
+| Codec | Accepté | Refusé (« Provided device doesn't support required NVENC features ») |
+|---|---|---|
+| H.264 | 4096×2304, 4096×4096 à 240 i/s, 2560×1440 à 240 i/s | 4098×1152, 5120×1440 |
+| HEVC | 8192×4320 | 8194×2160 |
+| AV1 | 7680×4320 | — |
+
+La limite est donc un côté maximal (4096 en H.264, 8192 en HEVC et AV1), pas un nombre de
+pixels ni un débit d'images. L'app la vérifie d'abord (message clair sans ouvrir
+l'encodeur), puis fait l'essai réel avant d'appliquer un changement vidéo ou de capture. Un
+écran super-ultrawide 5120×1440 en natif exige HEVC ou AV1.
+
 ### Mémoire du pipeline (PERF-02, mesuré le 2026-10-16)
 
 Machine de Palawi, pilote NVIDIA 617.42, 1440p60 `h264_nvenc` 40 Mb/s, 4 pistes ; mémoire
