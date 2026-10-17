@@ -8,9 +8,8 @@
 - **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `feature/app-shell` (à jour sur `dev`) : écran État + shell construits, revus
-  (verdict impeccable « ship ») et documentés (`DESIGN.md`) ; PR #19 (brouillon) vers `dev`
-  **laissée ouverte** (reste de la phase 5).
+- **Branche :** `dev` à jour (écran État + shell mergés, PR #19). Prochaine branche :
+  `feature/settings-persistence`.
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
@@ -154,19 +153,24 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 5, suite (sur `feature/app-shell`) :
-   - 👤 montrer l'écran État à Palawi (ressenti ; moment de sauvegarde : surlignage des pistes
-     + carte qui arrive, jamais capturé ; la revue n'a pas vu la zone d'alertes) ;
-   - persistance des réglages (`settings.json` versionné, migration, réinitialisation,
-     `set_config`), prérequis des écrans Réglages ;
-   - toasts sans vol de focus + son à la sauvegarde (RPL-06, critère 👤 Fortnite) ;
+1. Phase 5, suite (une branche par tâche, depuis `dev`) :
+   - `feature/settings-persistence` : `settings.json` versionné (`%APPDATA%\PalaClips\`),
+     migration, réinitialisation, `set_config`, l'app charge la config au démarrage ;
+   - `feature/game-names` (décision de Palawi, 2026-10-17) : nom du jeu = `ProductName` de
+     l'exe, sinon `FileDescription`, sinon nom de l'exe ; noms génériques ignorés (vide,
+     « Unreal Engine », « UE4 », « Shipping », noms de moteurs) ; nettoyé pour le système de
+     fichiers (™, ®, :, caractères interdits) ; **figé par exe** une fois choisi (table
+     persistante dans les réglages), modifiable dans Réglages > Stockage (STO-02) ; même nom
+     pour le fichier (STO-03) et la galerie ; tests unitaires des cas de repli ;
+   - `feature/save-feedback` : toast (sans vol de focus) **et** son de confirmation joué par
+     PalaClips lui-même, indépendant du toast (Windows 11 coupe les notifications pendant un
+     jeu) ; son désactivable (RPL-06) ; 👤 vérifier les deux dans Fortnite ;
    - raccourcis personnalisables avec conflits (APP-05), démarrage avec Windows (APP-04) ;
-   - écrans Réglages (Capture avec miniatures en direct, Audio avec vumètres et assistant de
-     calibrage AUD-11, Replay & qualité avec estimation RAM, Raccourcis, Stockage, Général dont
-     le thème) via `/design` dans le système `DESIGN.md` ;
-   - CPU fenêtre ouverte non focalisée pendant une capture (PERF-03), en build release.
+   - écrans Réglages (Capture, Audio + assistant AUD-11, Replay & qualité, Raccourcis,
+     Stockage, Général dont le thème) via `/design` dans le système `DESIGN.md` ; consigne de
+     copie de `PRODUCT.md` (aucune phrase qui commente l'écran) ;
    - ⚠️ L'app arme le replay au démarrage (écran principal, micro, piste Jeu) : demander à
-     Palawi avant tout `npm run tauri dev` ; une sauvegarde de test écrit un vrai clip
+     Palawi avant tout lancement ; une sauvegarde de test écrit un vrai clip
      (`Vidéos\PalaClips\<Jeu>`) et sa miniature : les supprimer après.
 2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
    dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
@@ -268,3 +272,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-16/17 | 4→5 | PERF-02 mesuré (a–d) : NVENC défauts ~175 Mo → ADR-022 (`dpb_size=2`, pipeline court ≤ 60 i/s, −110 Mo, qualité identique sur Fortnite) ; PERF-01/02 en working set privé (ADR-023, 61 Mo hors tampon) ; RPL-03 = fenêtre + 7 % ; PR #16, #17. Perte de 50–100 i/s dans Fortnite pendant une capture → `fps-impact.ps1` (PR #18), test en attente. Phase 5 : socle Tauri (événements, commandes replay, `Alt+F10`, zone de notification, instance unique), niveaux audio, miniatures, derniers clips, espace disque | Test fps avec Palawi ; écran État (`/design`) |
 | 2026-10-17 | 5 | `fps-impact.ps1` lancé par Palawi (avec et sans G-Sync) : aucune perte de fps, Independent Flip conservé ; script corrigé (mise en route non comptée, GPU relevé) ; PERF-03 GPU-bound ajouté au PLAN | Écran État (`/design`) |
 | 2026-10-17 | 5 | `track_changed` / `capture_started`, `get_config` ; écran État + shell (Barlow, roster à plaques de couleur, vumètres 20 Hz interpolés, derniers clips avec miniatures) ; revue impeccable : recapture, 8 correctifs + logo, verdict « ship » ; `DESIGN.md` par le documenteur ; vérifié en vrai : 1180×760, 900×600, thème clair, sauvegarde, 0 WebView2 fenêtre fermée, instance unique | Montrer l'écran à Palawi ; persistance des réglages, toasts, écrans Réglages |
+| 2026-10-17 | 5 | Vumètres indexés par piste, animation plafonnée à 60 i/s et sans boucle hors focus ; PERF-03 mesuré en release (fenêtre ouverte sans focus 0,57 % CPU, fermée 0,27 %) ; test de Palawi : écran OK, `Alt+F10` dans Fortnite sans perte de focus, sauvegarde fenêtre ouverte OK ; consigne de copie dans PRODUCT.md ; PR #19 mergée | Réglages persistants, noms de jeux, toast + son |
