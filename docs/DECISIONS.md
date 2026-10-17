@@ -323,3 +323,23 @@ premier plan » de la phase 3.
 - Écarté : commencer à la première image clé après la fin du clip précédent (jusqu'à 1 s
   perdue entre les deux clips) ; garder la durée complète à chaque fois (comportement de
   ShadowPlay, refusé par Palawi).
+
+## ADR-026 — Assistant de calibrage de la synchro (AUD-11)
+**Statut :** acceptée (2026-10-17, défauts annoncés à Palawi).
+- Contexte : il faut une valeur proposée pour chaque piste, sans Python ni FFmpeg en ligne de
+  commande chez l'utilisateur, en moins de 30 s.
+- Décision : le moteur arrête le replay et lance une capture temporaire de l'écran principal
+  (H.264 360p 60 i/s, sans les pistes d'applis, piste Jeu épinglée sur PalaClips) ; une
+  fenêtre plein écran sans activation (`WS_EX_NOACTIVATE`) flashe en blanc avec un bip de
+  50 ms chaque seconde pendant 10 s, sur la sortie par défaut comme un jeu ; le tampon est
+  écrit dans un MP4 temporaire, relu (luminance moyenne 64×36, échantillons par piste),
+  supprimé, puis le replay est réarmé s'il l'était. Mesure par piste : médiane des écarts
+  flash → bip (≥ 5 paires, dispersion ≤ 20 ms), décalage proposé = décalage actuel −
+  retard mesuré (`engine::calibrate`).
+- Les pistes d'applis n'entendent pas le bip (il sort du processus PalaClips) : elles
+  reçoivent la mesure de la piste Jeu, qui passe par la même capture par processus. Le micro
+  n'est mesuré que s'il entend les bips (haut-parleurs) ; sinon « non mesuré ».
+- L'appli prévient avant (écran principal, bips, replay redémarré) et rappelle que le retard
+  d'une chaîne Voicemeeter/LightHost change à chaque relance ; « Recalibrer » reste visible.
+- Écarté : mesurer dans le replay en cours (la cible peut être une fenêtre ou un autre écran)
+  ; jouer le bip dans chaque appli (impossible sans injection).

@@ -63,6 +63,14 @@ enum Command {
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
     #[cfg(windows)]
+    #[command(
+        about = "Calibre la synchro par piste (flash + bip plein écran ~12 s) avec les réglages audio d'un settings.json, sans rien enregistrer"
+    )]
+    Calibrate {
+        #[arg(long)]
+        settings: Option<std::path::PathBuf>,
+    },
+    #[cfg(windows)]
     #[command(about = "Liste les périphériques audio et les applis qui ont une session audio")]
     AudioSources,
     #[cfg(windows)]
@@ -338,6 +346,8 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
+        Command::Calibrate { settings } => calibrate(settings.as_deref())?,
+        #[cfg(windows)]
         Command::AudioSources => audio_sources()?,
         #[cfg(windows)]
         Command::Preview {
@@ -554,6 +564,37 @@ fn list_targets(json: bool) -> Result<()> {
             }
         }
     }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn calibrate(settings: Option<&std::path::Path>) -> Result<()> {
+    use palaclips_engine::engine::Engine;
+
+    let config = match settings {
+        Some(path) => {
+            let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path)?)?;
+            serde_json::from_value(json.get("engine").cloned().unwrap_or(json))?
+        }
+        None => EngineConfig::default(),
+    };
+    let engine = Engine::start(config)?;
+    let started = std::time::Instant::now();
+    let calibration = engine.handle().calibrate()?;
+    println!("calibrage en {:.1} s", started.elapsed().as_secs_f64());
+    for track in &calibration.tracks {
+        match track.measurement {
+            Some(measured) => println!(
+                "  {:<14} {:+7.1} ms (paires {}, écart {:.1} ms)",
+                track.title, measured.late_ms, measured.pairs, measured.spread_ms
+            ),
+            None => println!("  {:<14} non mesurée", track.title),
+        }
+    }
+    println!(
+        "propositions : mix {:?}, micro {:?}, jeu {:?}, applis {:?}",
+        calibration.mix_ms, calibration.microphone_ms, calibration.game_ms, calibration.apps
+    );
     Ok(())
 }
 
