@@ -15,6 +15,14 @@ export function getConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("get_config");
 }
 
+export function setConfig(config: EngineConfig): Promise<void> {
+  return invoke("set_config", { config });
+}
+
+export function resetConfig(): Promise<EngineConfig> {
+  return invoke<EngineConfig>("reset_config");
+}
+
 export function getState(): Promise<AppStatus> {
   return invoke<AppStatus>("get_state");
 }
