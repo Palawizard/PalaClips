@@ -52,3 +52,18 @@ plaques `kbd`) ; l'état « Appuie sur la combinaison… » est le seul moment a
   qui sera supprimé (les plus anciens) et demander confirmation la première fois. Si le disque
   se remplit pendant un enregistrement : arrêt propre avec un fichier lisible et une alerte,
   jamais un fichier cassé (phase 6, REC/STO-05).
+
+## Capture, brief confirmé (shape, 2026-10-17)
+
+- En haut : « Afficher le curseur » et « Bordure jaune de Windows » (CAP-07), lignes de réglage.
+- Puis « Écrans » et « Fenêtres » en grille de vignettes 16:9 (3 colonnes à 1180 px, 2 à
+  900 px). Carte : miniature, icône de l'appli, nom de l'appli, titre ou définition. Cible
+  actuelle cerclée ; point rouge « En capture » si le replay est armé.
+- Miniatures en direct : tous les écrans + 6 fenêtres visibles, ~1 image/s, sans bordure ni
+  curseur, arrêtées en quittant la section ou quand la fenêtre est cachée. Autres fenêtres :
+  icône + « Aperçu » (remplace la plus ancienne). Fenêtre réduite : icône + « Réduite ».
+- Exclues : PalaClips, fenêtres minuscules et invisibles.
+- Clic = nouvelle cible ; replay armé → barre de confirmation en pied (RPL-07).
+- Cible mémorisée dont l'appli est fermée : carte grisée « Pas lancée », toujours
+  sélectionnée.
+- Clavier : flèches dans la grille, Entrée pour choisir.

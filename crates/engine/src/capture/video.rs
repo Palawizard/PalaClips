@@ -207,7 +207,7 @@ impl Drop for VideoCapture {
     }
 }
 
-fn keep_mta_alive() {
+pub(super) fn keep_mta_alive() {
     static MTA: std::sync::Once = std::sync::Once::new();
     MTA.call_once(|| {
         // windows-rs caches WinRT factories for the whole process; once the MTA is torn down

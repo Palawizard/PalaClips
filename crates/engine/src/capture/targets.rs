@@ -4,6 +4,7 @@ use windows::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
 use windows::Win32::System::Threading::{
     OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
 };
+use windows::Win32::UI::WindowsAndMessaging::IsIconic;
 use windows::core::PWSTR;
 use windows_capture::monitor::Monitor;
 use windows_capture::window::Window;
@@ -24,12 +25,17 @@ pub enum TargetInfo {
     },
     Window {
         exe_name: String,
+        app_name: String,
         title: String,
         process_id: u32,
         width: i32,
         height: i32,
+        minimized: bool,
     },
 }
+
+const MIN_WINDOW_WIDTH: i32 = 160;
+const MIN_WINDOW_HEIGHT: i32 = 90;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ResolvedTarget {
@@ -70,12 +76,23 @@ pub fn list_targets() -> Result<Vec<TargetInfo>> {
         .filter_map(|window| {
             let title = window.title().ok().filter(|title| !title.is_empty())?;
             let process_id = window.process_id().ok()?;
+            // SAFETY: IsIconic only reads the state of a window handle from EnumWindows.
+            let minimized = unsafe { IsIconic(HWND(window.as_raw_hwnd())) }.as_bool();
+            let width = window.width().ok()?;
+            let height = window.height().ok()?;
+            if !minimized && (width < MIN_WINDOW_WIDTH || height < MIN_WINDOW_HEIGHT) {
+                return None;
+            }
+            let path = exe_path(process_id)?;
+            let exe_name = path.file_name()?.to_string_lossy().into_owned();
             Some(TargetInfo::Window {
-                exe_name: exe_name(process_id)?,
+                app_name: crate::games::app_name(&path, &exe_name),
+                exe_name,
                 title,
                 process_id,
-                width: window.width().ok()?,
-                height: window.height().ok()?,
+                width,
+                height,
+                minimized,
             })
         })
         .filter(|info| !matches!(info, TargetInfo::Window { process_id, .. } if *process_id == std::process::id()));
@@ -158,7 +175,20 @@ fn is_cloaked(window: &Window) -> bool {
     result.is_ok() && cloaked != 0
 }
 
+pub fn app_icon(process_id: u32) -> Option<Vec<u8>> {
+    super::icon::app_icon_png(&exe_path(process_id)?)
+}
+
 fn exe_name(process_id: u32) -> Option<String> {
+    Some(
+        exe_path(process_id)?
+            .file_name()?
+            .to_string_lossy()
+            .into_owned(),
+    )
+}
+
+fn exe_path(process_id: u32) -> Option<std::path::PathBuf> {
     // SAFETY: PROCESS_QUERY_LIMITED_INFORMATION is the minimal right for QueryFullProcessImageNameW and works on protected processes.
     let process =
         unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) }.ok()?;
@@ -176,13 +206,7 @@ fn exe_name(process_id: u32) -> Option<String> {
     // SAFETY: the handle was opened above and is closed exactly once.
     unsafe { CloseHandle(process) }.ok()?;
     queried.ok()?;
-    let path = String::from_utf16_lossy(&buffer[..len as usize]);
-    Some(
-        std::path::Path::new(&path)
-            .file_name()?
-            .to_string_lossy()
-            .into_owned(),
-    )
+    Some(String::from_utf16_lossy(&buffer[..len as usize]).into())
 }
 
 fn windows_error(error: impl std::fmt::Display) -> EngineError {
