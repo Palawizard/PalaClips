@@ -270,9 +270,10 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 aussi l'`AppStatus` renvoyé par `get_state`.
 
 `state_changed`, `capture_started { source, width, height, fps, tracks }` (à l'armement),
-`track_changed { title, state: waiting | capturing | silent | unavailable, source }` (appli ou
-périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels` (crête linéaire 0–1 de chaque piste depuis le
-relevé précédent, dans l'ordre des pistes ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
+`track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
+périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
+le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
+de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
 fenêtre),
 `replay_stats`, `alert { severity, code, message }`.
