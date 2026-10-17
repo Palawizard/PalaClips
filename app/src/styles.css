@@ -62,7 +62,7 @@
   --track-3: #1f6fb3;
   --track-4: #b23f78;
   --track-5: #7d6a00;
-  --track-6: #0e7f93;
+  --track-6: #0d778a;
   --track-7: #7d3fc7;
   --track-8: #a85314;
   --track-9: #2f5fbf;
@@ -121,7 +121,7 @@ body {
   border-radius: 4px;
 }
 
-[tabindex="-1"]:focus-visible {
+:not(button, input, select, textarea, a)[tabindex="-1"]:focus-visible {
   outline: none;
 }
 
@@ -252,6 +252,7 @@ body {
   .alert-item,
   .switch-thumb,
   .capture-card,
+  .capture-frame,
   .session-meter {
     transition-duration: 0ms !important;
   }

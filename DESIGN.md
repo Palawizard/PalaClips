@@ -172,14 +172,14 @@ A stadium-night neutral ramp with one ink, one alarm, one caution, and a fixed j
 - **Meter Ground** (meter-ground): meter trough and missing-thumbnail backdrop.
 
 ### Light theme
-Under `prefers-color-scheme: light` every role is remapped, never re-chosen: ground #eef1f6, rail #e2e7ef, surface #ffffff, surface-raised #f5f7fb, surface-hover #edf1f7, line #d9dfe9, line-strong #c3cbd9, ink #121826, ink-muted #445066, ink-faint #536076, rec #d92639, warn #9a6200, focus #2f6fd8, meter-ground #e4e9f1; jersey colours darken to keep contrast (mix #2b3345, mic #8a5f00, game #23703a, track-1..11 #127a73, #5b4fd6, #1f6fb3, #b23f78, #7d6a00, #0e7f93, #7d3fc7, #a85314, #2f5fbf, #2d7a4c, #9a3fa8).
+Under `prefers-color-scheme: light` every role is remapped, never re-chosen: ground #eef1f6, rail #e2e7ef, surface #ffffff, surface-raised #f5f7fb, surface-hover #edf1f7, line #d9dfe9, line-strong #c3cbd9, ink #121826, ink-muted #445066, ink-faint #536076, rec #d92639, warn #9a6200, focus #2f6fd8, meter-ground #e4e9f1; jersey colours darken to keep contrast (mix #2b3345, mic #8a5f00, game #23703a, track-1..11 #127a73, #5b4fd6, #1f6fb3, #b23f78, #7d6a00, #0d778a, #7d3fc7, #a85314, #2f5fbf, #2d7a4c, #9a3fa8).
 
 ### Named Rules
 **The One Meaning Red Rule.** Red says "it records" and nothing else. Outlined ring = replay armed; solid red = manual recording in progress. Brand marks, errors and emphasis never borrow it; the rail mark is drawn in ink.
 
 **The Fixed Jersey Rule.** A track's colour is assigned once (Mix ink, Micro amber, Jeu green, apps track-1..11 in config order, unknown titles hashed) and never reassigned or reused for anything else. The same colour follows the track to every screen: roster, clip cards, audio sources, player, toast.
 
-**The Ink Is The Accent Rule.** No interface accent colour exists. The primary action is an ink fill; everything else is tonal. One exception: a switch in the on state is an ink fill, because a tonal fill would fall under the 3:1 non-text contrast a control state needs. Selected segments stay tonal (surface-raised, ink text, semibold).
+**The Ink Is The Accent Rule.** No interface accent colour exists. The primary action is an ink fill; everything else is tonal. One exception: a switch in the on state is an ink fill, because a tonal fill would fall under the 3:1 non-text contrast a control state needs. Selected segments keep their tonal fill (surface-raised, ink text, semibold) and add a 2 px ink bar under the label, so the choice clears 3:1 against its neighbours (audit, Palawi 2026-10-17). Text fields and selects take an ink-faint 1 px border (≥ 3:1 on ground in both themes) instead of line-strong. A disabled or inactive row is shown by switching tokens (ink to ink-muted), never by lowering opacity, which would drop text under AA.
 
 ## Typography
 
