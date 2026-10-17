@@ -156,7 +156,7 @@ export type EngineEvent =
       fps: number;
       tracks: string[];
     }
-  | { type: "track_changed"; title: string; state: TrackState; source: string | null }
+  | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
   | {
       type: "clip_saved";
       path: string;
@@ -164,6 +164,6 @@ export type EngineEvent =
       save_latency_ms: number;
       thumbnail: string | null;
     }
-  | { type: "audio_levels"; levels: [string, number][] }
+  | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
   | { type: "alert"; severity: Severity; code: string; message: string };

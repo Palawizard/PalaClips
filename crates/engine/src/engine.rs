@@ -343,7 +343,7 @@ struct Pipeline {
     time_bases: Vec<AVRational>,
     receivers: Vec<Receiver<AVPacket>>,
     alerts: Vec<Receiver<EngineEvent>>,
-    meters: Vec<(String, PeakMeter)>,
+    meters: Vec<PeakMeter>,
     level_interval: Option<Hns>,
     next_levels: Hns,
     rings: Vec<PacketRing<ReplayPacket>>,
@@ -364,8 +364,10 @@ impl Pipeline {
         let video = capture.stream().clone();
         let tracks = audio_sources(config)
             .into_iter()
-            .map(|(source, title, offset_ms)| {
+            .enumerate()
+            .map(|(index, (source, title, offset_ms))| {
                 AudioTrack::start(
+                    index,
                     source,
                     title,
                     video.origin,
@@ -432,10 +434,7 @@ impl Pipeline {
             time_bases: specs.iter().map(|spec| spec.time_base).collect(),
             rings: specs.iter().map(|_| PacketRing::new(window)).collect(),
             alerts: tracks.iter().map(|track| track.alerts().clone()).collect(),
-            meters: tracks
-                .iter()
-                .map(|track| (track.stream().title.clone(), track.meter().clone()))
-                .collect(),
+            meters: tracks.iter().map(|track| track.meter().clone()).collect(),
             level_interval: None,
             next_levels: Hns::ZERO,
             capture,
@@ -546,11 +545,7 @@ impl Pipeline {
 
     fn levels(&self) -> EngineEvent {
         EngineEvent::AudioLevels {
-            levels: self
-                .meters
-                .iter()
-                .map(|(title, meter)| (title.clone(), meter.take()))
-                .collect(),
+            levels: self.meters.iter().map(PeakMeter::take).collect(),
         }
     }
 

@@ -157,7 +157,8 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                             if args.levels {
                                 let peaks: Vec<String> = last_levels
                                     .iter()
-                                    .map(|(title, peak): &(String, f32)| format!("{title} {:.1} dB", 20.0 * peak.max(1e-6).log10()))
+                                    .enumerate()
+                                    .map(|(index, peak): (usize, &f32)| format!("piste {} {:.1} dB", index + 1, 20.0 * peak.max(1e-6).log10()))
                                     .collect();
                                 println!(
                                     "niveaux : {:.1} par seconde ; {}",
@@ -186,8 +187,8 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     EngineEvent::CaptureStarted { source, width, height, fps, tracks } => {
                         println!("capture : {source}, {width}x{height} à {fps} i/s, pistes {}", tracks.join(", "));
                     }
-                    EngineEvent::TrackChanged { title, state, source } => {
-                        println!("piste « {title} » : {state:?} {}", source.unwrap_or_default());
+                    EngineEvent::TrackChanged { track, title, state, source } => {
+                        println!("piste {} « {title} » : {state:?} {}", track + 1, source.unwrap_or_default());
                     }
                     EngineEvent::AudioLevels { levels } => {
                         level_events += 1;

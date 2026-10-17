@@ -17,8 +17,8 @@ interface Meter {
   textAt: number;
 }
 
-const targets = new Map<string, number>();
-const meters = new Map<string, Meter>();
+let targets: number[] = [];
+const meters = new Map<number, Meter>();
 const reducedMotion =
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 let frame = 0;
@@ -53,8 +53,8 @@ function tick(now: number) {
   const dt = previous ? Math.min(0.1, (now - previous) / 1000) : 0;
   previous = now;
   let active = now - lastEvent < IDLE_AFTER_MS;
-  for (const [title, meter] of meters) {
-    step(meter, targets.get(title) ?? Number.NEGATIVE_INFINITY, now, dt);
+  for (const [index, meter] of meters) {
+    step(meter, targets[index] ?? Number.NEGATIVE_INFINITY, now, dt);
     if (position(meter.display) > 0 || position(meter.peak) > 0) active = true;
   }
   frame = active ? requestAnimationFrame(tick) : 0;
@@ -65,24 +65,24 @@ function wake() {
   if (!frame) frame = requestAnimationFrame(tick);
 }
 
-export function pushLevels(levels: [string, number][]) {
-  for (const [title, peak] of levels) targets.set(title, decibels(peak));
+export function pushLevels(levels: number[]) {
+  targets = levels.map(decibels);
   lastEvent = performance.now();
   wake();
 }
 
 export function clearLevels() {
-  targets.clear();
+  targets = [];
   wake();
 }
 
 export function registerMeter(
-  title: string,
+  index: number,
   fill: HTMLElement,
   hold: HTMLElement,
   text: HTMLElement,
 ): () => void {
-  meters.set(title, {
+  meters.set(index, {
     fill,
     hold,
     text,
@@ -93,6 +93,6 @@ export function registerMeter(
   });
   wake();
   return () => {
-    if (meters.get(title)?.fill === fill) meters.delete(title);
+    if (meters.get(index)?.fill === fill) meters.delete(index);
   };
 }

@@ -40,6 +40,7 @@ pub enum EngineEvent {
         tracks: Vec<String>,
     },
     TrackChanged {
+        track: usize,
         title: String,
         state: TrackState,
         source: Option<String>,
@@ -51,7 +52,7 @@ pub enum EngineEvent {
         thumbnail: Option<String>,
     },
     AudioLevels {
-        levels: Vec<(String, f32)>,
+        levels: Vec<f32>,
     },
     ReplayStats {
         buffered_secs: f64,
