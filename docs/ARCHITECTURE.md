@@ -265,6 +265,9 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
 | `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
 | `pick_clips_dir` | 5 ✅ | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
+| `list_capture_targets` | 5 ✅ | écrans (nom, définition, Hz, principal) et fenêtres (exe, titre, PID, taille, réduite) ; PalaClips, fenêtres invisibles et fenêtres de moins de 160×90 exclues |
+| `app_icon { processId }` | 5 ✅ | icône 48 px de l'exe en PNG (octets bruts, `SHDefExtractIconW` + encodeur PNG de FFmpeg) |
+| `start_preview { target, channel }` / `stop_preview { id }` / `stop_previews` | 5 ✅ | aperçu en direct d'une cible : session WGC à part, sans curseur ni bordure, ~1 image/s, réduite sur le GPU (≤ 384×216) puis JPEG envoyé en octets bruts sur un `Channel` ; 12 au plus ; toutes arrêtées à la destruction de la fenêtre. Jamais utilisé pour la capture réelle |
 | `open_clips_dir` | 5 ✅ | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
 | `list_encoders` | 5 ✅ | encodeurs matériels détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur est grisé dans Réglages |
 | `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |

@@ -3,6 +3,8 @@ mod feedback;
 mod hotkeys;
 mod settings;
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use palaclips_engine::EngineConfig;
@@ -18,6 +20,7 @@ use crate::hotkeys::{HotkeyAction, Hotkeys};
 
 pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
+const MAX_PREVIEWS: usize = 12;
 pub const AUTOSTART_ARG: &str = "--autostart";
 
 #[derive(Debug, Clone, Serialize)]
@@ -142,6 +145,8 @@ pub struct EngineSlot {
     settings: Mutex<settings::Settings>,
     shortcuts: Mutex<Vec<(HotkeyAction, Shortcut)>>,
     encoders: Mutex<Option<Vec<palaclips_engine::encode::HardwareEncoder>>>,
+    previews: Mutex<HashMap<u32, palaclips_engine::capture::PreviewCapture>>,
+    next_preview: AtomicU32,
     unavailable: Mutex<Vec<HotkeyAction>>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
@@ -191,6 +196,8 @@ impl EngineSlot {
             settings: Mutex::new(settings),
             shortcuts: Mutex::new(Vec::new()),
             encoders: Mutex::new(None),
+            previews: Mutex::new(HashMap::new()),
+            next_preview: AtomicU32::new(1),
             unavailable: Mutex::new(Vec::new()),
             engine: Mutex::new(Some(engine)),
             handle,
@@ -410,6 +417,40 @@ impl EngineSlot {
         }
     }
 
+    fn add_preview(
+        &self,
+        preview: palaclips_engine::capture::PreviewCapture,
+    ) -> Result<u32, String> {
+        let mut previews = self
+            .previews
+            .lock()
+            .map_err(|_| "aperçus illisibles".to_owned())?;
+        if previews.len() >= MAX_PREVIEWS {
+            return Err("Trop d'aperçus ouverts.".to_owned());
+        }
+        let id = self.next_preview.fetch_add(1, Ordering::Relaxed);
+        previews.insert(id, preview);
+        Ok(id)
+    }
+
+    fn stop_preview(&self, id: u32) {
+        let removed = self
+            .previews
+            .lock()
+            .ok()
+            .and_then(|mut previews| previews.remove(&id));
+        drop(removed);
+    }
+
+    fn stop_previews(&self) {
+        let removed: Vec<_> = self
+            .previews
+            .lock()
+            .map(|mut previews| previews.drain().map(|(_, preview)| preview).collect())
+            .unwrap_or_default();
+        drop(removed);
+    }
+
     fn clips_root(&self) -> palaclips_engine::Result<std::path::PathBuf> {
         match self.config().storage.clips_dir {
             Some(dir) => Ok(dir),
@@ -482,6 +523,11 @@ pub fn run() {
             commands::storage_status,
             commands::pick_clips_dir,
             commands::open_clips_dir,
+            commands::list_capture_targets,
+            commands::app_icon,
+            commands::start_preview,
+            commands::stop_preview,
+            commands::stop_previews,
         ])
         .setup(|app| {
             let settings_path = palaclips_engine::paths::settings_path().ok();
@@ -616,6 +662,11 @@ pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     set_level_rate(app, LevelRate::Focused);
     let watched = window.clone();
     window.on_window_event(move |event| {
+        if matches!(event, WindowEvent::Destroyed)
+            && let Some(slot) = watched.app_handle().try_state::<EngineSlot>()
+        {
+            slot.stop_previews();
+        }
         let rate = match event {
             WindowEvent::Focused(true) => LevelRate::Focused,
             WindowEvent::Focused(false) => LevelRate::Background,
