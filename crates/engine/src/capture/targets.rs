@@ -1,11 +1,7 @@
 use serde::Serialize;
-use windows::Win32::Foundation::{CloseHandle, HWND};
+use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
-use windows::Win32::System::Threading::{
-    OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
-};
 use windows::Win32::UI::WindowsAndMessaging::IsIconic;
-use windows::core::PWSTR;
 use windows_capture::monitor::Monitor;
 use windows_capture::window::Window;
 
@@ -83,7 +79,7 @@ pub fn list_targets() -> Result<Vec<TargetInfo>> {
             if !minimized && (width < MIN_WINDOW_WIDTH || height < MIN_WINDOW_HEIGHT) {
                 return None;
             }
-            let path = exe_path(process_id)?;
+            let path = crate::games::exe_path(process_id)?;
             let exe_name = path.file_name()?.to_string_lossy().into_owned();
             Some(TargetInfo::Window {
                 app_name: crate::games::app_name(&path, &exe_name),
@@ -176,37 +172,16 @@ fn is_cloaked(window: &Window) -> bool {
 }
 
 pub fn app_icon(process_id: u32) -> Option<Vec<u8>> {
-    super::icon::app_icon_png(&exe_path(process_id)?)
+    super::icon::app_icon_png(&crate::games::exe_path(process_id)?)
 }
 
 fn exe_name(process_id: u32) -> Option<String> {
     Some(
-        exe_path(process_id)?
+        crate::games::exe_path(process_id)?
             .file_name()?
             .to_string_lossy()
             .into_owned(),
     )
-}
-
-fn exe_path(process_id: u32) -> Option<std::path::PathBuf> {
-    // SAFETY: PROCESS_QUERY_LIMITED_INFORMATION is the minimal right for QueryFullProcessImageNameW and works on protected processes.
-    let process =
-        unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) }.ok()?;
-    let mut buffer = [0u16; 1024];
-    let mut len = buffer.len() as u32;
-    // SAFETY: `buffer` holds `len` UTF-16 units and the handle is valid until CloseHandle below.
-    let queried = unsafe {
-        QueryFullProcessImageNameW(
-            process,
-            PROCESS_NAME_WIN32,
-            PWSTR(buffer.as_mut_ptr()),
-            &mut len,
-        )
-    };
-    // SAFETY: the handle was opened above and is closed exactly once.
-    unsafe { CloseHandle(process) }.ok()?;
-    queried.ok()?;
-    Some(String::from_utf16_lossy(&buffer[..len as usize]).into())
 }
 
 fn windows_error(error: impl std::fmt::Display) -> EngineError {

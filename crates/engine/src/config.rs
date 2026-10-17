@@ -159,15 +159,19 @@ pub struct AppTrack {
 #[serde(default)]
 pub struct AudioSettings {
     pub record_full_mix: bool,
+    pub full_mix_label: String,
     pub output_device_id: Option<String>,
     pub full_mix_sync_offset_ms: i32,
     pub record_microphone: bool,
+    pub microphone_label: String,
     pub microphone_device_id: Option<String>,
     pub microphone_gain_db: f32,
     pub microphone_sync_offset_ms: i32,
     pub app_tracks: Vec<AppTrack>,
     pub max_app_tracks: usize,
     pub auto_game_track: bool,
+    pub game_label: String,
+    pub game_sync_offset_ms: i32,
     pub game_exe: Option<String>,
 }
 
@@ -175,15 +179,19 @@ impl Default for AudioSettings {
     fn default() -> Self {
         Self {
             record_full_mix: true,
+            full_mix_label: "Mix complet".into(),
             output_device_id: None,
             full_mix_sync_offset_ms: 0,
             record_microphone: true,
+            microphone_label: "Micro".into(),
             microphone_device_id: None,
             microphone_gain_db: 0.0,
             microphone_sync_offset_ms: 0,
             app_tracks: Vec::new(),
             max_app_tracks: 6,
             auto_game_track: true,
+            game_label: "Jeu".into(),
+            game_sync_offset_ms: 0,
             game_exe: None,
         }
     }
@@ -216,9 +224,27 @@ impl AudioSettings {
                 "le gain du micro doit être entre -20 et +20 dB".into(),
             ));
         }
-        let offsets = [self.full_mix_sync_offset_ms, self.microphone_sync_offset_ms]
-            .into_iter()
-            .chain(self.app_tracks.iter().map(|track| track.sync_offset_ms));
+        let labels = [
+            self.full_mix_label.as_str(),
+            self.microphone_label.as_str(),
+            self.game_label.as_str(),
+        ]
+        .into_iter()
+        .chain(self.app_tracks.iter().map(|track| track.label.as_str()));
+        for label in labels {
+            if label.trim().is_empty() {
+                return Err(EngineError::InvalidConfig(
+                    "le nom d'une piste ne peut pas être vide".into(),
+                ));
+            }
+        }
+        let offsets = [
+            self.full_mix_sync_offset_ms,
+            self.microphone_sync_offset_ms,
+            self.game_sync_offset_ms,
+        ]
+        .into_iter()
+        .chain(self.app_tracks.iter().map(|track| track.sync_offset_ms));
         for offset in offsets {
             if !SYNC_OFFSET_RANGE_MS.contains(&offset) {
                 return Err(EngineError::InvalidConfig(
@@ -408,6 +434,25 @@ mod tests {
         assert!(cfg.validate().is_ok());
         cfg.audio.microphone_sync_offset_ms = 1_001;
         assert!(cfg.validate().is_err());
+        cfg.audio.microphone_sync_offset_ms = 0;
+        cfg.audio.game_sync_offset_ms = -1_001;
+        assert!(cfg.validate().is_err());
+    }
+
+    #[test]
+    fn empty_track_names_are_rejected() {
+        let mut cfg = EngineConfig::default();
+        cfg.audio.microphone_label = "  ".into();
+        assert!(cfg.validate().is_err());
+    }
+
+    #[test]
+    fn settings_without_track_names_get_the_defaults() {
+        let audio: AudioSettings =
+            serde_json::from_str(r#"{"record_full_mix":true,"max_app_tracks":4}"#).expect("parse");
+        assert_eq!(audio.full_mix_label, "Mix complet");
+        assert_eq!(audio.game_label, "Jeu");
+        assert_eq!(audio.max_app_tracks, 4);
     }
 
     #[test]
