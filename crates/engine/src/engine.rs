@@ -10,16 +10,16 @@ use rsmpeg::avutil::AVRational;
 use rsmpeg::ffi::AV_PKT_FLAG_KEY;
 
 use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
-use crate::capture::{VideoCapture, VideoStream};
+use crate::capture::{VideoCapture, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, EngineConfig, ReplayStorage};
-use crate::encode::{hardware_video_encoders, pick_encoder, write_thumbnail};
+use crate::encode::{Size, hardware_video_encoders, output_size, pick_encoder, write_thumbnail};
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
-    forget_saved, plan_clip, share_packet,
+    estimate_buffer_bytes, forget_saved, plan_clip, share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -197,6 +197,29 @@ fn capture_label(target: &CaptureTarget, fell_back: bool) -> String {
         CaptureTarget::Window { exe_name, .. } if fell_back => format!("Écran de {exe_name}"),
         CaptureTarget::Window { exe_name, .. } => exe_name.clone(),
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+pub struct ReplayEstimate {
+    pub width: u32,
+    pub height: u32,
+    pub video_kbps: u32,
+    pub audio_tracks: usize,
+    pub bytes: u64,
+}
+
+pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
+    let (width, height) = target_size(&config.capture)?;
+    let size = output_size(Size::new(width, height), config.video.resolution);
+    let video_kbps = config.video.bitrate_kbps_for(size.width, size.height);
+    let audio_tracks = audio_sources(config).len();
+    Ok(ReplayEstimate {
+        width: size.width,
+        height: size.height,
+        video_kbps,
+        audio_tracks,
+        bytes: estimate_buffer_bytes(video_kbps, audio_tracks, ring_window(config)),
+    })
 }
 
 fn current_game(config: &EngineConfig) -> CurrentGame {

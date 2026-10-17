@@ -83,6 +83,19 @@ pub fn list_targets() -> Result<Vec<TargetInfo>> {
     Ok(monitor_infos.chain(window_infos).collect())
 }
 
+pub fn target_size(target: &CaptureTarget) -> Result<(u32, u32)> {
+    match resolve_target(target)? {
+        ResolvedTarget::Monitor(monitor) => Ok((
+            monitor.width().map_err(windows_error)?,
+            monitor.height().map_err(windows_error)?,
+        )),
+        ResolvedTarget::Window(window) => Ok((
+            window.width().map_err(windows_error)?.max(1) as u32,
+            window.height().map_err(windows_error)?.max(1) as u32,
+        )),
+    }
+}
+
 pub fn resolve_target(target: &CaptureTarget) -> Result<ResolvedTarget> {
     match target {
         CaptureTarget::PrimaryMonitor => Monitor::primary()

@@ -1,6 +1,7 @@
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
 import { GeneralSection } from "./GeneralSection.tsx";
 import { HotkeysSection } from "./HotkeysSection.tsx";
+import { ReplaySection } from "./ReplaySection.tsx";
 
 type SectionId = "capture" | "audio" | "replay" | "hotkeys" | "storage" | "general";
 
@@ -77,7 +78,7 @@ export function Segmented<T extends string>({
   onChange,
 }: {
   value: T;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; disabled?: boolean }[];
   label: string;
   onChange: (value: T) => void;
 }) {
@@ -86,11 +87,15 @@ export function Segmented<T extends string>({
     const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
     if (!step) return;
     event.preventDefault();
-    const next = (index + step + options.length) % options.length;
-    const target = options[next];
-    if (!target) return;
-    onChange(target.value);
-    buttons.current[next]?.focus();
+    for (let offset = 1; offset < options.length; offset++) {
+      const next = (index + step * offset + options.length * offset) % options.length;
+      const target = options[next];
+      if (target && !target.disabled) {
+        onChange(target.value);
+        buttons.current[next]?.focus();
+        return;
+      }
+    }
   };
   return (
     <div role="radiogroup" aria-label={label} className="flex rounded-md border border-line-strong p-0.5">
@@ -106,10 +111,13 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
+            disabled={option.disabled}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => move(event, index)}
             className={`pressable rounded-[4px] border px-3 py-1.5 text-[13px] font-medium ${
-              selected ? "border-line-strong bg-surface-2 font-semibold text-ink" : "border-transparent text-ink-2 hover:text-ink"
+              selected
+                ? "border-line-strong bg-surface-2 font-semibold text-ink"
+                : "border-transparent text-ink-2 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-3 disabled:line-through"
             }`}
           >
             {option.label}
@@ -117,6 +125,36 @@ export function Segmented<T extends string>({
         );
       })}
     </div>
+  );
+}
+
+export function Select<T extends string | number>({
+  value,
+  options,
+  label,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  label: string;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <select
+      aria-label={label}
+      value={String(value)}
+      onChange={(event) => {
+        const picked = options.find((option) => String(option.value) === event.target.value);
+        if (picked) onChange(picked.value);
+      }}
+      className="pressable h-9 min-w-40 rounded-md border border-line-strong bg-surface px-2.5 text-[14px] text-ink hover:border-ink-3"
+    >
+      {options.map((option) => (
+        <option key={String(option.value)} value={String(option.value)}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -163,7 +201,8 @@ export function Settings() {
         </h2>
         {section === "hotkeys" && <HotkeysSection />}
         {section === "general" && <GeneralSection />}
-        {section !== "hotkeys" && section !== "general" && <Pending title={label} />}
+        {section === "replay" && <ReplaySection />}
+        {(section === "capture" || section === "audio" || section === "storage") && <Pending title={label} />}
       </section>
     </div>
   );

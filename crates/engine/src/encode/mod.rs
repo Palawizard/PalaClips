@@ -28,7 +28,7 @@ const PROBE_SIZE: Size = Size::new(1280, 720);
 const PROBE_FPS: u32 = 60;
 const PROBE_FRAMES: i64 = 5;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct HardwareEncoder {
     pub name: String,
     pub description: String,
