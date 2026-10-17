@@ -3,6 +3,7 @@ use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
 use serde::Serialize;
 use tauri::State;
 
+use crate::settings::Feedback;
 use crate::{AppStatus, EngineSlot};
 
 #[tauri::command]
@@ -24,11 +25,18 @@ pub fn get_state(slot: State<'_, EngineSlot>) -> Result<AppStatus, String> {
 }
 
 #[tauri::command]
-pub fn get_config(slot: State<'_, EngineSlot>) -> Result<EngineConfig, String> {
-    slot.config
-        .lock()
-        .map(|config| config.clone())
-        .map_err(|_| "réglages illisibles".to_owned())
+pub fn get_config(slot: State<'_, EngineSlot>) -> EngineConfig {
+    slot.config()
+}
+
+#[tauri::command]
+pub fn get_feedback(slot: State<'_, EngineSlot>) -> Feedback {
+    slot.feedback()
+}
+
+#[tauri::command]
+pub fn set_feedback(slot: State<'_, EngineSlot>, feedback: Feedback) -> Result<(), String> {
+    slot.update(|settings| settings.feedback = feedback)
 }
 
 #[tauri::command]
