@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ActiveAlert } from "../lib/ipc.ts";
 
 const ICONS = { info: Info, warning: TriangleAlert, error: CircleAlert };
-const TONE = { info: "text-ink-2", warning: "text-warn", error: "text-rec" };
+const TONE = { info: "text-ink-2", warning: "text-warn", error: "text-warn" };
 
 export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
   const [dismissed, setDismissed] = useState<Record<string, string>>({});
