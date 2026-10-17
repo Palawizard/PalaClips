@@ -1,7 +1,99 @@
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/600.css";
+@import "@fontsource/barlow-condensed/500.css";
+@import "@fontsource/barlow-condensed/600.css";
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
+  --ground: #0f1420;
+  --rail: #0a0e17;
+  --surface: #171d2b;
+  --surface-2: #1e2536;
+  --surface-hover: #232b3e;
+  --line: #262e40;
+  --line-strong: #343d52;
+  --ink: #e8ecf4;
+  --ink-2: #a7b0c3;
+  --ink-3: #7b869c;
+  --rec: #ff4d5e;
+  --rec-ink: #ffffff;
+  --warn: #f2b84b;
+  --focus: #8fb8ff;
+  --track-mix: #e8ecf4;
+  --track-mic: #f2b84b;
+  --track-game: #7fd18b;
+  --track-1: #4fc1b9;
+  --track-2: #8f86f5;
+  --track-3: #5aa9e6;
+  --track-4: #e58fb8;
+  --track-5: #c9b458;
+  --track-6: #6fd6e8;
+  --track-7: #b98cf2;
+  --track-8: #e6a16a;
+  --track-9: #9cc2ff;
+  --track-10: #8fd1a6;
+  --track-11: #d6a0e0;
+  --meter-ground: #0b0f18;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --ground: #eef1f6;
+    --rail: #e2e7ef;
+    --surface: #ffffff;
+    --surface-2: #f5f7fb;
+    --surface-hover: #edf1f7;
+    --line: #d9dfe9;
+    --line-strong: #c3cbd9;
+    --ink: #121826;
+    --ink-2: #445066;
+    --ink-3: #5d6a80;
+    --rec: #d92639;
+    --warn: #9a6200;
+    --focus: #2f6fd8;
+    --track-mix: #2b3345;
+    --track-mic: #b07a00;
+    --track-game: #2f8a45;
+    --track-1: #127a73;
+    --track-2: #5b4fd6;
+    --track-3: #1f6fb3;
+    --track-4: #b23f78;
+    --track-5: #7d6a00;
+    --track-6: #0e7f93;
+    --track-7: #7d3fc7;
+    --track-8: #a85314;
+    --track-9: #2f5fbf;
+    --track-10: #2d7a4c;
+    --track-11: #9a3fa8;
+    --meter-ground: #e4e9f1;
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-rail: var(--rail);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rec: var(--rec);
+  --color-rec-ink: var(--rec-ink);
+  --color-warn: var(--warn);
+  --color-focus: var(--focus);
+  --color-meter-ground: var(--meter-ground);
+  --font-sans: "Barlow", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-score: "Barlow Condensed", "Barlow", "Segoe UI", sans-serif;
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
 }
 
 html,
@@ -12,6 +104,107 @@ body,
 
 body {
   margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--focus) 35%, transparent);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.score {
+  font-family: var(--font-score);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+}
+
+.label {
+  font-family: var(--font-score);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pressable {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.pressable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.roster-row {
+  transition: background-color 600ms var(--ease-out);
+}
+
+.roster-row[data-flash="true"] {
+  background-color: color-mix(in srgb, var(--row-color) 16%, transparent);
+  transition-duration: 80ms;
+}
+
+.clip-card {
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 240ms var(--ease-out);
+}
+
+.clip-card[data-fresh="true"] {
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+}
+
+.alert-item {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.meter-fill,
+.meter-hold {
+  transform-origin: left center;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .roster-row,
+  .clip-card,
+  .alert-item {
+    transition-duration: 0ms !important;
+  }
+
+  .pressable:active:not(:disabled) {
+    transform: none;
+  }
 }
