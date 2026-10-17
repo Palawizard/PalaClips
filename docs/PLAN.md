@@ -124,6 +124,9 @@ Critères :
 ## Phase 6 — Enregistrement, galerie, lecteur (REC-01–06 ; STO-02, 04, 05 ; GAL-01–08)
 
 - [ ] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
+      Fait : enregistrement (bouton, raccourci, zone de notification), MP4 hybride relisible
+      après un arrêt brutal (test unitaire), replay au début, découpage. Reste : récupération
+      au démarrage (REC-06), essai réel avec Palawi (TESTING § T6).
 - [ ] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
       fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi). Tests unitaires
       par injection d'erreur dans l'écriture, puis vrai test sur un petit disque virtuel

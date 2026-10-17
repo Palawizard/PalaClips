@@ -110,6 +110,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   une alerte ; retour aux réglages par défaut possible.
 - CLI : `probe-memory`, `recent-clips`, `replay --levels`, `replay --no-arm` ; scripts
   `engine-memory.ps1`, `nvenc-quality.ps1`.
+- Enregistrement manuel (écran État, raccourci `Ctrl+Alt+F9`, zone de notification avec un
+  point rouge pendant l'enregistrement) sur la même capture que le replay, sans coût en plus ;
+  fichier lisible jusqu'à la dernière seconde même après un arrêt brutal ; option pour
+  commencer par le replay en mémoire et découpage par durée ou par taille (Réglages >
+  Enregistrement).
 - Interface en français et en anglais (Réglages > Général > Langue), langue de Windows par
   défaut : écrans, alertes, erreurs, menu de la zone de notification et notifications. Les
   pistes non renommées (Mix, Micro, Jeu) prennent le nom de la langue choisie, à l'écran
