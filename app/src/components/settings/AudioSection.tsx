@@ -1,5 +1,5 @@
 import { FolderOpen, Search, X } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { iconUrl } from "../../lib/appIcons.ts";
 import { decibels } from "../../lib/format.ts";
 import {
@@ -22,6 +22,7 @@ import { NumberField, Select, SettingRow, Switch } from "./Settings.tsx";
 import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
 const SESSION_POLL_MS = 100;
+const SESSION_POLL_BACKGROUND_MS = 500;
 const RECENT_SOUND_MS = 15_000;
 const SOUND_FLOOR = 0.003;
 const BUTTON =
@@ -73,19 +74,31 @@ function meterPosition(peak: number): number {
 function NameField({
   value,
   label,
+  muted,
+  errorId,
   isTaken,
   onCommit,
+  onReject,
 }: {
   value: string;
   label: string;
+  muted: boolean;
+  errorId: string | undefined;
   isTaken: (name: string) => boolean;
   onCommit: (name: string) => void;
+  onReject: (message: string | null) => void;
 }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   const commit = () => {
     const next = text.trim().replace(/\s+/g, " ");
-    if (next === "" || next === value || isTaken(next)) setText(value);
+    if (next !== value && isTaken(next)) {
+      setText(value);
+      onReject(`« ${next} » est déjà le nom d'une autre piste.`);
+      return;
+    }
+    onReject(null);
+    if (next === "" || next === value) setText(value);
     else onCommit(next);
   };
   return (
@@ -94,13 +107,14 @@ function NameField({
       value={text}
       spellCheck={false}
       aria-label={label}
+      aria-describedby={errorId}
       onChange={(event) => setText(event.target.value)}
       onBlur={commit}
       onKeyDown={(event) => {
         if (event.key === "Enter") commit();
         if (event.key === "Escape") setText(value);
       }}
-      className="h-9 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-[15px] font-semibold text-ink hover:border-line-strong focus:border-line-strong focus:bg-surface"
+      className={`h-9 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-[15px] font-semibold hover:border-ink-3 focus:border-ink-3 focus:bg-surface ${muted ? "text-ink-2" : "text-ink"}`}
     />
   );
 }
@@ -146,6 +160,8 @@ function TrackRow({
   action: ReactNode;
 }) {
   const { fill, hold, peak } = useTrackMeter(meterIndex);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const errorId = useId();
   return (
     <li className={`${ROW_COLUMNS} gap-y-1 border-b border-line px-5 py-3`}>
       <span
@@ -154,9 +170,17 @@ function TrackRow({
       >
         {index === null ? <span className="text-ink-3">—</span> : String(index + 1).padStart(2, "0")}
       </span>
-      <div className={`flex min-w-0 items-center gap-1 ${row.enabled ? "" : "opacity-60"}`}>
+      <div className="flex min-w-0 items-center gap-1">
         <AppGlyph exe={row.exe} processId={processId} kind={row.kind} color={color} />
-        <NameField value={row.label} label={`Nom de la piste ${row.label}`} isTaken={isTaken} onCommit={onRename} />
+        <NameField
+          value={row.label}
+          label={`Nom de la piste ${row.label}`}
+          muted={!row.enabled}
+          errorId={nameError ? errorId : undefined}
+          isTaken={isTaken}
+          onCommit={onRename}
+          onReject={setNameError}
+        />
       </div>
       <div className="flex min-w-0 items-center gap-2">
         <MeterBar color={color} fill={fill} hold={hold} className="h-2 flex-1" />
@@ -176,10 +200,15 @@ function TrackRow({
         <span className="flex w-11 justify-center">{action}</span>
       </div>
       <div
-        className={`col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-2 pl-7 text-[12px] text-ink-2 ${row.enabled ? "" : "opacity-60"}`}
+        className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-2 pl-7 text-[12px] text-ink-2"
       >
         {detail}
       </div>
+      {nameError && (
+        <p id={errorId} role="alert" className="col-start-2 col-end-4 pl-7 text-[12px] text-warn">
+          {nameError}
+        </p>
+      )}
     </li>
   );
 }
@@ -191,6 +220,10 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const [sessions, setSessions] = useState<AppSession[]>([]);
   const [windows, setWindows] = useState<TargetInfo[]>([]);
   const [visible, setVisible] = useState(document.visibilityState === "visible");
+  const [focused, setFocused] = useState(document.hasFocus());
+  const peaks = useRef(new Map<string, number>());
+  const meters = useRef(new Map<string, HTMLSpanElement>());
+  const membership = useRef("");
   const [query, setQuery] = useState("");
   const [calibrating, setCalibrating] = useState(false);
   const [pickError, setPickError] = useState<string | null>(null);
@@ -203,10 +236,17 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
     const loadWindows = () => listCaptureTargets().then(setWindows, () => setWindows([]));
     loadWindows();
     const onVisibility = () => setVisible(document.visibilityState === "visible");
-    window.addEventListener("focus", loadWindows);
+    const onFocus = () => {
+      setFocused(true);
+      loadWindows();
+    };
+    const onBlur = () => setFocused(false);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.removeEventListener("focus", loadWindows);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
@@ -221,12 +261,27 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
           if (!active) return;
           const now = Date.now();
           for (const session of list) {
-            if (session.peak > SOUND_FLOOR) lastSound.current.set(session.exe_name.toLowerCase(), now);
+            const key = session.exe_name.toLowerCase();
+            if (session.peak > SOUND_FLOOR) lastSound.current.set(key, now);
+            peaks.current.set(key, session.peak);
+            const meter = meters.current.get(key);
+            if (meter) meter.style.transform = `scaleX(${meterPosition(session.peak)})`;
           }
-          setSessions(list);
+          const signature = list
+            .map((session) => {
+              const key = session.exe_name.toLowerCase();
+              const sounding = now - (lastSound.current.get(key) ?? 0) < RECENT_SOUND_MS;
+              return `${key}:${session.process_id}:${sounding ? 1 : 0}`;
+            })
+            .sort()
+            .join("|");
+          if (signature !== membership.current) {
+            membership.current = signature;
+            setSessions(list);
+          }
         }, () => undefined)
         .finally(() => {
-          if (active) timer = window.setTimeout(poll, SESSION_POLL_MS);
+          if (active) timer = window.setTimeout(poll, focused ? SESSION_POLL_MS : SESSION_POLL_BACKGROUND_MS);
         });
     };
     poll();
@@ -234,7 +289,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [visible]);
+  }, [visible, focused]);
 
   if (!config) return <LoadError message={loadError} />;
   const { draft } = config;
@@ -323,7 +378,10 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
         <button
           type="button"
           aria-label={`Retirer ${row.label}`}
-          onClick={() => setAudio({ app_tracks: audio.app_tracks.filter((track) => track.exe_name !== exe) })}
+          onClick={() => {
+            setAudio({ app_tracks: audio.app_tracks.filter((track) => track.exe_name !== exe) });
+            listRef.current?.focus();
+          }}
           className="pressable flex size-9 items-center justify-center rounded-md text-ink-2 hover:bg-surface-hover hover:text-ink"
         >
           <X size={18} aria-hidden />
@@ -382,10 +440,12 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
     .filter((candidate) => !needle || candidate.name.toLowerCase().includes(needle) || candidate.exe.toLowerCase().includes(needle))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
   const sounding = available.filter((candidate) => now - (lastSound.current.get(candidate.exe.toLowerCase()) ?? 0) < RECENT_SOUND_MS);
-  const others = available.filter((candidate) => !sounding.includes(candidate));
+  const ordered = [...sounding, ...available.filter((candidate) => !sounding.includes(candidate))];
 
-  const add = (exe: string, label: string) =>
+  const add = (exe: string, label: string) => {
     setAudio({ app_tracks: [...audio.app_tracks, { exe_name: exe, label, enabled: true, sync_offset_ms: 0 }] });
+    listRef.current?.focus();
+  };
 
   const browse = () => {
     setPickError(null);
@@ -408,8 +468,14 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       <span aria-hidden className="relative block h-2 overflow-hidden rounded-[2px] bg-meter-ground">
         {candidate.peak !== null && (
           <span
+            ref={(element) => {
+              const key = candidate.exe.toLowerCase();
+              if (element) {
+                meters.current.set(key, element);
+                element.style.transform = `scaleX(${meterPosition(peaks.current.get(key) ?? 0)})`;
+              } else meters.current.delete(key);
+            }}
             className="session-meter absolute inset-0 origin-left bg-ink-2"
-            style={{ transform: `scaleX(${meterPosition(candidate.peak)})` }}
           />
         )}
       </span>
@@ -483,7 +549,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Rechercher"
               aria-label="Rechercher une appli"
-              className="h-9 w-52 rounded-md border border-line-strong bg-surface pr-2.5 pl-8 text-[14px] text-ink placeholder:text-ink-3 hover:border-ink-3"
+              className="h-9 w-52 rounded-md border border-ink-3 bg-surface pr-2.5 pl-8 text-[14px] text-ink placeholder:text-ink-3 hover:border-ink-2"
             />
           </label>
           <button type="button" onClick={browse} disabled={full} className={`${BUTTON} flex items-center gap-2`}>
@@ -501,20 +567,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
             {pickError}
           </p>
         )}
-        {sounding.length > 0 && (
-          <>
-            <h4 className="border-t border-line px-5 pt-3 pb-2 text-[13px] font-semibold text-ink-2">Font du son</h4>
-            <ul className="border-t border-line">{sounding.map(candidateRow)}</ul>
-          </>
-        )}
-        {others.length > 0 && (
-          <>
-            <h4 className="border-t border-line px-5 pt-3 pb-2 text-[13px] font-semibold text-ink-2">
-              Autres applis ouvertes
-            </h4>
-            <ul className="border-t border-line">{others.map(candidateRow)}</ul>
-          </>
-        )}
+        {ordered.length > 0 && <ul className="border-t border-line">{ordered.map(candidateRow)}</ul>}
         {available.length === 0 && (
           <p className="border-t border-line px-5 py-3 text-[13px] text-ink-2">
             {needle ? "Aucune appli ne correspond." : "Aucune autre appli ouverte."}
