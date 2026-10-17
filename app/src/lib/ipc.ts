@@ -23,6 +23,14 @@ export function resetConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("reset_config");
 }
 
+export function getAutostart(): Promise<boolean> {
+  return invoke<boolean>("get_autostart");
+}
+
+export function setAutostart(enabled: boolean): Promise<void> {
+  return invoke("set_autostart", { enabled });
+}
+
 export interface Feedback {
   sound: boolean;
   toast: boolean;
