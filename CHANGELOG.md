@@ -76,7 +76,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
 - Assistant de calibrage de la synchro (Réglages > Audio) : flash + bip sur l'écran principal
   pendant 10 s, mesure de chaque piste dans PalaClips même (sans Python ni FFmpeg externe),
-  décalage proposé par piste à appliquer d'un clic. CLI `palaclips-cli calibrate`.
+  décalage proposé par piste à appliquer d'un clic. La référence est la capture par processus
+  de l'émetteur : seul l'excédent de chaque piste est compensé (Jeu et applis 0 ms). Au
+  casque, l'assistant demande de coller un écouteur contre le micro. CLI
+  `palaclips-cli calibrate`.
 - Réglages > Audio : pistes dans l'ordre du fichier avec vumètre, nom modifiable (Mix, Micro
   et Jeu compris), décalage de synchro par piste, sortie et micro au choix, gain du micro,
   piste Jeu automatique, nombre maximal de pistes d'applis ; ajout d'une appli parmi celles
