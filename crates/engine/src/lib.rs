@@ -19,6 +19,8 @@ pub mod library;
 pub mod mux;
 #[cfg(windows)]
 pub mod paths;
+#[cfg(windows)]
+pub mod record;
 pub mod replay;
 #[cfg(windows)]
 pub mod sources;

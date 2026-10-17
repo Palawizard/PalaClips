@@ -5,12 +5,13 @@ import type { AppStatus } from "../../lib/ipc.ts";
 import { AudioSection } from "./AudioSection.tsx";
 import { CaptureSection } from "./CaptureSection.tsx";
 import { HotkeysSection } from "./HotkeysSection.tsx";
+import { RecordingSection } from "./RecordingSection.tsx";
 import { ReplaySection } from "./ReplaySection.tsx";
 import { StorageSection } from "./StorageSection.tsx";
 
-type SectionId = "capture" | "audio" | "replay" | "hotkeys" | "storage" | "general";
+type SectionId = "capture" | "audio" | "replay" | "recording" | "hotkeys" | "storage" | "general";
 
-const SECTIONS: SectionId[] = ["capture", "audio", "replay", "hotkeys", "storage", "general"];
+const SECTIONS: SectionId[] = ["capture", "audio", "replay", "recording", "hotkeys", "storage", "general"];
 
 export function SettingRow({
   label,
@@ -237,6 +238,7 @@ export function Settings({ status }: { status: AppStatus | null }) {
         {section === "hotkeys" && <HotkeysSection />}
         {section === "general" && <GeneralSection />}
         {section === "replay" && <ReplaySection />}
+        {section === "recording" && <RecordingSection />}
         {section === "storage" && <StorageSection />}
         {section === "capture" && <CaptureSection />}
         {section === "audio" && <AudioSection status={status} />}

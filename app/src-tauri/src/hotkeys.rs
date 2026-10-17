@@ -9,6 +9,7 @@ use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut};
 pub enum HotkeyAction {
     SaveReplay,
     ToggleReplay,
+    ToggleRecording,
 }
 
 impl HotkeyAction {
@@ -16,6 +17,7 @@ impl HotkeyAction {
         match self {
             Self::SaveReplay => Localized::new("action_save_replay"),
             Self::ToggleReplay => Localized::new("action_toggle_replay"),
+            Self::ToggleRecording => Localized::new("action_toggle_recording"),
         }
     }
 }
@@ -25,6 +27,7 @@ impl HotkeyAction {
 pub struct Hotkeys {
     pub save_replay: Option<String>,
     pub toggle_replay: Option<String>,
+    pub toggle_recording: Option<String>,
 }
 
 impl Default for Hotkeys {
@@ -32,6 +35,7 @@ impl Default for Hotkeys {
         Self {
             save_replay: Some("Alt+F10".into()),
             toggle_replay: Some("Ctrl+Alt+F10".into()),
+            toggle_recording: Some("Ctrl+Alt+F9".into()),
         }
     }
 }
@@ -41,6 +45,10 @@ impl Hotkeys {
         [
             (HotkeyAction::SaveReplay, self.save_replay.as_deref()),
             (HotkeyAction::ToggleReplay, self.toggle_replay.as_deref()),
+            (
+                HotkeyAction::ToggleRecording,
+                self.toggle_recording.as_deref(),
+            ),
         ]
         .into_iter()
         .filter_map(|(action, keys)| keys.map(|keys| (action, keys)))
@@ -169,9 +177,10 @@ mod tests {
     #[test]
     fn default_hotkeys_are_valid() {
         let parsed = validate(&Hotkeys::default()).expect("defaults");
-        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed.len(), 3);
         assert_eq!(canonical(&parsed[0].1), "Alt+F10");
         assert_eq!(canonical(&parsed[1].1), "Ctrl+Alt+F10");
+        assert_eq!(canonical(&parsed[2].1), "Ctrl+Alt+F9");
     }
 
     #[test]
@@ -221,6 +230,7 @@ mod tests {
         let hotkeys = Hotkeys {
             save_replay: Some("Alt+F10".into()),
             toggle_replay: Some("alt+f10".into()),
+            toggle_recording: None,
         };
         let error = validate(&hotkeys).expect_err("duplicate");
         assert_eq!(error.code, "hotkey_duplicate");
@@ -232,6 +242,7 @@ mod tests {
         let hotkeys = Hotkeys {
             save_replay: Some("Alt+F10".into()),
             toggle_replay: None,
+            toggle_recording: None,
         };
         assert_eq!(validate(&hotkeys).expect("valid").len(), 1);
     }

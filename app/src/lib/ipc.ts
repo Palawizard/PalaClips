@@ -81,11 +81,12 @@ export function setLanguageSetting(language: LanguageSetting): Promise<Language>
   return invoke<Language>("set_language", { language });
 }
 
-export type HotkeyAction = "save_replay" | "toggle_replay";
+export type HotkeyAction = "save_replay" | "toggle_replay" | "toggle_recording";
 
 export interface Hotkeys {
   save_replay: string | null;
   toggle_replay: string | null;
+  toggle_recording: string | null;
 }
 
 export interface HotkeysView {
@@ -146,6 +147,14 @@ export function replaySave(): Promise<void> {
   return invoke("replay_save");
 }
 
+export function recordStart(): Promise<void> {
+  return invoke("record_start");
+}
+
+export function recordStop(): Promise<void> {
+  return invoke("record_stop");
+}
+
 export function listRecentClips(limit: number): Promise<ClipSummary[]> {
   return invoke<ClipSummary[]>("list_recent_clips", { limit });
 }
@@ -169,6 +178,11 @@ export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<Un
 export type VideoCodec = "h264" | "hevc" | "av1";
 export type VideoQuality = "quality" | "balanced" | "light" | "custom";
 export type ReplayStorage = "ram" | "disk";
+
+export type RecordSplit =
+  | { kind: "never" }
+  | { kind: "duration"; minutes: number }
+  | { kind: "size"; megabytes: number };
 
 export type CaptureTarget =
   | { kind: "primary_monitor" }
@@ -313,6 +327,10 @@ export interface EngineConfig {
     duration_secs: number;
     storage: ReplayStorage;
   };
+  record: {
+    include_replay: boolean;
+    split: RecordSplit;
+  };
   storage: {
     clips_dir: string | null;
     game_names: Record<string, string>;
@@ -370,6 +388,8 @@ export interface AppStatus {
   state: EngineState;
   buffered_secs: number;
   buffer_bytes: number;
+  recording_secs: number;
+  recording_bytes: number;
   capture: CaptureInfo | null;
   tracks: TrackInfo[];
   alerts: ActiveAlert[];
@@ -397,4 +417,5 @@ export type EngineEvent =
     }
   | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
+  | { type: "recording_stats"; elapsed_secs: number; bytes: number }
   | ({ type: "alert"; severity: Severity; message: string } & Localized);

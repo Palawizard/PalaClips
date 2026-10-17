@@ -177,6 +177,16 @@ pub fn replay_save(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
 }
 
 #[tauri::command]
+pub fn record_start(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
+    Ok(slot.handle.start_recording()?)
+}
+
+#[tauri::command]
+pub fn record_stop(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
+    Ok(slot.handle.stop_recording()?)
+}
+
+#[tauri::command]
 pub async fn list_recent_clips(
     slot: State<'_, EngineSlot>,
     limit: usize,

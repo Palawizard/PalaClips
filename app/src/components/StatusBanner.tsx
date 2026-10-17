@@ -49,6 +49,7 @@ export function StatusBanner({ engine }: { engine: Engine }) {
   const buffered = Math.min(status?.buffered_secs ?? 0, total);
   const armed = phase === "armed";
   const busy = phase === "arming" || phase === "disarming";
+  const recording = engine.recording;
   const capture = status?.capture;
   const fellBack = status?.alerts.some((alert) => alert.code === "capture_fallback_monitor");
   const source = capture ? message(capture.source) : targetLabel(config?.capture);
@@ -100,15 +101,35 @@ export function StatusBanner({ engine }: { engine: Engine }) {
       </Cell>
 
       <Cell title={t("status.recording")}>
-        <h2 className="text-[15px] font-semibold text-ink-2">{t("status.recordingStopped")}</h2>
-        <p className="score text-[28px] leading-none font-semibold text-ink-3">00:00</p>
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className={`inline-block size-3 shrink-0 rounded-full border-2 ${
+              recording ? "border-rec bg-rec" : "border-ink-3"
+            }`}
+          />
+          <h2 className={`text-[15px] font-semibold ${recording ? "text-ink" : "text-ink-2"}`}>
+            <span role="status">{recording ? t("status.recordingRunning") : t("status.recordingStopped")}</span>
+          </h2>
+        </div>
+        <p className="flex items-baseline gap-2">
+          <span className={`score text-[28px] leading-none font-semibold ${recording ? "text-ink" : "text-ink-3"}`}>
+            {clock(recording ? (status?.recording_secs ?? 0) : 0)}
+          </span>
+          {recording && (
+            <span className="score text-[15px] font-medium text-ink-2">{bytes(status?.recording_bytes ?? 0)}</span>
+          )}
+        </p>
         <button
           type="button"
-          disabled
-          title={t("status.recordingLater")}
-          className="pressable mt-auto h-9 self-start rounded-md border border-line-strong px-3.5 font-medium text-ink-3 disabled:cursor-not-allowed"
+          onClick={recording ? engine.stopRecording : engine.record}
+          disabled={engine.recordPending || busy}
+          className="pressable mt-auto inline-flex h-9 items-center gap-2 self-start rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover disabled:cursor-wait disabled:text-ink-3"
         >
-          {t("status.start")}
+          {recording ? t("status.stop") : t("status.start")}
+          {engine.recordKeys && (
+            <span className="score text-[13px] font-medium opacity-70">{engine.recordKeys}</span>
+          )}
         </button>
       </Cell>
 

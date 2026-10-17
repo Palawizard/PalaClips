@@ -67,6 +67,8 @@ pub struct AppStatus {
     pub state: EngineState,
     pub buffered_secs: f64,
     pub buffer_bytes: u64,
+    pub recording_secs: f64,
+    pub recording_bytes: u64,
     pub capture: Option<CaptureInfo>,
     pub tracks: Vec<TrackInfo>,
     pub alerts: Vec<ActiveAlert>,
@@ -77,6 +79,10 @@ impl AppStatus {
         match event {
             EngineEvent::StateChanged { state } => {
                 self.state = *state;
+                if *state != EngineState::Recording {
+                    self.recording_secs = 0.0;
+                    self.recording_bytes = 0;
+                }
                 if *state != EngineState::Idle {
                     self.alerts.retain(|alert| {
                         alert.text.code != "replay_arm_failed"
@@ -130,6 +136,13 @@ impl AppStatus {
             } => {
                 self.buffered_secs = *buffered_secs;
                 self.buffer_bytes = *bytes;
+            }
+            EngineEvent::RecordingStats {
+                elapsed_secs,
+                bytes,
+            } => {
+                self.recording_secs = *elapsed_secs;
+                self.recording_bytes = *bytes;
             }
             EngineEvent::ClipSaved { .. } => {
                 self.alerts
@@ -234,6 +247,13 @@ impl EngineSlot {
             .unwrap_or_default()
     }
 
+    fn state(&self) -> EngineState {
+        self.status
+            .lock()
+            .map(|status| status.state)
+            .unwrap_or_default()
+    }
+
     fn language(&self) -> Language {
         self.settings
             .lock()
@@ -278,7 +298,7 @@ impl EngineSlot {
             settings.engine = config.clone();
         })?;
         self.handle.configure(config)?;
-        refresh_tray(app, resolved);
+        refresh_tray(app, resolved, self.state() == EngineState::Recording);
         Ok(resolved)
     }
 
@@ -298,6 +318,13 @@ impl EngineSlot {
         });
         let result = match action {
             Some(HotkeyAction::SaveReplay) => self.handle.save_replay(),
+            Some(HotkeyAction::ToggleRecording) => {
+                if self.state() == EngineState::Recording {
+                    self.handle.stop_recording()
+                } else {
+                    self.handle.start_recording()
+                }
+            }
             Some(HotkeyAction::ToggleReplay) => {
                 let armed = self
                     .status
@@ -382,6 +409,7 @@ impl EngineSlot {
         let saved = Hotkeys {
             save_replay: canonical_for(HotkeyAction::SaveReplay),
             toggle_replay: canonical_for(HotkeyAction::ToggleReplay),
+            toggle_recording: canonical_for(HotkeyAction::ToggleRecording),
         };
         self.update(|settings| settings.hotkeys = saved)
     }
@@ -398,7 +426,7 @@ impl EngineSlot {
         self.set_hotkeys(app, defaults.hotkeys.clone())?;
         self.apply(defaults.engine.clone())?;
         self.update(|settings| *settings = defaults)?;
-        refresh_tray(app, self.language());
+        refresh_tray(app, self.language(), self.state() == EngineState::Recording);
         tauri_plugin_autostart::ManagerExt::autolaunch(app)
             .disable()
             .map_err(|error| {
@@ -408,6 +436,9 @@ impl EngineSlot {
 
     fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
         match event {
+            EngineEvent::StateChanged { state } => {
+                refresh_tray_state(app, self.language(), *state == EngineState::Recording);
+            }
             EngineEvent::GameNamed { exe_name, name } => {
                 if let Err(error) = self.update(|settings| {
                     settings
@@ -554,6 +585,8 @@ pub fn run() {
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
+            commands::record_start,
+            commands::record_stop,
             commands::list_recent_clips,
             commands::list_encoders,
             commands::memory_status,
@@ -626,19 +659,23 @@ pub fn run() {
 }
 
 const TRAY: &str = "main";
-const TRAY_ITEMS: [&str; 5] = ["open", "save", "arm", "disarm", "quit"];
+const TRAY_ITEMS: [&str; 6] = ["open", "save", "record", "arm", "disarm", "quit"];
+const RECORDING_DOT: [u8; 4] = [0xe5, 0x2b, 0x2b, 0xff];
 
-fn tray_menu(app: &tauri::AppHandle, language: Language) -> tauri::Result<Menu<tauri::Wry>> {
+fn tray_menu(
+    app: &tauri::AppHandle,
+    language: Language,
+    recording: bool,
+) -> tauri::Result<Menu<tauri::Wry>> {
     let items = TRAY_ITEMS
         .iter()
         .map(|id| {
-            MenuItem::with_id(
-                app,
-                *id,
-                i18n::text(language, &format!("tray.{id}")),
-                true,
-                None::<&str>,
-            )
+            let key = match *id {
+                "record" if recording => "tray.recordStop".to_owned(),
+                "record" => "tray.recordStart".to_owned(),
+                id => format!("tray.{id}"),
+            };
+            MenuItem::with_id(app, *id, i18n::text(language, &key), true, None::<&str>)
         })
         .collect::<tauri::Result<Vec<_>>>()?;
     let items: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = items
@@ -648,17 +685,52 @@ fn tray_menu(app: &tauri::AppHandle, language: Language) -> tauri::Result<Menu<t
     Menu::with_items(app, &items)
 }
 
-pub fn refresh_tray(app: &tauri::AppHandle, language: Language) {
+pub fn refresh_tray(app: &tauri::AppHandle, language: Language, recording: bool) {
     let Some(tray) = app.tray_by_id(TRAY) else {
         return;
     };
-    if let Err(error) = tray_menu(app, language).and_then(|menu| tray.set_menu(Some(menu))) {
+    if let Err(error) =
+        tray_menu(app, language, recording).and_then(|menu| tray.set_menu(Some(menu)))
+    {
         tracing::warn!(%error, "menu de la zone de notification non traduit");
     }
 }
 
+fn refresh_tray_state(app: &tauri::AppHandle, language: Language, recording: bool) {
+    refresh_tray(app, language, recording);
+    let (Some(tray), Some(icon)) = (app.tray_by_id(TRAY), app.default_window_icon()) else {
+        return;
+    };
+    let icon = if recording {
+        recording_icon(icon)
+    } else {
+        icon.clone()
+    };
+    if let Err(error) = tray.set_icon(Some(icon)) {
+        tracing::warn!(%error, "icône de la zone de notification non changée");
+    }
+}
+
+fn recording_icon(base: &tauri::image::Image<'_>) -> tauri::image::Image<'static> {
+    let (width, height) = (base.width(), base.height());
+    let mut rgba = base.rgba().to_vec();
+    let radius = width.min(height) as f32 * 0.24;
+    let center = (width as f32 - radius - 1.0, height as f32 - radius - 1.0);
+    for y in 0..height {
+        for x in 0..width {
+            let distance =
+                ((x as f32 + 0.5 - center.0).powi(2) + (y as f32 + 0.5 - center.1).powi(2)).sqrt();
+            if distance <= radius {
+                let offset = ((y * width + x) * 4) as usize;
+                rgba[offset..offset + 4].copy_from_slice(&RECORDING_DOT);
+            }
+        }
+    }
+    tauri::image::Image::new_owned(rgba, width, height)
+}
+
 fn build_tray(app: &tauri::AppHandle, language: Language) -> tauri::Result<()> {
-    let menu = tray_menu(app, language)?;
+    let menu = tray_menu(app, language, false)?;
     let mut tray = TrayIconBuilder::with_id(TRAY)
         .tooltip("PalaClips")
         .menu(&menu)
@@ -667,10 +739,14 @@ fn build_tray(app: &tauri::AppHandle, language: Language) -> tauri::Result<()> {
             "open" => {
                 open_main_window(app).ok();
             }
-            "save" | "arm" | "disarm" => {
+            "save" | "record" | "arm" | "disarm" => {
                 if let Some(slot) = app.try_state::<EngineSlot>() {
                     let result = match event.id().as_ref() {
                         "save" => slot.handle.save_replay(),
+                        "record" if slot.state() == EngineState::Recording => {
+                            slot.handle.stop_recording()
+                        }
+                        "record" => slot.handle.start_recording(),
                         "arm" => slot.handle.arm(),
                         _ => slot.handle.disarm(),
                     };
@@ -876,6 +952,34 @@ mod tests {
         assert_eq!(status.alerts.len(), 1);
         assert_eq!(status.alerts[0].text.params["keys"], "Alt+F9");
         assert!(status.alerts[0].message.starts_with("Alt+F9 est déjà pris"));
+    }
+
+    #[test]
+    fn recording_stats_reset_when_the_recording_stops() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::Recording,
+        });
+        status.apply(&EngineEvent::RecordingStats {
+            elapsed_secs: 42.0,
+            bytes: 9_000_000,
+        });
+        assert_eq!(status.recording_bytes, 9_000_000);
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::ReplayArmed,
+        });
+        assert_eq!(status.recording_secs, 0.0);
+        assert_eq!(status.recording_bytes, 0);
+    }
+
+    #[test]
+    fn the_recording_icon_keeps_the_size_and_adds_a_red_dot() {
+        let base = tauri::image::Image::new_owned(vec![0; 32 * 32 * 4], 32, 32);
+        let icon = recording_icon(&base);
+        assert_eq!((icon.width(), icon.height()), (32, 32));
+        let corner = ((26 * 32 + 26) * 4) as usize;
+        assert_eq!(&icon.rgba()[corner..corner + 4], &RECORDING_DOT);
+        assert_eq!(&icon.rgba()[..4], &[0, 0, 0, 0]);
     }
 
     #[test]
