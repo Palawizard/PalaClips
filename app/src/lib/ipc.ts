@@ -23,6 +23,26 @@ export function resetConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("reset_config");
 }
 
+export type HotkeyAction = "save_replay" | "toggle_replay";
+
+export interface Hotkeys {
+  save_replay: string | null;
+  toggle_replay: string | null;
+}
+
+export interface HotkeysView {
+  hotkeys: Hotkeys;
+  unavailable: HotkeyAction[];
+}
+
+export function getHotkeys(): Promise<HotkeysView> {
+  return invoke<HotkeysView>("get_hotkeys");
+}
+
+export function setHotkeys(hotkeys: Hotkeys): Promise<void> {
+  return invoke("set_hotkeys", { hotkeys });
+}
+
 export function getAutostart(): Promise<boolean> {
   return invoke<boolean>("get_autostart");
 }

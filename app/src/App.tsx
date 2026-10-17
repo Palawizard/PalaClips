@@ -39,7 +39,12 @@ export default function App() {
             <Alerts alerts={engine.status?.alerts ?? []} />
             <div className="grid flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,320px)] max-[1000px]:grid-cols-1 max-[1000px]:flex-none">
               <Roster tracks={engine.status?.tracks ?? []} appOrder={appOrder} flashAt={engine.savedAt} />
-              <RecentClips clips={engine.clips} appOrder={appOrder} freshClip={engine.freshClip} />
+              <RecentClips
+                clips={engine.clips}
+                appOrder={appOrder}
+                freshClip={engine.freshClip}
+                saveKeys={engine.saveKeys}
+              />
             </div>
           </>
         )}
