@@ -264,6 +264,8 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `record_start` / `record_stop` | 6 | enregistrement |
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
 | `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
+| `pick_clips_dir` | 5 ✅ | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
+| `open_clips_dir` | 5 ✅ | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
 | `list_encoders` | 5 ✅ | encodeurs matériels détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur est grisé dans Réglages |
 | `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
 | `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |

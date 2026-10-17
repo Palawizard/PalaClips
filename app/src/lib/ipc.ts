@@ -140,6 +140,14 @@ export function storageStatus(): Promise<StorageStatus> {
   return invoke<StorageStatus>("storage_status");
 }
 
+export function pickClipsDir(): Promise<string | null> {
+  return invoke<string | null>("pick_clips_dir");
+}
+
+export function openClipsDir(): Promise<void> {
+  return invoke("open_clips_dir");
+}
+
 export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<UnlistenFn> {
   return listen<EngineEvent>(ENGINE_EVENT, (message) => handler(message.payload));
 }
