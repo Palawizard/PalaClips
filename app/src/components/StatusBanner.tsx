@@ -117,8 +117,8 @@ export function StatusBanner({ engine }: { engine: Engine }) {
             {capture?.source ?? targetLabel(config?.capture)}
           </span>
         </p>
-        <p className="score text-[17px] font-medium text-ink-2">
-          {capture ? `${capture.width} × ${capture.height} · ${capture.fps} i/s` : "Capture à l'arrêt"}
+        <p className="score truncate text-[17px] font-medium whitespace-nowrap text-ink-2">
+          {capture ? `${capture.width}×${capture.height} · ${capture.fps} i/s` : "Capture à l'arrêt"}
         </p>
         {fellBack && <p className="text-[13px] text-warn">Fenêtre introuvable : l'écran est capturé.</p>}
       </Cell>
