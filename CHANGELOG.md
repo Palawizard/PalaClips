@@ -57,6 +57,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   l'ordre du fichier avec sa couleur, son vumètre, sa crête et son état (en attente de l'appli,
   muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
 - Menu de la zone de notification : armer et désarmer le replay.
+- Écran Réglages : sections Raccourcis (saisie en appuyant sur la combinaison, conflits
+  signalés) et Général (démarrage avec Windows, armement au démarrage, son et notification de
+  confirmation, thème Système / Sombre / Clair, réinitialisation) ; les autres sections
+  suivent.
+- Raccourcis personnalisables (sauvegarder, armer/désarmer le replay) : refus des
+  combinaisons de Windows et des touches qui gêneraient en jeu, retour aux raccourcis
+  précédents si une autre appli a déjà pris la combinaison.
 - Démarrage avec Windows (option) : PalaClips s'ouvre directement dans la zone de
   notification, sans fenêtre.
 - Un nouveau clip commence où le précédent s'est arrêté : plus de minute répétée d'un clip à

@@ -1,5 +1,6 @@
 mod commands;
 mod feedback;
+mod hotkeys;
 mod settings;
 
 use std::sync::{Arc, Mutex};
@@ -11,7 +12,9 @@ use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+
+use crate::hotkeys::{HotkeyAction, Hotkeys};
 
 pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
@@ -137,6 +140,8 @@ pub struct EngineSlot {
     settings_path: Option<std::path::PathBuf>,
     settings_writable: bool,
     settings: Mutex<settings::Settings>,
+    shortcuts: Mutex<Vec<(HotkeyAction, Shortcut)>>,
+    unavailable: Mutex<Vec<HotkeyAction>>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
     status: Arc<Mutex<AppStatus>>,
@@ -183,6 +188,8 @@ impl EngineSlot {
             settings_path,
             settings_writable,
             settings: Mutex::new(settings),
+            shortcuts: Mutex::new(Vec::new()),
+            unavailable: Mutex::new(Vec::new()),
             engine: Mutex::new(Some(engine)),
             handle,
             status,
@@ -230,6 +237,130 @@ impl EngineSlot {
         self.handle
             .configure(config)
             .map_err(|error| error.to_string())
+    }
+
+    fn hotkeys(&self) -> Hotkeys {
+        self.settings
+            .lock()
+            .map(|settings| settings.hotkeys.clone())
+            .unwrap_or_default()
+    }
+
+    fn run_hotkey(&self, shortcut: &Shortcut) {
+        let action = self.shortcuts.lock().ok().and_then(|shortcuts| {
+            shortcuts
+                .iter()
+                .find(|(_, registered)| registered == shortcut)
+                .map(|(action, _)| *action)
+        });
+        let result = match action {
+            Some(HotkeyAction::SaveReplay) => self.handle.save_replay(),
+            Some(HotkeyAction::ToggleReplay) => {
+                let armed = self
+                    .status
+                    .lock()
+                    .map(|status| status.state != EngineState::Idle)
+                    .unwrap_or(false);
+                if armed {
+                    self.handle.disarm()
+                } else {
+                    self.handle.arm()
+                }
+            }
+            None => return,
+        };
+        if let Err(error) = result {
+            tracing::warn!(%error, "action du raccourci impossible");
+        }
+    }
+
+    fn register_hotkeys(
+        &self,
+        app: &tauri::AppHandle,
+        bindings: &[(HotkeyAction, Shortcut)],
+    ) -> Vec<(HotkeyAction, Shortcut)> {
+        let mut failed = Vec::new();
+        let mut registered = Vec::new();
+        for (action, shortcut) in bindings {
+            match app.global_shortcut().register(*shortcut) {
+                Ok(()) => registered.push((*action, *shortcut)),
+                Err(error) => {
+                    tracing::warn!(%error, keys = %hotkeys::canonical(shortcut), "raccourci indisponible");
+                    failed.push((*action, *shortcut));
+                }
+            }
+        }
+        if let Ok(mut shortcuts) = self.shortcuts.lock() {
+            *shortcuts = registered;
+        }
+        if let Ok(mut unavailable) = self.unavailable.lock() {
+            *unavailable = failed.iter().map(|(action, _)| *action).collect();
+        }
+        failed
+    }
+
+    fn unregister_hotkeys(&self, app: &tauri::AppHandle) {
+        let shortcuts = self
+            .shortcuts
+            .lock()
+            .map(|mut shortcuts| std::mem::take(&mut *shortcuts))
+            .unwrap_or_default();
+        for (_, shortcut) in shortcuts {
+            app.global_shortcut().unregister(shortcut).ok();
+        }
+    }
+
+    fn resume_hotkeys(&self, app: &tauri::AppHandle) {
+        self.unregister_hotkeys(app);
+        let bindings = hotkeys::validate(&self.hotkeys()).unwrap_or_default();
+        self.register_hotkeys(app, &bindings);
+    }
+
+    fn set_hotkeys(&self, app: &tauri::AppHandle, wanted: Hotkeys) -> Result<(), String> {
+        let bindings = hotkeys::validate(&wanted)?;
+        let previous = hotkeys::validate(&self.hotkeys()).unwrap_or_default();
+        self.unregister_hotkeys(app);
+        let failed = self.register_hotkeys(app, &bindings);
+        if !failed.is_empty() {
+            self.unregister_hotkeys(app);
+            self.register_hotkeys(app, &previous);
+            let taken: Vec<String> = failed
+                .iter()
+                .map(|(_, shortcut)| hotkeys::canonical(shortcut))
+                .collect();
+            return Err(format!(
+                "{} déjà pris par une autre application : tes raccourcis précédents sont gardés.",
+                taken.join(", ")
+            ));
+        }
+        let canonical_for = |wanted_action| {
+            bindings
+                .iter()
+                .find(|(action, _)| *action == wanted_action)
+                .map(|(_, shortcut)| hotkeys::canonical(shortcut))
+        };
+        let saved = Hotkeys {
+            save_replay: canonical_for(HotkeyAction::SaveReplay),
+            toggle_replay: canonical_for(HotkeyAction::ToggleReplay),
+        };
+        self.update(|settings| settings.hotkeys = saved)
+    }
+
+    fn theme(&self) -> settings::Theme {
+        self.settings
+            .lock()
+            .map(|settings| settings.theme)
+            .unwrap_or_default()
+    }
+
+    fn reset(&self, app: &tauri::AppHandle) -> Result<(), String> {
+        let defaults = settings::Settings::default();
+        self.set_hotkeys(app, defaults.hotkeys.clone())?;
+        self.apply(defaults.engine.clone())?;
+        self.update(|settings| *settings = defaults)?;
+        tauri_plugin_autostart::ManagerExt::autolaunch(app)
+            .disable()
+            .map_err(|error| format!("Démarrage avec Windows non désactivé : {error}."))
     }
 
     fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
@@ -314,11 +445,9 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
                     if event.state() == ShortcutState::Pressed
-                        && *shortcut == save_replay_shortcut()
                         && let Some(slot) = app.try_state::<EngineSlot>()
-                        && let Err(error) = slot.handle.save_replay()
                     {
-                        tracing::warn!(%error, "sauvegarde par raccourci impossible");
+                        slot.run_hotkey(shortcut);
                     }
                 })
                 .build(),
@@ -329,7 +458,13 @@ pub fn run() {
             commands::get_state,
             commands::get_config,
             commands::set_config,
-            commands::reset_config,
+            commands::reset_settings,
+            commands::get_theme,
+            commands::set_theme,
+            commands::get_hotkeys,
+            commands::suspend_hotkeys,
+            commands::resume_hotkeys,
+            commands::set_hotkeys,
             commands::get_autostart,
             commands::set_autostart,
             commands::get_feedback,
@@ -368,9 +503,14 @@ pub fn run() {
                     },
                 );
             }
-            if let Err(error) = app.global_shortcut().register(save_replay_shortcut()) {
-                tracing::warn!(%error, "raccourci de sauvegarde indisponible");
-                slot.publish(app.handle(), hotkey_unavailable_alert("Alt+F10"));
+            let bindings = hotkeys::validate(&slot.hotkeys())
+                .or_else(|_| hotkeys::validate(&Hotkeys::default()))
+                .unwrap_or_default();
+            for (_, shortcut) in slot.register_hotkeys(app.handle(), &bindings) {
+                slot.publish(
+                    app.handle(),
+                    hotkey_unavailable_alert(&hotkeys::canonical(&shortcut)),
+                );
             }
             app.manage(slot);
             build_tray(app.handle())?;
@@ -399,7 +539,7 @@ pub fn run() {
 
 fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Ouvrir PalaClips", true, None::<&str>)?;
-    let save = MenuItem::with_id(app, "save", "Sauvegarder le replay", true, Some("Alt+F10"))?;
+    let save = MenuItem::with_id(app, "save", "Sauvegarder le replay", true, None::<&str>)?;
     let arm = MenuItem::with_id(app, "arm", "Armer le replay", true, None::<&str>)?;
     let disarm = MenuItem::with_id(app, "disarm", "Désarmer le replay", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
@@ -444,16 +584,12 @@ fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-fn save_replay_shortcut() -> Shortcut {
-    Shortcut::new(Some(Modifiers::ALT), Code::F10)
-}
-
 fn hotkey_unavailable_alert(keys: &str) -> EngineEvent {
     EngineEvent::Alert {
         severity: Severity::Warning,
         code: "hotkey_unavailable".into(),
         message: format!(
-            "{keys} est déjà pris par une autre application, probablement l'overlay NVIDIA (il y enregistre son propre replay). Désactive ce raccourci dans l'overlay (Alt+Z → Paramètres → Raccourcis clavier) ou choisis-en un autre dans Réglages → Raccourcis."
+            "{keys} est déjà pris par une autre application, souvent l'overlay NVIDIA (Alt+F10 et Alt+Shift+F10 y servent au replay). Désactive ce raccourci dans l'overlay (Alt+Z → Paramètres → Raccourcis clavier) ou choisis-en un autre dans Réglages → Raccourcis."
         ),
     }
 }

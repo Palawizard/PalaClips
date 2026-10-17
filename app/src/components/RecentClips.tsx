@@ -46,10 +46,12 @@ export function RecentClips({
   clips,
   appOrder,
   freshClip,
+  saveKeys,
 }: {
   clips: ClipSummary[];
   appOrder: string[];
   freshClip: string | null;
+  saveKeys: string | null;
 }) {
   return (
     <section aria-labelledby="clips-title" className="flex min-w-0 flex-col gap-3 px-5 pt-5 pb-6">
@@ -60,8 +62,14 @@ export function RecentClips({
         <div className="rounded-md border border-dashed border-line-strong px-4 py-6 text-ink-2">
           <p className="font-semibold text-ink">Aucun clip pour l'instant</p>
           <p className="mt-1">
-            Appuie sur <kbd className="score font-semibold text-ink">Alt+F10</kbd> en jeu pour sauvegarder les
-            dernières secondes.
+            {saveKeys ? (
+              <>
+                Appuie sur <kbd className="score font-semibold text-ink">{saveKeys}</kbd> en jeu pour sauvegarder
+                les dernières secondes.
+              </>
+            ) : (
+              "Choisis un raccourci de sauvegarde dans Réglages → Raccourcis."
+            )}
           </p>
         </div>
       ) : (
