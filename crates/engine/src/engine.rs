@@ -12,7 +12,7 @@ use rsmpeg::ffi::AV_PKT_FLAG_KEY;
 use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
 use crate::capture::{VideoCapture, VideoStream};
 use crate::clock::{HNS_PER_SECOND, Hns};
-use crate::config::{EngineConfig, ReplayStorage};
+use crate::config::{CaptureTarget, EngineConfig, ReplayStorage};
 use crate::encode::{hardware_video_encoders, pick_encoder, write_thumbnail};
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
@@ -188,6 +188,15 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
         sources.push((AudioSource::Game(current_game(config)), "Jeu".to_owned(), 0));
     }
     sources
+}
+
+fn capture_label(target: &CaptureTarget, fell_back: bool) -> String {
+    match target {
+        CaptureTarget::PrimaryMonitor => "Écran principal".into(),
+        CaptureTarget::Monitor { device_name } => device_name.clone(),
+        CaptureTarget::Window { exe_name, .. } if fell_back => format!("Écran de {exe_name}"),
+        CaptureTarget::Window { exe_name, .. } => exe_name.clone(),
+    }
 }
 
 fn current_game(config: &EngineConfig) -> CurrentGame {
@@ -397,6 +406,18 @@ impl Pipeline {
         } else {
             None
         };
+        events
+            .try_send(EngineEvent::CaptureStarted {
+                source: capture_label(&config.capture, capture.alert().is_some()),
+                width: video.size.width,
+                height: video.size.height,
+                fps: video.fps,
+                tracks: tracks
+                    .iter()
+                    .map(|track| track.stream().title.clone())
+                    .collect(),
+            })
+            .ok();
         tracing::info!(
             encoder = %encoder.name,
             width = video.size.width,
@@ -747,6 +768,26 @@ mod tests {
                 ("Discord".to_owned(), 0),
                 ("Jeu".to_owned(), 0),
             ]
+        );
+    }
+
+    #[test]
+    fn capture_label_names_the_window_or_its_fallback_screen() {
+        let window = CaptureTarget::Window {
+            exe_name: "FortniteClient-Win64-Shipping.exe".into(),
+            title_hint: None,
+        };
+        assert_eq!(
+            capture_label(&window, false),
+            "FortniteClient-Win64-Shipping.exe"
+        );
+        assert_eq!(
+            capture_label(&window, true),
+            "Écran de FortniteClient-Win64-Shipping.exe"
+        );
+        assert_eq!(
+            capture_label(&CaptureTarget::PrimaryMonitor, false),
+            "Écran principal"
         );
     }
 

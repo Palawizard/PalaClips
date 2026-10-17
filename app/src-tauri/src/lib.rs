@@ -3,8 +3,8 @@ mod commands;
 use std::sync::{Arc, Mutex};
 
 use palaclips_engine::EngineConfig;
-use palaclips_engine::engine::{Engine, EngineHandle, LevelRate};
-use palaclips_engine::events::{EngineEvent, EngineState, Severity};
+use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, audio_sources};
+use palaclips_engine::events::{EngineEvent, EngineState, Severity, TrackState};
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -21,11 +21,38 @@ pub struct ActiveAlert {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct CaptureInfo {
+    pub source: String,
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TrackInfo {
+    pub title: String,
+    pub state: Option<TrackState>,
+    pub source: Option<String>,
+}
+
+impl TrackInfo {
+    fn named(title: String) -> Self {
+        Self {
+            title,
+            state: None,
+            source: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct AppStatus {
     pub state: EngineState,
     pub buffered_secs: f64,
     pub buffer_bytes: u64,
+    pub capture: Option<CaptureInfo>,
+    pub tracks: Vec<TrackInfo>,
     pub alerts: Vec<ActiveAlert>,
 }
 
@@ -37,6 +64,36 @@ impl AppStatus {
                 if *state == EngineState::Idle {
                     self.buffered_secs = 0.0;
                     self.buffer_bytes = 0;
+                    self.capture = None;
+                    for track in &mut self.tracks {
+                        track.state = None;
+                        track.source = None;
+                    }
+                }
+            }
+            EngineEvent::CaptureStarted {
+                source,
+                width,
+                height,
+                fps,
+                tracks,
+            } => {
+                self.capture = Some(CaptureInfo {
+                    source: source.clone(),
+                    width: *width,
+                    height: *height,
+                    fps: *fps,
+                });
+                self.tracks = tracks.iter().cloned().map(TrackInfo::named).collect();
+            }
+            EngineEvent::TrackChanged {
+                title,
+                state,
+                source,
+            } => {
+                if let Some(track) = self.tracks.iter_mut().find(|track| track.title == *title) {
+                    track.state = Some(*state);
+                    track.source = source.clone();
                 }
             }
             EngineEvent::ReplayStats {
@@ -76,7 +133,13 @@ impl EngineSlot {
         let arm = config.replay.arm_on_startup;
         let engine = Engine::start(config.clone())?;
         let handle = engine.handle();
-        let status = Arc::new(Mutex::new(AppStatus::default()));
+        let status = Arc::new(Mutex::new(AppStatus {
+            tracks: audio_sources(&config)
+                .into_iter()
+                .map(|(_, title, _)| TrackInfo::named(title))
+                .collect(),
+            ..AppStatus::default()
+        }));
         let events = engine.events().clone();
         let relay_status = status.clone();
         let app = app.clone();
@@ -150,6 +213,7 @@ pub fn run() {
             commands::engine_version,
             commands::default_config,
             commands::get_state,
+            commands::get_config,
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
@@ -292,6 +356,30 @@ mod tests {
         });
         assert_eq!(status.buffered_secs, 0.0);
         assert_eq!(status.buffer_bytes, 0);
+    }
+
+    #[test]
+    fn track_states_follow_the_capture_and_reset_when_disarmed() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::CaptureStarted {
+            source: "Écran principal".into(),
+            width: 2560,
+            height: 1440,
+            fps: 60,
+            tracks: vec!["Mix complet".into(), "Discord".into()],
+        });
+        status.apply(&EngineEvent::TrackChanged {
+            title: "Discord".into(),
+            state: TrackState::Waiting,
+            source: None,
+        });
+        assert_eq!(status.tracks[1].state, Some(TrackState::Waiting));
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::Idle,
+        });
+        assert!(status.capture.is_none());
+        assert_eq!(status.tracks.len(), 2);
+        assert_eq!(status.tracks[1].state, None);
     }
 
     #[test]
