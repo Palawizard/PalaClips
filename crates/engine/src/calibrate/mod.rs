@@ -86,13 +86,17 @@ pub fn proposals(audio: &AudioSettings, tracks: Vec<TrackMeasurement>) -> Calibr
             .and_then(|track| track.measurement)
             .map(|measurement| measurement.late_ms)
     };
-    let game_ms =
-        late(TrackKind::Game).map(|late_ms| proposed_offset_ms(audio.game_sync_offset_ms, late_ms));
+    let reference =
+        late(TrackKind::Game).map(|late_ms| late_ms - f64::from(audio.game_sync_offset_ms));
+    let propose = |kind: TrackKind, current_ms: i32| {
+        reference.and_then(|reference_ms| {
+            late(kind).map(|measured_ms| proposed_offset_ms(current_ms, measured_ms, reference_ms))
+        })
+    };
+    let game_ms = propose(TrackKind::Game, audio.game_sync_offset_ms);
     Calibration {
-        mix_ms: late(TrackKind::Mix)
-            .map(|late_ms| proposed_offset_ms(audio.full_mix_sync_offset_ms, late_ms)),
-        microphone_ms: late(TrackKind::Microphone)
-            .map(|late_ms| proposed_offset_ms(audio.microphone_sync_offset_ms, late_ms)),
+        mix_ms: propose(TrackKind::Mix, audio.full_mix_sync_offset_ms),
+        microphone_ms: propose(TrackKind::Microphone, audio.microphone_sync_offset_ms),
         game_ms,
         apps: game_ms
             .map(|offset_ms| {
@@ -195,7 +199,65 @@ mod tests {
     }
 
     #[test]
-    fn apps_share_the_process_loopback_measurement_of_the_game_track() {
+    fn the_emitter_buffer_measured_by_the_game_track_is_not_compensated() {
+        let audio = AudioSettings {
+            app_tracks: vec![crate::config::AppTrack {
+                exe_name: "discord.exe".into(),
+                label: "Discord".into(),
+                enabled: true,
+                sync_offset_ms: 0,
+            }],
+            ..AudioSettings::default()
+        };
+        let calibration = proposals(
+            &audio,
+            vec![
+                measured(TrackKind::Mix, 138.0),
+                measured(TrackKind::Game, 33.4),
+            ],
+        );
+        assert_eq!(calibration.mix_ms, Some(-105));
+        assert_eq!(calibration.game_ms, Some(0));
+        assert_eq!(calibration.apps[0].offset_ms, 0);
+    }
+
+    #[test]
+    fn earlier_wrong_offsets_are_corrected_from_their_current_value() {
+        let audio = AudioSettings {
+            full_mix_sync_offset_ms: -138,
+            game_sync_offset_ms: -33,
+            ..AudioSettings::default()
+        };
+        let calibration = proposals(
+            &audio,
+            vec![
+                measured(TrackKind::Mix, 0.0),
+                measured(TrackKind::Game, 0.4),
+            ],
+        );
+        assert_eq!(calibration.mix_ms, Some(-105));
+        assert_eq!(calibration.game_ms, Some(0));
+    }
+
+    #[test]
+    fn nothing_is_proposed_without_a_reference() {
+        let calibration = proposals(
+            &AudioSettings::default(),
+            vec![
+                measured(TrackKind::Mix, 138.0),
+                TrackMeasurement {
+                    kind: TrackKind::Game,
+                    title: String::new(),
+                    measurement: None,
+                },
+            ],
+        );
+        assert_eq!(calibration.mix_ms, None);
+        assert_eq!(calibration.game_ms, None);
+    }
+
+    #[test]
+    fn current_offsets_enter_the_reference_and_apps_follow_the_game_track() {
         let mut audio = AudioSettings {
             full_mix_sync_offset_ms: -50,
             game_sync_offset_ms: 10,
@@ -219,10 +281,10 @@ mod tests {
                 measured(TrackKind::Game, 40.0),
             ],
         );
-        assert_eq!(calibration.mix_ms, Some(-120));
+        assert_eq!(calibration.mix_ms, Some(-90));
         assert_eq!(calibration.microphone_ms, None);
-        assert_eq!(calibration.game_ms, Some(-30));
-        assert_eq!(calibration.apps[0].offset_ms, -30);
+        assert_eq!(calibration.game_ms, Some(0));
+        assert_eq!(calibration.apps[0].offset_ms, 0);
     }
 
     #[test]
