@@ -8,8 +8,8 @@
 - **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `dev` à jour après les PR #21 (réglages), #22 (noms de jeux), #23 (carillon +
-  toast) et #24 (clips sans doublon, en cours de merge).
+- **Branche :** `feature/hotkeys` (PR à merger) : raccourcis personnalisables + écran Réglages
+  (Raccourcis, Général) ; `dev` contient déjà les PR #21 à #26.
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
@@ -142,6 +142,23 @@
     clips suivants.
   - `replay::forget_saved` (RPL-09, ADR-025) : le clip suivant commence où le précédent s'est
     arrêté.
+- **Raccourcis, démarrage avec Windows, écran Réglages (2026-10-17)** :
+  - `hotkeys.rs` : actions `save_replay` (Alt+F10), `toggle_replay` (Ctrl+Alt+F10 ;
+    Alt+Shift+F10 est pris par l'overlay NVIDIA chez Palawi) ; refus : sans modificateur,
+    raccourcis système, touche Windows, Maj + lettre, doublons ; enregistrement avec retour
+    arrière ; `get_hotkeys` (actions indisponibles), `set_hotkeys`, `suspend_hotkeys` /
+    `resume_hotkeys` (pendant la saisie).
+  - `tauri-plugin-autostart` 2.7 : `--autostart` = zone de notification, aucune fenêtre ni
+    WebView2 ; `get_autostart` / `set_autostart`.
+  - `settings.json` : `{ schema_version, engine, feedback, hotkeys, theme }` ;
+    `reset_settings` (tout, autostart désactivé) ; `get_theme` / `set_theme`, `data-theme` posé
+    par `lib/theme.ts`.
+  - Front : `components/settings/` (`Settings` : sous-menu + `SettingRow`, `Switch`,
+    `Segmented` ; `HotkeysSection` : saisie par combinaison, lettres via `event.key`
+    (AZERTY), bord ambre si pris ; `GeneralSection`) ; brief
+    `.impeccable/surfaces/app-src-components-settings-tsx.md` ; revue impeccable : 2 tours,
+    restes : confirmation de réinitialisation et Raccourcis à 900×600 vérifiés en code seulement.
+  - Moteur : moins de 3 s à sauvegarder → pas de clip, alerte d'info `clip_too_short`.
 - **Écran État + shell (front, `feature/app-shell`)** : `app/src/App.tsx` (rail État / Galerie
   / Réglages ; Galerie et Réglages = textes d'attente), `components/` : `StatusBanner` (replay :
   état, chrono « en mémoire », RAM, Sauvegarder + Armer/Désarmer ; enregistrement désactivé
@@ -168,17 +185,16 @@
 ## Prochaines actions (dans l'ordre)
 
 1. Phase 5, suite (une branche par tâche, depuis `dev`) :
-   - merger la PR #24 si elle ne l'est pas (CI verte attendue) ;
-   - raccourcis personnalisables avec conflits (APP-05) et démarrage avec Windows (APP-04) ;
-   - écrans Réglages via `/design` dans le système `DESIGN.md` : Capture (miniatures en direct),
-     Audio (vumètres, recherche, appli non lancée, renommage, assistant de calibrage AUD-11),
-     Replay & qualité (estimation RAM RPL-03), Raccourcis, Stockage (dossier, quota, **noms de
-     jeux modifiables**, STO-02), Général (thème, carillon et toast désactivables, démarrage
-     avec Windows) ; consigne de copie de `PRODUCT.md` (aucune phrase qui commente l'écran) ;
-   - RPL-07 : l'UI dit que changer de sources ou de zone redémarre le tampon avant d'appliquer ;
-   - ⚠️ L'app arme le replay au démarrage (écran principal, micro, piste Jeu) : demander à
-     Palawi avant tout lancement ; une sauvegarde de test écrit un vrai clip
-     (`Vidéos\PalaClips\<Jeu>`) et sa miniature : les supprimer après (demander).
+   - merger la PR de `feature/hotkeys` si ce n'est pas fait ;
+   - sections Réglages restantes via `/design` (brief confirmé :
+     `.impeccable/surfaces/app-src-components-settings-tsx.md`, application immédiate sauf
+     redémarrage du tampon → confirmation en ligne RPL-07) : Capture (miniatures en direct),
+     Audio (vumètres, recherche, appli non lancée, renommage, assistant AUD-11), Replay &
+     qualité (estimation RAM RPL-03), Stockage (dossier, quota, noms de jeux modifiables) ;
+   - ⚠️ L'app arme le replay au démarrage : demander à Palawi avant tout lancement ; tests de
+     saisie de raccourcis : jamais de touches synthétiques (elles partent vers la fenêtre au
+     premier plan de Palawi), le faire tester par lui ; une sauvegarde de test écrit un vrai
+     clip : le supprimer après (demander).
 2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
    dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
 3. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
@@ -281,3 +297,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-17 | 5 | `track_changed` / `capture_started`, `get_config` ; écran État + shell (Barlow, roster à plaques de couleur, vumètres 20 Hz interpolés, derniers clips avec miniatures) ; revue impeccable : recapture, 8 correctifs + logo, verdict « ship » ; `DESIGN.md` par le documenteur ; vérifié en vrai : 1180×760, 900×600, thème clair, sauvegarde, 0 WebView2 fenêtre fermée, instance unique | Montrer l'écran à Palawi ; persistance des réglages, toasts, écrans Réglages |
 | 2026-10-17 | 5 | Vumètres indexés par piste, animation plafonnée à 60 i/s et sans boucle hors focus ; PERF-03 mesuré en release (fenêtre ouverte sans focus 0,57 % CPU, fermée 0,27 %) ; test de Palawi : écran OK, `Alt+F10` dans Fortnite sans perte de focus, sauvegarde fenêtre ouverte OK ; consigne de copie dans PRODUCT.md ; PR #19 mergée | Réglages persistants, noms de jeux, toast + son |
 | 2026-10-17 | 5 | PR #21 réglages persistants ; PR #22 noms de jeux (Fortnite sans métadonnées → nom d'exe nettoyé, décision de Palawi, ADR-024) ; PR #23 carillon + toast, test Fortnite ✅ (carillon en jeu, toast bloqué en jeu puis dans le centre de notifications, toast + carillon au bureau, dossier « Fortnite ») ; PR #24 clips sans doublon (RPL-09, ADR-025, 20,2 s puis 10,2 s) | Raccourcis, démarrage avec Windows, écrans Réglages |
+| 2026-10-17 | 5 | PR #25 clip < 3 s ignoré ; PR #26 démarrage avec Windows (0 WebView2) ; raccourcis personnalisables (conflit réel détecté : Alt+Shift+F10 pris par NVIDIA → défaut Ctrl+Alt+F10) ; écran Réglages (Raccourcis, Général, thème) testé par Palawi au clavier ; revue impeccable 2 tours | Sections Réglages restantes |
