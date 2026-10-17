@@ -74,6 +74,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   message clair en cas de refus, par exemple 5120×1440 en H.264. « Réglages appliqués »
   s'affiche quand un changement en attente part au désarmement du replay.
 - `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
+- Réglages > Capture : écrans et fenêtres en vignettes avec aperçu en direct (~1 image/s,
+  seulement pendant que la section est visible), icône et nom de l'appli ; curseur et bordure
+  jaune réglables ; changer de cible pendant que le replay tourne demande confirmation.
+- CLI `palaclips-cli preview` : aperçus JPEG et icône d'une cible.
 - Réglages > Stockage : dossier des clips choisi avec le sélecteur de Windows et ouvert dans
   l'Explorateur, espace libre affiché, noms des jeux modifiables. Un nom qui ne peut pas
   servir de nom de dossier (caractères interdits, noms réservés comme CON ou NUL) est refusé
