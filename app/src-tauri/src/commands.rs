@@ -32,6 +32,17 @@ pub fn get_config(slot: State<'_, EngineSlot>) -> Result<EngineConfig, String> {
 }
 
 #[tauri::command]
+pub fn set_config(slot: State<'_, EngineSlot>, config: EngineConfig) -> Result<(), String> {
+    slot.apply(config)
+}
+
+#[tauri::command]
+pub fn reset_config(slot: State<'_, EngineSlot>) -> Result<EngineConfig, String> {
+    slot.apply(EngineConfig::default())?;
+    Ok(EngineConfig::default())
+}
+
+#[tauri::command]
 pub fn replay_arm(slot: State<'_, EngineSlot>) -> Result<(), String> {
     slot.handle.arm().map_err(|error| error.to_string())
 }

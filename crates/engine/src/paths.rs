@@ -5,7 +5,8 @@ use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY
 use windows::Win32::System::SystemInformation::GetLocalTime;
 use windows::Win32::System::Threading::GetCurrentProcess;
 use windows::Win32::UI::Shell::{
-    FOLDERID_LocalAppData, FOLDERID_Videos, KF_FLAG_DEFAULT, SHGetKnownFolderPath,
+    FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_Videos, KF_FLAG_DEFAULT,
+    SHGetKnownFolderPath,
 };
 use windows::core::GUID;
 
@@ -16,6 +17,12 @@ const DESKTOP_GAME: &str = "Bureau";
 
 pub fn default_clips_dir() -> Result<PathBuf> {
     Ok(known_folder(&FOLDERID_Videos)?.join(APP_DIR))
+}
+
+pub fn settings_path() -> Result<PathBuf> {
+    Ok(known_folder(&FOLDERID_RoamingAppData)?
+        .join(APP_DIR)
+        .join("settings.json"))
 }
 
 pub fn replay_spool_dir() -> Result<PathBuf> {
