@@ -2,6 +2,7 @@ use palaclips_engine::EngineConfig;
 use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
 use serde::Serialize;
 use tauri::State;
+use tauri_plugin_autostart::ManagerExt;
 
 use crate::settings::Feedback;
 use crate::{AppStatus, EngineSlot};
@@ -27,6 +28,24 @@ pub fn get_state(slot: State<'_, EngineSlot>) -> Result<AppStatus, String> {
 #[tauri::command]
 pub fn get_config(slot: State<'_, EngineSlot>) -> EngineConfig {
     slot.config()
+}
+
+#[tauri::command]
+pub fn get_autostart(app: tauri::AppHandle) -> Result<bool, String> {
+    app.autolaunch()
+        .is_enabled()
+        .map_err(|error| format!("Démarrage avec Windows illisible : {error}."))
+}
+
+#[tauri::command]
+pub fn set_autostart(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
+    let autolaunch = app.autolaunch();
+    if enabled {
+        autolaunch.enable()
+    } else {
+        autolaunch.disable()
+    }
+    .map_err(|error| format!("Démarrage avec Windows non modifié : {error}."))
 }
 
 #[tauri::command]
