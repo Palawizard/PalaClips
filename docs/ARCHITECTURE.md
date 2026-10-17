@@ -283,7 +283,8 @@ fenêtre),
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
-`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `settings_reset` (réglages
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `clip_too_short` (info :
+moins de 3 s à sauvegarder, aucun clip ; pas de notification), `settings_reset` (réglages
 illisibles mis de côté en `settings.json.bak`, ou venant d'une version plus récente).
 
 Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
