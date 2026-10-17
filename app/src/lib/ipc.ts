@@ -11,6 +11,10 @@ export function defaultConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("default_config");
 }
 
+export function getConfig(): Promise<EngineConfig> {
+  return invoke<EngineConfig>("get_config");
+}
+
 export function getState(): Promise<AppStatus> {
   return invoke<AppStatus>("get_state");
 }
@@ -118,15 +122,41 @@ export interface ActiveAlert {
   message: string;
 }
 
+export type TrackState = "waiting" | "capturing" | "silent" | "unavailable";
+
+export interface CaptureInfo {
+  source: string;
+  width: number;
+  height: number;
+  fps: number;
+}
+
+export interface TrackInfo {
+  title: string;
+  state: TrackState | null;
+  source: string | null;
+}
+
 export interface AppStatus {
   state: EngineState;
   buffered_secs: number;
   buffer_bytes: number;
+  capture: CaptureInfo | null;
+  tracks: TrackInfo[];
   alerts: ActiveAlert[];
 }
 
 export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
+  | {
+      type: "capture_started";
+      source: string;
+      width: number;
+      height: number;
+      fps: number;
+      tracks: string[];
+    }
+  | { type: "track_changed"; title: string; state: TrackState; source: string | null }
   | {
       type: "clip_saved";
       path: string;

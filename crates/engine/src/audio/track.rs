@@ -20,7 +20,7 @@ use super::{AudioSource, CHANNELS, PeakMeter, SAMPLE_RATE};
 use crate::clock::Hns;
 use crate::encode::AacEncoder;
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, Severity};
+use crate::events::{EngineEvent, Severity, TrackState};
 use crate::sources::{self, ForegroundWatch, ForegroundWindow};
 
 const BUFFER_DURATION_HNS: i64 = 2_000_000;
@@ -107,6 +107,7 @@ impl AudioTrack {
             app: None,
             foreground: None,
             silence: SilenceWatch::default(),
+            reported: None,
         };
         let thread = std::thread::Builder::new()
             .name(format!("palaclips-audio-{}", worker.title))
@@ -186,6 +187,7 @@ struct Worker {
     app: Option<AttachedApp>,
     foreground: Option<ForegroundSignal>,
     silence: SilenceWatch,
+    reported: Option<(TrackState, Option<String>)>,
 }
 
 #[derive(Clone)]
@@ -298,6 +300,7 @@ impl Worker {
                 match self.attach() {
                     Some(app) => open_app_stream(&app),
                     None => {
+                        self.report(TrackState::Waiting, None);
                         if self.idle(&waits_for_device, Some(APP_RETRY_MS))? {
                             break;
                         }
@@ -314,6 +317,7 @@ impl Worker {
                     if !unavailable_reported {
                         unavailable_reported = true;
                         self.alert_unavailable(&error, in_use);
+                        self.report(TrackState::Unavailable, None);
                     }
                     if self.idle(&waits_for_device, in_use.then_some(EXCLUSIVE_RETRY_MS))? {
                         break;
@@ -322,6 +326,7 @@ impl Worker {
                 }
             };
             unavailable_reported = false;
+            self.report(TrackState::Capturing, Some(stream.name.clone()));
             if self.source.is_application() {
                 tracing::info!(track = %self.title, app = %stream.name, "application rattachée");
                 if current_device.is_some() {
@@ -544,12 +549,32 @@ impl Worker {
             self.title, app.exe_name
         );
         self.alert(Severity::Warning, "app_track_silent", message);
+        let source = self.reported.clone().and_then(|(_, source)| source);
+        self.report(TrackState::Silent, source);
+    }
+
+    fn report(&mut self, state: TrackState, source: Option<String>) {
+        let reported = Some((state, source.clone()));
+        if self.reported == reported {
+            return;
+        }
+        self.reported = reported;
+        self.alerts
+            .try_send(EngineEvent::TrackChanged {
+                title: self.title.clone(),
+                state,
+                source,
+            })
+            .ok();
     }
 
     fn on_packet(&mut self, qpc: Hns, data: &mut [f32]) -> Result<()> {
         self.stats.packets += 1;
         if data.iter().any(|sample| *sample != 0.0) {
             self.silence.on_signal(Hns::now());
+            if let Some((TrackState::Silent, source)) = self.reported.clone() {
+                self.report(TrackState::Capturing, source);
+            }
         }
         let gain = self.gain();
         let mut peak = 0.0f32;

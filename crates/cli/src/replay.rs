@@ -183,6 +183,12 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         println!("alerte {severity:?} {code} : {message}");
                     }
                     EngineEvent::StateChanged { state } => println!("état : {state:?}"),
+                    EngineEvent::CaptureStarted { source, width, height, fps, tracks } => {
+                        println!("capture : {source}, {width}x{height} à {fps} i/s, pistes {}", tracks.join(", "));
+                    }
+                    EngineEvent::TrackChanged { title, state, source } => {
+                        println!("piste « {title} » : {state:?} {}", source.unwrap_or_default());
+                    }
                     EngineEvent::AudioLevels { levels } => {
                         level_events += 1;
                         last_levels = levels;

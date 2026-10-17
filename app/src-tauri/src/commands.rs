@@ -24,6 +24,14 @@ pub fn get_state(slot: State<'_, EngineSlot>) -> Result<AppStatus, String> {
 }
 
 #[tauri::command]
+pub fn get_config(slot: State<'_, EngineSlot>) -> Result<EngineConfig, String> {
+    slot.config
+        .lock()
+        .map(|config| config.clone())
+        .map_err(|_| "réglages illisibles".to_owned())
+}
+
+#[tauri::command]
 pub fn replay_arm(slot: State<'_, EngineSlot>) -> Result<(), String> {
     slot.handle.arm().map_err(|error| error.to_string())
 }
