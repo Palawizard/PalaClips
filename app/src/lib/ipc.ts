@@ -23,6 +23,19 @@ export function resetConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("reset_config");
 }
 
+export interface Feedback {
+  sound: boolean;
+  toast: boolean;
+}
+
+export function getFeedback(): Promise<Feedback> {
+  return invoke<Feedback>("get_feedback");
+}
+
+export function setFeedback(feedback: Feedback): Promise<void> {
+  return invoke("set_feedback", { feedback });
+}
+
 export function getState(): Promise<AppStatus> {
   return invoke<AppStatus>("get_state");
 }
