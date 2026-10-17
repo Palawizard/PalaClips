@@ -69,6 +69,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   sortie avec valeur libre, intervalle d'images clés. Taille du tampon estimée en direct,
   alerte au-delà de 40 % de la RAM disponible avec passage sur disque en un clic ; un
   changement qui redémarre le replay armé demande confirmation.
+- La résolution de sortie ne dépasse jamais celle de la source. Un changement vidéo est
+  vérifié avant d'être appliqué (limite du codec, puis essai réel de l'encodeur) avec un
+  message clair en cas de refus, par exemple 5120×1440 en H.264. « Réglages appliqués »
+  s'affiche quand un changement en attente part au désarmement du replay.
+- `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
+- CLI `palaclips-cli try-output` : essaie l'encodeur matériel à une taille et un fps donnés.
 - Démarrage avec Windows (option) : PalaClips s'ouvre directement dans la zone de
   notification, sans fenêtre.
 - Un nouveau clip commence où le précédent s'est arrêté : plus de minute répétée d'un clip à

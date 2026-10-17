@@ -24,8 +24,8 @@ use super::targets::{ResolvedTarget, resolve_target};
 use crate::clock::Hns;
 use crate::config::{CaptureTarget, VideoSettings};
 use crate::encode::{
-    GpuConverter, HdrToSdr, Size, VideoEncoder, VideoEncoderSettings, frame_texture, output_size,
-    render_texture,
+    GpuConverter, HdrToSdr, Size, VideoEncoder, VideoEncoderSettings, check_output_size,
+    frame_texture, output_size, render_texture,
 };
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Severity};
@@ -103,6 +103,7 @@ impl VideoCapture {
         let device = unsafe { first.texture.0.GetDevice() }
             .map_err(|error| EngineError::Capture(error.message()))?;
         let size = output_size(first.size, settings.resolution);
+        check_output_size(settings.codec, size)?;
         let encoder = VideoEncoder::open(
             &device,
             &VideoEncoderSettings {

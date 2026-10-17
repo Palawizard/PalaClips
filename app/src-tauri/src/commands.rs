@@ -99,7 +99,13 @@ pub fn set_feedback(slot: State<'_, EngineSlot>, feedback: Feedback) -> Result<(
 }
 
 #[tauri::command]
-pub fn set_config(slot: State<'_, EngineSlot>, config: EngineConfig) -> Result<(), String> {
+pub async fn set_config(slot: State<'_, EngineSlot>, config: EngineConfig) -> Result<(), String> {
+    let current = slot.config();
+    if current.video != config.video || current.capture != config.capture {
+        let encoders = cached_encoders(&slot)?;
+        palaclips_engine::engine::try_video_output(&config, &encoders)
+            .map_err(|error| error.to_string())?;
+    }
     slot.apply(config)
 }
 
@@ -162,6 +168,10 @@ pub async fn storage_status(slot: State<'_, EngineSlot>) -> Result<StorageStatus
 
 #[tauri::command]
 pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<HardwareEncoder>, String> {
+    cached_encoders(&slot)
+}
+
+fn cached_encoders(slot: &EngineSlot) -> Result<Vec<HardwareEncoder>, String> {
     if let Some(encoders) = slot.encoders.lock().ok().and_then(|cache| cache.clone()) {
         return Ok(encoders);
     }
