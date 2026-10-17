@@ -6,7 +6,7 @@ use windows_capture::monitor::Monitor;
 use windows_capture::window::Window;
 
 use crate::config::CaptureTarget;
-use crate::error::{EngineError, Result};
+use crate::error::{EngineError, MissingTarget, Result};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -113,7 +113,7 @@ pub fn resolve_target(target: &CaptureTarget) -> Result<ResolvedTarget> {
     match target {
         CaptureTarget::PrimaryMonitor => Monitor::primary()
             .map(ResolvedTarget::Monitor)
-            .map_err(|_| EngineError::TargetNotFound("aucun écran principal".into())),
+            .map_err(|_| EngineError::TargetNotFound(MissingTarget::PrimaryMonitor)),
         CaptureTarget::Monitor { device_name } => Monitor::enumerate()
             .map_err(windows_error)?
             .into_iter()
@@ -124,7 +124,7 @@ pub fn resolve_target(target: &CaptureTarget) -> Result<ResolvedTarget> {
             })
             .map(ResolvedTarget::Monitor)
             .ok_or_else(|| {
-                EngineError::TargetNotFound(format!("l'écran {device_name} n'est pas branché"))
+                EngineError::TargetNotFound(MissingTarget::Monitor(device_name.clone()))
             }),
         CaptureTarget::Window {
             exe_name: wanted,
@@ -150,9 +150,7 @@ pub fn resolve_target(target: &CaptureTarget) -> Result<ResolvedTarget> {
                 .or_else(|| candidates.iter().find(|(_, title)| !title.is_empty()))
                 .or(candidates.first())
                 .map(|(window, _)| ResolvedTarget::Window(*window))
-                .ok_or_else(|| {
-                    EngineError::TargetNotFound(format!("aucune fenêtre de {wanted} n'est ouverte"))
-                })
+                .ok_or_else(|| EngineError::TargetNotFound(MissingTarget::Window(wanted.clone())))
         }
     }
 }

@@ -1,8 +1,11 @@
 use std::path::{Path, PathBuf};
 
 use palaclips_engine::EngineConfig;
+use palaclips_engine::events::Localized;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use crate::i18n::{self, Language, LanguageSetting};
 
 pub const SETTINGS_VERSION: u32 = 1;
 
@@ -14,6 +17,7 @@ pub struct Settings {
     pub feedback: Feedback,
     pub hotkeys: crate::hotkeys::Hotkeys,
     pub theme: Theme,
+    pub language: LanguageSetting,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,12 +33,21 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             schema_version: SETTINGS_VERSION,
-            engine: EngineConfig::default(),
+            engine: engine_defaults(i18n::system_language()),
             feedback: Feedback::default(),
             hotkeys: crate::hotkeys::Hotkeys::default(),
             theme: Theme::default(),
+            language: LanguageSetting::default(),
         }
     }
+}
+
+pub fn engine_defaults(language: Language) -> EngineConfig {
+    let mut engine = EngineConfig::default();
+    engine.audio.full_mix_label = i18n::text(language, "tracks.mix");
+    engine.audio.microphone_label = i18n::text(language, "tracks.microphone");
+    engine.audio.game_label = i18n::text(language, "tracks.game");
+    engine
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,7 +70,7 @@ impl Default for Feedback {
 pub struct Loaded {
     pub settings: Settings,
     pub writable: bool,
-    pub problem: Option<String>,
+    pub problem: Option<Localized>,
 }
 
 pub fn load(path: &Path) -> Loaded {
@@ -84,9 +97,7 @@ pub fn load(path: &Path) -> Loaded {
         return Loaded {
             settings: Settings::default(),
             writable: false,
-            problem: Some(format!(
-                "Tes réglages viennent d'une version plus récente de PalaClips (format {version}) : réglages par défaut pour cette session, fichier laissé intact. Mets PalaClips à jour pour les retrouver."
-            )),
+            problem: Some(Localized::new("settings_newer").with("version", version)),
         };
     }
     let settings = match serde_json::from_value::<Settings>(value) {
@@ -114,12 +125,11 @@ fn unreadable(path: &Path, reason: &str) -> Loaded {
         settings: Settings::default(),
         writable: true,
         problem: Some(if kept {
-            format!(
-                "Tes réglages étaient illisibles ({reason}) : ils ont été réinitialisés. L'ancien fichier est gardé dans {}.",
-                backup.display()
-            )
+            Localized::new("settings_unreadable_kept")
+                .with("detail", reason)
+                .with("backup", backup.display().to_string())
         } else {
-            format!("Tes réglages étaient illisibles ({reason}) : ils ont été réinitialisés.")
+            Localized::new("settings_unreadable").with("detail", reason)
         }),
     }
 }
@@ -198,6 +208,18 @@ mod tests {
         assert!(!loaded.writable);
         assert!(loaded.problem.is_some());
         assert_eq!(std::fs::read_to_string(&path).expect("read"), text);
+    }
+
+    #[test]
+    fn default_track_names_follow_the_language() {
+        assert_eq!(
+            engine_defaults(Language::Fr).audio.full_mix_label,
+            "Mix complet"
+        );
+        let english = engine_defaults(Language::En).audio;
+        assert_eq!(english.full_mix_label, "Full mix");
+        assert_eq!(english.microphone_label, "Mic");
+        assert_eq!(english.game_label, "Game");
     }
 
     #[test]

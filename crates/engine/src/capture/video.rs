@@ -28,7 +28,7 @@ use crate::encode::{
     frame_texture, output_size, render_texture,
 };
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, Severity};
+use crate::events::{EngineEvent, Localized, Severity};
 
 const FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(3);
 const SEND_RETRY: Duration = Duration::from_millis(100);
@@ -88,11 +88,10 @@ impl VideoCapture {
                 let session =
                     start_session(ResolvedTarget::Monitor(monitor), settings, color_format)
                         .map_err(|_| error)?;
-                let message = format!(
-                    "La fenêtre « {} » ne peut pas être capturée : PalaClips capture son écran à la place.",
-                    window.title().unwrap_or_default()
-                );
-                (session, Some(fallback_alert(message)))
+                (
+                    session,
+                    Some(fallback_alert(&window.title().unwrap_or_default())),
+                )
             }
         };
         let first = shared.latest().ok_or_else(|| {
@@ -394,9 +393,7 @@ fn run_encoder(
     while !shared.stop.load(Ordering::Relaxed) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
-            return Err(EngineError::CaptureSourceLost(
-                "la fenêtre capturée a été fermée".into(),
-            ));
+            return Err(EngineError::CapturedWindowClosed);
         }
         let wait = clock.next_deadline() - Hns::now();
         if wait > Hns::ZERO {
@@ -470,10 +467,12 @@ fn run_encoder(
     Ok(stats)
 }
 
-fn fallback_alert(message: String) -> EngineEvent {
+fn fallback_alert(title: &str) -> EngineEvent {
     EngineEvent::Alert {
         severity: Severity::Warning,
-        code: "capture_fallback_monitor".into(),
-        message,
+        text: Localized::new("capture_fallback_monitor").with("title", title),
+        message: format!(
+            "La fenêtre « {title} » ne peut pas être capturée : PalaClips capture son écran à la place."
+        ),
     }
 }

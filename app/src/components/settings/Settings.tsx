@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { GeneralSection } from "./GeneralSection.tsx";
+import { useT } from "../../lib/i18n.ts";
 import type { AppStatus } from "../../lib/ipc.ts";
 import { AudioSection } from "./AudioSection.tsx";
 import { CaptureSection } from "./CaptureSection.tsx";
@@ -9,14 +10,7 @@ import { StorageSection } from "./StorageSection.tsx";
 
 type SectionId = "capture" | "audio" | "replay" | "hotkeys" | "storage" | "general";
 
-const SECTIONS: { id: SectionId; label: string }[] = [
-  { id: "capture", label: "Capture" },
-  { id: "audio", label: "Audio" },
-  { id: "replay", label: "Replay & qualité" },
-  { id: "hotkeys", label: "Raccourcis" },
-  { id: "storage", label: "Stockage" },
-  { id: "general", label: "Général" },
-];
+const SECTIONS: SectionId[] = ["capture", "audio", "replay", "hotkeys", "storage", "general"];
 
 export function SettingRow({
   label,
@@ -207,28 +201,28 @@ export function NumberField({
 }
 
 export function Settings({ status }: { status: AppStatus | null }) {
+  const t = useT();
   const [section, setSection] = useState<SectionId>("capture");
-  const label = SECTIONS.find((item) => item.id === section)?.label ?? "";
 
   return (
     <div className="grid min-h-full grid-cols-[200px_minmax(0,1fr)]">
-      <nav aria-label="Sections des réglages" className="border-r border-line bg-surface">
+      <nav aria-label={t("settings.nav")} className="border-r border-line bg-surface">
         <div className="sticky top-0 py-4">
-        <h1 className="px-5 pb-3 text-[17px] font-semibold">Réglages</h1>
+        <h1 className="px-5 pb-3 text-[17px] font-semibold">{t("settings.title")}</h1>
         <ul className="flex flex-col gap-0.5 px-2">
-          {SECTIONS.map((item) => {
-            const active = item.id === section;
+          {SECTIONS.map((id) => {
+            const active = id === section;
             return (
-              <li key={item.id}>
+              <li key={id}>
                 <button
                   type="button"
-                  onClick={() => setSection(item.id)}
+                  onClick={() => setSection(id)}
                   aria-current={active ? "page" : undefined}
                   className={`pressable w-full rounded-md px-3 py-2 text-left text-[14px] ${
                     active ? "bg-surface-2 font-semibold text-ink" : "text-ink-2 hover:bg-surface-hover hover:text-ink"
                   }`}
                 >
-                  {item.label}
+                  {t(`settings.sections.${id}`)}
                 </button>
               </li>
             );
@@ -238,7 +232,7 @@ export function Settings({ status }: { status: AppStatus | null }) {
       </nav>
       <section aria-labelledby="settings-section-title" className="min-w-0">
         <h2 id="settings-section-title" className="border-b border-line px-5 pt-6 pb-4 text-[22px] font-semibold">
-          {label}
+          {t(`settings.sections.${section}`)}
         </h2>
         {section === "hotkeys" && <HotkeysSection />}
         {section === "general" && <GeneralSection />}

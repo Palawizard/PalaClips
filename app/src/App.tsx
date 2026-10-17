@@ -5,6 +5,7 @@ import { RecentClips } from "./components/RecentClips.tsx";
 import { Roster } from "./components/Roster.tsx";
 import { Settings } from "./components/settings/Settings.tsx";
 import { StatusBanner } from "./components/StatusBanner.tsx";
+import { useT } from "./lib/i18n.ts";
 import { useEngine } from "./lib/useEngine.ts";
 
 function Pending({ title, text }: { title: string; text: string }) {
@@ -17,6 +18,7 @@ function Pending({ title, text }: { title: string; text: string }) {
 }
 
 export default function App() {
+  const t = useT();
   const [view, setView] = useState<View>("status");
   const engine = useEngine();
   const appOrder = useMemo(
@@ -30,7 +32,7 @@ export default function App() {
       <main className="flex min-w-0 flex-col overflow-y-auto">
         {view === "status" && (
           <>
-            <h1 className="sr-only">État de PalaClips</h1>
+            <h1 className="sr-only">{t("status.title")}</h1>
             <StatusBanner engine={engine} />
             {engine.actionError && (
               <p role="alert" className="border-b border-line bg-surface-2 px-5 py-3 text-warn">
@@ -51,7 +53,7 @@ export default function App() {
           </>
         )}
         {view === "gallery" && (
-          <Pending title="Galerie" text="Galerie en préparation." />
+          <Pending title={t("nav.gallery")} text={t("gallery.pending")} />
         )}
         {view === "settings" && <Settings status={engine.status} />}
       </main>

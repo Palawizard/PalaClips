@@ -1,5 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { Language, LanguageSetting, Localized } from "./i18n.ts";
 
 export const ENGINE_EVENT = "engine-event";
 
@@ -65,6 +66,19 @@ export function getTheme(): Promise<Theme> {
 
 export function setTheme(theme: Theme): Promise<void> {
   return invoke("set_theme", { theme });
+}
+
+export interface LanguageView {
+  setting: LanguageSetting;
+  resolved: Language;
+}
+
+export function getLanguage(): Promise<LanguageView> {
+  return invoke<LanguageView>("get_language");
+}
+
+export function setLanguageSetting(language: LanguageSetting): Promise<Language> {
+  return invoke<Language>("set_language", { language });
 }
 
 export type HotkeyAction = "save_replay" | "toggle_replay";
@@ -324,16 +338,15 @@ export interface StorageStatus {
   total_bytes: number;
 }
 
-export interface ActiveAlert {
+export interface ActiveAlert extends Localized {
   severity: Severity;
-  code: string;
   message: string;
 }
 
 export type TrackState = "waiting" | "capturing" | "silent" | "unavailable";
 
 export interface CaptureInfo {
-  source: string;
+  source: Localized;
   width: number;
   height: number;
   fps: number;
@@ -366,7 +379,7 @@ export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
   | {
       type: "capture_started";
-      source: string;
+      source: Localized;
       width: number;
       height: number;
       fps: number;
@@ -383,4 +396,4 @@ export type EngineEvent =
     }
   | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
-  | { type: "alert"; severity: Severity; code: string; message: string };
+  | ({ type: "alert"; severity: Severity; message: string } & Localized);
