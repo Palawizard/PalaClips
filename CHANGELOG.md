@@ -74,6 +74,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   message clair en cas de refus, par exemple 5120×1440 en H.264. « Réglages appliqués »
   s'affiche quand un changement en attente part au désarmement du replay.
 - `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
+- Réglages > Stockage : dossier des clips choisi avec le sélecteur de Windows et ouvert dans
+  l'Explorateur, espace libre affiché, noms des jeux modifiables. Un nom qui ne peut pas
+  servir de nom de dossier (caractères interdits, noms réservés comme CON ou NUL) est refusé
+  avec un message clair.
 - CLI `palaclips-cli try-output` : essaie l'encodeur matériel à une taille et un fps donnés.
 - Démarrage avec Windows (option) : PalaClips s'ouvre directement dans la zone de
   notification, sans fenêtre.

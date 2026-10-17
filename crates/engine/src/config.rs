@@ -33,6 +33,7 @@ impl EngineConfig {
         self.video.validate()?;
         self.audio.validate()?;
         self.replay.validate()?;
+        self.storage.validate()?;
         Ok(())
     }
 }
@@ -279,6 +280,48 @@ pub struct StorageSettings {
     pub game_names: std::collections::BTreeMap<String, String>,
 }
 
+impl StorageSettings {
+    fn validate(&self) -> Result<()> {
+        if let Some(dir) = &self.clips_dir
+            && !dir.is_absolute()
+        {
+            return Err(EngineError::InvalidConfig(
+                "le dossier des clips doit être un chemin complet (ex. D:\\Clips)".into(),
+            ));
+        }
+        for name in self.game_names.values() {
+            if name.trim().is_empty() {
+                return Err(EngineError::InvalidConfig(
+                    "un nom de jeu ne peut pas être vide".into(),
+                ));
+            }
+            if crate::games::sanitize(name) != *name {
+                return Err(EngineError::InvalidConfig(format!(
+                    "« {name} » ne peut pas servir de nom de dossier : retire les caractères < > : \" / \\ | ? * ™ ® ©, les doubles espaces et les points ou espaces en début et fin"
+                )));
+            }
+            if is_reserved_folder_name(name) {
+                return Err(EngineError::InvalidConfig(format!(
+                    "« {name} » est un nom réservé par Windows, choisis-en un autre"
+                )));
+            }
+        }
+        Ok(())
+    }
+}
+
+fn is_reserved_folder_name(name: &str) -> bool {
+    let stem = name
+        .split('.')
+        .next()
+        .unwrap_or(name)
+        .trim()
+        .to_ascii_uppercase();
+    matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || ((stem.starts_with("COM") || stem.starts_with("LPT"))
+            && matches!(stem.as_bytes().get(3..), Some([b'1'..=b'9'])))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -286,6 +329,48 @@ mod tests {
     #[test]
     fn default_config_is_valid() {
         EngineConfig::default().validate().expect("valid default");
+    }
+
+    fn with_game_name(name: &str) -> EngineConfig {
+        let mut config = EngineConfig::default();
+        config
+            .storage
+            .game_names
+            .insert("game.exe".into(), name.into());
+        config
+    }
+
+    #[test]
+    fn game_names_must_be_valid_folder_names() {
+        with_game_name("Rocket League")
+            .validate()
+            .expect("plain name");
+        with_game_name("Tom & Jerry").validate().expect("ampersand");
+        assert!(with_game_name("").validate().is_err());
+        assert!(with_game_name("   ").validate().is_err());
+        assert!(with_game_name("Half-Life: Alyx").validate().is_err());
+        assert!(with_game_name("CS2 ").validate().is_err());
+        assert!(with_game_name("a/b").validate().is_err());
+        assert!(with_game_name("Rocket  League").validate().is_err());
+    }
+
+    #[test]
+    fn windows_reserved_names_are_refused() {
+        for name in ["CON", "nul", "Aux.txt", "COM1", "lpt9"] {
+            assert!(with_game_name(name).validate().is_err(), "{name}");
+        }
+        for name in ["Console", "COM", "COM10", "Nullpomme", "LPT0"] {
+            with_game_name(name).validate().expect(name);
+        }
+    }
+
+    #[test]
+    fn clips_dir_must_be_absolute() {
+        let mut config = EngineConfig::default();
+        config.storage.clips_dir = Some("Clips".into());
+        assert!(config.validate().is_err());
+        config.storage.clips_dir = Some("D:\\Clips".into());
+        config.validate().expect("absolute path");
     }
 
     #[test]
