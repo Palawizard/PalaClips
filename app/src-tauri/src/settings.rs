@@ -13,6 +13,16 @@ pub struct Settings {
     pub engine: EngineConfig,
     pub feedback: Feedback,
     pub hotkeys: crate::hotkeys::Hotkeys,
+    pub theme: Theme,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Theme {
+    #[default]
+    System,
+    Dark,
+    Light,
 }
 
 impl Default for Settings {
@@ -22,6 +32,7 @@ impl Default for Settings {
             engine: EngineConfig::default(),
             feedback: Feedback::default(),
             hotkeys: crate::hotkeys::Hotkeys::default(),
+            theme: Theme::default(),
         }
     }
 }

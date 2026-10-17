@@ -310,6 +310,12 @@ impl EngineSlot {
         }
     }
 
+    fn resume_hotkeys(&self, app: &tauri::AppHandle) {
+        self.unregister_hotkeys(app);
+        let bindings = hotkeys::validate(&self.hotkeys()).unwrap_or_default();
+        self.register_hotkeys(app, &bindings);
+    }
+
     fn set_hotkeys(&self, app: &tauri::AppHandle, wanted: Hotkeys) -> Result<(), String> {
         let bindings = hotkeys::validate(&wanted)?;
         let previous = hotkeys::validate(&self.hotkeys()).unwrap_or_default();
@@ -338,6 +344,23 @@ impl EngineSlot {
             toggle_replay: canonical_for(HotkeyAction::ToggleReplay),
         };
         self.update(|settings| settings.hotkeys = saved)
+    }
+
+    fn theme(&self) -> settings::Theme {
+        self.settings
+            .lock()
+            .map(|settings| settings.theme)
+            .unwrap_or_default()
+    }
+
+    fn reset(&self, app: &tauri::AppHandle) -> Result<(), String> {
+        let defaults = settings::Settings::default();
+        self.set_hotkeys(app, defaults.hotkeys.clone())?;
+        self.apply(defaults.engine.clone())?;
+        self.update(|settings| *settings = defaults)?;
+        tauri_plugin_autostart::ManagerExt::autolaunch(app)
+            .disable()
+            .map_err(|error| format!("Démarrage avec Windows non désactivé : {error}."))
     }
 
     fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
@@ -435,8 +458,12 @@ pub fn run() {
             commands::get_state,
             commands::get_config,
             commands::set_config,
-            commands::reset_config,
+            commands::reset_settings,
+            commands::get_theme,
+            commands::set_theme,
             commands::get_hotkeys,
+            commands::suspend_hotkeys,
+            commands::resume_hotkeys,
             commands::set_hotkeys,
             commands::get_autostart,
             commands::set_autostart,
