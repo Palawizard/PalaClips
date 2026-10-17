@@ -383,6 +383,9 @@
     "action_toggle_replay": "Arm or disarm the replay",
     "recording_failed": "Recording stopped: {reason}.",
     "recording_running": "a recording is running",
-    "action_toggle_recording": "Start or stop recording"
+    "action_toggle_recording": "Start or stop recording",
+    "disk_full": "the clips drive is full",
+    "disk_almost_full": "Clips drive almost full: {free_mb} MB free. Recording stops below 300 MB.",
+    "recording_recovered": "Interrupted recording recovered: {name}."
   }
 }

@@ -31,6 +31,10 @@ pub fn settings_path() -> Result<PathBuf> {
     Ok(dir.join("settings.json"))
 }
 
+pub fn recordings_journal() -> Result<PathBuf> {
+    Ok(settings_path()?.with_file_name("recordings.txt"))
+}
+
 pub fn replay_spool_dir() -> Result<PathBuf> {
     Ok(known_folder(&FOLDERID_LocalAppData)?
         .join(APP_DIR)

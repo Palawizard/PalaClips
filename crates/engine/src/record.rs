@@ -1,22 +1,190 @@
-use std::path::PathBuf;
+use std::ffi::CString;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread::JoinHandle;
 
 use crossbeam_channel::{Receiver, Sender, unbounded};
+use parking_lot::Mutex;
 use rsmpeg::avcodec::AVPacket;
+use rsmpeg::avformat::AVFormatContextInput;
 use rsmpeg::avutil::AVRational;
 
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::RecordSplit;
-use crate::encode::write_thumbnail;
-use crate::error::Result;
+use crate::encode::{route_ffmpeg_logs, write_thumbnail};
+use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Localized, Severity};
+use crate::library::{STOP_FREE_BYTES, WARN_FREE_BYTES, disk_space};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::paths;
 use crate::replay::{PacketReader, ReplayPacket, packet_data, share_packet};
 
 const PREVIOUS_SEGMENT_GRACE: Hns = Hns::from_millis(3_000);
+const SPACE_CHECK_INTERVAL: Hns = Hns::from_millis(2_000);
+
+static JOURNAL_LOCK: Mutex<()> = Mutex::new(());
+
+#[derive(Debug, Clone)]
+pub struct Journal {
+    path: PathBuf,
+}
+
+impl Journal {
+    pub fn open_default() -> Result<Self> {
+        Ok(Self::at(paths::recordings_journal()?))
+    }
+
+    pub fn at(path: PathBuf) -> Self {
+        Self { path }
+    }
+
+    pub fn entries(&self) -> Vec<(u32, PathBuf)> {
+        let _guard = JOURNAL_LOCK.lock();
+        self.read()
+    }
+
+    fn read(&self) -> Vec<(u32, PathBuf)> {
+        std::fs::read_to_string(&self.path)
+            .unwrap_or_default()
+            .lines()
+            .filter_map(|line| {
+                let (pid, path) = line.split_once('\t')?;
+                Some((pid.parse().ok()?, PathBuf::from(path)))
+            })
+            .collect()
+    }
+
+    fn write(&self, entries: &[(u32, PathBuf)]) -> Result<()> {
+        if entries.is_empty() {
+            match std::fs::remove_file(&self.path) {
+                Err(error) if error.kind() != std::io::ErrorKind::NotFound => {
+                    return Err(error.into());
+                }
+                _ => return Ok(()),
+            }
+        }
+        if let Some(dir) = self.path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        let text: String = entries
+            .iter()
+            .map(|(pid, path)| format!("{pid}\t{}\n", path.display()))
+            .collect();
+        std::fs::write(&self.path, text)?;
+        Ok(())
+    }
+
+    pub fn add(&self, file: &Path) -> Result<()> {
+        let _guard = JOURNAL_LOCK.lock();
+        let mut entries = self.read();
+        entries.push((std::process::id(), file.to_path_buf()));
+        self.write(&entries)
+    }
+
+    pub fn remove(&self, file: &Path) -> Result<()> {
+        let _guard = JOURNAL_LOCK.lock();
+        let mut entries = self.read();
+        entries.retain(|(_, path)| path != file);
+        self.write(&entries)
+    }
+}
+
+fn process_alive(pid: u32) -> bool {
+    use windows::Win32::Foundation::{CloseHandle, WAIT_TIMEOUT};
+    use windows::Win32::System::Threading::{
+        OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject,
+    };
+
+    // SAFETY: SYNCHRONIZE only allows waiting on the process; the handle is closed below.
+    let Ok(handle) = (unsafe { OpenProcess(PROCESS_SYNCHRONIZE, false, pid) }) else {
+        return false;
+    };
+    // SAFETY: `handle` was just opened and is still valid.
+    let alive = unsafe { WaitForSingleObject(handle, 0) } == WAIT_TIMEOUT;
+    // SAFETY: `handle` is owned here and closed once.
+    unsafe { CloseHandle(handle) }.ok();
+    alive
+}
+
+pub fn finalize(path: &Path) -> Result<()> {
+    route_ffmpeg_logs();
+    let url = CString::new(path.to_string_lossy().as_bytes())
+        .map_err(|_| EngineError::Mux("chemin de fichier invalide".into()))?;
+    let mut input =
+        AVFormatContextInput::open(&url).map_err(|error| EngineError::Mux(error.to_string()))?;
+    let specs: Vec<MuxStream> = input
+        .streams()
+        .iter()
+        .map(|stream| MuxStream {
+            codec_parameters: stream.codecpar().clone(),
+            time_base: stream.time_base,
+            frame_rate: (stream.avg_frame_rate.num > 0 && stream.avg_frame_rate.den > 0)
+                .then(|| (stream.avg_frame_rate.num / stream.avg_frame_rate.den) as u32),
+            title: stream
+                .metadata()
+                .as_ref()
+                .and_then(|metadata| metadata.get(c"title", None, 0))
+                .map(|entry| entry.value().to_string_lossy().into_owned()),
+        })
+        .collect();
+    let finished = path.with_extension("recovering.mp4");
+    let mut writer = Mp4Writer::create(&finished, &specs)?;
+    let copied = (|| {
+        while let Some(packet) = input
+            .read_packet()
+            .map_err(|error| EngineError::Mux(error.to_string()))?
+        {
+            let stream = packet.stream_index as usize;
+            writer.write(stream, packet)?;
+        }
+        writer.finish()
+    })();
+    drop(input);
+    if let Err(error) = copied {
+        std::fs::remove_file(&finished).ok();
+        return Err(error);
+    }
+    std::fs::rename(&finished, path)?;
+    Ok(())
+}
+
+pub fn recover_interrupted(journal: &Journal, events: &Sender<EngineEvent>) {
+    for (pid, path) in journal.entries() {
+        if process_alive(pid) {
+            continue;
+        }
+        let result = match std::fs::metadata(&path) {
+            Err(_) => Ok(false),
+            Ok(meta) if meta.len() == 0 => std::fs::remove_file(&path)
+                .map(|()| false)
+                .map_err(Into::into),
+            Ok(_) => finalize(&path).map(|()| true),
+        };
+        match result {
+            Ok(recovered) => {
+                journal.remove(&path).ok();
+                if recovered {
+                    tracing::info!(path = %path.display(), "enregistrement interrompu récupéré");
+                    let name = path
+                        .file_name()
+                        .map(|name| name.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    events
+                        .try_send(EngineEvent::Alert {
+                            severity: Severity::Info,
+                            message: format!("Enregistrement interrompu récupéré : {name}."),
+                            text: Localized::new("recording_recovered").with("name", name),
+                        })
+                        .ok();
+                }
+            }
+            Err(error) => {
+                tracing::warn!(%error, path = %path.display(), "enregistrement interrompu non récupéré");
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Route {
@@ -127,11 +295,17 @@ struct Segment {
 }
 
 impl Segment {
-    fn open(target: &RecordTarget, layout: &RecordLayout, start: Hns) -> Result<Self> {
+    fn open(
+        target: &RecordTarget,
+        layout: &RecordLayout,
+        journal: &Journal,
+        start: Hns,
+    ) -> Result<Self> {
         let path = paths::recording_path(&target.root, &target.game, &paths::local_timestamp());
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)?;
         }
+        journal.add(&path)?;
         let writer = Mp4Writer::create_fragmented(&path, &layout.specs)?;
         tracing::info!(path = %path.display(), "enregistrement : nouveau fichier");
         Ok(Self {
@@ -166,8 +340,9 @@ impl Segment {
         self.writer.write(stream, packet)
     }
 
-    fn finish(self, layout: &RecordLayout) -> Result<EngineEvent> {
+    fn finish(self, layout: &RecordLayout, journal: &Journal) -> Result<EngineEvent> {
         self.writer.finish()?;
+        journal.remove(&self.path)?;
         let duration = self.newest_video + layout.frame - self.start;
         let thumbnail = self.last_keyframe.and_then(|keyframe| {
             let path = paths::thumbnail_path(&self.path).ok()?;
@@ -196,18 +371,47 @@ impl Segment {
 struct Writer {
     target: RecordTarget,
     layout: RecordLayout,
+    journal: Journal,
     splitter: Splitter,
     current: Segment,
     previous: Option<Segment>,
     bytes: Arc<AtomicU64>,
     events: Sender<EngineEvent>,
+    next_space_check: Hns,
+    warned_space: bool,
 }
 
 impl Writer {
+    fn check_space(&mut self, pts: Hns) -> Result<()> {
+        if pts < self.next_space_check {
+            return Ok(());
+        }
+        self.next_space_check = pts + SPACE_CHECK_INTERVAL;
+        let free = disk_space(&self.target.root)?.free_bytes;
+        if free < STOP_FREE_BYTES {
+            return Err(EngineError::DiskFull);
+        }
+        if free < WARN_FREE_BYTES && !self.warned_space {
+            self.warned_space = true;
+            let free_mb = free / 1_000_000;
+            self.events
+                .try_send(EngineEvent::Alert {
+                    severity: Severity::Warning,
+                    text: Localized::new("disk_almost_full").with("free_mb", free_mb),
+                    message: format!("Disque presque plein : {free_mb} Mo libres."),
+                })
+                .ok();
+        }
+        Ok(())
+    }
+
     fn push(&mut self, stream: usize, pts: Hns, keyframe: bool, packet: AVPacket) -> Result<()> {
+        if stream == 0 && keyframe {
+            self.check_space(pts)?;
+        }
         if self.splitter.splits_at(stream, pts, keyframe) {
             self.close_previous()?;
-            let next = Segment::open(&self.target, &self.layout, pts)?;
+            let next = Segment::open(&self.target, &self.layout, &self.journal, pts)?;
             self.previous = Some(std::mem::replace(&mut self.current, next));
             self.splitter.begin(pts, self.layout.specs.len() - 1);
         }
@@ -240,17 +444,17 @@ impl Writer {
     fn close_previous(&mut self) -> Result<()> {
         self.splitter.close_previous();
         if let Some(previous) = self.previous.take() {
-            let event = previous.finish(&self.layout)?;
+            let event = previous.finish(&self.layout, &self.journal)?;
             self.events.try_send(event).ok();
         }
         Ok(())
     }
 
     fn finish(mut self) -> Result<()> {
-        self.close_previous()?;
-        let event = self.current.finish(&self.layout)?;
+        let previous = self.close_previous();
+        let event = self.current.finish(&self.layout, &self.journal)?;
         self.events.try_send(event).ok();
-        Ok(())
+        previous
     }
 }
 
@@ -293,16 +497,20 @@ impl Recorder {
         backlog: Vec<(Hns, usize, ReplayPacket)>,
         events: Sender<EngineEvent>,
     ) -> Result<Self> {
-        let current = Segment::open(&target, &layout, start)?;
+        let journal = Journal::open_default()?;
+        let current = Segment::open(&target, &layout, &journal, start)?;
         let bytes = Arc::new(AtomicU64::new(0));
         let writer = Writer {
             splitter: Splitter::new(target.split, layout.audio_packet, start),
             target,
             layout,
+            journal,
             current,
             previous: None,
             bytes: bytes.clone(),
             events: events.clone(),
+            next_space_check: start,
+            warned_space: false,
         };
         let (packets, live) = unbounded();
         let thread = std::thread::Builder::new()
@@ -360,23 +568,155 @@ fn write_all(
     backlog: Vec<(Hns, usize, ReplayPacket)>,
     live: &Receiver<LivePacket>,
 ) -> Result<()> {
-    let mut reader = PacketReader::default();
-    for (pts, stream, packet) in backlog {
-        let keyframe = stream == 0 && crate::replay::TimedPacket::is_keyframe(&packet);
-        let packet = reader.read(packet)?;
-        writer.push(stream, pts, keyframe, packet)?;
-    }
-    for item in live {
-        writer.push(item.stream, item.pts, item.keyframe, item.packet)?;
-    }
-    writer.finish()
+    let written = (|| {
+        let mut reader = PacketReader::default();
+        for (pts, stream, packet) in backlog {
+            let keyframe = stream == 0 && crate::replay::TimedPacket::is_keyframe(&packet);
+            let packet = reader.read(packet)?;
+            writer.push(stream, pts, keyframe, packet)?;
+        }
+        for item in live {
+            writer.push(item.stream, item.pts, item.keyframe, item.packet)?;
+        }
+        Ok(())
+    })();
+    let finished = writer.finish();
+    written.and(finished)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::encode::AacEncoder;
 
     const AAC: Hns = Hns(213_333);
+    const DEAD_PID: u32 = u32::MAX - 1;
+
+    fn scratch(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir()
+            .join("palaclips-record-tests")
+            .join(format!("{name}-{}", std::process::id()));
+        std::fs::remove_dir_all(&dir).ok();
+        std::fs::create_dir_all(&dir).expect("scratch");
+        dir
+    }
+
+    fn tone() -> Result<(MuxStream, Vec<AVPacket>)> {
+        let mut encoder = AacEncoder::open(48_000, 2)?;
+        let samples: Vec<f32> = (0..48_000 * 2 * 4)
+            .map(|index| ((index / 2) as f32 * 0.05).sin() * 0.3)
+            .collect();
+        let mut packets = Vec::new();
+        for chunk in samples.chunks(960) {
+            encoder.encode(chunk, &mut |packet| {
+                packets.push(packet);
+                Ok(())
+            })?;
+        }
+        let stream = MuxStream {
+            codec_parameters: encoder.codec_parameters(),
+            time_base: encoder.time_base(),
+            frame_rate: None,
+            title: Some("Mix".into()),
+        };
+        Ok((stream, packets))
+    }
+
+    fn packet_pts(packet: &AVPacket) -> Hns {
+        Hns(packet.pts * HNS_PER_SECOND / 48_000)
+    }
+
+    fn writer(root: &Path, journal: Journal, stream: MuxStream) -> Result<Writer> {
+        let (events, _) = unbounded();
+        let target = RecordTarget {
+            root: root.to_path_buf(),
+            game: "Test".into(),
+            split: RecordSplit::Never,
+        };
+        let layout = RecordLayout {
+            time_bases: vec![stream.time_base],
+            specs: vec![stream],
+            frame: AAC,
+            audio_packet: AAC,
+        };
+        let current = Segment::open(&target, &layout, &journal, Hns::ZERO)?;
+        Ok(Writer {
+            splitter: Splitter::new(RecordSplit::Never, AAC, Hns::ZERO),
+            target,
+            layout,
+            journal,
+            current,
+            previous: None,
+            bytes: Arc::new(AtomicU64::new(0)),
+            events,
+            next_space_check: Hns::ZERO,
+            warned_space: false,
+        })
+    }
+
+    #[test]
+    fn the_journal_lists_recordings_until_they_finish() {
+        let dir = scratch("journal");
+        let journal = Journal::at(dir.join("recordings.txt"));
+        journal.add(&dir.join("a.mp4")).expect("add");
+        journal.add(&dir.join("b.mp4")).expect("add");
+        journal.remove(&dir.join("a.mp4")).expect("remove");
+        assert_eq!(journal.entries(), [(std::process::id(), dir.join("b.mp4"))]);
+        journal.remove(&dir.join("b.mp4")).expect("remove");
+        assert!(!dir.join("recordings.txt").exists());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_full_disk_stops_the_recording_and_the_file_is_recovered_at_startup() -> Result<()> {
+        let dir = scratch("disk-full");
+        let journal = Journal::at(dir.join("recordings.txt"));
+        let (stream, packets) = tone()?;
+        let mut writer = writer(&dir, journal.clone(), stream)?;
+        writer.current.writer.fail_after(30_000);
+        let path = writer.current.path.clone();
+        let mut stopped = None;
+        for packet in packets {
+            let pts = packet_pts(&packet);
+            if let Err(error) = writer.push(0, pts, true, packet) {
+                stopped = Some(error);
+                break;
+            }
+        }
+        assert!(
+            matches!(stopped, Some(EngineError::DiskFull)),
+            "{stopped:?}"
+        );
+        assert!(matches!(writer.finish(), Err(EngineError::DiskFull)));
+        assert_eq!(journal.entries().len(), 1);
+        journal.write(&[(DEAD_PID, path.clone())])?;
+        let (events, received) = unbounded();
+        recover_interrupted(&journal, &events);
+        assert!(journal.entries().is_empty());
+        let info = crate::library::probe_clip(&path)?;
+        assert!(info.duration_secs > 0.5, "{}", info.duration_secs);
+        let event = received.try_recv();
+        assert!(
+            matches!(&event, Ok(EngineEvent::Alert { text, .. }) if text.code == "recording_recovered"),
+            "{event:?}"
+        );
+        std::fs::remove_dir_all(&dir).ok();
+        Ok(())
+    }
+
+    #[test]
+    fn a_recording_of_a_running_process_is_left_alone() {
+        let dir = scratch("alive");
+        let journal = Journal::at(dir.join("recordings.txt"));
+        let file = dir.join("live.mp4");
+        std::fs::write(&file, b"en cours").expect("write");
+        journal.add(&file).expect("add");
+        let (events, _) = unbounded();
+        recover_interrupted(&journal, &events);
+        assert_eq!(journal.entries().len(), 1);
+        assert_eq!(std::fs::read(&file).expect("read"), b"en cours");
+        std::fs::remove_dir_all(&dir).ok();
+    }
 
     fn seconds(value: i64) -> Hns {
         Hns(value * HNS_PER_SECOND)

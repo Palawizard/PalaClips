@@ -125,6 +125,17 @@ fn game_of(root: &Path, clip: &Path) -> String {
         .map_or_else(String::new, |name| name.to_string_lossy().into_owned())
 }
 
+pub const STOP_FREE_BYTES: u64 = 300_000_000;
+pub const WARN_FREE_BYTES: u64 = 2_000_000_000;
+
+pub fn ensure_free_space(dir: &Path, needed: u64) -> Result<u64> {
+    let free = disk_space(dir)?.free_bytes;
+    if free < needed.saturating_add(STOP_FREE_BYTES) {
+        return Err(EngineError::DiskFull);
+    }
+    Ok(free)
+}
+
 pub fn disk_space(path: &Path) -> Result<DiskSpace> {
     let existing = path
         .ancestors()
