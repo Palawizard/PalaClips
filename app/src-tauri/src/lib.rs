@@ -1,6 +1,7 @@
 mod commands;
 mod feedback;
 mod hotkeys;
+mod i18n;
 mod settings;
 
 use std::collections::HashMap;
@@ -10,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, track_descriptors};
 use palaclips_engine::events::{
-    EngineEvent, EngineState, Severity, TrackDescriptor, TrackKind, TrackState,
+    EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind, TrackState,
 };
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
@@ -19,6 +20,7 @@ use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, Window
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::hotkeys::{HotkeyAction, Hotkeys};
+use crate::i18n::Language;
 
 pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
@@ -28,13 +30,14 @@ pub const AUTOSTART_ARG: &str = "--autostart";
 #[derive(Debug, Clone, Serialize)]
 pub struct ActiveAlert {
     pub severity: Severity,
-    pub code: String,
+    #[serde(flatten)]
+    pub text: Localized,
     pub message: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CaptureInfo {
-    pub source: String,
+    pub source: Localized,
     pub width: u32,
     pub height: u32,
     pub fps: u32,
@@ -76,7 +79,8 @@ impl AppStatus {
                 self.state = *state;
                 if *state != EngineState::Idle {
                     self.alerts.retain(|alert| {
-                        alert.code != "replay_arm_failed" && alert.code != "replay_stopped"
+                        alert.text.code != "replay_arm_failed"
+                            && alert.text.code != "replay_stopped"
                     });
                 }
                 if *state == EngineState::Idle {
@@ -123,17 +127,18 @@ impl AppStatus {
                 self.buffer_bytes = *bytes;
             }
             EngineEvent::ClipSaved { .. } => {
-                self.alerts.retain(|alert| alert.code != "clip_too_short");
+                self.alerts
+                    .retain(|alert| alert.text.code != "clip_too_short");
             }
             EngineEvent::Alert {
                 severity,
-                code,
+                text,
                 message,
             } => {
-                self.alerts.retain(|alert| alert.code != *code);
+                self.alerts.retain(|alert| alert.text.code != text.code);
                 self.alerts.push(ActiveAlert {
                     severity: *severity,
-                    code: code.clone(),
+                    text: text.clone(),
                     message: message.clone(),
                 });
             }
@@ -223,33 +228,34 @@ impl EngineSlot {
             .unwrap_or_default()
     }
 
-    fn update(&self, change: impl FnOnce(&mut settings::Settings)) -> Result<(), String> {
-        if !self.settings_writable {
-            return Err(
-                "Réglages en lecture seule : ils viennent d'une version plus récente de PalaClips."
-                    .into(),
-            );
-        }
-        let mut current = self
-            .settings
+    fn language(&self) -> Language {
+        self.settings
             .lock()
-            .map_err(|_| "réglages illisibles".to_owned())?;
+            .map(|settings| settings.language)
+            .unwrap_or_default()
+            .resolve()
+    }
+
+    fn update(&self, change: impl FnOnce(&mut settings::Settings)) -> Result<(), Localized> {
+        if !self.settings_writable {
+            return Err(Localized::new("settings_read_only"));
+        }
+        let mut current = self.settings.lock().map_err(|_| internal_error())?;
         let mut changed = current.clone();
         change(&mut changed);
         if let Some(path) = &self.settings_path {
-            settings::save(path, &changed)
-                .map_err(|error| format!("Réglages non enregistrés : {error}."))?;
+            settings::save(path, &changed).map_err(|error| {
+                Localized::new("settings_not_saved").with("detail", error.to_string())
+            })?;
         }
         *current = changed;
         Ok(())
     }
 
-    fn apply(&self, config: EngineConfig) -> Result<(), String> {
-        config.validate().map_err(|error| error.to_string())?;
+    fn apply(&self, config: EngineConfig) -> Result<(), Localized> {
+        config.validate()?;
         self.update(|settings| settings.engine = config.clone())?;
-        self.handle
-            .configure(config)
-            .map_err(|error| error.to_string())
+        Ok(self.handle.configure(config)?)
     }
 
     fn hotkeys(&self) -> Hotkeys {
@@ -329,7 +335,7 @@ impl EngineSlot {
         self.register_hotkeys(app, &bindings);
     }
 
-    fn set_hotkeys(&self, app: &tauri::AppHandle, wanted: Hotkeys) -> Result<(), String> {
+    fn set_hotkeys(&self, app: &tauri::AppHandle, wanted: Hotkeys) -> Result<(), Localized> {
         let bindings = hotkeys::validate(&wanted)?;
         let previous = hotkeys::validate(&self.hotkeys()).unwrap_or_default();
         self.unregister_hotkeys(app);
@@ -341,10 +347,7 @@ impl EngineSlot {
                 .iter()
                 .map(|(_, shortcut)| hotkeys::canonical(shortcut))
                 .collect();
-            return Err(format!(
-                "{} déjà pris par une autre application : tes raccourcis précédents sont gardés.",
-                taken.join(", ")
-            ));
+            return Err(Localized::new("hotkeys_taken").with("keys", taken.join(", ")));
         }
         let canonical_for = |wanted_action| {
             bindings
@@ -366,14 +369,17 @@ impl EngineSlot {
             .unwrap_or_default()
     }
 
-    fn reset(&self, app: &tauri::AppHandle) -> Result<(), String> {
+    fn reset(&self, app: &tauri::AppHandle) -> Result<(), Localized> {
         let defaults = settings::Settings::default();
         self.set_hotkeys(app, defaults.hotkeys.clone())?;
         self.apply(defaults.engine.clone())?;
         self.update(|settings| *settings = defaults)?;
+        refresh_tray(app, self.language());
         tauri_plugin_autostart::ManagerExt::autolaunch(app)
             .disable()
-            .map_err(|error| format!("Démarrage avec Windows non désactivé : {error}."))
+            .map_err(|error| {
+                Localized::new("autostart_not_disabled").with("detail", error.to_string())
+            })
     }
 
     fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
@@ -407,15 +413,20 @@ impl EngineSlot {
                     let seconds = duration_secs.round() as u64;
                     feedback::toast(
                         app,
-                        "Clip sauvegardé",
+                        &i18n::text(self.language(), "toast.clipSaved"),
                         &format!("{game} · {}:{:02}", seconds / 60, seconds % 60),
                     );
                 }
             }
-            EngineEvent::Alert { code, message, .. }
-                if code == "clip_save_failed" && self.feedback().toast =>
+            EngineEvent::Alert { text, .. }
+                if text.code == "clip_save_failed" && self.feedback().toast =>
             {
-                feedback::toast(app, "Clip non sauvegardé", message);
+                let language = self.language();
+                feedback::toast(
+                    app,
+                    &i18n::text(language, "toast.clipNotSaved"),
+                    &i18n::render(language, text),
+                );
             }
             _ => {}
         }
@@ -424,13 +435,10 @@ impl EngineSlot {
     fn add_preview(
         &self,
         preview: palaclips_engine::capture::PreviewCapture,
-    ) -> Result<u32, String> {
-        let mut previews = self
-            .previews
-            .lock()
-            .map_err(|_| "aperçus illisibles".to_owned())?;
+    ) -> Result<u32, Localized> {
+        let mut previews = self.previews.lock().map_err(|_| internal_error())?;
         if previews.len() >= MAX_PREVIEWS {
-            return Err("Trop d'aperçus ouverts.".to_owned());
+            return Err(Localized::new("too_many_previews"));
         }
         let id = self.next_preview.fetch_add(1, Ordering::Relaxed);
         previews.insert(id, preview);
@@ -509,6 +517,8 @@ pub fn run() {
             commands::reset_settings,
             commands::get_theme,
             commands::set_theme,
+            commands::get_language,
+            commands::set_language,
             commands::get_hotkeys,
             commands::suspend_hotkeys,
             commands::resume_hotkeys,
@@ -545,9 +555,7 @@ pub fn run() {
                 .unwrap_or_else(|| settings::Loaded {
                     settings: settings::Settings::default(),
                     writable: false,
-                    problem: Some(
-                        "Dossier des réglages introuvable : ils ne seront pas enregistrés.".into(),
-                    ),
+                    problem: Some(Localized::new("settings_dir_missing")),
                 });
             let slot = EngineSlot::start(
                 app.handle(),
@@ -556,14 +564,7 @@ pub fn run() {
                 loaded.writable,
             )?;
             if let Some(problem) = loaded.problem {
-                slot.publish(
-                    app.handle(),
-                    EngineEvent::Alert {
-                        severity: Severity::Warning,
-                        code: "settings_reset".into(),
-                        message: problem,
-                    },
-                );
+                slot.publish(app.handle(), shell_alert(problem));
             }
             let bindings = hotkeys::validate(&slot.hotkeys())
                 .or_else(|_| hotkeys::validate(&Hotkeys::default()))
@@ -574,8 +575,9 @@ pub fn run() {
                     hotkey_unavailable_alert(&hotkeys::canonical(&shortcut)),
                 );
             }
+            let language = slot.language();
             app.manage(slot);
-            build_tray(app.handle())?;
+            build_tray(app.handle(), language)?;
             if !std::env::args().any(|arg| arg == AUTOSTART_ARG) {
                 open_main_window(app.handle())?;
             }
@@ -599,14 +601,41 @@ pub fn run() {
     });
 }
 
-fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Ouvrir PalaClips", true, None::<&str>)?;
-    let save = MenuItem::with_id(app, "save", "Sauvegarder le replay", true, None::<&str>)?;
-    let arm = MenuItem::with_id(app, "arm", "Armer le replay", true, None::<&str>)?;
-    let disarm = MenuItem::with_id(app, "disarm", "Désarmer le replay", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &save, &arm, &disarm, &quit])?;
-    let mut tray = TrayIconBuilder::with_id("main")
+const TRAY: &str = "main";
+const TRAY_ITEMS: [&str; 5] = ["open", "save", "arm", "disarm", "quit"];
+
+fn tray_menu(app: &tauri::AppHandle, language: Language) -> tauri::Result<Menu<tauri::Wry>> {
+    let items = TRAY_ITEMS
+        .iter()
+        .map(|id| {
+            MenuItem::with_id(
+                app,
+                *id,
+                i18n::text(language, &format!("tray.{id}")),
+                true,
+                None::<&str>,
+            )
+        })
+        .collect::<tauri::Result<Vec<_>>>()?;
+    let items: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = items
+        .iter()
+        .map(|item| item as &dyn tauri::menu::IsMenuItem<tauri::Wry>)
+        .collect();
+    Menu::with_items(app, &items)
+}
+
+pub fn refresh_tray(app: &tauri::AppHandle, language: Language) {
+    let Some(tray) = app.tray_by_id(TRAY) else {
+        return;
+    };
+    if let Err(error) = tray_menu(app, language).and_then(|menu| tray.set_menu(Some(menu))) {
+        tracing::warn!(%error, "menu de la zone de notification non traduit");
+    }
+}
+
+fn build_tray(app: &tauri::AppHandle, language: Language) -> tauri::Result<()> {
+    let menu = tray_menu(app, language)?;
+    let mut tray = TrayIconBuilder::with_id(TRAY)
         .tooltip("PalaClips")
         .menu(&menu)
         .show_menu_on_left_click(false)
@@ -646,14 +675,20 @@ fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-fn hotkey_unavailable_alert(keys: &str) -> EngineEvent {
+pub fn internal_error() -> Localized {
+    Localized::new("internal_error")
+}
+
+fn shell_alert(text: Localized) -> EngineEvent {
     EngineEvent::Alert {
         severity: Severity::Warning,
-        code: "hotkey_unavailable".into(),
-        message: format!(
-            "{keys} est déjà pris par une autre application, souvent l'overlay NVIDIA (Alt+F10 et Alt+Shift+F10 y servent au replay). Désactive ce raccourci dans l'overlay (Alt+Z → Paramètres → Raccourcis clavier) ou choisis-en un autre dans Réglages → Raccourcis."
-        ),
+        message: i18n::render(Language::Fr, &text),
+        text,
     }
+}
+
+fn hotkey_unavailable_alert(keys: &str) -> EngineEvent {
+    shell_alert(Localized::new("hotkey_unavailable").with("keys", keys))
 }
 
 pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
@@ -729,7 +764,7 @@ mod tests {
     fn track_states_follow_the_capture_and_reset_when_disarmed() {
         let mut status = AppStatus::default();
         status.apply(&EngineEvent::CaptureStarted {
-            source: "Écran principal".into(),
+            source: Localized::new("source_primary_screen"),
             width: 2560,
             height: 1440,
             fps: 60,
@@ -757,7 +792,7 @@ mod tests {
     fn tracks_with_the_same_title_keep_separate_states() {
         let mut status = AppStatus::default();
         status.apply(&EngineEvent::CaptureStarted {
-            source: "Écran principal".into(),
+            source: Localized::new("source_primary_screen"),
             width: 1920,
             height: 1080,
             fps: 60,
@@ -781,7 +816,7 @@ mod tests {
         let mut status = AppStatus::default();
         status.apply(&EngineEvent::Alert {
             severity: Severity::Error,
-            code: "replay_stopped".into(),
+            text: Localized::new("replay_stopped"),
             message: "Le replay s'est arrêté.".into(),
         });
         status.apply(&hotkey_unavailable_alert("Alt+F10"));
@@ -789,7 +824,7 @@ mod tests {
             state: EngineState::ReplayArmed,
         });
         assert_eq!(status.alerts.len(), 1);
-        assert_eq!(status.alerts[0].code, "hotkey_unavailable");
+        assert_eq!(status.alerts[0].text.code, "hotkey_unavailable");
     }
 
     #[test]
@@ -797,7 +832,7 @@ mod tests {
         let mut status = AppStatus::default();
         status.apply(&EngineEvent::Alert {
             severity: Severity::Info,
-            code: "clip_too_short".into(),
+            text: Localized::new("clip_too_short"),
             message: "Rien de nouveau à sauvegarder.".into(),
         });
         status.apply(&EngineEvent::ClipSaved {
@@ -815,6 +850,20 @@ mod tests {
         status.apply(&hotkey_unavailable_alert("Alt+F10"));
         status.apply(&hotkey_unavailable_alert("Alt+F9"));
         assert_eq!(status.alerts.len(), 1);
-        assert!(status.alerts[0].message.starts_with("Alt+F9"));
+        assert_eq!(status.alerts[0].text.params["keys"], "Alt+F9");
+        assert!(status.alerts[0].message.starts_with("Alt+F9 est déjà pris"));
+    }
+
+    #[test]
+    fn an_alert_reaches_the_front_as_a_code_with_parameters() {
+        let json = serde_json::to_value(hotkey_unavailable_alert("Alt+F10")).expect("json");
+        assert_eq!(json["type"], "alert");
+        assert_eq!(json["code"], "hotkey_unavailable");
+        assert_eq!(json["params"]["keys"], "Alt+F10");
+        assert!(
+            json["message"]
+                .as_str()
+                .is_some_and(|text| text.contains("Alt+F10"))
+        );
     }
 }

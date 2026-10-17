@@ -22,7 +22,7 @@ use crate::encode::{
     write_thumbnail,
 };
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, EngineState, Severity, TrackDescriptor};
+use crate::events::{EngineEvent, EngineState, Localized, Severity, TrackDescriptor};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
@@ -233,12 +233,18 @@ pub fn track_descriptors(config: &EngineConfig) -> Vec<TrackDescriptor> {
         .collect()
 }
 
-fn capture_label(target: &CaptureTarget, fell_back: bool) -> String {
+fn capture_label(target: &CaptureTarget, fell_back: bool) -> Localized {
     match target {
-        CaptureTarget::PrimaryMonitor => "Écran principal".into(),
-        CaptureTarget::Monitor { device_name } => device_name.clone(),
-        CaptureTarget::Window { exe_name, .. } if fell_back => format!("Écran de {exe_name}"),
-        CaptureTarget::Window { exe_name, .. } => exe_name.clone(),
+        CaptureTarget::PrimaryMonitor => Localized::new("source_primary_screen"),
+        CaptureTarget::Monitor { device_name } => {
+            Localized::new("source_screen").with("name", device_name)
+        }
+        CaptureTarget::Window { exe_name, .. } if fell_back => {
+            Localized::new("source_window_fallback").with("exe", exe_name)
+        }
+        CaptureTarget::Window { exe_name, .. } => {
+            Localized::new("source_window").with("exe", exe_name)
+        }
     }
 }
 
@@ -311,7 +317,7 @@ impl Core {
                     Ok(command) => command.unwrap_or(Command::Shutdown),
                     Err(error) => {
                         tracing::error!(%error, "replay interrompu");
-                        self.alert(Severity::Error, "replay_stopped", format!(
+                        self.alert(Severity::Error, Localized::new("replay_stopped").with("reason", error.localized()), format!(
                             "Le replay s'est arrêté : {error}. Réarme-le quand la source est de nouveau disponible."
                         ));
                         self.disarm();
@@ -333,7 +339,7 @@ impl Core {
                     }
                     Command::SaveReplay => self.alert(
                         Severity::Info,
-                        "calibration_running",
+                        Localized::new("calibration_running"),
                         "Calibrage en cours : rien n'est sauvegardé.".into(),
                     ),
                     Command::SetLevelRate(rate) => self.level_rate = rate,
@@ -381,7 +387,7 @@ impl Core {
                 tracing::error!(%error, "armement du replay impossible");
                 self.alert(
                     Severity::Error,
-                    "replay_arm_failed",
+                    Localized::new("replay_arm_failed").with("reason", error.localized()),
                     format!("Impossible d'armer le replay : {error}."),
                 );
             }
@@ -455,7 +461,7 @@ impl Core {
         let pipeline = self
             .pipeline
             .as_mut()
-            .ok_or(EngineError::NothingToSave("le calibrage s'est arrêté"))?;
+            .ok_or(EngineError::CalibrationStopped)?;
         let path = paths::calibration_clip_path()?;
         let job = pipeline.clip_job(Hns::now(), path.clone(), config)?;
         let signals = job.write().and_then(|_| read_signals(&path));
@@ -488,7 +494,7 @@ impl Core {
         let game = self.game_name(exe_name.as_deref());
         let result = match self.pipeline.as_mut() {
             Some(pipeline) => pipeline.save(requested, &game, &self.config, &self.events),
-            None => Err(EngineError::NothingToSave("le replay n'est pas armé")),
+            None => Err(EngineError::ReplayNotArmed),
         };
         match result {
             Ok(()) => {}
@@ -496,7 +502,7 @@ impl Core {
                 tracing::info!("sauvegarde ignorée : moins de 3 s depuis le dernier clip");
                 self.alert(
                     Severity::Info,
-                    "clip_too_short",
+                    EngineError::ClipTooShort.localized(),
                     "Rien de nouveau à sauvegarder : moins de 3 s depuis le dernier clip.".into(),
                 );
             }
@@ -504,7 +510,7 @@ impl Core {
                 tracing::warn!(%error, "sauvegarde du replay impossible");
                 self.alert(
                     Severity::Warning,
-                    "clip_save_failed",
+                    Localized::new("clip_save_failed").with("reason", error.localized()),
                     format!("Clip non sauvegardé : {error}."),
                 );
             }
@@ -547,10 +553,10 @@ impl Core {
         }
     }
 
-    fn alert(&self, severity: Severity, code: &str, message: String) {
+    fn alert(&self, severity: Severity, text: Localized, message: String) {
         self.emit(EngineEvent::Alert {
             severity,
-            code: code.into(),
+            text,
             message,
         });
     }
@@ -703,12 +709,11 @@ impl Pipeline {
                     Ok(packet) => self.store(stream, packet)?,
                     Err(_) => {
                         return Err(if stream == 0 {
-                            EngineError::CaptureSourceLost("la capture vidéo s'est arrêtée".into())
+                            EngineError::VideoCaptureStopped
                         } else {
-                            EngineError::Audio(format!(
-                                "la piste « {} » s'est arrêtée",
-                                self.specs[stream].title.as_deref().unwrap_or("?")
-                            ))
+                            EngineError::TrackStopped(
+                                self.specs[stream].title.clone().unwrap_or_default(),
+                            )
                         });
                     }
                 }
@@ -813,7 +818,8 @@ impl Pipeline {
                         std::fs::remove_file(&path).ok();
                         EngineEvent::Alert {
                             severity: Severity::Warning,
-                            code: "clip_save_failed".into(),
+                            text: Localized::new("clip_save_failed")
+                                .with("reason", error.localized()),
                             message: format!("Clip non sauvegardé : {error}."),
                         }
                     }
@@ -834,10 +840,7 @@ impl Pipeline {
         }
         let duration = Hns(i64::from(config.replay.duration_secs) * HNS_PER_SECOND);
         let frame = Hns(HNS_PER_SECOND / i64::from(self.video.fps));
-        let (video, audio) = self
-            .rings
-            .split_first()
-            .ok_or(EngineError::NothingToSave("aucun flux"))?;
+        let (video, audio) = self.rings.split_first().ok_or(EngineError::NoStream)?;
         let plan = plan_clip(video, audio, duration, frame, AAC_PACKET)
             .filter(ClipPlan::worth_saving)
             .ok_or(EngineError::ClipTooShort)?;
@@ -1032,17 +1035,13 @@ mod tests {
             exe_name: "FortniteClient-Win64-Shipping.exe".into(),
             title_hint: None,
         };
+        let direct = capture_label(&window, false);
+        assert_eq!(direct.code, "source_window");
+        assert_eq!(direct.params["exe"], "FortniteClient-Win64-Shipping.exe");
+        assert_eq!(capture_label(&window, true).code, "source_window_fallback");
         assert_eq!(
-            capture_label(&window, false),
-            "FortniteClient-Win64-Shipping.exe"
-        );
-        assert_eq!(
-            capture_label(&window, true),
-            "Écran de FortniteClient-Win64-Shipping.exe"
-        );
-        assert_eq!(
-            capture_label(&CaptureTarget::PrimaryMonitor, false),
-            "Écran principal"
+            capture_label(&CaptureTarget::PrimaryMonitor, false).code,
+            "source_primary_screen"
         );
     }
 

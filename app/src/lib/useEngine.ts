@@ -14,6 +14,7 @@ import {
   replaySave,
   storageStatus,
 } from "./ipc.ts";
+import { errorText } from "./i18n.ts";
 import { clearLevels, pushLevels } from "./levels.ts";
 
 const RECENT_CLIPS = 5;
@@ -57,7 +58,7 @@ export function useEngine(): Engine {
   const [saveKeys, setSaveKeys] = useState<string | null>(null);
 
   const refreshState = useCallback(() => {
-    getState().then(setStatus, (error) => setActionError(String(error)));
+    getState().then(setStatus, (error) => setActionError(errorText(error)));
   }, []);
 
   const refreshLibrary = useCallback(() => {
@@ -113,7 +114,7 @@ export function useEngine(): Engine {
     if (phase) setPending(phase);
     action().catch((error) => {
       setPending(null);
-      setActionError(String(error));
+      setActionError(errorText(error));
     });
   }, []);
 

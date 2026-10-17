@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { type LanguageSetting, errorText, setLanguage, useT } from "../../lib/i18n.ts";
 import {
   type EngineConfig,
   type Feedback,
@@ -6,27 +7,28 @@ import {
   getAutostart,
   getConfig,
   getFeedback,
+  getLanguage,
   getTheme,
   resetSettings,
   setAutostart,
   setConfig,
   setFeedback,
+  setLanguageSetting,
   setTheme,
 } from "../../lib/ipc.ts";
 import { applyTheme } from "../../lib/theme.ts";
 import { Segmented, SettingRow, Switch } from "./Settings.tsx";
 
-const THEMES: { value: Theme; label: string }[] = [
-  { value: "system", label: "Système" },
-  { value: "dark", label: "Sombre" },
-  { value: "light", label: "Clair" },
-];
+const THEMES: Theme[] = ["system", "dark", "light"];
+const LANGUAGES: LanguageSetting[] = ["system", "fr", "en"];
 
 export function GeneralSection() {
+  const t = useT();
   const [autostart, setAutostartState] = useState<boolean | null>(null);
   const [config, setConfigState] = useState<EngineConfig | null>(null);
   const [feedback, setFeedbackState] = useState<Feedback | null>(null);
   const [theme, setThemeState] = useState<Theme>("system");
+  const [language, setLanguageState] = useState<LanguageSetting>("system");
   const [error, setError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const resetTrigger = useRef<HTMLButtonElement>(null);
@@ -43,10 +45,17 @@ export function GeneralSection() {
   }, [confirmReset]);
 
   const load = () => {
-    getAutostart().then(setAutostartState, (failure) => setError(String(failure)));
-    getConfig().then(setConfigState, (failure) => setError(String(failure)));
-    getFeedback().then(setFeedbackState, (failure) => setError(String(failure)));
+    getAutostart().then(setAutostartState, (failure) => setError(errorText(failure)));
+    getConfig().then(setConfigState, (failure) => setError(errorText(failure)));
+    getFeedback().then(setFeedbackState, (failure) => setError(errorText(failure)));
     getTheme().then(setThemeState, () => setThemeState("system"));
+    getLanguage().then(
+      (view) => {
+        setLanguageState(view.setting);
+        setLanguage(view.resolved);
+      },
+      () => setLanguageState("system"),
+    );
   };
 
   useEffect(load, []);
@@ -55,7 +64,7 @@ export function GeneralSection() {
     setError(null);
     action.catch((failure) => {
       undo();
-      setError(String(failure));
+      setError(errorText(failure));
     });
   };
 
@@ -89,12 +98,22 @@ export function GeneralSection() {
     });
   };
 
+  const changeLanguage = (next: LanguageSetting) => {
+    const previous = language;
+    setLanguageState(next);
+    setError(null);
+    setLanguageSetting(next).then(setLanguage, (failure) => {
+      setLanguageState(previous);
+      setError(errorText(failure));
+    });
+  };
+
   const reset = () => {
     setConfirmReset(false);
     setError(null);
     resetSettings()
       .then(() => applyTheme("system"))
-      .catch((failure) => setError(String(failure)))
+      .catch((failure) => setError(errorText(failure)))
       .finally(load);
   };
 
@@ -105,51 +124,57 @@ export function GeneralSection() {
           {error}
         </p>
       )}
-      <SettingRow label="Démarrer avec Windows" help="Dans la zone de notification, sans fenêtre.">
+      <SettingRow label={t("settings.general.autostart")} help={t("settings.general.autostartHelp")}>
         {autostart !== null && (
-          <Switch checked={autostart} label="Démarrer avec Windows" onChange={changeAutostart} />
+          <Switch checked={autostart} label={t("settings.general.autostart")} onChange={changeAutostart} />
         )}
       </SettingRow>
-      <SettingRow label="Armer le replay au démarrage">
+      <SettingRow label={t("settings.general.armOnStartup")}>
         {config && (
           <Switch
             checked={config.replay.arm_on_startup}
-            label="Armer le replay au démarrage"
+            label={t("settings.general.armOnStartup")}
             onChange={changeArm}
           />
         )}
       </SettingRow>
-      <SettingRow label="Son de confirmation" help="Joué à chaque clip sauvegardé, même en jeu.">
+      <SettingRow label={t("settings.general.sound")} help={t("settings.general.soundHelp")}>
         {feedback && (
           <Switch
             checked={feedback.sound}
-            label="Son de confirmation"
+            label={t("settings.general.sound")}
             onChange={(sound) => changeFeedback({ ...feedback, sound })}
           />
         )}
       </SettingRow>
-      <SettingRow
-        label="Notification de confirmation"
-        help="Windows la retient pendant une partie en plein écran."
-      >
+      <SettingRow label={t("settings.general.toast")} help={t("settings.general.toastHelp")}>
         {feedback && (
           <Switch
             checked={feedback.toast}
-            label="Notification de confirmation"
+            label={t("settings.general.toast")}
             onChange={(toast) => changeFeedback({ ...feedback, toast })}
           />
         )}
       </SettingRow>
-      <SettingRow label="Thème">
-        <Segmented value={theme} options={THEMES} label="Thème" onChange={changeTheme} />
+      <SettingRow label={t("settings.general.theme")}>
+        <Segmented
+          value={theme}
+          options={THEMES.map((value) => ({ value, label: t(`settings.general.themes.${value}`) }))}
+          label={t("settings.general.theme")}
+          onChange={changeTheme}
+        />
+      </SettingRow>
+      <SettingRow label={t("settings.general.language")}>
+        <Segmented
+          value={language}
+          options={LANGUAGES.map((value) => ({ value, label: t(`settings.general.languages.${value}`) }))}
+          label={t("settings.general.language")}
+          onChange={changeLanguage}
+        />
       </SettingRow>
       <SettingRow
-        label="Réinitialiser les réglages"
-        help={
-          confirmReset
-            ? "Tous les réglages reviennent aux valeurs par défaut, raccourcis compris."
-            : undefined
-        }
+        label={t("settings.general.reset")}
+        help={confirmReset ? t("settings.general.resetHelp") : undefined}
       >
         {confirmReset ? (
           <span className="flex gap-2">
@@ -158,7 +183,7 @@ export function GeneralSection() {
               onClick={reset}
               className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
             >
-              Réinitialiser
+              {t("settings.general.resetConfirm")}
             </button>
             <button
               ref={resetCancel}
@@ -166,7 +191,7 @@ export function GeneralSection() {
               onClick={() => setConfirmReset(false)}
               className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
             >
-              Annuler
+              {t("settings.cancel")}
             </button>
           </span>
         ) : (
@@ -176,7 +201,7 @@ export function GeneralSection() {
             onClick={() => setConfirmReset(true)}
             className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
           >
-            Réinitialiser…
+            {t("settings.general.resetOpen")}
           </button>
         )}
       </SettingRow>

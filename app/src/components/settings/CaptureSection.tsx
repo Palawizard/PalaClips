@@ -10,6 +10,7 @@ import {
   stopPreviews,
 } from "../../lib/ipc.ts";
 import { iconUrl } from "../../lib/appIcons.ts";
+import { errorText, t, useT } from "../../lib/i18n.ts";
 import { SettingRow, Switch } from "./Settings.tsx";
 import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
@@ -42,7 +43,11 @@ function toCards(targets: TargetInfo[], config: EngineConfig): Card[] {
           target: { kind: "monitor", device_name: target.device_name },
           kind: "monitor",
           name: target.name,
-          detail: `${target.width}×${target.height} · ${target.refresh_rate} Hz${target.primary ? " · principal" : ""}`,
+          detail: [
+            `${target.width}×${target.height}`,
+            t("units.hz", { value: target.refresh_rate }),
+            ...(target.primary ? [t("settings.capture.primary")] : []),
+          ].join(" · "),
           processId: null,
           exe: null,
           state: "live",
@@ -146,6 +151,7 @@ function CaptureCard({
   onPreview: () => void;
   onFocus: () => void;
 }) {
+  const t = useT();
   const [icon, setIcon] = useState<string | null>(null);
   useEffect(() => {
     if (!card.exe || card.processId === null) return;
@@ -165,11 +171,11 @@ function CaptureCard({
   );
   const placeholder =
     card.state === "closed"
-      ? "Pas lancée"
+      ? t("settings.capture.notLaunched")
       : card.state === "minimized"
-        ? "Réduite"
+        ? t("settings.capture.minimized")
         : failed
-          ? "Aperçu indisponible"
+          ? t("settings.capture.previewUnavailable")
           : null;
 
   return (
@@ -196,7 +202,7 @@ function CaptureCard({
         {armed && (
           <span className="absolute top-2 left-2 flex items-center gap-1.5 rounded bg-ground/85 px-1.5 py-0.5 text-[12px] font-medium text-ink">
             <span aria-hidden className="size-2 rounded-full bg-rec" />
-            En capture
+            {t("settings.capture.capturing")}
           </span>
         )}
       </div>
@@ -215,7 +221,10 @@ function CaptureCard({
         tabIndex={focusable ? 0 : -1}
         onFocus={onFocus}
         aria-pressed={selected}
-        aria-label={`${card.name}, ${card.state === "closed" ? "pas lancée" : card.detail}`}
+        aria-label={t("settings.capture.card", {
+          name: card.name,
+          detail: card.state === "closed" ? t("settings.capture.notLaunchedLower") : card.detail,
+        })}
         onClick={onSelect}
         className="absolute inset-0 rounded-md"
       />
@@ -223,10 +232,10 @@ function CaptureCard({
         <button
           type="button"
           onClick={onPreview}
-          aria-label={`Aperçu de ${card.name}`}
+          aria-label={t("settings.capture.previewOf", { name: card.name })}
           className="pressable absolute top-2 right-2 z-10 h-8 rounded-md border border-line-strong bg-surface px-2.5 text-[13px] font-medium text-ink hover:bg-surface-hover"
         >
-          Aperçu
+          {t("settings.capture.preview")}
         </button>
       )}
     </li>
@@ -234,6 +243,7 @@ function CaptureCard({
 }
 
 export function CaptureSection() {
+  const t = useT();
   const { config, loadError } = useConfigDraft();
   const [targets, setTargets] = useState<TargetInfo[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
@@ -258,7 +268,7 @@ export function CaptureSection() {
         setListError(null);
         setTargets(list);
       },
-      (failure) => setListError(String(failure)),
+      (failure) => setListError(errorText(failure)),
     );
   }, []);
 
@@ -390,17 +400,17 @@ export function CaptureSection() {
 
   return (
     <>
-      <SettingRow label="Afficher le curseur">
+      <SettingRow label={t("settings.capture.cursor")}>
         <Switch
           checked={draft.video.capture_cursor}
-          label="Afficher le curseur"
+          label={t("settings.capture.cursor")}
           onChange={(capture_cursor) => video({ capture_cursor })}
         />
       </SettingRow>
-      <SettingRow label="Bordure jaune de Windows" help="Autour de la zone capturée, visible à l'écran mais pas dans les clips.">
+      <SettingRow label={t("settings.capture.border")} help={t("settings.capture.borderHelp")}>
         <Switch
           checked={draft.video.draw_border}
-          label="Bordure jaune de Windows"
+          label={t("settings.capture.border")}
           onChange={(draw_border) => video({ draw_border })}
         />
       </SettingRow>
@@ -415,8 +425,8 @@ export function CaptureSection() {
         }}
         className="@container pb-5 outline-none"
       >
-        {targets !== null && grid("Écrans", monitors, "Aucun écran détecté.")}
-        {targets !== null && grid("Fenêtres", windows, "Aucune fenêtre ouverte.")}
+        {targets !== null && grid(t("settings.capture.screens"), monitors, t("settings.capture.noScreens"))}
+        {targets !== null && grid(t("settings.capture.windows"), windows, t("settings.capture.noWindows"))}
       </div>
       <ConfigFooter config={config} focusAfter={gridRef} />
     </>

@@ -1,17 +1,19 @@
 import type { LucideIcon } from "lucide-react";
 import { Clapperboard, Gauge, SlidersHorizontal } from "lucide-react";
+import { useT } from "../lib/i18n.ts";
 
 export type View = "status" | "gallery" | "settings";
 
-const ITEMS: { view: View; label: string; icon: LucideIcon }[] = [
-  { view: "status", label: "État", icon: Gauge },
-  { view: "gallery", label: "Galerie", icon: Clapperboard },
-  { view: "settings", label: "Réglages", icon: SlidersHorizontal },
+const ITEMS: { view: View; icon: LucideIcon }[] = [
+  { view: "status", icon: Gauge },
+  { view: "gallery", icon: Clapperboard },
+  { view: "settings", icon: SlidersHorizontal },
 ];
 
 function Mark() {
+  const t = useT();
   return (
-    <svg viewBox="200 200 624 624" className="mb-5 size-8 text-ink" role="img" aria-label="PalaClips">
+    <svg viewBox="200 200 624 624" className="mb-5 size-8 text-ink" role="img" aria-label={t("app.name")}>
       <circle cx="512" cy="512" r="276" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="56" />
       <path d="M512 236 A276 276 0 1 1 268 386" fill="none" stroke="currentColor" strokeWidth="56" strokeLinecap="round" />
       <path
@@ -28,10 +30,11 @@ function Mark() {
 }
 
 export function Rail({ view, onChange }: { view: View; onChange: (view: View) => void }) {
+  const t = useT();
   return (
-    <nav aria-label="Navigation" className="flex w-[84px] flex-col items-center gap-1 border-r border-line bg-rail py-4">
+    <nav aria-label={t("nav.label")} className="flex w-[84px] flex-col items-center gap-1 border-r border-line bg-rail py-4">
       <Mark />
-      {ITEMS.map(({ view: target, label, icon: Icon }) => {
+      {ITEMS.map(({ view: target, icon: Icon }) => {
         const current = target === view;
         return (
           <button
@@ -44,7 +47,7 @@ export function Rail({ view, onChange }: { view: View; onChange: (view: View) =>
             }`}
           >
             <Icon size={20} strokeWidth={current ? 2.2 : 1.8} aria-hidden />
-            {label}
+            {t(`nav.${target}`)}
           </button>
         );
       })}

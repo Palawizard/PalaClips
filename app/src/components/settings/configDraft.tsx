@@ -1,7 +1,8 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
+import { type Key, errorText, useT } from "../../lib/i18n.ts";
 import { type EngineConfig, getConfig, getState, onEngineEvent, setConfig } from "../../lib/ipc.ts";
 
-export const APPLIED_ON_DISARM = "Réglages appliqués";
+const APPLIED_ON_DISARM: Key = "settings.applied";
 
 export function restartsReplay(before: EngineConfig, after: EngineConfig): boolean {
   return (
@@ -18,7 +19,7 @@ export interface ConfigDraft {
   armed: boolean;
   pendingRestart: boolean;
   error: string | null;
-  notice: string | null;
+  notice: Key | null;
   change: (next: EngineConfig) => void;
   commit: (next: EngineConfig) => void;
   apply: () => void;
@@ -30,12 +31,12 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
   const [draft, setDraft] = useState<EngineConfig | null>(null);
   const [armed, setArmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Key | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const latest = useRef({ saved, draft });
   latest.current = { saved, draft };
 
-  const save = (next: EngineConfig, appliedNotice?: string) => {
+  const save = (next: EngineConfig, appliedNotice?: Key) => {
     setError(null);
     setConfig(next).then(
       () => {
@@ -45,7 +46,7 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
       },
       (failure) => {
         setDraft(latest.current.saved);
-        setError(String(failure));
+        setError(errorText(failure));
       },
     );
   };
@@ -54,7 +55,7 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
     getConfig().then((config) => {
       setSaved(config);
       setDraft(config);
-    }, (failure) => setLoadError(String(failure)));
+    }, (failure) => setLoadError(errorText(failure)));
     getState().then((status) => setArmed(status.state !== "idle"), () => setArmed(false));
     const unlisten = onEngineEvent((event) => {
       if (event.type === "state_changed") setArmed(event.state !== "idle");
@@ -97,6 +98,7 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
 }
 
 export function ConfigFooter({ config, focusAfter }: { config: ConfigDraft; focusAfter: RefObject<HTMLElement | null> }) {
+  const t = useT();
   return (
     <div className="sticky bottom-0 z-10">
       {config.error && (
@@ -106,9 +108,7 @@ export function ConfigFooter({ config, focusAfter }: { config: ConfigDraft; focu
       )}
       {config.pendingRestart && (
         <div role="alert" className="flex flex-wrap items-center gap-3 border-t border-line bg-surface-2 px-5 py-3">
-          <p className="flex-1 text-[13px] text-ink">
-            Appliquer redémarre le replay : les secondes en mémoire seront perdues.
-          </p>
+          <p className="flex-1 text-[13px] text-ink">{t("settings.restartWarning")}</p>
           <button
             type="button"
             onClick={() => {
@@ -117,7 +117,7 @@ export function ConfigFooter({ config, focusAfter }: { config: ConfigDraft; focu
             }}
             className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
           >
-            Appliquer
+            {t("settings.apply")}
           </button>
           <button
             type="button"
@@ -127,13 +127,13 @@ export function ConfigFooter({ config, focusAfter }: { config: ConfigDraft; focu
             }}
             className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
           >
-            Annuler
+            {t("settings.cancel")}
           </button>
         </div>
       )}
       {config.notice && !config.pendingRestart && (
         <p role="status" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-ink">
-          {config.notice}
+          {t(config.notice)}
         </p>
       )}
     </div>

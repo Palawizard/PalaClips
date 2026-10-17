@@ -175,13 +175,13 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                             );
                         }
                     }
-                    EngineEvent::Alert { severity, code, message } => {
-                        match code.as_str() {
+                    EngineEvent::Alert { severity, text, message } => {
+                        match text.code {
                             "clip_save_failed" => finished += 1,
                             "replay_stopped" | "replay_arm_failed" => quitting = true,
                             _ => {}
                         }
-                        println!("alerte {severity:?} {code} : {message}");
+                        println!("alerte {severity:?} {} : {message}", text.code);
                     }
                     EngineEvent::StateChanged { state } => println!("état : {state:?}"),
                     EngineEvent::GameNamed { exe_name, name } => {
@@ -221,7 +221,7 @@ fn wait_until_armed(events: &Receiver<EngineEvent>) -> Result<()> {
             EngineEvent::StateChanged {
                 state: EngineState::ReplayArmed,
             } => return Ok(()),
-            EngineEvent::Alert { code, message, .. } if code == "replay_arm_failed" => {
+            EngineEvent::Alert { text, message, .. } if text.code == "replay_arm_failed" => {
                 anyhow::bail!(message)
             }
             EngineEvent::Alert { message, .. } => println!("alerte : {message}"),

@@ -99,8 +99,9 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 
 ## 4. Conventions de code
 
-- `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`
-  et `npm run build` (dans `app/`) passent avant chaque commit. La CI fait pareil sur Windows.
+- `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`,
+  `npm run build` et `npm test` (dans `app/`) passent avant chaque commit. La CI fait pareil sur
+  Windows.
 
 ### Commentaires
 
@@ -117,14 +118,19 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 - Le contexte, les règles et les raisons vivent dans `docs/` (ARCHITECTURE, DECISIONS,
   RESEARCH), jamais dans le code.
 - Noms de tests en anglais, au format comportement (`replay_starts_on_keyframe`).
-- Les textes visibles par l'utilisateur (erreurs, `about` de la CLI) restent en français.
-- Messages d'erreur destinés à l'utilisateur : en **français**, actionnables. Logs : `tracing`,
-  structurés, avec par piste : paquets, trous comblés, crête.
+- **Textes visibles = clés i18n** (ADR-028). Front : `t("clé")` / `useT()` de
+  `app/src/lib/i18n.ts`, textes dans `app/src/locales/fr.json` **et** `en.json`, jamais en dur
+  dans un composant (`npm test` échoue sinon). Moteur et shell : tout texte qui s'affiche part
+  en `Localized::new("code").with("param", valeur)`, texte sous `messages.<code>` dans les deux
+  fichiers ; le message français du moteur reste pour les journaux et la CLI.
+- Messages d'erreur destinés à l'utilisateur : actionnables, en français et en anglais. Le
+  `about` de la CLI reste en français. Logs : `tracing`, structurés, avec par piste : paquets,
+  trous comblés, crête.
 - Nouvelle dépendance : justifiée dans la PR, version **stable**, ajoutée à
   `[workspace.dependencies]` si partagée.
 - Contrat IPC (commandes Tauri + `EngineEvent`) : toujours synchronisé entre
-  `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`, `app/src/lib/ipc.ts` et
-  `docs/ARCHITECTURE.md` § IPC.
+  `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`, `app/src/lib/ipc.ts`,
+  `app/src/locales/*.json` (codes d'alerte et d'erreur) et `docs/ARCHITECTURE.md` § IPC.
 - Doute sur le comportement d'une API Windows : écris d'abord une sous-commande de test dans
   `crates/cli`, ne suppose pas.
 
