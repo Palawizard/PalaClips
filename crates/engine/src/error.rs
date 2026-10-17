@@ -43,6 +43,9 @@ pub enum EngineError {
     #[error("aucun replay à sauvegarder : {0}")]
     NothingToSave(&'static str),
 
+    #[error("moins de 3 s en mémoire depuis le dernier clip")]
+    ClipTooShort,
+
     #[error("fonctionnalité pas encore implémentée : {0}")]
     NotImplemented(&'static str),
 }

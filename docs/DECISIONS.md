@@ -316,6 +316,10 @@ premier plan » de la phase 3.
   plus un intervalle d'images clés (≤ 1 s par défaut), puisqu'un clip doit commencer sur une
   image clé. « En mémoire » repart de zéro et la RAM du tampon est libérée.
 - Vérifié : deux sauvegardes à 10 s d'écart → 20,2 s puis 10,2 s (`replay`, CLI).
+- **Complément (2026-10-17, Palawi)** : un double appui sur `Alt+F10` créait un clip d'~1 s.
+  Moins de 3 s à sauvegarder (`replay::MIN_CLIP`, tampon vide compris) : pas de clip,
+  alerte d'information `clip_too_short` dans l'app, sans notification ni carillon ; elle
+  s'efface au clip suivant.
 - Écarté : commencer à la première image clé après la fin du clip précédent (jusqu'à 1 s
   perdue entre les deux clips) ; garder la durée complète à chaque fois (comportement de
   ShadowPlay, refusé par Palawi).
