@@ -30,3 +30,18 @@ moyenne par moteur.
 - Limite : trois pistes (la config par défaut), pas quatre ; à refaire avec quatre pistes et
   en jeu GPU-bound pour la validation de PERF-03 en phase 7.
 - Journal : `docs/reports/phase-5/app-load-2026-10-17_11-51.txt`.
+
+### Tests 👤 de l'écran État avec Palawi (2026-10-17)
+
+Build release (`target\release\palaclips-app.exe`), replay armé avec la config par défaut,
+Fortnite en plein écran sur l'écran principal.
+
+| Test | Résultat |
+|---|---|
+| Ressenti de l'écran État | ✅ validé ; une phrase jugée « style IA » retirée (« 3 pistes dans chaque clip, dans cet ordre ») avec l'accroche de l'état vide des clips |
+| `Alt+F10` dans Fortnite plein écran : le jeu garde le focus | ✅ rien n'est passé devant le jeu ; 2 clips de 303 Mo écrits (supprimés après le test). Le toast et le son (RPL-06) ne sont pas encore faits : critère de phase « le toast apparaît » encore ouvert |
+| Sauvegarde fenêtre ouverte : surlignage des pistes et carte du clip qui arrive | ✅ |
+
+- Remarque : les clips de Fortnite sont rangés sous `FortniteClient-Win64-Shipping\` (nom
+  d'exe sans `.exe`, STO-03). Un nom lisible (« Fortnite », lu dans les métadonnées de l'exe)
+  serait plus propre : à décider avec Palawi.
