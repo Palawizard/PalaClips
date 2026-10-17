@@ -8,8 +8,8 @@
 - **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
   (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
   confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `dev` à jour (écran État + shell mergés, PR #19). Prochaine branche :
-  `feature/settings-persistence`.
+- **Branche :** `dev` à jour après les PR #21 (réglages), #22 (noms de jeux), #23 (carillon +
+  toast) et #24 (clips sans doublon, en cours de merge).
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
@@ -128,6 +128,20 @@
     `EngineState: Default`.
   - CLI : `recent-clips [--clips-dir] [--limit]` (JSON), `replay --levels`.
   - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés.
+- **Réglages, noms de jeux, confirmation, clips sans doublon (2026-10-17)** :
+  - `app/src-tauri/src/settings.rs` : `settings.json` (`%APPDATA%\PalaClips\`) =
+    `{ schema_version, engine, feedback }`, écriture atomique, illisible → `.bak` + défauts +
+    alerte `settings_reset`, format plus récent → défauts sans écraser ; `EngineSlot` garde
+    `Settings` entier (`update` = enregistrer puis garder) ; commandes `set_config`,
+    `reset_config`, `get_feedback`, `set_feedback`.
+  - `engine::games` (ADR-024) : nom du jeu = ProductName → FileDescription → nom d'exe nettoyé
+    (suffixes Unreal, « Client ») ; génériques ignorés ; nettoyé pour le disque ; figé par exe
+    dans `storage.game_names` (événement `game_named`) ; CLI `game-name`.
+  - `feedback.rs` : carillon généré en mémoire, `PlaySoundW` async, indépendant du toast muet
+    (`tauri-plugin-notification` 2.7) ; désactivables. Le carillon finit dans la piste Mix des
+    clips suivants.
+  - `replay::forget_saved` (RPL-09, ADR-025) : le clip suivant commence où le précédent s'est
+    arrêté.
 - **Écran État + shell (front, `feature/app-shell`)** : `app/src/App.tsx` (rail État / Galerie
   / Réglages ; Galerie et Réglages = textes d'attente), `components/` : `StatusBanner` (replay :
   état, chrono « en mémoire », RAM, Sauvegarder + Armer/Désarmer ; enregistrement désactivé
@@ -154,24 +168,17 @@
 ## Prochaines actions (dans l'ordre)
 
 1. Phase 5, suite (une branche par tâche, depuis `dev`) :
-   - `feature/settings-persistence` : `settings.json` versionné (`%APPDATA%\PalaClips\`),
-     migration, réinitialisation, `set_config`, l'app charge la config au démarrage ;
-   - `feature/game-names` (décision de Palawi, 2026-10-17) : nom du jeu = `ProductName` de
-     l'exe, sinon `FileDescription`, sinon nom de l'exe ; noms génériques ignorés (vide,
-     « Unreal Engine », « UE4 », « Shipping », noms de moteurs) ; nettoyé pour le système de
-     fichiers (™, ®, :, caractères interdits) ; **figé par exe** une fois choisi (table
-     persistante dans les réglages), modifiable dans Réglages > Stockage (STO-02) ; même nom
-     pour le fichier (STO-03) et la galerie ; tests unitaires des cas de repli ;
-   - `feature/save-feedback` : toast (sans vol de focus) **et** son de confirmation joué par
-     PalaClips lui-même, indépendant du toast (Windows 11 coupe les notifications pendant un
-     jeu) ; son désactivable (RPL-06) ; 👤 vérifier les deux dans Fortnite ;
-   - raccourcis personnalisables avec conflits (APP-05), démarrage avec Windows (APP-04) ;
-   - écrans Réglages (Capture, Audio + assistant AUD-11, Replay & qualité, Raccourcis,
-     Stockage, Général dont le thème) via `/design` dans le système `DESIGN.md` ; consigne de
-     copie de `PRODUCT.md` (aucune phrase qui commente l'écran) ;
+   - merger la PR #24 si elle ne l'est pas (CI verte attendue) ;
+   - raccourcis personnalisables avec conflits (APP-05) et démarrage avec Windows (APP-04) ;
+   - écrans Réglages via `/design` dans le système `DESIGN.md` : Capture (miniatures en direct),
+     Audio (vumètres, recherche, appli non lancée, renommage, assistant de calibrage AUD-11),
+     Replay & qualité (estimation RAM RPL-03), Raccourcis, Stockage (dossier, quota, **noms de
+     jeux modifiables**, STO-02), Général (thème, carillon et toast désactivables, démarrage
+     avec Windows) ; consigne de copie de `PRODUCT.md` (aucune phrase qui commente l'écran) ;
+   - RPL-07 : l'UI dit que changer de sources ou de zone redémarre le tampon avant d'appliquer ;
    - ⚠️ L'app arme le replay au démarrage (écran principal, micro, piste Jeu) : demander à
      Palawi avant tout lancement ; une sauvegarde de test écrit un vrai clip
-     (`Vidéos\PalaClips\<Jeu>`) et sa miniature : les supprimer après.
+     (`Vidéos\PalaClips\<Jeu>`) et sa miniature : les supprimer après (demander).
 2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
    dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
 3. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
@@ -273,3 +280,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-17 | 5 | `fps-impact.ps1` lancé par Palawi (avec et sans G-Sync) : aucune perte de fps, Independent Flip conservé ; script corrigé (mise en route non comptée, GPU relevé) ; PERF-03 GPU-bound ajouté au PLAN | Écran État (`/design`) |
 | 2026-10-17 | 5 | `track_changed` / `capture_started`, `get_config` ; écran État + shell (Barlow, roster à plaques de couleur, vumètres 20 Hz interpolés, derniers clips avec miniatures) ; revue impeccable : recapture, 8 correctifs + logo, verdict « ship » ; `DESIGN.md` par le documenteur ; vérifié en vrai : 1180×760, 900×600, thème clair, sauvegarde, 0 WebView2 fenêtre fermée, instance unique | Montrer l'écran à Palawi ; persistance des réglages, toasts, écrans Réglages |
 | 2026-10-17 | 5 | Vumètres indexés par piste, animation plafonnée à 60 i/s et sans boucle hors focus ; PERF-03 mesuré en release (fenêtre ouverte sans focus 0,57 % CPU, fermée 0,27 %) ; test de Palawi : écran OK, `Alt+F10` dans Fortnite sans perte de focus, sauvegarde fenêtre ouverte OK ; consigne de copie dans PRODUCT.md ; PR #19 mergée | Réglages persistants, noms de jeux, toast + son |
+| 2026-10-17 | 5 | PR #21 réglages persistants ; PR #22 noms de jeux (Fortnite sans métadonnées → nom d'exe nettoyé, décision de Palawi, ADR-024) ; PR #23 carillon + toast, test Fortnite ✅ (carillon en jeu, toast bloqué en jeu puis dans le centre de notifications, toast + carillon au bureau, dossier « Fortnite ») ; PR #24 clips sans doublon (RPL-09, ADR-025, 20,2 s puis 10,2 s) | Raccourcis, démarrage avec Windows, écrans Réglages |

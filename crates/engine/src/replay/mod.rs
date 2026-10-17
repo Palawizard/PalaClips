@@ -62,6 +62,24 @@ pub fn plan_clip<P: TimedPacket>(
     })
 }
 
+pub fn forget_saved<P: TimedPacket>(
+    video: &mut PacketRing<P>,
+    audio: &mut [PacketRing<P>],
+    end: Hns,
+) {
+    let Some(keep) = video.start_index(end) else {
+        return;
+    };
+    video.discard_before(keep);
+    let Some(start) = video.get(0).map(TimedPacket::pts) else {
+        return;
+    };
+    for ring in audio {
+        let index = ring.index_at_or_before(start);
+        ring.discard_before(index);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -174,6 +192,44 @@ mod tests {
             plan_clip(&video, &audio, Hns::from_millis(60_000), FRAME, AAC_PACKET).expect("plan");
         assert_eq!(plan.video_from, 0);
         assert_eq!(plan.start, Hns::ZERO);
+    }
+
+    #[test]
+    fn the_next_clip_starts_where_the_saved_one_ended() {
+        let duration = Hns::from_millis(60_000);
+        let (mut video, mut audio) = rings(90, duration);
+        let first = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("first");
+        forget_saved(&mut video, &mut audio, first.end);
+        assert!(
+            video.buffered() < Hns::from_millis(1_000),
+            "{:?}",
+            video.buffered()
+        );
+        let mut next_audio = audio[0].newest().expect("audio") + AAC_PACKET;
+        let mut pts = video.newest().expect("video");
+        for frame in 1..=600 {
+            pts = pts + FRAME;
+            while next_audio <= pts {
+                for ring in &mut audio {
+                    ring.push(Pkt {
+                        pts: next_audio,
+                        key: true,
+                    });
+                }
+                next_audio = next_audio + AAC_PACKET;
+            }
+            video.push(Pkt {
+                pts,
+                key: (90 * 60 + frame) % 60 == 0,
+            });
+        }
+        let second = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("second");
+        assert!(second.start <= first.end);
+        assert!(first.end - second.start < Hns::from_millis(1_000));
+        assert!(second.end - second.start < Hns::from_millis(12_000));
+        for (ring, from) in audio.iter().zip(&second.audio_from) {
+            assert!(ring.get(*from).expect("audio").pts() <= second.start);
+        }
     }
 
     #[test]

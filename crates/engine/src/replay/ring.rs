@@ -112,6 +112,12 @@ impl<P: TimedPacket> PacketRing<P> {
         self.packets.is_empty()
     }
 
+    pub fn discard_before(&mut self, index: usize) {
+        for old in self.packets.drain(..index.min(self.packets.len())) {
+            self.bytes -= old.size();
+        }
+    }
+
     pub fn clear(&mut self) {
         self.packets.clear();
         self.bytes = 0;
@@ -173,6 +179,18 @@ mod tests {
         let first = ring.iter_from(idx).next().expect("packet");
         assert!(first.key);
         assert_eq!(first.pts, Hns::from_millis(4_000));
+    }
+
+    #[test]
+    fn discarding_keeps_the_byte_count() {
+        let mut ring = PacketRing::new(Hns::from_millis(10_000));
+        push_video_10fps_keyframe_every_second(&mut ring, 5);
+        ring.discard_before(20);
+        assert_eq!(ring.len(), 30);
+        assert_eq!(ring.bytes(), 30 * 100);
+        ring.discard_before(1_000);
+        assert!(ring.is_empty());
+        assert_eq!(ring.bytes(), 0);
     }
 
     #[test]

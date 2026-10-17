@@ -18,8 +18,8 @@ use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::replay::{
-    PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, plan_clip,
-    share_packet,
+    PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, forget_saved,
+    plan_clip, share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -621,6 +621,9 @@ impl Pipeline {
             }
         }
         packets.sort_by_key(|(pts, stream, _)| (*pts, *stream));
+        if let Some((video, audio)) = self.rings.split_first_mut() {
+            forget_saved(video, audio, plan.end);
+        }
         let root = match &config.storage.clips_dir {
             Some(dir) => dir.clone(),
             None => paths::default_clips_dir()?,
