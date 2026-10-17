@@ -15,6 +15,7 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 
 pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
+pub const AUTOSTART_ARG: &str = "--autostart";
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ActiveAlert {
@@ -299,6 +300,11 @@ impl EngineSlot {
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(
+            tauri_plugin_autostart::Builder::new()
+                .args([AUTOSTART_ARG])
+                .build(),
+        )
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Err(error) = open_main_window(app) {
                 tracing::warn!(%error, "ouverture de la fenêtre impossible");
@@ -324,6 +330,8 @@ pub fn run() {
             commands::get_config,
             commands::set_config,
             commands::reset_config,
+            commands::get_autostart,
+            commands::set_autostart,
             commands::get_feedback,
             commands::set_feedback,
             commands::replay_arm,
@@ -366,7 +374,9 @@ pub fn run() {
             }
             app.manage(slot);
             build_tray(app.handle())?;
-            open_main_window(app.handle())?;
+            if !std::env::args().any(|arg| arg == AUTOSTART_ARG) {
+                open_main_window(app.handle())?;
+            }
             Ok(())
         })
         .build(tauri::generate_context!())

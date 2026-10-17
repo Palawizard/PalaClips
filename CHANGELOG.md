@@ -57,6 +57,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   l'ordre du fichier avec sa couleur, son vumètre, sa crête et son état (en attente de l'appli,
   muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
 - Menu de la zone de notification : armer et désarmer le replay.
+- Démarrage avec Windows (option) : PalaClips s'ouvre directement dans la zone de
+  notification, sans fenêtre.
 - Un nouveau clip commence où le précédent s'est arrêté : plus de minute répétée d'un clip à
   l'autre ; le temps en mémoire repart de zéro après chaque sauvegarde. Un double appui sur
   le raccourci ne crée plus de clip d'une seconde.
