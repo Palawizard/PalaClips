@@ -433,6 +433,7 @@ impl EngineSlot {
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_autostart::Builder::new()
                 .args([AUTOSTART_ARG])
@@ -479,6 +480,8 @@ pub fn run() {
             commands::memory_status,
             commands::estimate_replay,
             commands::storage_status,
+            commands::pick_clips_dir,
+            commands::open_clips_dir,
         ])
         .setup(|app| {
             let settings_path = palaclips_engine::paths::settings_path().ok();
