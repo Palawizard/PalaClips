@@ -26,7 +26,12 @@ function Measure-Fps([string]$Label, [string[]]$CliArguments) {
         $capture = Start-Process $cli -ArgumentList $CliArguments -PassThru -NoNewWindow -RedirectStandardError "$csv.log" -RedirectStandardOutput "$csv.out"
         Start-Sleep -Seconds 3
     }
+    $gpuLog = "$csv.gpu"
+    $gpu = Start-Process nvidia-smi -ArgumentList "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits", "-lms", "500" -PassThru -WindowStyle Hidden -RedirectStandardOutput $gpuLog -ErrorAction SilentlyContinue
     & $PresentMon --process_name $Game --timed $Seconds --terminate_after_timed --output_file $csv --no_console_stats --stop_existing_session --v1_metrics | Out-Null
+    if ($gpu) { Stop-Process -Id $gpu.Id -Force -ErrorAction SilentlyContinue }
+    $gpuSamples = @(Get-Content $gpuLog -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*\d+\s*$' } | ForEach-Object { [double]$_ })
+    $gpuBusy = if ($gpuSamples) { "GPU {0:N0} %" -f ($gpuSamples | Measure-Object -Average).Average } else { "GPU ?" }
     if ($capture) {
         if (-not $capture.WaitForExit(($Seconds + 30) * 1000)) { Stop-Process -Id $capture.Id -Force }
     }
@@ -36,8 +41,8 @@ function Measure-Fps([string]$Label, [string[]]$CliArguments) {
     $average = 1000 / ($frameTimes | Measure-Object -Average).Average
     $low = 1000 / ($frameTimes[[int]([math]::Floor($frameTimes.Count * 0.99))])
     $mode = ($rows | Group-Object PresentMode | Sort-Object Count -Descending | Select-Object -First 1).Name
-    $stats = (Get-Content "$csv.log", "$csv.out" -ErrorAction SilentlyContinue | Select-String "arrêtée|images reçues" | ForEach-Object { $_.Line -replace '^.*arrêtée ', '' }) -join " "
-    Write-Journal ("{0,-30} {1,6:N1} i/s, 1 % bas {2,6:N1} i/s, {3} présentations, mode « {4} » {5}" -f $Label, $average, $low, $rows.Count, $mode, $stats)
+    $stats = (Get-Content "$csv.log", "$csv.out" -ErrorAction SilentlyContinue | Select-String "arrêtée|images reçues" | ForEach-Object { $_.Line -replace "`e\[[0-9;]*m", '' -replace '^.*arrêtée ', '' }) -join " "
+    Write-Journal ("{0,-30} {1,6:N1} i/s, 1 % bas {2,6:N1} i/s, {3}, {4} présentations, mode « {5} » {6}" -f $Label, $average, $low, $gpuBusy, $rows.Count, $mode, $stats)
     [pscustomobject]@{ Label = $Label; Fps = $average; Low = $low }
 }
 
@@ -55,6 +60,7 @@ $out = Join-Path $work "capture.mp4"
 $video = @("--bitrate-mbps", "$BitrateMbps", "--seconds", "$($Seconds + 6)", "--out", $out)
 try {
     Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger"
+    $null = Measure-Fps "mise en route (non comptée)" @()
     $results = @(
         Measure-Fps "sans capture" @()
         Measure-Fps "fenêtre 60 i/s" (@("capture-video", "--target", $target, "--fps", "60") + $video)
@@ -63,8 +69,11 @@ try {
         Measure-Fps "WGC seul (sans encodage)" @("probe-wgc", "--target", $target, "--seconds", "$($Seconds + 6)", "--min-interval-ms", "8")
         Measure-Fps "sans capture (fin)" @()
     )
-    $reference = ($results[0].Fps + $results[-1].Fps) / 2
-    foreach ($result in $results[1..($results.Count - 2)]) {
+    $baselines = @($results | Where-Object { $_.Label -like "sans capture*" })
+    $captures = @($results | Where-Object { $_.Label -notlike "sans capture*" })
+    $reference = ($baselines | Measure-Object -Property Fps -Average).Average
+    Write-Journal ("RÉFÉRENCE : moyenne des {0} essais sans capture (mise en route exclue) = {1:N1} i/s" -f $baselines.Count, $reference)
+    foreach ($result in $captures) {
         Write-Journal ("PERTE {0,-28} {1,6:N1} % ({2:+0.0;-0.0} i/s)" -f $result.Label, (100 * ($reference - $result.Fps) / $reference), ($result.Fps - $reference))
     }
 } catch {
