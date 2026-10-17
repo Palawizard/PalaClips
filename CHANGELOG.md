@@ -64,6 +64,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Raccourcis personnalisables (sauvegarder, armer/désarmer le replay) : refus des
   combinaisons de Windows et des touches qui gêneraient en jeu, retour aux raccourcis
   précédents si une autre appli a déjà pris la combinaison.
+- Réglages > Replay & qualité : durée, tampon en RAM ou sur disque, codec (ceux que la carte
+  graphique ne sait pas encoder sont grisés), qualité et débit libre, i/s et résolution de
+  sortie avec valeur libre, intervalle d'images clés. Taille du tampon estimée en direct,
+  alerte au-delà de 40 % de la RAM disponible avec passage sur disque en un clic ; un
+  changement qui redémarre le replay armé demande confirmation.
 - Démarrage avec Windows (option) : PalaClips s'ouvre directement dans la zone de
   notification, sans fenêtre.
 - Un nouveau clip commence où le précédent s'est arrêté : plus de minute répétée d'un clip à

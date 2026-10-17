@@ -1,4 +1,6 @@
 use palaclips_engine::EngineConfig;
+use palaclips_engine::encode::{HardwareEncoder, hardware_video_encoders};
+use palaclips_engine::engine::ReplayEstimate;
 use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
 use serde::Serialize;
 use tauri::State;
@@ -156,4 +158,37 @@ pub async fn storage_status(slot: State<'_, EngineSlot>) -> Result<StorageStatus
         free_bytes: space.free_bytes,
         total_bytes: space.total_bytes,
     })
+}
+
+#[tauri::command]
+pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<HardwareEncoder>, String> {
+    if let Some(encoders) = slot.encoders.lock().ok().and_then(|cache| cache.clone()) {
+        return Ok(encoders);
+    }
+    let encoders = hardware_video_encoders().map_err(|error| error.to_string())?;
+    if let Ok(mut cache) = slot.encoders.lock() {
+        *cache = Some(encoders.clone());
+    }
+    Ok(encoders)
+}
+
+#[derive(Debug, Serialize)]
+pub struct MemoryStatus {
+    total_bytes: u64,
+    available_bytes: u64,
+}
+
+#[tauri::command]
+pub fn memory_status() -> Result<MemoryStatus, String> {
+    let (total_bytes, available_bytes) = palaclips_engine::paths::physical_memory()
+        .ok_or_else(|| "Mémoire du PC illisible.".to_owned())?;
+    Ok(MemoryStatus {
+        total_bytes,
+        available_bytes,
+    })
+}
+
+#[tauri::command]
+pub async fn estimate_replay(config: EngineConfig) -> Result<ReplayEstimate, String> {
+    palaclips_engine::engine::estimate_replay(&config).map_err(|error| error.to_string())
 }
