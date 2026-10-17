@@ -108,6 +108,11 @@ impl AppStatus {
                 });
                 self.tracks = tracks.iter().cloned().map(TrackInfo::named).collect();
             }
+            EngineEvent::TracksRenamed { tracks } => {
+                for (track, renamed) in self.tracks.iter_mut().zip(tracks) {
+                    track.title = renamed.title.clone();
+                }
+            }
             EngineEvent::TrackChanged {
                 track,
                 state,
@@ -169,7 +174,8 @@ impl EngineSlot {
         settings_path: Option<std::path::PathBuf>,
         settings_writable: bool,
     ) -> palaclips_engine::Result<Self> {
-        let config = settings.engine.clone();
+        let mut config = settings.engine.clone();
+        config.audio.default_names = settings::track_names(settings.language.resolve());
         let arm = config.replay.arm_on_startup;
         let engine = Engine::start(config.clone())?;
         let handle = engine.handle();
@@ -252,10 +258,28 @@ impl EngineSlot {
         Ok(())
     }
 
-    fn apply(&self, config: EngineConfig) -> Result<(), Localized> {
+    fn apply(&self, mut config: EngineConfig) -> Result<(), Localized> {
+        config.audio.default_names = settings::track_names(self.language());
         config.validate()?;
         self.update(|settings| settings.engine = config.clone())?;
         Ok(self.handle.configure(config)?)
+    }
+
+    fn set_language(
+        &self,
+        app: &tauri::AppHandle,
+        language: i18n::LanguageSetting,
+    ) -> Result<Language, Localized> {
+        let resolved = language.resolve();
+        let mut config = self.config();
+        config.audio.default_names = settings::track_names(resolved);
+        self.update(|settings| {
+            settings.language = language;
+            settings.engine = config.clone();
+        })?;
+        self.handle.configure(config)?;
+        refresh_tray(app, resolved);
+        Ok(resolved)
     }
 
     fn hotkeys(&self) -> Hotkeys {

@@ -88,6 +88,9 @@ pub enum EngineEvent {
         fps: u32,
         tracks: Vec<TrackDescriptor>,
     },
+    TracksRenamed {
+        tracks: Vec<TrackDescriptor>,
+    },
     TrackChanged {
         track: usize,
         title: String,

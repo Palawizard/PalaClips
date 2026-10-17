@@ -165,49 +165,109 @@ pub struct AppTrack {
     pub sync_offset_ms: i32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DefaultTrackNames {
+    pub mix: String,
+    pub microphone: String,
+    pub game: String,
+}
+
+impl Default for DefaultTrackNames {
+    fn default() -> Self {
+        Self {
+            mix: "Mix complet".into(),
+            microphone: "Micro".into(),
+            game: "Jeu".into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AudioSettings {
     pub record_full_mix: bool,
-    pub full_mix_label: String,
+    pub full_mix_label: Option<String>,
     pub output_device_id: Option<String>,
     pub full_mix_sync_offset_ms: i32,
     pub record_microphone: bool,
-    pub microphone_label: String,
+    pub microphone_label: Option<String>,
     pub microphone_device_id: Option<String>,
     pub microphone_gain_db: f32,
     pub microphone_sync_offset_ms: i32,
     pub app_tracks: Vec<AppTrack>,
     pub max_app_tracks: usize,
     pub auto_game_track: bool,
-    pub game_label: String,
+    pub game_label: Option<String>,
     pub game_sync_offset_ms: i32,
     pub game_exe: Option<String>,
+    #[serde(skip)]
+    pub default_names: DefaultTrackNames,
 }
 
 impl Default for AudioSettings {
     fn default() -> Self {
         Self {
             record_full_mix: true,
-            full_mix_label: "Mix complet".into(),
+            full_mix_label: None,
             output_device_id: None,
             full_mix_sync_offset_ms: 0,
             record_microphone: true,
-            microphone_label: "Micro".into(),
+            microphone_label: None,
             microphone_device_id: None,
             microphone_gain_db: 0.0,
             microphone_sync_offset_ms: 0,
             app_tracks: Vec::new(),
             max_app_tracks: 6,
             auto_game_track: true,
-            game_label: "Jeu".into(),
+            game_label: None,
             game_sync_offset_ms: 0,
             game_exe: None,
+            default_names: DefaultTrackNames::default(),
         }
     }
 }
 
 impl AudioSettings {
+    pub fn full_mix_title(&self) -> &str {
+        self.full_mix_label
+            .as_deref()
+            .unwrap_or(&self.default_names.mix)
+    }
+
+    pub fn microphone_title(&self) -> &str {
+        self.microphone_label
+            .as_deref()
+            .unwrap_or(&self.default_names.microphone)
+    }
+
+    pub fn game_title(&self) -> &str {
+        self.game_label
+            .as_deref()
+            .unwrap_or(&self.default_names.game)
+    }
+
+    pub fn same_sources(&self, other: &Self) -> bool {
+        self.without_names() == other.without_names()
+    }
+
+    fn without_names(&self) -> Self {
+        Self {
+            full_mix_label: None,
+            microphone_label: None,
+            game_label: None,
+            default_names: DefaultTrackNames::default(),
+            app_tracks: self
+                .app_tracks
+                .iter()
+                .map(|track| AppTrack {
+                    label: String::new(),
+                    ..track.clone()
+                })
+                .collect(),
+            ..self.clone()
+        }
+    }
+
     fn validate(&self) -> Result<()> {
         if !(1..=12).contains(&self.max_app_tracks) {
             return Err(EngineError::InvalidConfig(
@@ -235,11 +295,12 @@ impl AudioSettings {
             ));
         }
         let labels = [
-            self.full_mix_label.as_str(),
-            self.microphone_label.as_str(),
-            self.game_label.as_str(),
+            self.full_mix_label.as_deref(),
+            self.microphone_label.as_deref(),
+            self.game_label.as_deref(),
         ]
         .into_iter()
+        .flatten()
         .chain(self.app_tracks.iter().map(|track| track.label.as_str()));
         for label in labels {
             if label.trim().is_empty() {
@@ -452,7 +513,7 @@ mod tests {
     #[test]
     fn empty_track_names_are_rejected() {
         let mut cfg = EngineConfig::default();
-        cfg.audio.microphone_label = "  ".into();
+        cfg.audio.microphone_label = Some("  ".into());
         assert!(cfg.validate().is_err());
     }
 
@@ -460,9 +521,34 @@ mod tests {
     fn settings_without_track_names_get_the_defaults() {
         let audio: AudioSettings =
             serde_json::from_str(r#"{"record_full_mix":true,"max_app_tracks":4}"#).expect("parse");
-        assert_eq!(audio.full_mix_label, "Mix complet");
-        assert_eq!(audio.game_label, "Jeu");
+        assert_eq!(audio.full_mix_label, None);
+        assert_eq!(audio.full_mix_title(), "Mix complet");
+        assert_eq!(audio.game_title(), "Jeu");
         assert_eq!(audio.max_app_tracks, 4);
+    }
+
+    #[test]
+    fn default_names_are_never_written_to_the_settings() {
+        let mut audio = AudioSettings::default();
+        audio.default_names.mix = "Full mix".into();
+        audio.game_label = Some("Partie".into());
+        let json = serde_json::to_value(&audio).expect("json");
+        assert!(json.get("default_names").is_none());
+        assert_eq!(json["full_mix_label"], serde_json::Value::Null);
+        assert_eq!(json["game_label"], "Partie");
+        assert_eq!(audio.full_mix_title(), "Full mix");
+    }
+
+    #[test]
+    fn renaming_or_translating_a_track_keeps_the_same_sources() {
+        let audio = AudioSettings::default();
+        let mut renamed = audio.clone();
+        renamed.microphone_label = Some("Voix".into());
+        renamed.default_names.game = "Game".into();
+        assert!(audio.same_sources(&renamed));
+        let mut muted = audio.clone();
+        muted.record_microphone = false;
+        assert!(!audio.same_sources(&muted));
     }
 
     #[test]
