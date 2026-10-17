@@ -190,7 +190,7 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
             AudioSource::SystemMix {
                 device_id: audio.output_device_id.clone(),
             },
-            audio.full_mix_label.clone(),
+            audio.full_mix_title().to_owned(),
             audio.full_mix_sync_offset_ms,
         ));
     }
@@ -200,7 +200,7 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
                 device_id: audio.microphone_device_id.clone(),
                 gain_db: audio.microphone_gain_db,
             },
-            audio.microphone_label.clone(),
+            audio.microphone_title().to_owned(),
             audio.microphone_sync_offset_ms,
         ));
     }
@@ -216,7 +216,7 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
     if audio.auto_game_track {
         sources.push((
             AudioSource::Game(current_game(config)),
-            audio.game_label.clone(),
+            audio.game_title().to_owned(),
             audio.game_sync_offset_ms,
         ));
     }
@@ -295,8 +295,19 @@ fn ring_window(config: &EngineConfig) -> Hns {
 fn needs_restart(old: &EngineConfig, new: &EngineConfig) -> bool {
     old.capture != new.capture
         || old.video != new.video
-        || old.audio != new.audio
+        || !old.audio.same_sources(&new.audio)
         || old.replay.storage != new.replay.storage
+}
+
+fn titled(specs: &[MuxStream], config: &EngineConfig) -> Vec<MuxStream> {
+    let titles = track_descriptors(config);
+    let mut specs = specs.to_vec();
+    if titles.len() + 1 == specs.len() {
+        for (spec, track) in specs.iter_mut().skip(1).zip(titles) {
+            spec.title = Some(track.title);
+        }
+    }
+    specs
 }
 
 struct Core {
@@ -542,10 +553,16 @@ impl Core {
 
     fn configure(&mut self, config: EngineConfig) {
         let restart = self.pipeline.is_some() && needs_restart(&self.config, &config);
+        let renamed = track_descriptors(&self.config) != track_descriptors(&config);
         if let Some(pipeline) = self.pipeline.as_mut() {
             pipeline.set_window(ring_window(&config));
         }
         self.config = config;
+        if renamed && !restart && self.pipeline.is_some() {
+            self.emit(EngineEvent::TracksRenamed {
+                tracks: track_descriptors(&self.config),
+            });
+        }
         if restart {
             tracing::info!("sources ou zone de capture changées : redémarrage du replay");
             self.disarm();
@@ -869,7 +886,7 @@ impl Pipeline {
             .collect();
         Ok(SaveJob {
             path,
-            specs: self.specs.clone(),
+            specs: titled(&self.specs, config),
             shifts,
             packets,
             duration: plan.end - plan.start,
@@ -1009,11 +1026,23 @@ mod tests {
     }
 
     #[test]
+    fn a_translated_default_name_renames_the_track_without_restarting() {
+        let french = EngineConfig::default();
+        let mut english = french.clone();
+        english.audio.default_names.mix = "Full mix".into();
+        assert!(!needs_restart(&french, &english));
+        assert_eq!(track_descriptors(&english)[0].title, "Full mix");
+        let mut renamed = french.clone();
+        renamed.audio.game_label = Some("Partie".into());
+        assert!(!needs_restart(&french, &renamed));
+    }
+
+    #[test]
     fn renamed_tracks_keep_their_order_and_offsets() {
         let mut config = EngineConfig::default();
-        config.audio.full_mix_label = "Tout".into();
-        config.audio.microphone_label = "Voix".into();
-        config.audio.game_label = "Partie".into();
+        config.audio.full_mix_label = Some("Tout".into());
+        config.audio.microphone_label = Some("Voix".into());
+        config.audio.game_label = Some("Partie".into());
         config.audio.game_sync_offset_ms = 40;
         let titles: Vec<(String, i32)> = audio_sources(&config)
             .into_iter()

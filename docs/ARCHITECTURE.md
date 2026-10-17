@@ -293,7 +293,8 @@ d'une erreur système.
 aussi l'`AppStatus` renvoyé par `get_state`.
 
 `state_changed`, `capture_started { source, width, height, fps, tracks: [{ title, kind }] }` (à l'armement ; `source` = `Localized` : `source_primary_screen`, `source_screen { name }`, `source_window { exe }`, `source_window_fallback { exe }` ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
-`game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
+`tracks_renamed { tracks: [{ title, kind }] }` (nom de piste ou langue changés pendant le
+replay : titres mis à jour sans redémarrage, appliqués au prochain clip), `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
 périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
 le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
@@ -322,7 +323,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 
 | Quoi | Où |
 |---|---|
-| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
+| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |

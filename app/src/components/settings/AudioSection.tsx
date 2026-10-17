@@ -16,7 +16,7 @@ import {
   listCaptureTargets,
   pickAppExe,
 } from "../../lib/ipc.ts";
-import { trackColor, trackIcon } from "../../lib/tracks.ts";
+import { chosenName, trackColor, trackIcon, trackTitle } from "../../lib/tracks.ts";
 import { MeterBar, useTrackMeter } from "../MeterBar.tsx";
 import { CalibrationPanel } from "./CalibrationPanel.tsx";
 import { NumberField, Select, SettingRow, Switch } from "./Settings.tsx";
@@ -49,8 +49,8 @@ interface Candidate {
 
 function rowsOf(audio: Audio): Row[] {
   return [
-    { key: "mix", kind: "mix", label: audio.full_mix_label, enabled: audio.record_full_mix, offset: audio.full_mix_sync_offset_ms, exe: null },
-    { key: "microphone", kind: "microphone", label: audio.microphone_label, enabled: audio.record_microphone, offset: audio.microphone_sync_offset_ms, exe: null },
+    { key: "mix", kind: "mix", label: trackTitle(audio, "mix"), enabled: audio.record_full_mix, offset: audio.full_mix_sync_offset_ms, exe: null },
+    { key: "microphone", kind: "microphone", label: trackTitle(audio, "microphone"), enabled: audio.record_microphone, offset: audio.microphone_sync_offset_ms, exe: null },
     ...audio.app_tracks.map((track) => ({
       key: `app:${track.exe_name.toLowerCase()}`,
       kind: "application" as const,
@@ -59,7 +59,7 @@ function rowsOf(audio: Audio): Row[] {
       offset: track.sync_offset_ms,
       exe: track.exe_name,
     })),
-    { key: "game", kind: "game", label: audio.game_label, enabled: audio.auto_game_track, offset: audio.game_sync_offset_ms, exe: null },
+    { key: "game", kind: "game", label: trackTitle(audio, "game"), enabled: audio.auto_game_track, offset: audio.game_sync_offset_ms, exe: null },
   ];
 }
 
@@ -422,9 +422,9 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   };
 
   const rename = (row: Row, label: string) => {
-    if (row.kind === "mix") setAudio({ full_mix_label: label });
-    else if (row.kind === "microphone") setAudio({ microphone_label: label });
-    else if (row.kind === "game") setAudio({ game_label: label });
+    if (row.kind === "mix") setAudio({ full_mix_label: chosenName(label, "mix") });
+    else if (row.kind === "microphone") setAudio({ microphone_label: chosenName(label, "microphone") });
+    else if (row.kind === "game") setAudio({ game_label: chosenName(label, "game") });
     else if (row.exe) setApp(row.exe, { label });
   };
 

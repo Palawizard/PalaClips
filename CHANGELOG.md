@@ -112,7 +112,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   `engine-memory.ps1`, `nvenc-quality.ps1`.
 - Interface en français et en anglais (Réglages > Général > Langue), langue de Windows par
   défaut : écrans, alertes, erreurs, menu de la zone de notification et notifications. Les
-  noms par défaut des pistes suivent la langue de Windows à la création des réglages.
+  pistes non renommées (Mix, Micro, Jeu) prennent le nom de la langue choisie, à l'écran
+  comme dans les clips ; renommer une piste ne redémarre plus le replay.
 
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
