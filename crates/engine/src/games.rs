@@ -137,7 +137,7 @@ pub fn resolve(exe_name: &str) -> Resolved {
     }
 }
 
-fn exe_path(pid: u32) -> Option<PathBuf> {
+pub(crate) fn exe_path(pid: u32) -> Option<PathBuf> {
     // SAFETY: the handle is checked and closed before returning; the buffer outlives the call.
     unsafe {
         let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;

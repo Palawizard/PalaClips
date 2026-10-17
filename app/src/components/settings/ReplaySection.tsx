@@ -13,7 +13,7 @@ import {
   listEncoders,
   memoryStatus,
 } from "../../lib/ipc.ts";
-import { Segmented, Select, SettingRow } from "./Settings.tsx";
+import { NumberField, Segmented, Select, SettingRow } from "./Settings.tsx";
 import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
 const RAM_SHARE_LIMIT = 0.4;
@@ -49,47 +49,6 @@ function withCurrent(presets: number[], current: number): number[] {
 function resolutionKey(resolution: OutputResolution): string {
   if (resolution.kind === "native") return "native";
   return HEIGHTS.includes(resolution.height) ? String(resolution.height) : "free";
-}
-
-function NumberField({
-  value,
-  min,
-  max,
-  unit,
-  label,
-  onCommit,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  unit: string;
-  label: string;
-  onCommit: (value: number) => void;
-}) {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
-  const commit = () => {
-    const parsed = Math.round(Number(text));
-    const next = Number.isFinite(parsed) && text.trim() !== "" ? Math.min(max, Math.max(min, parsed)) : value;
-    setText(String(next));
-    if (next !== value) onCommit(next);
-  };
-  return (
-    <label className="flex items-center gap-1.5 text-[13px] text-ink-2">
-      <input
-        type="number"
-        min={min}
-        max={max}
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => event.key === "Enter" && commit()}
-        className="score h-9 w-20 rounded-md border border-line-strong bg-surface px-2 text-right text-[15px] text-ink"
-        aria-label={label}
-      />
-      {unit}
-    </label>
-  );
 }
 
 export function ReplaySection() {

@@ -8,8 +8,10 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use palaclips_engine::EngineConfig;
-use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, audio_sources};
-use palaclips_engine::events::{EngineEvent, EngineState, Severity, TrackState};
+use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, track_descriptors};
+use palaclips_engine::events::{
+    EngineEvent, EngineState, Severity, TrackDescriptor, TrackKind, TrackState,
+};
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -41,14 +43,16 @@ pub struct CaptureInfo {
 #[derive(Debug, Clone, Serialize)]
 pub struct TrackInfo {
     pub title: String,
+    pub kind: TrackKind,
     pub state: Option<TrackState>,
     pub source: Option<String>,
 }
 
 impl TrackInfo {
-    fn named(title: String) -> Self {
+    fn named(descriptor: TrackDescriptor) -> Self {
         Self {
-            title,
+            title: descriptor.title,
+            kind: descriptor.kind,
             state: None,
             source: None,
         }
@@ -165,9 +169,9 @@ impl EngineSlot {
         let engine = Engine::start(config.clone())?;
         let handle = engine.handle();
         let status = Arc::new(Mutex::new(AppStatus {
-            tracks: audio_sources(&config)
+            tracks: track_descriptors(&config)
                 .into_iter()
-                .map(|(_, title, _)| TrackInfo::named(title))
+                .map(TrackInfo::named)
                 .collect(),
             ..AppStatus::default()
         }));
@@ -524,6 +528,9 @@ pub fn run() {
             commands::pick_clips_dir,
             commands::open_clips_dir,
             commands::list_capture_targets,
+            commands::list_audio_devices,
+            commands::list_app_sessions,
+            commands::pick_app_exe,
             commands::app_icon,
             commands::start_preview,
             commands::stop_preview,
@@ -710,6 +717,13 @@ mod tests {
         assert_eq!(status.buffer_bytes, 0);
     }
 
+    fn descriptor(title: &str, kind: TrackKind) -> TrackDescriptor {
+        TrackDescriptor {
+            title: title.into(),
+            kind,
+        }
+    }
+
     #[test]
     fn track_states_follow_the_capture_and_reset_when_disarmed() {
         let mut status = AppStatus::default();
@@ -718,7 +732,10 @@ mod tests {
             width: 2560,
             height: 1440,
             fps: 60,
-            tracks: vec!["Mix complet".into(), "Discord".into()],
+            tracks: vec![
+                descriptor("Mix complet", TrackKind::Mix),
+                descriptor("Discord", TrackKind::Application),
+            ],
         });
         status.apply(&EngineEvent::TrackChanged {
             track: 1,
@@ -743,7 +760,10 @@ mod tests {
             width: 1920,
             height: 1080,
             fps: 60,
-            tracks: vec!["Jeu".into(), "Jeu".into()],
+            tracks: vec![
+                descriptor("Jeu", TrackKind::Game),
+                descriptor("Jeu", TrackKind::Game),
+            ],
         });
         status.apply(&EngineEvent::TrackChanged {
             track: 1,

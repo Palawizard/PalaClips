@@ -437,6 +437,90 @@ pub fn audio_sessions(processes: &[Process]) -> Result<Vec<AudioSession>> {
     Ok(sessions)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AudioDevice {
+    pub id: String,
+    pub name: String,
+    pub default: bool,
+}
+
+pub fn audio_devices(input: bool) -> Result<Vec<AudioDevice>> {
+    let _ = wasapi::initialize_mta();
+    let direction = if input {
+        Direction::Capture
+    } else {
+        Direction::Render
+    };
+    let enumerator = DeviceEnumerator::new().map_err(audio_error)?;
+    let default = enumerator
+        .get_default_device(&direction)
+        .ok()
+        .and_then(|device| device.get_id().ok());
+    let mut devices = Vec::new();
+    for device in &enumerator
+        .get_device_collection(&direction)
+        .map_err(audio_error)?
+    {
+        let Ok(device) = device else { continue };
+        let (Ok(id), Ok(name)) = (device.get_id(), device.get_friendlyname()) else {
+            continue;
+        };
+        devices.push(AudioDevice {
+            default: default.as_deref() == Some(id.as_str()),
+            id,
+            name,
+        });
+    }
+    Ok(devices)
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AppSession {
+    pub exe_name: String,
+    pub app_name: String,
+    pub process_id: u32,
+    pub peak: f32,
+}
+
+pub fn app_sessions() -> Result<Vec<AppSession>> {
+    static APP_NAMES: parking_lot::Mutex<Option<HashMap<String, String>>> =
+        parking_lot::Mutex::new(None);
+    let _ = wasapi::initialize_mta();
+    let processes = processes()?;
+    let own = std::process::id();
+    let mut by_exe: HashMap<String, AppSession> = HashMap::new();
+    for session in audio_sessions(&processes)? {
+        let Some(exe_name) = session.exe_name.filter(|_| session.pid != own) else {
+            continue;
+        };
+        let key = exe_name.to_lowercase();
+        let entry = by_exe.entry(key.clone()).or_insert_with(|| {
+            let process_id = root_pid(&processes, &exe_name).unwrap_or(session.pid);
+            let app_name = APP_NAMES
+                .lock()
+                .get_or_insert_with(HashMap::new)
+                .entry(key)
+                .or_insert_with(|| {
+                    crate::games::exe_path(process_id).map_or_else(
+                        || crate::games::clean_exe_stem(&exe_name),
+                        |path| crate::games::app_name(&path, &exe_name),
+                    )
+                })
+                .clone();
+            AppSession {
+                exe_name,
+                app_name,
+                process_id,
+                peak: 0.0,
+            }
+        });
+        entry.peak = entry.peak.max(session.peak);
+    }
+    let mut sessions: Vec<AppSession> = by_exe.into_values().collect();
+    sessions.sort_by(|a, b| a.app_name.cmp(&b.app_name));
+    Ok(sessions)
+}
+
 pub fn session_peak(root: u32) -> Result<f32> {
     let loud: Vec<AudioSession> = audio_sessions(&[])?
         .into_iter()

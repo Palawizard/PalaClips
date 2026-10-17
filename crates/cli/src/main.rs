@@ -63,6 +63,9 @@ enum Command {
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
     #[cfg(windows)]
+    #[command(about = "Liste les périphériques audio et les applis qui ont une session audio")]
+    AudioSources,
+    #[cfg(windows)]
     #[command(about = "Capture des aperçus (JPEG ~1/s) et l'icône d'une cible dans un dossier")]
     Preview {
         #[arg(long, value_parser = parse_target, default_value = "primary")]
@@ -335,6 +338,8 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
+        Command::AudioSources => audio_sources()?,
+        #[cfg(windows)]
         Command::Preview {
             target,
             seconds,
@@ -548,6 +553,27 @@ fn list_targets(json: bool) -> Result<()> {
                 println!("window:{exe_name:<30} {width}x{height}  {title}{minimized}")
             }
         }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn audio_sources() -> Result<()> {
+    use palaclips_engine::sources::{app_sessions, audio_devices};
+
+    for (input, title) in [(false, "Sorties"), (true, "Entrées")] {
+        println!("{title} :");
+        for device in audio_devices(input)? {
+            let default = if device.default { " (défaut)" } else { "" };
+            println!("  {}{default}", device.name);
+        }
+    }
+    println!("Applis avec une session audio :");
+    for session in app_sessions()? {
+        println!(
+            "  {:<28} {:<34} PID {:>6}  crête {:.3}",
+            session.app_name, session.exe_name, session.process_id, session.peak
+        );
     }
     Ok(())
 }

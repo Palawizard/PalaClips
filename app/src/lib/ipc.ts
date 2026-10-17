@@ -182,6 +182,36 @@ export type TargetInfo =
       minimized: boolean;
     };
 
+export interface AudioDevice {
+  id: string;
+  name: string;
+  default: boolean;
+}
+
+export function listAudioDevices(input: boolean): Promise<AudioDevice[]> {
+  return invoke<AudioDevice[]>("list_audio_devices", { input });
+}
+
+export interface AppSession {
+  exe_name: string;
+  app_name: string;
+  process_id: number;
+  peak: number;
+}
+
+export function listAppSessions(): Promise<AppSession[]> {
+  return invoke<AppSession[]>("list_app_sessions");
+}
+
+export interface PickedApp {
+  exe_name: string;
+  app_name: string;
+}
+
+export function pickAppExe(): Promise<PickedApp | null> {
+  return invoke<PickedApp | null>("pick_app_exe");
+}
+
 export function listCaptureTargets(): Promise<TargetInfo[]> {
   return invoke<TargetInfo[]>("list_capture_targets");
 }
@@ -231,15 +261,19 @@ export interface EngineConfig {
   };
   audio: {
     record_full_mix: boolean;
+    full_mix_label: string;
     output_device_id: string | null;
     full_mix_sync_offset_ms: number;
     record_microphone: boolean;
+    microphone_label: string;
     microphone_device_id: string | null;
     microphone_gain_db: number;
     microphone_sync_offset_ms: number;
     app_tracks: AppTrack[];
     max_app_tracks: number;
     auto_game_track: boolean;
+    game_label: string;
+    game_sync_offset_ms: number;
     game_exe: string | null;
   };
   replay: {
@@ -287,8 +321,16 @@ export interface CaptureInfo {
   fps: number;
 }
 
+export type TrackKind = "mix" | "microphone" | "application" | "game";
+
+export interface TrackDescriptor {
+  title: string;
+  kind: TrackKind;
+}
+
 export interface TrackInfo {
   title: string;
+  kind: TrackKind;
   state: TrackState | null;
   source: string | null;
 }
@@ -310,7 +352,7 @@ export type EngineEvent =
       width: number;
       height: number;
       fps: number;
-      tracks: string[];
+      tracks: TrackDescriptor[];
     }
   | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
   | { type: "game_named"; exe_name: string; name: string }

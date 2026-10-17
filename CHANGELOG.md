@@ -74,6 +74,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   message clair en cas de refus, par exemple 5120×1440 en H.264. « Réglages appliqués »
   s'affiche quand un changement en attente part au désarmement du replay.
 - `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
+- Réglages > Audio : pistes dans l'ordre du fichier avec vumètre, nom modifiable (Mix, Micro
+  et Jeu compris), décalage de synchro par piste, sortie et micro au choix, gain du micro,
+  piste Jeu automatique, nombre maximal de pistes d'applis ; ajout d'une appli parmi celles
+  qui font du son (avec vumètre), les autres applis ouvertes ou un .exe à parcourir.
+- CLI `palaclips-cli audio-sources` : périphériques et applis qui ont une session audio.
 - Réglages > Capture : écrans et fenêtres en vignettes avec aperçu en direct (~1 image/s,
   seulement pendant que la section est visible), icône et nom de l'appli ; curseur et bordure
   jaune réglables ; changer de cible pendant que le replay tourne demande confirmation.

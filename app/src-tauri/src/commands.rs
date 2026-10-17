@@ -4,6 +4,7 @@ use palaclips_engine::config::CaptureTarget;
 use palaclips_engine::encode::{HardwareEncoder, hardware_video_encoders};
 use palaclips_engine::engine::ReplayEstimate;
 use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
+use palaclips_engine::sources::{AppSession, AudioDevice, app_sessions, audio_devices};
 use serde::Serialize;
 use tauri::State;
 use tauri::ipc::{Channel, InvokeResponseBody, Response};
@@ -209,6 +210,51 @@ pub fn open_clips_dir(slot: State<'_, EngineSlot>) -> Result<(), String> {
         .spawn()
         .map(|_| ())
         .map_err(|error| format!("Explorateur impossible à ouvrir : {error}."))
+}
+
+#[tauri::command]
+pub async fn list_audio_devices(input: bool) -> Result<Vec<AudioDevice>, String> {
+    audio_devices(input).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn list_app_sessions() -> Result<Vec<AppSession>, String> {
+    app_sessions().map_err(|error| error.to_string())
+}
+
+#[derive(Debug, Serialize)]
+pub struct PickedApp {
+    exe_name: String,
+    app_name: String,
+}
+
+#[tauri::command]
+pub async fn pick_app_exe(app: tauri::AppHandle) -> Result<Option<PickedApp>, String> {
+    use tauri::Manager;
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app
+        .dialog()
+        .file()
+        .set_title("Appli à capturer")
+        .add_filter("Applications", &["exe"]);
+    if let Some(window) = app.get_webview_window("main") {
+        dialog = dialog.set_parent(&window);
+    }
+    let Some(picked) = dialog.blocking_pick_file() else {
+        return Ok(None);
+    };
+    let path = picked
+        .into_path()
+        .map_err(|error| format!("Fichier illisible : {error}."))?;
+    let exe_name = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .ok_or_else(|| "Ce fichier n'est pas une application.".to_owned())?;
+    Ok(Some(PickedApp {
+        app_name: palaclips_engine::games::app_name(&path, &exe_name),
+        exe_name,
+    }))
 }
 
 #[tauri::command]
