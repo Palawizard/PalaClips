@@ -253,6 +253,7 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
 | `get_config` | 5 ✅ | configuration en cours |
 | `set_config { config }` | 5 ✅ | valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `get_feedback` / `set_feedback { feedback }` | 5 ✅ | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
 | `reset_config` | 5 ✅ | revenir aux réglages par défaut (APP-07), renvoie la configuration appliquée |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
 | `list_audio_sources` | 5 | sessions audio, processus, périphériques |
@@ -292,7 +293,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 
 | Quoi | Où |
 |---|---|
-| Réglages (`settings.json` : `{ schema_version, engine }`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
+| Réglages (`settings.json` : `{ schema_version, engine, feedback }`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |
