@@ -48,3 +48,7 @@ jobs:
       - name: Front — types et build
         working-directory: app
         run: npm run build
+
+      - name: Front — textes traduits
+        working-directory: app
+        run: npm test
