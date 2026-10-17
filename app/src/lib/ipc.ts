@@ -102,6 +102,7 @@ export interface EngineConfig {
   };
   storage: {
     clips_dir: string | null;
+    game_names: Record<string, string>;
   };
 }
 
@@ -165,6 +166,7 @@ export type EngineEvent =
       tracks: string[];
     }
   | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
+  | { type: "game_named"; exe_name: string; name: string }
   | {
       type: "clip_saved";
       path: string;

@@ -271,7 +271,8 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 aussi l'`AppStatus` renvoyé par `get_state`.
 
 `state_changed`, `capture_started { source, width, height, fps, tracks }` (à l'armement),
-`track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
+`game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
+`settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
 périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
 le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
