@@ -21,7 +21,7 @@ export function decibels(linear: number): number {
 }
 
 export function decibelLabel(db: number): string {
-  return Number.isFinite(db) && db > -60 ? `${decimal.format(db)} dB` : "−∞";
+  return Number.isFinite(db) && db > -60 ? `${decimal.format(db).replace("-", "−")} dB` : "−∞";
 }
 
 export function relativeTime(epochMs: number, now = Date.now()): string {
