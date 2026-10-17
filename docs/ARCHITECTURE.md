@@ -251,8 +251,9 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `engine_version` | 0 ✅ | version du moteur |
 | `default_config` | 0 ✅ | configuration par défaut |
 | `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
-| `get_config` | 5 ✅ | configuration en cours (lecture seule tant que `set_config` n'existe pas) |
-| `get_config` / `set_config` | 5 | lire / valider + appliquer + persister |
+| `get_config` | 5 ✅ | configuration en cours |
+| `set_config { config }` | 5 ✅ | valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `reset_config` | 5 ✅ | revenir aux réglages par défaut (APP-07), renvoie la configuration appliquée |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
 | `list_audio_sources` | 5 | sessions audio, processus, périphériques |
 | `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = message français) |
@@ -280,7 +281,8 @@ fenêtre),
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
-`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA).
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `settings_reset` (réglages
+illisibles mis de côté en `settings.json.bak`, ou venant d'une version plus récente).
 
 Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
 `save_replay` (personnalisable avec la persistance des réglages).
@@ -289,7 +291,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 
 | Quoi | Où |
 |---|---|
-| Réglages (`settings.json`, versionné) | `%APPDATA%\PalaClips\` |
+| Réglages (`settings.json` : `{ schema_version, engine }`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |

@@ -1,4 +1,5 @@
 mod commands;
+mod settings;
 
 use std::sync::{Arc, Mutex};
 
@@ -128,6 +129,8 @@ impl AppStatus {
 
 #[derive(Debug)]
 pub struct EngineSlot {
+    settings_path: Option<std::path::PathBuf>,
+    settings_writable: bool,
     config: Mutex<EngineConfig>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
@@ -135,7 +138,12 @@ pub struct EngineSlot {
 }
 
 impl EngineSlot {
-    fn start(app: &tauri::AppHandle, config: EngineConfig) -> palaclips_engine::Result<Self> {
+    fn start(
+        app: &tauri::AppHandle,
+        config: EngineConfig,
+        settings_path: Option<std::path::PathBuf>,
+        settings_writable: bool,
+    ) -> palaclips_engine::Result<Self> {
         let arm = config.replay.arm_on_startup;
         let engine = Engine::start(config.clone())?;
         let handle = engine.handle();
@@ -163,11 +171,40 @@ impl EngineSlot {
             handle.arm()?;
         }
         Ok(Self {
+            settings_path,
+            settings_writable,
             config: Mutex::new(config),
             engine: Mutex::new(Some(engine)),
             handle,
             status,
         })
+    }
+
+    fn apply(&self, config: EngineConfig) -> Result<(), String> {
+        config.validate().map_err(|error| error.to_string())?;
+        if !self.settings_writable {
+            return Err(
+                "Réglages en lecture seule : ils viennent d'une version plus récente de PalaClips."
+                    .into(),
+            );
+        }
+        if let Some(path) = &self.settings_path {
+            settings::save(
+                path,
+                &settings::Settings {
+                    engine: config.clone(),
+                    ..settings::Settings::default()
+                },
+            )
+            .map_err(|error| format!("Réglages non enregistrés : {error}."))?;
+        }
+        self.handle
+            .configure(config.clone())
+            .map_err(|error| error.to_string())?;
+        if let Ok(mut current) = self.config.lock() {
+            *current = config;
+        }
+        Ok(())
     }
 
     fn clips_root(&self) -> palaclips_engine::Result<std::path::PathBuf> {
@@ -220,6 +257,8 @@ pub fn run() {
             commands::default_config,
             commands::get_state,
             commands::get_config,
+            commands::set_config,
+            commands::reset_config,
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
@@ -227,7 +266,33 @@ pub fn run() {
             commands::storage_status,
         ])
         .setup(|app| {
-            let slot = EngineSlot::start(app.handle(), EngineConfig::default())?;
+            let settings_path = palaclips_engine::paths::settings_path().ok();
+            let loaded = settings_path
+                .as_deref()
+                .map(settings::load)
+                .unwrap_or_else(|| settings::Loaded {
+                    settings: settings::Settings::default(),
+                    writable: false,
+                    problem: Some(
+                        "Dossier des réglages introuvable : ils ne seront pas enregistrés.".into(),
+                    ),
+                });
+            let slot = EngineSlot::start(
+                app.handle(),
+                loaded.settings.engine,
+                settings_path,
+                loaded.writable,
+            )?;
+            if let Some(problem) = loaded.problem {
+                slot.publish(
+                    app.handle(),
+                    EngineEvent::Alert {
+                        severity: Severity::Warning,
+                        code: "settings_reset".into(),
+                        message: problem,
+                    },
+                );
+            }
             if let Err(error) = app.global_shortcut().register(save_replay_shortcut()) {
                 tracing::warn!(%error, "raccourci de sauvegarde indisponible");
                 slot.publish(app.handle(), hotkey_unavailable_alert("Alt+F10"));
