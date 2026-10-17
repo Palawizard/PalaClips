@@ -73,6 +73,13 @@
   l'option « Experimental Web Platform features ».
 - Décision : `<video muted>` + une source Web Audio par piste (fichiers extraits à la demande,
   mis en cache), synchronisés sur `currentTime`.
+- Précision (2026-10-18, consigne de Palawi) : **jamais** une piste entière décodée en
+  `AudioBuffer` (1 h × 6 pistes ≈ 8 Go en float 32 bits). Chaque piste est extraite en `.m4a`
+  par copie de flux (sans réencodage), à la demande, dans un cache disque limité en taille et
+  nettoyé (les plus anciens d'abord, et au démarrage). Lecture en continu par un `<audio>` par
+  piste branché sur Web Audio (`MediaElementAudioSourceNode` → gain, mute, solo), recalé sur la
+  vidéo quand l'écart dépasse ~40 ms. La RAM du lecteur est mesurée sur un enregistrement
+  d'1 h (rapport de la phase 6).
 
 ## ADR-009 — Index de la bibliothèque en SQLite (`rusqlite`, feature `bundled`)
 **Statut :** acceptée
@@ -395,10 +402,16 @@ phase 8).
 - Le shell lit les mêmes fichiers (`include_str!`) pour ce qu'il affiche sans WebView : menu de
   la zone de notification (reconstruit au changement de langue), notifications, titres des
   sélecteurs de fichier.
-- Noms par défaut des pistes (Mix complet / Full mix, Micro / Mic, Jeu / Game) : écrits dans la
-  langue du système à la création ou à la réinitialisation des réglages, puis traités comme
-  des noms choisis par l'utilisateur (ils vont dans les fichiers). Le dossier des clips hors
-  jeu garde le nom « Bureau » sur le disque.
+- Noms par défaut des pistes (Mix complet / Full mix, Micro / Mic, Jeu / Game), corrigé le
+  2026-10-18 à la demande de Palawi : `settings.json` ne garde que les noms renommés ; un nom
+  par défaut vaut `null`, s'affiche dans la langue courante et s'écrit dans le fichier dans la
+  langue courante au moment de la sauvegarde (le shell passe les noms de la langue au moteur,
+  `AudioSettings::default_names`, jamais enregistré ; les titres des pistes sont relus à chaque
+  clip). Renommer une piste ou changer de langue ne redémarre plus le replay
+  (`AudioSettings::same_sources`, événement `tracks_renamed`). Taper le nom par défaut de la
+  langue courante le remet à `null`. Migration (format 2) : un nom identique au défaut français
+  ou anglais redevient `null`. Le dossier des clips hors jeu garde le nom « Bureau » sur le
+  disque.
 - Garde-fou : `npm test` (`app/tests/i18n.test.mjs`, CI) échoue si un texte visible est écrit
   en dur dans `app/src` (texte JSX, attributs `aria-label`/`title`/`placeholder`/`alt`, props
   `label`/`help`/`error`/`unit`…, toute chaîne avec une lettre accentuée), si `fr.json` et

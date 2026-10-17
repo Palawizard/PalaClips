@@ -4,11 +4,21 @@ import { type EngineConfig, getConfig, getState, onEngineEvent, setConfig } from
 
 const APPLIED_ON_DISARM: Key = "settings.applied";
 
+function audioSources(audio: EngineConfig["audio"]): string {
+  return JSON.stringify({
+    ...audio,
+    full_mix_label: null,
+    microphone_label: null,
+    game_label: null,
+    app_tracks: audio.app_tracks.map((track) => ({ ...track, label: "" })),
+  });
+}
+
 export function restartsReplay(before: EngineConfig, after: EngineConfig): boolean {
   return (
     JSON.stringify(before.capture) !== JSON.stringify(after.capture) ||
     JSON.stringify(before.video) !== JSON.stringify(after.video) ||
-    JSON.stringify(before.audio) !== JSON.stringify(after.audio) ||
+    audioSources(before.audio) !== audioSources(after.audio) ||
     before.replay.storage !== after.replay.storage
   );
 }

@@ -293,18 +293,18 @@ export interface EngineConfig {
   };
   audio: {
     record_full_mix: boolean;
-    full_mix_label: string;
+    full_mix_label: string | null;
     output_device_id: string | null;
     full_mix_sync_offset_ms: number;
     record_microphone: boolean;
-    microphone_label: string;
+    microphone_label: string | null;
     microphone_device_id: string | null;
     microphone_gain_db: number;
     microphone_sync_offset_ms: number;
     app_tracks: AppTrack[];
     max_app_tracks: number;
     auto_game_track: boolean;
-    game_label: string;
+    game_label: string | null;
     game_sync_offset_ms: number;
     game_exe: string | null;
   };
@@ -385,6 +385,7 @@ export type EngineEvent =
       fps: number;
       tracks: TrackDescriptor[];
     }
+  | { type: "tracks_renamed"; tracks: TrackDescriptor[] }
   | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
   | { type: "game_named"; exe_name: string; name: string }
   | {

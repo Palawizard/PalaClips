@@ -191,6 +191,9 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     EngineEvent::CaptureStarted { source, width, height, fps, tracks } => {
                         println!("capture : {source}, {width}x{height} à {fps} i/s, pistes {}", tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
                     }
+                    EngineEvent::TracksRenamed { tracks } => {
+                        println!("pistes : {}", tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
+                    }
                     EngineEvent::TrackChanged { track, title, state, source } => {
                         println!("piste {} « {title} » : {state:?} {}", track + 1, source.unwrap_or_default());
                     }

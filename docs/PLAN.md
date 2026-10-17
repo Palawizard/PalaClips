@@ -125,12 +125,20 @@ Critères :
 
 - [ ] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
 - [ ] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
-      fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi).
+      fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi). Tests unitaires
+      par injection d'erreur dans l'écriture, puis vrai test sur un petit disque virtuel
+      (VHDX de quelques Go) créé et supprimé par un script, avec l'accord de Palawi. Jamais
+      remplir le disque C:.
 - [ ] Quota (STO-04) appliqué : jamais un favori supprimé ; ce qui sera supprimé (les plus
-      anciens) dit clairement, confirmation demandée la première fois.
+      anciens) dit clairement, confirmation demandée la première fois. Suppression
+      **définitive** (la Corbeille ne libère rien), dite clairement ; la suppression manuelle
+      dans la galerie va à la Corbeille (GAL-05).
 - [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota.
 - [ ] Protocole `palaclips://` avec `Range`.
 - [ ] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
+      ADR-008 précisé : pistes extraites en `.m4a` par copie de flux dans un cache disque
+      limité, lues en continu par des `<audio>` branchés sur Web Audio, recalées au-delà de
+      ~40 ms ; jamais de piste entière en `AudioBuffer`.
 - [ ] Découpe rapide / précise, export pistes choisies ou mixées, copier dans le presse-papiers.
 - [ ] Galerie fluide (virtualisation) avec 5 000 clips.
 - [ ] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
@@ -140,7 +148,11 @@ Critères :
 Critères :
 - 👤 Tuer le processus pendant un enregistrement : fichier lisible, finalisé au redémarrage.
 - 🤖 Clip de 4 Go : déplacement dans le lecteur < 300 ms.
-- 🤖 5 000 clips factices : défilement à 60 fps, ouverture de la galerie < 500 ms.
+- 🤖 5 000 clips factices (uniquement dans le dossier isolé : `PALACLIPS_CONFIG_DIR` + dossier
+  de clips de test, supprimés à la fin) : défilement à 60 fps, ouverture de la galerie
+  < 500 ms.
+- 🤖 RAM du lecteur mesurée sur un enregistrement d'1 h (6 pistes), sans croissance avec la
+  durée (ADR-008).
 - 👤 Glisser un clip copié dans Discord : envoi OK, son = mix.
 
 ## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)

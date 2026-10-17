@@ -185,6 +185,13 @@ Tout est arrêté et les clips supprimés à la fin.
   dans la galerie et se lit jusqu'à la fin.
 - Gros fichier : enregistrement de 4 Go, déplacements rapides dans le lecteur.
 - Discord : copier un clip depuis la galerie, coller dans Discord, vérifier le son.
+- Disque plein (STO-05) : tests unitaires par injection d'erreur d'écriture ; puis un script
+  crée un VHDX de quelques Go, le monte, enregistre dessus jusqu'à le remplir, vérifie que le
+  fichier se lit jusqu'au dernier fragment, démonte et supprime le VHDX. Lancé seulement avec
+  l'accord de Palawi ; jamais sur C:.
+- Galerie à 5 000 clips : clips factices écrits seulement dans le dossier isolé
+  (`PALACLIPS_CONFIG_DIR`, dossier de clips de test), supprimés à la fin du test.
+- Lecteur : RAM mesurée en lisant un enregistrement d'1 h à 6 pistes (doit rester stable).
 
 ## T7 — Robustesse (phase 7)
 

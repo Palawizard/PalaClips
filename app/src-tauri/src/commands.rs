@@ -15,7 +15,7 @@ use tauri_plugin_autostart::ManagerExt;
 use crate::hotkeys::{HotkeyAction, Hotkeys};
 use crate::i18n::{self, Language, LanguageSetting};
 use crate::settings::{Feedback, Theme};
-use crate::{AppStatus, EngineSlot, internal_error, refresh_tray};
+use crate::{AppStatus, EngineSlot, internal_error};
 
 #[tauri::command]
 pub fn engine_version() -> &'static str {
@@ -158,10 +158,7 @@ pub fn set_language(
     slot: State<'_, EngineSlot>,
     language: LanguageSetting,
 ) -> Result<Language, Localized> {
-    slot.update(|settings| settings.language = language)?;
-    let resolved = language.resolve();
-    refresh_tray(&app, resolved);
-    Ok(resolved)
+    slot.set_language(&app, language)
 }
 
 #[tauri::command]
