@@ -39,38 +39,36 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --ground: #eef1f6;
-    --rail: #e2e7ef;
-    --surface: #ffffff;
-    --surface-2: #f5f7fb;
-    --surface-hover: #edf1f7;
-    --line: #d9dfe9;
-    --line-strong: #c3cbd9;
-    --ink: #121826;
-    --ink-2: #445066;
-    --ink-3: #536076;
-    --rec: #d92639;
-    --warn: #9a6200;
-    --focus: #2f6fd8;
-    --track-mix: #2b3345;
-    --track-mic: #8a5f00;
-    --track-game: #23703a;
-    --track-1: #127a73;
-    --track-2: #5b4fd6;
-    --track-3: #1f6fb3;
-    --track-4: #b23f78;
-    --track-5: #7d6a00;
-    --track-6: #0e7f93;
-    --track-7: #7d3fc7;
-    --track-8: #a85314;
-    --track-9: #2f5fbf;
-    --track-10: #2d7a4c;
-    --track-11: #9a3fa8;
-    --meter-ground: #e4e9f1;
-  }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #eef1f6;
+  --rail: #e2e7ef;
+  --surface: #ffffff;
+  --surface-2: #f5f7fb;
+  --surface-hover: #edf1f7;
+  --line: #d9dfe9;
+  --line-strong: #c3cbd9;
+  --ink: #121826;
+  --ink-2: #445066;
+  --ink-3: #536076;
+  --rec: #d92639;
+  --warn: #9a6200;
+  --focus: #2f6fd8;
+  --track-mix: #2b3345;
+  --track-mic: #8a5f00;
+  --track-game: #23703a;
+  --track-1: #127a73;
+  --track-2: #5b4fd6;
+  --track-3: #1f6fb3;
+  --track-4: #b23f78;
+  --track-5: #7d6a00;
+  --track-6: #0e7f93;
+  --track-7: #7d3fc7;
+  --track-8: #a85314;
+  --track-9: #2f5fbf;
+  --track-10: #2d7a4c;
+  --track-11: #9a3fa8;
+  --meter-ground: #e4e9f1;
 }
 
 @theme inline {
@@ -188,6 +186,23 @@ body {
   }
 }
 
+.switch-thumb {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms ease;
+}
+
+.hotkey-field[data-listening="true"] {
+  border-color: var(--ink);
+  animation: listening 1.4s ease-in-out infinite;
+}
+
+@keyframes listening {
+  50% {
+    border-color: var(--line-strong);
+  }
+}
+
 .meter-fill,
 .meter-hold {
   transform-origin: left center;
@@ -198,8 +213,13 @@ body {
   .pressable,
   .roster-row,
   .clip-card,
-  .alert-item {
+  .alert-item,
+  .switch-thumb {
     transition-duration: 0ms !important;
+  }
+
+  .hotkey-field[data-listening="true"] {
+    animation: none;
   }
 
   .pressable:active:not(:disabled) {

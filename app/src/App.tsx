@@ -3,6 +3,7 @@ import { Alerts } from "./components/Alerts.tsx";
 import { Rail, type View } from "./components/Rail.tsx";
 import { RecentClips } from "./components/RecentClips.tsx";
 import { Roster } from "./components/Roster.tsx";
+import { Settings } from "./components/settings/Settings.tsx";
 import { StatusBanner } from "./components/StatusBanner.tsx";
 import { useEngine } from "./lib/useEngine.ts";
 
@@ -49,11 +50,9 @@ export default function App() {
           </>
         )}
         {view === "gallery" && (
-          <Pending title="Galerie" text="La galerie complète, avec le lecteur et la découpe, arrive ici. Tes derniers clips sont déjà sur l'écran État." />
+          <Pending title="Galerie" text="Galerie en préparation." />
         )}
-        {view === "settings" && (
-          <Pending title="Réglages" text="Capture, audio, replay et qualité, raccourcis, stockage : les réglages arrivent ici." />
-        )}
+        {view === "settings" && <Settings />}
       </main>
     </div>
   );
