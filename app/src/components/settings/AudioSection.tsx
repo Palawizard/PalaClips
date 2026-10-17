@@ -17,6 +17,7 @@ import {
 } from "../../lib/ipc.ts";
 import { trackColor, trackIcon } from "../../lib/tracks.ts";
 import { MeterBar, useTrackMeter } from "../MeterBar.tsx";
+import { CalibrationPanel } from "./CalibrationPanel.tsx";
 import { NumberField, Select, SettingRow, Switch } from "./Settings.tsx";
 import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
@@ -425,6 +426,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
 
   return (
     <>
+      <CalibrationPanel config={config} />
       <section aria-labelledby="tracks-title">
         <div className={`${ROW_COLUMNS} px-5 pt-5 pb-3`}>
           <div className="col-span-3 flex items-baseline gap-3">
