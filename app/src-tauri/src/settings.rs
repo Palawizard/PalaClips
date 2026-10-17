@@ -11,6 +11,7 @@ pub const SETTINGS_VERSION: u32 = 1;
 pub struct Settings {
     pub schema_version: u32,
     pub engine: EngineConfig,
+    pub feedback: Feedback,
 }
 
 impl Default for Settings {
@@ -18,6 +19,23 @@ impl Default for Settings {
         Self {
             schema_version: SETTINGS_VERSION,
             engine: EngineConfig::default(),
+            feedback: Feedback::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Feedback {
+    pub sound: bool,
+    pub toast: bool,
+}
+
+impl Default for Feedback {
+    fn default() -> Self {
+        Self {
+            sound: true,
+            toast: true,
         }
     }
 }

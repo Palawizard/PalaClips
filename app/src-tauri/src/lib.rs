@@ -1,4 +1,5 @@
 mod commands;
+mod feedback;
 mod settings;
 
 use std::sync::{Arc, Mutex};
@@ -131,7 +132,7 @@ impl AppStatus {
 pub struct EngineSlot {
     settings_path: Option<std::path::PathBuf>,
     settings_writable: bool,
-    config: Mutex<EngineConfig>,
+    settings: Mutex<settings::Settings>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
     status: Arc<Mutex<AppStatus>>,
@@ -140,10 +141,11 @@ pub struct EngineSlot {
 impl EngineSlot {
     fn start(
         app: &tauri::AppHandle,
-        config: EngineConfig,
+        settings: settings::Settings,
         settings_path: Option<std::path::PathBuf>,
         settings_writable: bool,
     ) -> palaclips_engine::Result<Self> {
+        let config = settings.engine.clone();
         let arm = config.replay.arm_on_startup;
         let engine = Engine::start(config.clone())?;
         let handle = engine.handle();
@@ -161,10 +163,8 @@ impl EngineSlot {
             .name("palaclips-events".into())
             .spawn(move || {
                 for event in events.iter() {
-                    if let EngineEvent::GameNamed { exe_name, name } = &event
-                        && let Some(slot) = app.try_state::<EngineSlot>()
-                    {
-                        slot.remember_game(exe_name, name);
+                    if let Some(slot) = app.try_state::<EngineSlot>() {
+                        slot.react(&app, &event);
                     }
                     if let Ok(mut status) = relay_status.lock() {
                         status.apply(&event);
@@ -178,68 +178,103 @@ impl EngineSlot {
         Ok(Self {
             settings_path,
             settings_writable,
-            config: Mutex::new(config),
+            settings: Mutex::new(settings),
             engine: Mutex::new(Some(engine)),
             handle,
             status,
         })
     }
 
-    fn apply(&self, config: EngineConfig) -> Result<(), String> {
-        config.validate().map_err(|error| error.to_string())?;
+    fn config(&self) -> EngineConfig {
+        self.settings
+            .lock()
+            .map(|settings| settings.engine.clone())
+            .unwrap_or_default()
+    }
+
+    fn feedback(&self) -> settings::Feedback {
+        self.settings
+            .lock()
+            .map(|settings| settings.feedback)
+            .unwrap_or_default()
+    }
+
+    fn update(&self, change: impl FnOnce(&mut settings::Settings)) -> Result<(), String> {
         if !self.settings_writable {
             return Err(
                 "Réglages en lecture seule : ils viennent d'une version plus récente de PalaClips."
                     .into(),
             );
         }
+        let mut current = self
+            .settings
+            .lock()
+            .map_err(|_| "réglages illisibles".to_owned())?;
+        let mut changed = current.clone();
+        change(&mut changed);
         if let Some(path) = &self.settings_path {
-            settings::save(
-                path,
-                &settings::Settings {
-                    engine: config.clone(),
-                    ..settings::Settings::default()
-                },
-            )
-            .map_err(|error| format!("Réglages non enregistrés : {error}."))?;
+            settings::save(path, &changed)
+                .map_err(|error| format!("Réglages non enregistrés : {error}."))?;
         }
-        self.handle
-            .configure(config.clone())
-            .map_err(|error| error.to_string())?;
-        if let Ok(mut current) = self.config.lock() {
-            *current = config;
-        }
+        *current = changed;
         Ok(())
     }
 
-    fn remember_game(&self, exe_name: &str, name: &str) {
-        let Ok(mut config) = self.config.lock() else {
-            return;
-        };
-        config
-            .storage
-            .game_names
-            .insert(exe_name.to_owned(), name.to_owned());
-        if let (true, Some(path)) = (self.settings_writable, &self.settings_path)
-            && let Err(error) = settings::save(
+    fn apply(&self, config: EngineConfig) -> Result<(), String> {
+        config.validate().map_err(|error| error.to_string())?;
+        self.update(|settings| settings.engine = config.clone())?;
+        self.handle
+            .configure(config)
+            .map_err(|error| error.to_string())
+    }
+
+    fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
+        match event {
+            EngineEvent::GameNamed { exe_name, name } => {
+                if let Err(error) = self.update(|settings| {
+                    settings
+                        .engine
+                        .storage
+                        .game_names
+                        .insert(exe_name.clone(), name.clone());
+                }) {
+                    tracing::warn!(%error, "nom de jeu non enregistré");
+                }
+            }
+            EngineEvent::ClipSaved {
                 path,
-                &settings::Settings {
-                    engine: config.clone(),
-                    ..settings::Settings::default()
-                },
-            )
-        {
-            tracing::warn!(%error, "nom de jeu non enregistré");
+                duration_secs,
+                ..
+            } => {
+                let feedback = self.feedback();
+                if feedback.sound {
+                    feedback::play_chime();
+                }
+                if feedback.toast {
+                    let game = std::path::Path::new(path)
+                        .parent()
+                        .and_then(std::path::Path::file_name)
+                        .map(|name| name.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    let seconds = duration_secs.round() as u64;
+                    feedback::toast(
+                        app,
+                        "Clip sauvegardé",
+                        &format!("{game} · {}:{:02}", seconds / 60, seconds % 60),
+                    );
+                }
+            }
+            EngineEvent::Alert { code, message, .. }
+                if code == "clip_save_failed" && self.feedback().toast =>
+            {
+                feedback::toast(app, "Clip non sauvegardé", message);
+            }
+            _ => {}
         }
     }
 
     fn clips_root(&self) -> palaclips_engine::Result<std::path::PathBuf> {
-        let configured = self
-            .config
-            .lock()
-            .ok()
-            .and_then(|config| config.storage.clips_dir.clone());
-        match configured {
+        match self.config().storage.clips_dir {
             Some(dir) => Ok(dir),
             None => palaclips_engine::paths::default_clips_dir(),
         }
@@ -260,6 +295,7 @@ impl EngineSlot {
 
 pub fn run() {
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             if let Err(error) = open_main_window(app) {
                 tracing::warn!(%error, "ouverture de la fenêtre impossible");
@@ -285,6 +321,8 @@ pub fn run() {
             commands::get_config,
             commands::set_config,
             commands::reset_config,
+            commands::get_feedback,
+            commands::set_feedback,
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
@@ -305,7 +343,7 @@ pub fn run() {
                 });
             let slot = EngineSlot::start(
                 app.handle(),
-                loaded.settings.engine,
+                loaded.settings,
                 settings_path,
                 loaded.writable,
             )?;
