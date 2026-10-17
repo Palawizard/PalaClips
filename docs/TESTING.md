@@ -189,10 +189,15 @@ Tout est arrêté et les clips supprimés à la fin.
   dans la galerie et se lit jusqu'à la fin.
 - Gros fichier : enregistrement de 4 Go, déplacements rapides dans le lecteur.
 - Discord : copier un clip depuis la galerie, coller dans Discord, vérifier le son.
-- Disque plein (STO-05) : tests unitaires par injection d'erreur d'écriture ; puis un script
-  crée un VHDX de quelques Go, le monte, enregistre dessus jusqu'à le remplir, vérifie que le
-  fichier se lit jusqu'au dernier fragment, démonte et supprime le VHDX. Lancé seulement avec
-  l'accord de Palawi ; jamais sur C:.
+- Disque plein (STO-05) : tests unitaires par injection d'erreur d'écriture
+  (`a_full_disk_stops_the_recording_and_the_file_is_recovered_at_startup`) ; puis
+  `pwsh scripts/disk-full.ps1` dans un terminal **administrateur** (~3 min, accord de
+  Palawi) : VHDX de 1 Go dans `target\`, monté sur une lettre libre, enregistrement à 80 Mb/s
+  d'une fenêtre de bruit ffplay (aucun son, aucune fenêtre de Palawi) jusqu'à l'arrêt sous
+  300 Mo libres ; attendu : alertes `disk_almost_full` et `recording_failed`, sauvegarde du
+  replay refusée, fichier lisible (ffprobe), journal des enregistrements vide. Le VHDX est
+  démonté et supprimé à la fin, même en cas d'échec ; jamais d'écriture sur C: au-delà du
+  VHDX (le script vérifie 6 Go libres avant). Journal : `target/journals/disk-full-*.txt`.
 - Galerie à 5 000 clips : clips factices écrits seulement dans le dossier isolé
   (`PALACLIPS_CONFIG_DIR`, dossier de clips de test), supprimés à la fin du test.
 - Lecteur : RAM mesurée en lisant un enregistrement d'1 h à 6 pistes (doit rester stable).
