@@ -295,12 +295,17 @@
 ### Calibrage intégré (AUD-11, mesuré le 2026-10-17, machine de Palawi)
 
 `palaclips-cli calibrate --settings settings.json` (même chemin que Réglages > Audio) : 12,5 s
-au total, 9 paires flash/bip par piste. Mix « Voicemeeter Input » : son en retard de
-+138,0 ms (dispersion 0 ms) → proposé −138 ms, cohérent avec les +103 à +136 ms mesurés plus
-haut (la chaîne varie d'une relance à l'autre). Piste Jeu (capture par processus) : +33,4 ms
-→ −33 ms, proposé aussi aux pistes d'applis. Micro « CABLE Output » : non mesuré (le micro
-n'entend pas les bips au casque), comme prévu. Fichier temporaire supprimé, réglages
-seulement lus.
+au total, 9 paires flash/bip par piste. Mix « Voicemeeter Input » : +138,0 ms (dispersion
+0 ms) ; piste Jeu (capture par processus de l'émetteur) : +33,4 ms ; micro « CABLE Output » :
+non mesuré au casque.
+- Lecture corrigée (ADR-027) : les +33,4 ms de la piste Jeu sont le tampon de rendu de
+  l'émetteur lui-même (même nature que les +15,7 ms de l'Apogee plus haut), présent dans
+  toutes les pistes et propre à chaque jeu : ce n'est pas à compenser. Seul l'excédent d'une
+  piste sur cette référence vient de la chaîne : Mix +138,0 − 33,4 ≈ **+105 ms** propres à
+  Voicemeeter (cohérent avec les ~100 ms du loopback virtuel mesurés plus haut) → proposé
+  −105 ms ; Jeu et applis 0 ms.
+- La première version proposait −138 et −33 ms (alignement sur zéro) : faux, rien n'a été
+  appliqué.
 
 ### Aperçus en direct du sélecteur de capture (mesuré le 2026-10-17)
 
