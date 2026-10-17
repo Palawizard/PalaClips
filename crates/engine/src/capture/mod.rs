@@ -8,5 +8,5 @@ pub use display::{
     display_color_info,
 };
 pub use pacer::CfrClock;
-pub use targets::{ResolvedTarget, TargetInfo, list_targets, resolve_target};
+pub use targets::{ResolvedTarget, TargetInfo, list_targets, resolve_target, target_size};
 pub use video::{VideoCapture, VideoCaptureStats, VideoStream};

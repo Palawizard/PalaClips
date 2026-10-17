@@ -2,7 +2,9 @@ use std::path::{Path, PathBuf};
 
 use windows::Win32::System::Com::CoTaskMemFree;
 use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS_EX};
-use windows::Win32::System::SystemInformation::GetLocalTime;
+use windows::Win32::System::SystemInformation::{
+    GetLocalTime, GlobalMemoryStatusEx, MEMORYSTATUSEX,
+};
 use windows::Win32::System::Threading::GetCurrentProcess;
 use windows::Win32::UI::Shell::{
     FOLDERID_LocalAppData, FOLDERID_RoamingAppData, FOLDERID_Videos, KF_FLAG_DEFAULT,
@@ -66,6 +68,16 @@ pub fn local_timestamp() -> String {
         "{:04}-{:02}-{:02}_{:02}-{:02}-{:02}",
         now.wYear, now.wMonth, now.wDay, now.wHour, now.wMinute, now.wSecond
     )
+}
+
+pub fn physical_memory() -> Option<(u64, u64)> {
+    let mut status = MEMORYSTATUSEX {
+        dwLength: size_of::<MEMORYSTATUSEX>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: `status` is sized by `dwLength` as the call requires.
+    unsafe { GlobalMemoryStatusEx(&mut status) }.ok()?;
+    Some((status.ullTotalPhys, status.ullAvailPhys))
 }
 
 pub fn private_bytes() -> Option<u64> {
