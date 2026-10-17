@@ -57,15 +57,9 @@ pub fn hardware_video_encoders() -> Result<Vec<HardwareEncoder>> {
         .filter_map(|codec| {
             let codec_kind = video_codec(&codec)?;
             let name = codec.name().to_string_lossy().into_owned();
-            let (outcome, logs) = log::with_captured_errors(|| probe_encoder(&device, &name));
-            let failure = outcome.err().map(|error| {
-                logs.first()
-                    .map(|line| {
-                        line.split_once("] ")
-                            .map_or(line.as_str(), |(_, text)| text)
-                    })
-                    .map_or_else(|| error.to_string(), str::to_owned)
-            });
+            let (outcome, logs) =
+                log::with_captured_errors(|| probe_encoder(&device, &name, PROBE_SIZE, PROBE_FPS));
+            let failure = outcome.err().map(|error| failure_reason(&error, &logs));
             Some(HardwareEncoder {
                 description: codec.long_name().to_string_lossy().into_owned(),
                 codec: codec_kind,
@@ -84,6 +78,81 @@ pub fn pick_encoder(encoders: &[HardwareEncoder], codec: VideoCodec) -> Result<&
         .iter()
         .find(|encoder| encoder.codec == codec && encoder.is_available())
         .ok_or(EngineError::CodecUnavailable(codec))
+}
+
+pub fn codec_label(codec: VideoCodec) -> &'static str {
+    match codec {
+        VideoCodec::H264 => "H.264",
+        VideoCodec::Hevc => "HEVC",
+        VideoCodec::Av1 => "AV1",
+    }
+}
+
+pub fn max_output_side(codec: VideoCodec) -> u32 {
+    match codec {
+        VideoCodec::H264 => 4096,
+        VideoCodec::Hevc | VideoCodec::Av1 => 8192,
+    }
+}
+
+pub fn check_output_size(codec: VideoCodec, size: Size) -> Result<()> {
+    let limit = max_output_side(codec);
+    if size.width > limit || size.height > limit {
+        return Err(EngineError::OutputRefused(format!(
+            "{} est limité à {limit} px de côté et la vidéo ferait {}×{} : choisis une résolution de sortie plus basse ou un autre codec",
+            codec_label(codec),
+            size.width,
+            size.height
+        )));
+    }
+    Ok(())
+}
+
+pub fn try_output(
+    encoders: &[HardwareEncoder],
+    codec: VideoCodec,
+    size: Size,
+    fps: u32,
+) -> Result<()> {
+    check_output_size(codec, size)?;
+    probe_output(encoders, codec, size, fps)
+}
+
+pub fn probe_output(
+    encoders: &[HardwareEncoder],
+    codec: VideoCodec,
+    size: Size,
+    fps: u32,
+) -> Result<()> {
+    let encoder = pick_encoder(encoders, codec)?;
+    let device = create_device()?;
+    let (outcome, logs) =
+        log::with_captured_errors(|| probe_encoder(&device, &encoder.name, size, fps));
+    outcome.map_err(|error| {
+        tracing::warn!(
+            encoder = %encoder.name,
+            width = size.width,
+            height = size.height,
+            fps,
+            reason = %failure_reason(&error, &logs),
+            "sortie vidéo refusée par l'encodeur"
+        );
+        EngineError::OutputRefused(format!(
+            "la carte graphique refuse d'encoder {}×{} à {fps} i/s en {} : choisis une résolution de sortie plus basse ou un autre codec",
+            size.width,
+            size.height,
+            codec_label(codec)
+        ))
+    })
+}
+
+fn failure_reason(error: &EngineError, logs: &[String]) -> String {
+    logs.first()
+        .map(|line| {
+            line.split_once("] ")
+                .map_or(line.as_str(), |(_, text)| text)
+        })
+        .map_or_else(|| error.to_string(), str::to_owned)
 }
 
 fn accepts_d3d11_frames(codec: &AVCodec) -> bool {
@@ -108,15 +177,15 @@ fn video_codec(codec: &AVCodec) -> Option<VideoCodec> {
     }
 }
 
-fn probe_encoder(device: &ID3D11Device, name: &str) -> Result<()> {
+fn probe_encoder(device: &ID3D11Device, name: &str, size: Size, fps: u32) -> Result<()> {
     let source = render_texture(device, PROBE_SIZE, DXGI_FORMAT_B8G8R8A8_UNORM)?;
-    let converter = GpuConverter::new(device, PROBE_SIZE, PROBE_SIZE, PROBE_FPS)?;
+    let converter = GpuConverter::new(device, PROBE_SIZE, size, fps)?;
     let mut encoder = VideoEncoder::open(
         device,
         &VideoEncoderSettings {
             encoder: name.to_owned(),
-            size: PROBE_SIZE,
-            fps: PROBE_FPS,
+            size,
+            fps,
             bitrate_kbps: 5_000,
             keyframe_interval_secs: 1.0,
         },
@@ -140,4 +209,34 @@ fn probe_encoder(device: &ID3D11Device, name: &str) -> Result<()> {
         )));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn h264_accepts_exactly_4096_and_refuses_wider() {
+        assert!(check_output_size(VideoCodec::H264, Size::new(4096, 2160)).is_ok());
+        assert!(check_output_size(VideoCodec::H264, Size::new(4098, 1152)).is_err());
+        assert!(check_output_size(VideoCodec::H264, Size::new(1080, 4098)).is_err());
+    }
+
+    #[test]
+    fn super_ultrawide_native_needs_hevc_or_av1() {
+        let size = Size::new(5120, 1440);
+        assert!(check_output_size(VideoCodec::H264, size).is_err());
+        assert!(check_output_size(VideoCodec::Hevc, size).is_ok());
+        assert!(check_output_size(VideoCodec::Av1, size).is_ok());
+        assert!(check_output_size(VideoCodec::Hevc, Size::new(8194, 2160)).is_err());
+    }
+
+    #[test]
+    fn refusal_names_the_codec_and_the_size() {
+        let message = check_output_size(VideoCodec::H264, Size::new(5120, 1440))
+            .expect_err("5120 px exceeds the H.264 limit")
+            .to_string();
+        assert!(message.contains("H.264"), "{message}");
+        assert!(message.contains("5120×1440"), "{message}");
+    }
 }

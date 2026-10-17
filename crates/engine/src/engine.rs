@@ -13,7 +13,10 @@ use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
 use crate::capture::{VideoCapture, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, EngineConfig, ReplayStorage};
-use crate::encode::{Size, hardware_video_encoders, output_size, pick_encoder, write_thumbnail};
+use crate::encode::{
+    HardwareEncoder, Size, hardware_video_encoders, output_size, pick_encoder, try_output,
+    write_thumbnail,
+};
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
@@ -201,6 +204,8 @@ fn capture_label(target: &CaptureTarget, fell_back: bool) -> String {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 pub struct ReplayEstimate {
+    pub source_width: u32,
+    pub source_height: u32,
     pub width: u32,
     pub height: u32,
     pub video_kbps: u32,
@@ -214,12 +219,20 @@ pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
     let video_kbps = config.video.bitrate_kbps_for(size.width, size.height);
     let audio_tracks = audio_sources(config).len();
     Ok(ReplayEstimate {
+        source_width: width,
+        source_height: height,
         width: size.width,
         height: size.height,
         video_kbps,
         audio_tracks,
         bytes: estimate_buffer_bytes(video_kbps, audio_tracks, ring_window(config)),
     })
+}
+
+pub fn try_video_output(config: &EngineConfig, encoders: &[HardwareEncoder]) -> Result<()> {
+    let (width, height) = target_size(&config.capture)?;
+    let size = output_size(Size::new(width, height), config.video.resolution);
+    try_output(encoders, config.video.codec, size, config.video.fps)
 }
 
 fn current_game(config: &EngineConfig) -> CurrentGame {

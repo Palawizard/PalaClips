@@ -63,6 +63,20 @@ enum Command {
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
     #[cfg(windows)]
+    #[command(about = "Essaie d'ouvrir l'encodeur matériel à une taille et un fps donnés")]
+    TryOutput {
+        #[arg(long, value_parser = parse_codec, default_value = "h264")]
+        codec: VideoCodec,
+        #[arg(long)]
+        width: u32,
+        #[arg(long)]
+        height: u32,
+        #[arg(long, default_value_t = 60)]
+        fps: u32,
+        #[arg(long, help = "Ignore la limite connue du codec et essaie quand même")]
+        skip_limit: bool,
+    },
+    #[cfg(windows)]
     #[command(about = "Liste les écrans et fenêtres capturables")]
     ListTargets {
         #[arg(long, help = "Sortie JSON")]
@@ -311,6 +325,14 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
+        Command::TryOutput {
+            codec,
+            width,
+            height,
+            fps,
+            skip_limit,
+        } => try_output(codec, width, height, fps, skip_limit)?,
+        #[cfg(windows)]
         Command::ListTargets { json } => list_targets(json)?,
         #[cfg(windows)]
         Command::CaptureVideo { capture } => run_capture(&capture, Vec::new())?,
@@ -430,6 +452,30 @@ fn main() -> Result<()> {
 }
 
 #[cfg(windows)]
+#[cfg(windows)]
+fn try_output(
+    codec: VideoCodec,
+    width: u32,
+    height: u32,
+    fps: u32,
+    skip_limit: bool,
+) -> Result<()> {
+    use palaclips_engine::encode::{Size, hardware_video_encoders, probe_output, try_output};
+
+    let encoders = hardware_video_encoders()?;
+    let size = Size::new(width, height);
+    let outcome = if skip_limit {
+        probe_output(&encoders, codec, size, fps)
+    } else {
+        try_output(&encoders, codec, size, fps)
+    };
+    match outcome {
+        Ok(()) => println!("{codec:?} {width}x{height} {fps} i/s : accepté"),
+        Err(error) => println!("{codec:?} {width}x{height} {fps} i/s : {error}"),
+    }
+    Ok(())
+}
+
 fn ffmpeg_info() -> Result<()> {
     use palaclips_engine::encode::{ffmpeg_version, hardware_video_encoders};
 

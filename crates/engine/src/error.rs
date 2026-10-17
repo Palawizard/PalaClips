@@ -22,6 +22,9 @@ pub enum EngineError {
     #[error("la capture a échoué : {0}")]
     Capture(String),
 
+    #[error("sortie vidéo refusée : {0}")]
+    OutputRefused(String),
+
     #[error("l'encodeur vidéo a échoué : {0}")]
     Encoder(String),
 
