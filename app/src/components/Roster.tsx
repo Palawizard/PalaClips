@@ -1,7 +1,7 @@
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import type { TrackInfo, TrackState } from "../lib/ipc.ts";
-import { registerMeter } from "../lib/levels.ts";
 import { trackColor, trackIcon } from "../lib/tracks.ts";
+import { MeterBar, useTrackMeter } from "./MeterBar.tsx";
 
 const STATE_LABEL: Record<TrackState, string> = {
   capturing: "Capture",
@@ -17,8 +17,6 @@ const STATE_TONE: Record<TrackState, string> = {
   unavailable: "text-warn",
 };
 
-const TICKS = [-48, -36, -24, -12, -6];
-
 const COLUMNS =
   "grid grid-cols-[52px_minmax(0,1.3fr)_minmax(140px,2fr)_76px_minmax(0,1fr)] items-center gap-x-4";
 
@@ -33,15 +31,8 @@ function TrackRow({
   color: string;
   flashing: boolean;
 }) {
-  const fill = useRef<HTMLDivElement>(null);
-  const hold = useRef<HTMLDivElement>(null);
-  const peak = useRef<HTMLSpanElement>(null);
-  const Icon = trackIcon(track.title);
-
-  useEffect(() => {
-    if (!fill.current || !hold.current || !peak.current) return;
-    return registerMeter(index, fill.current, hold.current, peak.current);
-  }, [index]);
+  const { fill, hold, peak } = useTrackMeter(index);
+  const Icon = trackIcon(track.kind);
 
   return (
     <div
@@ -68,20 +59,7 @@ function TrackRow({
           )}
         </span>
       </span>
-      <span role="cell" className="relative block h-2.5 overflow-hidden rounded-[2px] bg-meter-ground">
-        <span ref={fill} className="meter-fill absolute inset-0" style={{ background: color, transform: "scaleX(0)" }} />
-        {TICKS.map((db) => (
-          <span
-            key={db}
-            aria-hidden
-            className="absolute inset-y-0 w-px bg-ground/70"
-            style={{ left: `${((db + 60) / 60) * 100}%` }}
-          />
-        ))}
-        <span ref={hold} className="meter-hold absolute inset-0" style={{ transform: "translateX(0%)" }}>
-          <span className="absolute inset-y-0 left-0 w-[2px] -translate-x-full" style={{ background: color }} />
-        </span>
-      </span>
+      <MeterBar cell color={color} fill={fill} hold={hold} />
       <span role="cell" ref={peak} className="score text-right text-[19px] leading-none font-semibold text-ink">
         −∞
       </span>
@@ -151,7 +129,7 @@ export function Roster({
             key={index}
             track={track}
             index={index}
-            color={trackColor(track.title, appOrder)}
+            color={trackColor(track.kind, track.title, appOrder)}
             flashing={flashing}
           />
         ))}
