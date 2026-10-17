@@ -24,6 +24,16 @@ pub fn replay_spool_dir() -> Result<PathBuf> {
         .join("replay"))
 }
 
+pub fn thumbnail_path(clip: &Path) -> Result<PathBuf> {
+    let name = clip.file_stem().unwrap_or_default();
+    Ok(known_folder(&FOLDERID_LocalAppData)?
+        .join(APP_DIR)
+        .join("cache")
+        .join("thumbnails")
+        .join(name)
+        .with_extension("jpg"))
+}
+
 pub fn game_label(exe_name: Option<&str>) -> String {
     let Some(exe_name) = exe_name else {
         return DESKTOP_GAME.into();

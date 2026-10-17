@@ -184,9 +184,9 @@ pub fn probe_memory(args: &ProbeMemoryArgs) -> Result<()> {
     )));
     let mut tracks = Vec::new();
     let mut drains = Vec::new();
-    for source in sources {
+    for (index, source) in sources.into_iter().enumerate() {
         let title = source.label();
-        let track = AudioTrack::start(source, title, origin, Hns::ZERO)?;
+        let track = AudioTrack::start(index, source, title, origin, Hns::ZERO)?;
         let packets = track.packets().clone();
         drains.push(std::thread::spawn(move || while packets.recv().is_ok() {}));
         tracks.push(track);

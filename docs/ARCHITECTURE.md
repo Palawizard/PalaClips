@@ -250,11 +250,15 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 |---|---|---|
 | `engine_version` | 0 ✅ | version du moteur |
 | `default_config` | 0 ✅ | configuration par défaut |
+| `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
+| `get_config` | 5 ✅ | configuration en cours (lecture seule tant que `set_config` n'existe pas) |
 | `get_config` / `set_config` | 5 | lire / valider + appliquer + persister |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
 | `list_audio_sources` | 5 | sessions audio, processus, périphériques |
-| `replay_arm` / `replay_disarm` / `replay_save` | 5 | contrôle du replay |
+| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = message français) |
 | `record_start` / `record_stop` | 6 | enregistrement |
+| `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
+| `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
 | `list_clips` / `clip_*` | 6 | galerie : renommer, favori, supprimer, copier, exporter |
 | `get_hotkeys` / `set_hotkeys` | 5 | raccourcis, avec conflits |
 | `performance_snapshot` | 7 | panneau de performances |
@@ -262,11 +266,24 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 
 ### Événements (app → front) : `EngineEvent`
 
-`state_changed`, `clip_saved`, `audio_levels` (~20 Hz, seulement fenêtre ouverte),
+Émis tels quels sur l'événement Tauri `engine-event` par le fil `palaclips-events`, qui tient
+aussi l'`AppStatus` renvoyé par `get_state`.
+
+`state_changed`, `capture_started { source, width, height, fps, tracks }` (à l'armement),
+`track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
+périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
+le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
+de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
+fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
+fenêtre),
 `replay_stats`, `alert { severity, code, message }`.
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
-`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`.
+`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA).
+
+Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
+`save_replay` (personnalisable avec la persistance des réglages).
 
 ## 7. Données sur le disque
 
@@ -275,7 +292,7 @@ Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `cap
 | Réglages (`settings.json`, versionné) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
-| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` |
+| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |
 | Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | DLL FFmpeg (LGPL) | à côté de `palaclips.exe` (ressources du bundle) |

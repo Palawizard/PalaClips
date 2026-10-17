@@ -5,6 +5,8 @@ mod store;
 pub use ring::{PacketRing, TimedPacket};
 #[cfg(windows)]
 pub use store::{PacketReader, ReplayPacket, Spool};
+#[cfg(windows)]
+pub(crate) use store::{packet_data, share_packet};
 
 use crate::clock::{HNS_PER_SECOND, Hns};
 

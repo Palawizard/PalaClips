@@ -1,24 +1,319 @@
 mod commands;
 
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use std::sync::{Arc, Mutex};
+
+use palaclips_engine::EngineConfig;
+use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, audio_sources};
+use palaclips_engine::events::{EngineEvent, EngineState, Severity, TrackState};
+use serde::Serialize;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 pub const MAIN_WINDOW: &str = "main";
+pub const ENGINE_EVENT: &str = "engine-event";
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ActiveAlert {
+    pub severity: Severity,
+    pub code: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CaptureInfo {
+    pub source: String,
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TrackInfo {
+    pub title: String,
+    pub state: Option<TrackState>,
+    pub source: Option<String>,
+}
+
+impl TrackInfo {
+    fn named(title: String) -> Self {
+        Self {
+            title,
+            state: None,
+            source: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct AppStatus {
+    pub state: EngineState,
+    pub buffered_secs: f64,
+    pub buffer_bytes: u64,
+    pub capture: Option<CaptureInfo>,
+    pub tracks: Vec<TrackInfo>,
+    pub alerts: Vec<ActiveAlert>,
+}
+
+impl AppStatus {
+    fn apply(&mut self, event: &EngineEvent) {
+        match event {
+            EngineEvent::StateChanged { state } => {
+                self.state = *state;
+                if *state != EngineState::Idle {
+                    self.alerts.retain(|alert| {
+                        alert.code != "replay_arm_failed" && alert.code != "replay_stopped"
+                    });
+                }
+                if *state == EngineState::Idle {
+                    self.buffered_secs = 0.0;
+                    self.buffer_bytes = 0;
+                    self.capture = None;
+                    for track in &mut self.tracks {
+                        track.state = None;
+                        track.source = None;
+                    }
+                }
+            }
+            EngineEvent::CaptureStarted {
+                source,
+                width,
+                height,
+                fps,
+                tracks,
+            } => {
+                self.capture = Some(CaptureInfo {
+                    source: source.clone(),
+                    width: *width,
+                    height: *height,
+                    fps: *fps,
+                });
+                self.tracks = tracks.iter().cloned().map(TrackInfo::named).collect();
+            }
+            EngineEvent::TrackChanged {
+                track,
+                state,
+                source,
+                ..
+            } => {
+                if let Some(track) = self.tracks.get_mut(*track) {
+                    track.state = Some(*state);
+                    track.source = source.clone();
+                }
+            }
+            EngineEvent::ReplayStats {
+                buffered_secs,
+                bytes,
+            } => {
+                self.buffered_secs = *buffered_secs;
+                self.buffer_bytes = *bytes;
+            }
+            EngineEvent::Alert {
+                severity,
+                code,
+                message,
+            } => {
+                self.alerts.retain(|alert| alert.code != *code);
+                self.alerts.push(ActiveAlert {
+                    severity: *severity,
+                    code: code.clone(),
+                    message: message.clone(),
+                });
+            }
+            _ => {}
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct EngineSlot {
+    config: Mutex<EngineConfig>,
+    engine: Mutex<Option<Engine>>,
+    handle: EngineHandle,
+    status: Arc<Mutex<AppStatus>>,
+}
+
+impl EngineSlot {
+    fn start(app: &tauri::AppHandle, config: EngineConfig) -> palaclips_engine::Result<Self> {
+        let arm = config.replay.arm_on_startup;
+        let engine = Engine::start(config.clone())?;
+        let handle = engine.handle();
+        let status = Arc::new(Mutex::new(AppStatus {
+            tracks: audio_sources(&config)
+                .into_iter()
+                .map(|(_, title, _)| TrackInfo::named(title))
+                .collect(),
+            ..AppStatus::default()
+        }));
+        let events = engine.events().clone();
+        let relay_status = status.clone();
+        let app = app.clone();
+        std::thread::Builder::new()
+            .name("palaclips-events".into())
+            .spawn(move || {
+                for event in events.iter() {
+                    if let Ok(mut status) = relay_status.lock() {
+                        status.apply(&event);
+                    }
+                    app.emit(ENGINE_EVENT, &event).ok();
+                }
+            })?;
+        if arm {
+            handle.arm()?;
+        }
+        Ok(Self {
+            config: Mutex::new(config),
+            engine: Mutex::new(Some(engine)),
+            handle,
+            status,
+        })
+    }
+
+    fn clips_root(&self) -> palaclips_engine::Result<std::path::PathBuf> {
+        let configured = self
+            .config
+            .lock()
+            .ok()
+            .and_then(|config| config.storage.clips_dir.clone());
+        match configured {
+            Some(dir) => Ok(dir),
+            None => palaclips_engine::paths::default_clips_dir(),
+        }
+    }
+
+    fn publish(&self, app: &tauri::AppHandle, event: EngineEvent) {
+        if let Ok(mut status) = self.status.lock() {
+            status.apply(&event);
+        }
+        app.emit(ENGINE_EVENT, &event).ok();
+    }
+
+    fn shutdown(&self) {
+        let engine = self.engine.lock().ok().and_then(|mut engine| engine.take());
+        drop(engine);
+    }
+}
 
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Err(error) = open_main_window(app) {
+                tracing::warn!(%error, "ouverture de la fenêtre impossible");
+            }
+        }))
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state() == ShortcutState::Pressed
+                        && *shortcut == save_replay_shortcut()
+                        && let Some(slot) = app.try_state::<EngineSlot>()
+                        && let Err(error) = slot.handle.save_replay()
+                    {
+                        tracing::warn!(%error, "sauvegarde par raccourci impossible");
+                    }
+                })
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             commands::engine_version,
             commands::default_config,
+            commands::get_state,
+            commands::get_config,
+            commands::replay_arm,
+            commands::replay_disarm,
+            commands::replay_save,
+            commands::list_recent_clips,
+            commands::storage_status,
         ])
         .setup(|app| {
+            let slot = EngineSlot::start(app.handle(), EngineConfig::default())?;
+            if let Err(error) = app.global_shortcut().register(save_replay_shortcut()) {
+                tracing::warn!(%error, "raccourci de sauvegarde indisponible");
+                slot.publish(app.handle(), hotkey_unavailable_alert("Alt+F10"));
+            }
+            app.manage(slot);
+            build_tray(app.handle())?;
             open_main_window(app.handle())?;
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .unwrap_or_else(|err| {
             eprintln!("PalaClips n'a pas pu démarrer : {err}");
             std::process::exit(1);
         });
+    app.run(|app, event| match event {
+        RunEvent::ExitRequested {
+            code: None, api, ..
+        } => api.prevent_exit(),
+        RunEvent::Exit => {
+            if let Some(slot) = app.try_state::<EngineSlot>() {
+                slot.shutdown();
+            }
+        }
+        _ => {}
+    });
+}
+
+fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
+    let open = MenuItem::with_id(app, "open", "Ouvrir PalaClips", true, None::<&str>)?;
+    let save = MenuItem::with_id(app, "save", "Sauvegarder le replay", true, Some("Alt+F10"))?;
+    let arm = MenuItem::with_id(app, "arm", "Armer le replay", true, None::<&str>)?;
+    let disarm = MenuItem::with_id(app, "disarm", "Désarmer le replay", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&open, &save, &arm, &disarm, &quit])?;
+    let mut tray = TrayIconBuilder::with_id("main")
+        .tooltip("PalaClips")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => {
+                open_main_window(app).ok();
+            }
+            "save" | "arm" | "disarm" => {
+                if let Some(slot) = app.try_state::<EngineSlot>() {
+                    let result = match event.id().as_ref() {
+                        "save" => slot.handle.save_replay(),
+                        "arm" => slot.handle.arm(),
+                        _ => slot.handle.disarm(),
+                    };
+                    if let Err(error) = result {
+                        tracing::warn!(%error, "action du menu impossible");
+                    }
+                }
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                open_main_window(tray.app_handle()).ok();
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
+}
+
+fn save_replay_shortcut() -> Shortcut {
+    Shortcut::new(Some(Modifiers::ALT), Code::F10)
+}
+
+fn hotkey_unavailable_alert(keys: &str) -> EngineEvent {
+    EngineEvent::Alert {
+        severity: Severity::Warning,
+        code: "hotkey_unavailable".into(),
+        message: format!(
+            "{keys} est déjà pris par une autre application, probablement l'overlay NVIDIA (il y enregistre son propre replay). Désactive ce raccourci dans l'overlay (Alt+Z → Paramètres → Raccourcis clavier) ou choisis-en un autre dans Réglages → Raccourcis."
+        ),
+    }
 }
 
 pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
@@ -27,10 +322,124 @@ pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         window.set_focus()?;
         return Ok(());
     }
-    WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
+    let window = WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
         .title("PalaClips")
         .inner_size(1180.0, 760.0)
         .min_inner_size(900.0, 600.0)
         .build()?;
+    set_level_rate(app, LevelRate::Focused);
+    let watched = window.clone();
+    window.on_window_event(move |event| {
+        let rate = match event {
+            WindowEvent::Focused(true) => LevelRate::Focused,
+            WindowEvent::Focused(false) => LevelRate::Background,
+            WindowEvent::Resized(_) if watched.is_minimized().unwrap_or(false) => LevelRate::Off,
+            WindowEvent::Destroyed => LevelRate::Off,
+            _ => return,
+        };
+        set_level_rate(watched.app_handle(), rate);
+    });
     Ok(())
+}
+
+fn set_level_rate(app: &tauri::AppHandle, rate: LevelRate) {
+    if let Some(slot) = app.try_state::<EngineSlot>()
+        && let Err(error) = slot.handle.set_level_rate(rate)
+    {
+        tracing::warn!(%error, "niveaux audio non transmis");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_follows_replay_stats_and_clears_when_disarmed() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::ReplayArmed,
+        });
+        status.apply(&EngineEvent::ReplayStats {
+            buffered_secs: 12.5,
+            bytes: 64_000_000,
+        });
+        assert_eq!(status.state, EngineState::ReplayArmed);
+        assert_eq!(status.buffer_bytes, 64_000_000);
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::Idle,
+        });
+        assert_eq!(status.buffered_secs, 0.0);
+        assert_eq!(status.buffer_bytes, 0);
+    }
+
+    #[test]
+    fn track_states_follow_the_capture_and_reset_when_disarmed() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::CaptureStarted {
+            source: "Écran principal".into(),
+            width: 2560,
+            height: 1440,
+            fps: 60,
+            tracks: vec!["Mix complet".into(), "Discord".into()],
+        });
+        status.apply(&EngineEvent::TrackChanged {
+            track: 1,
+            title: "Discord".into(),
+            state: TrackState::Waiting,
+            source: None,
+        });
+        assert_eq!(status.tracks[1].state, Some(TrackState::Waiting));
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::Idle,
+        });
+        assert!(status.capture.is_none());
+        assert_eq!(status.tracks.len(), 2);
+        assert_eq!(status.tracks[1].state, None);
+    }
+
+    #[test]
+    fn tracks_with_the_same_title_keep_separate_states() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::CaptureStarted {
+            source: "Écran principal".into(),
+            width: 1920,
+            height: 1080,
+            fps: 60,
+            tracks: vec!["Jeu".into(), "Jeu".into()],
+        });
+        status.apply(&EngineEvent::TrackChanged {
+            track: 1,
+            title: "Jeu".into(),
+            state: TrackState::Capturing,
+            source: Some("game.exe".into()),
+        });
+        assert_eq!(status.tracks[0].state, None);
+        assert_eq!(status.tracks[1].state, Some(TrackState::Capturing));
+    }
+
+    #[test]
+    fn rearming_clears_the_previous_replay_failure() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::Alert {
+            severity: Severity::Error,
+            code: "replay_stopped".into(),
+            message: "Le replay s'est arrêté.".into(),
+        });
+        status.apply(&hotkey_unavailable_alert("Alt+F10"));
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::ReplayArmed,
+        });
+        assert_eq!(status.alerts.len(), 1);
+        assert_eq!(status.alerts[0].code, "hotkey_unavailable");
+    }
+
+    #[test]
+    fn an_alert_code_is_listed_once_with_its_latest_message() {
+        let mut status = AppStatus::default();
+        status.apply(&hotkey_unavailable_alert("Alt+F10"));
+        status.apply(&hotkey_unavailable_alert("Alt+F9"));
+        assert_eq!(status.alerts.len(), 1);
+        assert!(status.alerts[0].message.starts_with("Alt+F9"));
+    }
 }

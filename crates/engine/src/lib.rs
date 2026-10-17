@@ -11,6 +11,8 @@ pub mod engine;
 pub mod error;
 pub mod events;
 #[cfg(windows)]
+pub mod library;
+#[cfg(windows)]
 pub mod mux;
 #[cfg(windows)]
 pub mod paths;
