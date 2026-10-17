@@ -157,7 +157,8 @@
   conservés au lieu d'aplats blancs (`docs/reports/phase-1.md`).
 
 ## ADR-017 — Décalage de synchro par piste (AUD-11)
-**Statut :** acceptée (2026-10-15, décision de Palawi)
+**Statut :** acceptée (2026-10-15, décision de Palawi) ; référence de mesure corrigée par
+ADR-027.
 - Contexte : mesuré avec `probe-av-emitter` (flash et bip émis ensemble, sans compensation,
   comme un jeu) et `capture-av` : sortie par défaut directe (Apogee BOOM) → son +15,7 ms
   après l'image, constant (tampon de rendu de l'émetteur) ; sortie par défaut « Voicemeeter
@@ -325,7 +326,8 @@ premier plan » de la phase 3.
   ShadowPlay, refusé par Palawi).
 
 ## ADR-026 — Assistant de calibrage de la synchro (AUD-11)
-**Statut :** acceptée (2026-10-17, défauts annoncés à Palawi).
+**Statut :** acceptée (2026-10-17, défauts annoncés à Palawi) ; calcul des propositions
+remplacé par ADR-027.
 - Contexte : il faut une valeur proposée pour chaque piste, sans Python ni FFmpeg en ligne de
   commande chez l'utilisateur, en moins de 30 s.
 - Décision : le moteur arrête le replay et lance une capture temporaire de l'écran principal
@@ -343,3 +345,24 @@ premier plan » de la phase 3.
   d'une chaîne Voicemeeter/LightHost change à chaque relance ; « Recalibrer » reste visible.
 - Écarté : mesurer dans le replay en cours (la cible peut être une fenêtre ou un autre écran)
   ; jouer le bip dans chaque appli (impossible sans injection).
+
+## ADR-027 — Calibrage : la référence est la capture par processus de l'émetteur
+**Statut :** acceptée (2026-10-17, décision de Palawi) ; corrige ADR-017 et ADR-026 sur ce
+point.
+- Contexte : ADR-017 et le premier assistant visaient « son pile avec l'image » (proposition
+  = − retard mesuré). Le premier calibrage sur la machine de Palawi a mesuré +33,4 ms sur la
+  piste Jeu, capturée par processus au plus près de l'émetteur : c'est le tampon de rendu de
+  l'émetteur lui-même (comme les +15,7 ms de l'Apogee en ADR-017), pas un défaut de la
+  chaîne. Un jeu a son propre tampon, différent ; le compenser décalerait tous les clips.
+- Décision : la référence est la mesure de la piste Jeu (capture par processus de
+  l'émetteur), ramenée à un décalage nul : `référence = mesure Jeu − décalage Jeu actuel`.
+  Proposition pour une piste = `décalage actuel + référence − mesure de la piste`, bornée à
+  ±1000 ms (`calibrate::proposed_offset_ms`). Jeu et applis (même capture par processus) :
+  0 ms. Mix : seul l'excédent de la chaîne est compensé (Palawi : −(138 − 33) ≈ −105 ms).
+  Micro : même règle s'il est mesuré. Sans référence mesurée, rien n'est proposé.
+- Micro au casque : l'assistant demande de coller un écouteur contre le micro (comme le T2)
+  avant de démarrer, et le rappelle dans le résultat s'il n'a rien entendu.
+- Tests : `a_track_is_aligned_on_the_reference_not_on_zero`,
+  `the_emitter_buffer_measured_by_the_game_track_is_not_compensated`,
+  `earlier_wrong_offsets_are_corrected_from_their_current_value`,
+  `nothing_is_proposed_without_a_reference`.

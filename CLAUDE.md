@@ -23,6 +23,9 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
 
 ## 1. Protocole de session
 
+0. **Toujours répondre à Palawi en français**, y compris les récapitulatifs de fin de tâche
+   et après une reprise de contexte. Commits, branches et noms de tests restent en anglais.
+
 1. Début : lance la commande `/reprendre` (`.claude/commands/reprendre.md`).
 2. Travaille **une phase à la fois**, dans l'ordre de `docs/PLAN.md`. Une phase n'est terminée
    que quand **tous** ses critères d'acceptation sont vérifiés, avec un rapport dans

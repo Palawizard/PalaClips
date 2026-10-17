@@ -73,11 +73,13 @@ pub fn measure(offsets_ms: &[f64]) -> Option<Measurement> {
     })
 }
 
-pub fn proposed_offset_ms(current_ms: i32, late_ms: f64) -> i32 {
-    (f64::from(current_ms) - late_ms).round().clamp(
-        f64::from(*SYNC_OFFSET_RANGE_MS.start()),
-        f64::from(*SYNC_OFFSET_RANGE_MS.end()),
-    ) as i32
+pub fn proposed_offset_ms(current_ms: i32, measured_ms: f64, reference_ms: f64) -> i32 {
+    (f64::from(current_ms) + reference_ms - measured_ms)
+        .round()
+        .clamp(
+            f64::from(*SYNC_OFFSET_RANGE_MS.start()),
+            f64::from(*SYNC_OFFSET_RANGE_MS.end()),
+        ) as i32
 }
 
 fn median(values: &[f64]) -> f64 {
@@ -151,10 +153,16 @@ mod tests {
     }
 
     #[test]
-    fn late_sound_is_pulled_earlier_within_bounds() {
-        assert_eq!(proposed_offset_ms(0, 120.4), -120);
-        assert_eq!(proposed_offset_ms(-100, 20.0), -120);
-        assert_eq!(proposed_offset_ms(0, -35.0), 35);
-        assert_eq!(proposed_offset_ms(-900, 300.0), -1_000);
+    fn a_track_is_aligned_on_the_reference_not_on_zero() {
+        assert_eq!(proposed_offset_ms(0, 138.0, 33.4), -105);
+        assert_eq!(proposed_offset_ms(0, 33.4, 33.4), 0);
+        assert_eq!(proposed_offset_ms(-138, 0.0, 33.4), -105);
+        assert_eq!(proposed_offset_ms(0, 10.0, 33.4), 23);
+    }
+
+    #[test]
+    fn proposals_stay_within_one_second() {
+        assert_eq!(proposed_offset_ms(-900, 300.0, 0.0), -1_000);
+        assert_eq!(proposed_offset_ms(900, 0.0, 300.0), 1_000);
     }
 }
