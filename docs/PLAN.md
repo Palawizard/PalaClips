@@ -96,7 +96,7 @@ Critères :
 - 👤 Import dans DaVinci Resolve : pistes séparées et synchronisées (STO-01 ; noms non affichés
   par Resolve, ADR-021).
 
-## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04, 11 ; RPL-01, 03, 06)
+## Phase 5 — Application et sélecteurs (APP-01–05, 07, 13 ; CAP-02 ; AUD-04, 11 ; RPL-01, 03, 06) ✅ ([rapport](reports/phase-5.md))
 
 Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 

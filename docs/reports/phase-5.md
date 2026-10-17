@@ -1,12 +1,11 @@
 # Phase 5 — Application et sélecteurs
 
 - Date de validation : 2026-10-17
-- Commit : `5c0c34c` (`dev`, après #35)
+- Commit : `5c0c34c` (`dev`, après #35) ; dernier critère validé sur `71b2606` (après #37)
 - Machine : Windows 11 build 26200, NVIDIA GeForce RTX 4070 SUPER pilote 617.42,
   Intel Core i5-13600KF, trois écrans (principal 2560×1440 240 Hz)
 
-**Statut : un critère 👤 reste ouvert** (ressenti des sélecteurs, à voir avec Palawi) ; tous
-les livrables et les autres critères sont faits.
+**Statut : phase 5 validée** (2026-10-17) : tous les critères et livrables sont faits.
 
 ## Critères
 
@@ -15,7 +14,7 @@ les livrables et les autres critères sont faits.
 | Fenêtre fermée : un seul processus PalaClips, aucun `msedgewebview2.exe` enfant | 🤖 | ✅ | Build release isolée (`scripts/app-isolated.ps1`) : fenêtre ouverte `msedgewebview2.exe ×6, palaclips-app.exe ×1` → après `CloseMainWindow` : `palaclips-app.exe ×1`, processus toujours vivant (zone de notification) |
 | `/impeccable audit` sans problème bloquant ; navigation clavier complète | 🤖 | ✅ | Audit initial 15/20 (P0 0, P1 3, P2 6, P3 4), détecteur `[]` ; corrections #35 → 18/20 « Excellent », puis derniers P2/P3 corrigés (focus dans la grille Capture, Tab libre pendant la saisie d'un raccourci, focus rendu après confirmations et listes, région live des alertes). Écart assumé : pas de zoom d'interface (P2-6), la mise à l'échelle Windows 100–200 % couvre APP-13 |
 | Sauvegarde en plein écran dans Fortnite : le jeu garde le focus, le toast apparaît | 👤 | ✅ | Tests du 2026-10-17 ci-dessous : focus gardé, carillon entendu en jeu, toast retenu par Windows en plein écran (Ne pas déranger) puis présent dans le centre de notifications, toast visible sur le bureau. Palawi : critère rempli |
-| Palawi valide le ressenti des sélecteurs (« propre et sympa ») | 👤 | ❌ | En attente : Palawi regardera Capture et Audio dans l'app isolée |
+| Palawi valide le ressenti des sélecteurs (« propre et sympa ») | 👤 | ✅ | Build release isolée (`scripts/app-isolated.ps1`, replay désarmé, interface en anglais après #37) : Palawi a parcouru Réglages > Capture et Audio, verdict « Tout est bon » ; app fermée et `target/test-config` supprimé ensuite |
 
 ## Livrables
 
