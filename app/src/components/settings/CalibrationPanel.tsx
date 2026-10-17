@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { errorText, t, useT } from "../../lib/i18n.ts";
 import { type Calibration, type EngineConfig, calibrateAudio } from "../../lib/ipc.ts";
 import { SettingRow } from "./Settings.tsx";
 import type { ConfigDraft } from "./configDraft.tsx";
@@ -11,7 +12,7 @@ const SECONDARY =
 type Phase = "idle" | "confirm" | "running" | "done";
 
 function signed(ms: number): string {
-  return `${ms > 0 ? "+" : ms < 0 ? "−" : ""}${Math.abs(Math.round(ms))} ms`;
+  return t("units.ms", { value: `${ms > 0 ? "+" : ms < 0 ? "−" : ""}${Math.abs(Math.round(ms))}` });
 }
 
 interface ResultRow {
@@ -27,30 +28,37 @@ function resultRows(calibration: Calibration, audio: EngineConfig["audio"]): Res
     if (!track) return null;
     if (!track.measurement) return null;
     const late = Math.round(track.measurement.late_ms);
-    return late < 0 ? `son en avance de ${-late} ms` : `son en retard de ${late} ms`;
+    return late < 0 ? t("settings.calibration.early", { ms: -late }) : t("settings.calibration.late", { ms: late });
   };
   const rows: ResultRow[] = [];
   if (audio.record_full_mix)
-    rows.push({ key: "mix", title: audio.full_mix_label, measured: measuredOf("mix") ?? "non mesuré", proposed: calibration.mix_ms });
+    rows.push({
+      key: "mix",
+      title: audio.full_mix_label,
+      measured: measuredOf("mix") ?? t("settings.calibration.notMeasured"),
+      proposed: calibration.mix_ms,
+    });
   if (audio.record_microphone)
     rows.push({
       key: "microphone",
       title: audio.microphone_label,
-      measured: measuredOf("microphone") ?? "non mesuré : au casque, colle un écouteur contre le micro puis recalibre",
+      measured: measuredOf("microphone") ?? t("settings.calibration.micNotMeasured"),
       proposed: calibration.microphone_ms,
     });
   for (const track of audio.app_tracks)
     rows.push({
       key: `app:${track.exe_name}`,
       title: track.label,
-      measured: "même capture que la référence",
+      measured: t("settings.calibration.sameCapture"),
       proposed: calibration.apps.find((app) => app.exe_name === track.exe_name)?.offset_ms ?? null,
     });
   const reference = measuredOf("game");
   rows.push({
     key: "game",
     title: audio.game_label,
-    measured: reference ? `référence, ${reference}` : "référence non mesurée : recalibre",
+    measured: reference
+      ? t("settings.calibration.reference", { measure: reference })
+      : t("settings.calibration.referenceMissing"),
     proposed: calibration.game_ms,
   });
   return rows;
@@ -80,6 +88,7 @@ export function CalibrationPanel({
   config: ConfigDraft;
   onRunning: (running: boolean) => void;
 }) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<Calibration | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +119,7 @@ export function CalibrationPanel({
         setPhase("done");
       },
       (failure) => {
-        setError(String(failure));
+        setError(errorText(failure));
         setPhase("idle");
       },
     );
@@ -121,7 +130,7 @@ export function CalibrationPanel({
 
   return (
     <>
-      <SettingRow label="Calibrage de la synchro" error={error}>
+      <SettingRow label={t("settings.calibration.title")} error={error}>
         <button
           ref={trigger}
           type="button"
@@ -129,31 +138,26 @@ export function CalibrationPanel({
           onClick={() => setPhase("confirm")}
           className={SECONDARY}
         >
-          {calibrated ? "Recalibrer…" : "Calibrer…"}
+          {calibrated ? t("settings.calibration.recalibrate") : t("settings.calibration.calibrate")}
         </button>
       </SettingRow>
 
       {phase === "confirm" && (
         <div className="flex flex-col gap-3 border-b border-line bg-surface-2 px-5 py-4">
           <p className="text-[14px] text-ink">
-            L'écran principal devient noir et clignote, avec un bip chaque seconde, pendant environ 15 s.
-            {config.armed ? " Le replay redémarre ensuite : les secondes en mémoire seront perdues." : ""}
+            {t("settings.calibration.warning")}
+            {config.armed && ` ${t("settings.calibration.warningArmed")}`}
           </p>
           {config.draft.audio.record_microphone && (
-            <p className="text-[13px] text-ink-2">
-              Au casque, colle un écouteur contre le micro pour qu'il entende les bips.
-            </p>
+            <p className="text-[13px] text-ink-2">{t("settings.calibration.micHint")}</p>
           )}
-          <p className="text-[13px] text-ink-2">
-            Le retard d'une chaîne Voicemeeter ou LightHost peut changer à chaque relance : recalibre après l'avoir
-            relancée.
-          </p>
+          <p className="text-[13px] text-ink-2">{t("settings.calibration.voicemeeter")}</p>
           <span className="flex gap-2">
             <button type="button" onClick={start} className={PRIMARY}>
-              Démarrer
+              {t("settings.calibration.start")}
             </button>
             <button type="button" onClick={() => setPhase(result ? "done" : "idle")} className={SECONDARY}>
-              Annuler
+              {t("settings.cancel")}
             </button>
           </span>
         </div>
@@ -166,7 +170,7 @@ export function CalibrationPanel({
           role="status"
           className="border-b border-line bg-surface-2 px-5 py-4 text-[14px] text-ink outline-none"
         >
-          Calibrage en cours…
+          {t("settings.calibration.running")}
         </p>
       )}
 
@@ -174,20 +178,20 @@ export function CalibrationPanel({
         <section
           ref={results}
           tabIndex={-1}
-          aria-label="Résultat du calibrage"
+          aria-label={t("settings.calibration.result")}
           className="border-b border-line bg-surface-2 px-5 py-4 outline-none"
         >
           <table className="w-full text-left text-[14px]">
             <thead>
               <tr>
                 <th scope="col" className="label pb-2 font-medium text-ink-2">
-                  Piste
+                  {t("settings.calibration.track")}
                 </th>
                 <th scope="col" className="label pb-2 font-medium text-ink-2">
-                  Mesure
+                  {t("settings.calibration.measure")}
                 </th>
                 <th scope="col" className="label pb-2 text-right font-medium text-ink-2">
-                  Décalage proposé
+                  {t("settings.calibration.proposed")}
                 </th>
               </tr>
             </thead>
@@ -206,9 +210,7 @@ export function CalibrationPanel({
             </tbody>
           </table>
           {config.armed && (
-            <p className="mt-3 text-[13px] text-ink">
-              Appliquer redémarre le replay : les secondes en mémoire seront perdues.
-            </p>
+            <p className="mt-3 text-[13px] text-ink">{t("settings.restartWarning")}</p>
           )}
           <span className="mt-3 flex gap-2">
             <button
@@ -220,10 +222,10 @@ export function CalibrationPanel({
               }}
               className={PRIMARY}
             >
-              Appliquer
+              {t("settings.apply")}
             </button>
             <button type="button" onClick={() => setPhase("idle")} className={SECONDARY}>
-              Ignorer
+              {t("settings.calibration.ignore")}
             </button>
           </span>
         </section>

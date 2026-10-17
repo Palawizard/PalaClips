@@ -1,5 +1,4 @@
-const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
-const whole = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+import { currentLanguage, number, t } from "./i18n.ts";
 
 export function clock(totalSeconds: number): string {
   const seconds = Math.max(0, Math.floor(totalSeconds));
@@ -11,10 +10,10 @@ export function clock(totalSeconds: number): string {
 }
 
 export function bytes(value: number): string {
-  if (value >= 1e12) return `${decimal.format(value / 1e12)} To`;
-  if (value >= 1e9) return `${decimal.format(value / 1e9)} Go`;
-  if (value >= 1e6) return `${whole.format(value / 1e6)} Mo`;
-  return `${whole.format(value / 1e3)} Ko`;
+  if (value >= 1e12) return t("units.tb", { value: number(value / 1e12, 1) });
+  if (value >= 1e9) return t("units.gb", { value: number(value / 1e9, 1) });
+  if (value >= 1e6) return t("units.mb", { value: number(value / 1e6) });
+  return t("units.kb", { value: number(value / 1e3) });
 }
 
 export function decibels(linear: number): number {
@@ -22,14 +21,14 @@ export function decibels(linear: number): number {
 }
 
 export function decibelLabel(db: number): string {
-  return Number.isFinite(db) && db > -60 ? `${decimal.format(db).replace("-", "−")} dB` : "−∞";
+  return Number.isFinite(db) && db > -60 ? t("units.db", { value: number(db, 1).replace("-", "−") }) : "−∞";
 }
 
 export function relativeTime(epochMs: number, now = Date.now()): string {
   const minutes = Math.round((now - epochMs) / 60_000);
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 1) return t("time.now");
+  if (minutes < 60) return t("time.minutesAgo", { count: minutes });
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `il y a ${hours} h`;
-  return new Date(epochMs).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  if (hours < 24) return t("time.hoursAgo", { count: hours });
+  return new Date(epochMs).toLocaleDateString(currentLanguage(), { day: "numeric", month: "short" });
 }

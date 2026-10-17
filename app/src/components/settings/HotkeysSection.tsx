@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useEffect, useState } from "react";
+import { errorText, t, useT } from "../../lib/i18n.ts";
 import {
   type HotkeyAction,
   type Hotkeys,
@@ -10,16 +11,13 @@ import {
 } from "../../lib/ipc.ts";
 import { SettingRow } from "./Settings.tsx";
 
-const ACTIONS: { action: HotkeyAction; label: string }[] = [
-  { action: "save_replay", label: "Sauvegarder le replay" },
-  { action: "toggle_replay", label: "Armer ou désarmer le replay" },
-];
+const ACTIONS: HotkeyAction[] = ["save_replay", "toggle_replay"];
 
 const MODIFIER_KEYS = new Set(["Control", "Alt", "Shift", "Meta", "AltGraph", "OS"]);
 
 function displayKey(part: string): string {
-  if (part === "Shift") return "Maj";
-  if (part === "Super") return "Win";
+  if (part === "Shift") return t("keys.shift");
+  if (part === "Super") return t("keys.super");
   return part;
 }
 
@@ -68,6 +66,7 @@ function HotkeyField({
   onClear: () => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const handleKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (!listening) return;
     if (event.key === "Tab") {
@@ -86,7 +85,11 @@ function HotkeyField({
   return (
     <button
       type="button"
-      aria-label={`${label} : ${keys ?? "aucun raccourci"}. ${listening ? "Appuie sur la combinaison, Échap pour annuler, Retour arrière pour retirer." : "Modifier"}`}
+      aria-label={t("settings.hotkeys.field", {
+        action: label,
+        keys: keys ?? t("settings.hotkeys.noneLower"),
+        hint: listening ? t("settings.hotkeys.listeningHint") : t("settings.hotkeys.edit"),
+      })}
       onClick={listening ? undefined : onListen}
       onKeyDown={handleKey}
       onBlur={listening ? onCancel : undefined}
@@ -96,17 +99,18 @@ function HotkeyField({
       }`}
     >
       {listening ? (
-        <span className="text-[13px] font-medium text-ink">Appuie sur la combinaison…</span>
+        <span className="text-[13px] font-medium text-ink">{t("settings.hotkeys.listening")}</span>
       ) : keys ? (
         <Keys keys={keys} />
       ) : (
-        <span className="text-[13px] text-ink-3">Aucun raccourci</span>
+        <span className="text-[13px] text-ink-3">{t("settings.hotkeys.none")}</span>
       )}
     </button>
   );
 }
 
 export function HotkeysSection() {
+  const t = useT();
   const [view, setView] = useState<HotkeysView | null>(null);
   const [listening, setListening] = useState<HotkeyAction | null>(null);
   const [errors, setErrors] = useState<Partial<Record<HotkeyAction, string>>>({});
@@ -137,7 +141,7 @@ export function HotkeysSection() {
     const wanted: Hotkeys = { ...view.hotkeys, [action]: keys };
     setHotkeys(wanted)
       .then(() => setErrors((current) => ({ ...current, [action]: undefined })))
-      .catch((error) => setErrors((current) => ({ ...current, [action]: String(error) })))
+      .catch((error) => setErrors((current) => ({ ...current, [action]: errorText(error) })))
       .finally(refresh);
   };
 
@@ -146,20 +150,18 @@ export function HotkeysSection() {
 
   return (
     <>
-      {ACTIONS.map(({ action, label }) => {
+      {ACTIONS.map((action) => {
         const unavailable = view.unavailable.includes(action);
+        const label = t(`messages.action_${action}`);
         return (
           <SettingRow
             key={action}
             label={label}
             help={
-              listening === action
-                ? "Si rien ne s'affiche, la combinaison est déjà prise par une autre application. Échap annule, Retour arrière retire le raccourci."
-                : undefined
+              listening === action ? t("settings.hotkeys.listeningHelp") : undefined
             }
             error={
-              errors[action] ??
-              (unavailable ? "Déjà pris par une autre application : choisis une autre combinaison." : null)
+              errors[action] ?? (unavailable ? t("settings.hotkeys.unavailable") : null)
             }
           >
             <HotkeyField
@@ -177,12 +179,9 @@ export function HotkeysSection() {
       })}
       <div className="max-w-[78ch] px-5 py-4 text-[13px] text-ink-2">
         <p className={`font-semibold ${conflicts ? "text-warn" : "text-ink"}`}>
-          {conflicts ? "Conflit détecté avec une autre application." : "Aucun conflit détecté."}
+          {conflicts ? t("settings.hotkeys.conflict") : t("settings.hotkeys.noConflict")}
         </p>
-        <p className="mt-1">
-          Discord et l'overlay NVIDIA lisent le clavier sans déclarer leurs raccourcis à Windows : vérifie‑les
-          (Discord : Paramètres → Raccourcis ; NVIDIA : Alt+Z → Paramètres → Raccourcis clavier).
-        </p>
+        <p className="mt-1">{t("settings.hotkeys.readers")}</p>
       </div>
     </>
   );

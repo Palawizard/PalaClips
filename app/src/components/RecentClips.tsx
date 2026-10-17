@@ -2,6 +2,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
 import type { ClipSummary } from "../lib/ipc.ts";
 import { clock, relativeTime } from "../lib/format.ts";
+import { useT } from "../lib/i18n.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../lib/tracks.ts";
 
 function ClipCard({
@@ -15,6 +16,7 @@ function ClipCard({
   labels: TrackLabels | null;
   fresh: boolean;
 }) {
+  const t = useT();
   return (
     <li
       data-fresh={fresh}
@@ -33,11 +35,14 @@ function ClipCard({
       <div className="flex flex-col gap-1.5 px-3 py-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <p className="truncate font-semibold" title={clip.path}>
-            {clip.game || "Clip"}
+            {clip.game || t("clips.fallbackName")}
           </p>
           <p className="shrink-0 text-[12px] text-ink-3">{relativeTime(clip.modified_ms)}</p>
         </div>
-        <ul aria-label={`${clip.tracks.length} pistes : ${clip.tracks.join(", ")}`} className="flex flex-wrap gap-1">
+        <ul
+          aria-label={t("clips.tracks", { count: clip.tracks.length, names: clip.tracks.join(", ") })}
+          className="flex flex-wrap gap-1"
+        >
           {clip.tracks.map((title) => (
             <li
               key={title}
@@ -65,22 +70,25 @@ export function RecentClips({
   freshClip: string | null;
   saveKeys: string | null;
 }) {
+  const t = useT();
+  const [beforeKeys, afterKeys] = t("clips.emptyWithKeys").split("{keys}");
   return (
     <section aria-labelledby="clips-title" className="flex min-w-0 flex-col gap-3 px-5 pt-5 pb-6">
       <h2 id="clips-title" className="text-[17px] font-semibold">
-        Derniers clips
+        {t("clips.title")}
       </h2>
       {clips.length === 0 ? (
         <div className="rounded-md border border-dashed border-line-strong px-4 py-6 text-ink-2">
-          <p className="font-semibold text-ink">Aucun clip pour l'instant</p>
+          <p className="font-semibold text-ink">{t("clips.emptyTitle")}</p>
           <p className="mt-1">
             {saveKeys ? (
               <>
-                Appuie sur <kbd className="score font-semibold text-ink">{saveKeys}</kbd> en jeu pour sauvegarder
-                les dernières secondes.
+                {beforeKeys}
+                <kbd className="score font-semibold text-ink">{saveKeys}</kbd>
+                {afterKeys}
               </>
             ) : (
-              "Choisis un raccourci de sauvegarde dans Réglages → Raccourcis."
+              t("clips.emptyNoKeys")
             )}
           </p>
         </div>

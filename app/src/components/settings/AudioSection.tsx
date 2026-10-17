@@ -2,6 +2,7 @@ import { FolderOpen, Search, X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { iconUrl } from "../../lib/appIcons.ts";
 import { decibels } from "../../lib/format.ts";
+import { errorText, localeCompare, useT } from "../../lib/i18n.ts";
 import {
   type AppSession,
   type AppStatus,
@@ -93,13 +94,14 @@ function NameField({
   onCommit: (name: string) => void;
   onReject: (message: string | null) => void;
 }) {
+  const t = useT();
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
   const commit = () => {
     const next = text.trim().replace(/\s+/g, " ");
     if (next !== value && isTaken(next)) {
       setText(value);
-      onReject(`« ${next} » est déjà le nom d'une autre piste.`);
+      onReject(t("settings.audio.nameTaken", { name: next }));
       return;
     }
     onReject(null);
@@ -164,6 +166,7 @@ function TrackRow({
   onOffset: (offset: number) => void;
   action: ReactNode;
 }) {
+  const t = useT();
   const { fill, hold, peak } = useTrackMeter(meterIndex);
   const [nameError, setNameError] = useState<string | null>(null);
   const errorId = useId();
@@ -179,7 +182,7 @@ function TrackRow({
         <AppGlyph exe={row.exe} processId={processId} kind={row.kind} color={color} />
         <NameField
           value={row.label}
-          label={`Nom de la piste ${row.label}`}
+          label={t("settings.audio.trackName", { name: row.label })}
           muted={!row.enabled}
           errorId={nameError ? errorId : undefined}
           isTaken={isTaken}
@@ -198,8 +201,8 @@ function TrackRow({
           value={row.offset}
           min={-1000}
           max={1000}
-          unit="ms"
-          label={`Décalage de ${row.label} en millisecondes`}
+          unit={t("units.msUnit")}
+          label={t("settings.audio.offsetOf", { name: row.label })}
           onCommit={onOffset}
         />
         <span className="flex w-11 justify-center">{action}</span>
@@ -219,6 +222,7 @@ function TrackRow({
 }
 
 export function AudioSection({ status }: { status: AppStatus | null }) {
+  const t = useT();
   const { config, loadError } = useConfigDraft();
   const [outputs, setOutputs] = useState<AudioDevice[]>([]);
   const [inputs, setInputs] = useState<AudioDevice[]>([]);
@@ -322,7 +326,12 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const deviceOptions = (devices: AudioDevice[]) => {
     const fallback = devices.find((device) => device.default);
     return [
-      { value: "", label: fallback ? `Par défaut (${fallback.name})` : "Par défaut" },
+      {
+        value: "",
+        label: fallback
+          ? t("settings.audio.defaultDeviceNamed", { name: fallback.name })
+          : t("settings.audio.defaultDevice"),
+      },
       ...devices.map((device) => ({ value: device.id, label: device.name })),
     ];
   };
@@ -331,7 +340,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
     if (row.kind === "mix")
       return (
         <Select
-          label="Sortie capturée"
+          label={t("settings.audio.output")}
           className="w-full max-w-80 min-w-0"
           value={audio.output_device_id ?? ""}
           options={deviceOptions(outputs)}
@@ -342,38 +351,44 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       return (
         <>
           <Select
-            label="Micro"
+            label={t("settings.audio.microphone")}
             className="w-full max-w-80 min-w-0"
             value={audio.microphone_device_id ?? ""}
             options={deviceOptions(inputs)}
             onChange={(id) => setAudio({ microphone_device_id: id || null })}
           />
           <span className="flex items-center gap-1.5">
-            Gain
+            {t("settings.audio.gain")}
             <NumberField
               value={audio.microphone_gain_db}
               min={-20}
               max={20}
-              unit="dB"
-              label="Gain du micro en décibels"
+              unit={t("units.dbUnit")}
+              label={t("settings.audio.gainLabel")}
               onCommit={(microphone_gain_db) => setAudio({ microphone_gain_db })}
             />
           </span>
         </>
       );
     if (row.kind === "game") {
-      if (gameSource) return <span className="truncate">Suit : {draft.storage.game_names[gameSource.toLowerCase()] ?? exeStem(gameSource)}</span>;
+      if (gameSource)
+        return (
+          <span className="truncate">
+            {t("settings.audio.follows", {
+              name: draft.storage.game_names[gameSource.toLowerCase()] ?? exeStem(gameSource),
+            })}
+          </span>
+        );
       return (
         <span className="truncate">
-          {draft.capture.kind === "window" ? "Suit l'appli de la fenêtre capturée" : "Suit le jeu au premier plan"}
+          {draft.capture.kind === "window" ? t("settings.audio.followsWindow") : t("settings.audio.followsForeground")}
         </span>
       );
     }
     const running = row.exe ? runningPid.has(row.exe.toLowerCase()) : false;
     return (
       <span className="truncate text-ink-3">
-        {row.exe}
-        {running ? "" : " · pas lancée"}
+        {running ? row.exe : t("settings.audio.notLaunched", { exe: row.exe })}
       </span>
     );
   };
@@ -384,7 +399,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       return (
         <button
           type="button"
-          aria-label={`Retirer ${row.label}`}
+          aria-label={t("settings.audio.remove", { name: row.label })}
           onClick={() => {
             setAudio({ app_tracks: audio.app_tracks.filter((track) => track.exe_name !== exe) });
             listRef.current?.focus();
@@ -403,7 +418,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
             ? { record_microphone: enabled }
             : { auto_game_track: enabled },
       );
-    return <Switch checked={row.enabled} label={`Enregistrer ${row.label}`} onChange={toggle} />;
+    return <Switch checked={row.enabled} label={t("settings.audio.record", { name: row.label })} onChange={toggle} />;
   };
 
   const rename = (row: Row, label: string) => {
@@ -445,7 +460,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const available = [...candidates.values()]
     .filter((candidate) => !tracked.has(candidate.exe.toLowerCase()))
     .filter((candidate) => !needle || candidate.name.toLowerCase().includes(needle) || candidate.exe.toLowerCase().includes(needle))
-    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    .sort((a, b) => localeCompare(a.name, b.name));
   const sounding = available.filter((candidate) => now - (lastSound.current.get(candidate.exe.toLowerCase()) ?? 0) < RECENT_SOUND_MS);
   const fresh = [...sounding, ...available.filter((candidate) => !sounding.includes(candidate))];
   const previous = candidateOrder.current;
@@ -463,9 +478,10 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
     setPickError(null);
     pickAppExe().then((picked) => {
       if (!picked) return;
-      if (tracked.has(picked.exe_name.toLowerCase())) setPickError(`${picked.app_name} a déjà sa piste.`);
+      if (tracked.has(picked.exe_name.toLowerCase()))
+        setPickError(t("settings.audio.alreadyTracked", { name: picked.app_name }));
       else add(picked.exe_name, picked.app_name);
-    }, (failure) => setPickError(String(failure)));
+    }, (failure) => setPickError(errorText(failure)));
   };
 
   const candidateRow = (candidate: Candidate) => (
@@ -495,10 +511,10 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
         type="button"
         disabled={full}
         onClick={() => add(candidate.exe, candidate.name)}
-        aria-label={`Ajouter ${candidate.name}`}
+        aria-label={t("settings.audio.addNamed", { name: candidate.name })}
         className={BUTTON}
       >
-        Ajouter
+        {t("settings.audio.add")}
       </button>
     </li>
   );
@@ -510,13 +526,13 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
         <div className={`${ROW_COLUMNS} px-5 pt-5 pb-3`}>
           <div className="col-span-3 flex items-baseline gap-3">
             <h3 id="tracks-title" className="text-[15px] font-semibold">
-              Pistes
+              {t("settings.audio.tracks")}
             </h3>
             <span className="score text-[15px] text-ink-2">
-              {audio.app_tracks.length}/{audio.max_app_tracks} applis
+              {t("settings.audio.appCount", { count: audio.app_tracks.length, max: audio.max_app_tracks })}
             </span>
           </div>
-          <span className="pr-[3.75rem] text-right text-[13px] text-ink-2">Décalage</span>
+          <span className="pr-[3.75rem] text-right text-[13px] text-ink-2">{t("settings.audio.offset")}</span>
         </div>
         <ul ref={listRef} tabIndex={-1} className="border-t border-line outline-none">
           {rows.map((row, position) => (
@@ -537,9 +553,9 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
         </ul>
       </section>
 
-      <SettingRow label="Pistes d'applis au maximum">
+      <SettingRow label={t("settings.audio.maxApps")}>
         <Select
-          label="Pistes d'applis au maximum"
+          label={t("settings.audio.maxApps")}
           value={audio.max_app_tracks}
           options={Array.from({ length: 12 }, (_, slot) => slot + 1)
             .filter((count) => count >= audio.app_tracks.length)
@@ -551,7 +567,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       <section aria-labelledby="add-app-title" className="pb-5">
         <div className="flex flex-wrap items-center gap-3 px-5 pt-5 pb-3">
           <h3 id="add-app-title" className="mr-auto text-[15px] font-semibold">
-            Ajouter une appli
+            {t("settings.audio.addApp")}
           </h3>
           <label className="relative flex items-center">
             <Search size={16} aria-hidden className="pointer-events-none absolute left-2.5 text-ink-3" />
@@ -559,19 +575,19 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Rechercher"
-              aria-label="Rechercher une appli"
+              placeholder={t("settings.audio.search")}
+              aria-label={t("settings.audio.searchLabel")}
               className="h-9 w-52 rounded-md border border-ink-3 bg-surface pr-2.5 pl-8 text-[14px] text-ink placeholder:text-ink-3 hover:border-ink-2"
             />
           </label>
           <button type="button" onClick={browse} disabled={full} className={`${BUTTON} flex items-center gap-2`}>
             <FolderOpen size={16} aria-hidden />
-            Parcourir un .exe…
+            {t("settings.audio.browse")}
           </button>
         </div>
         {full && (
           <p className="border-t border-line px-5 py-3 text-[13px] text-ink-2">
-            {audio.max_app_tracks}/{audio.max_app_tracks} : retire une piste ou augmente le maximum pour en ajouter.
+            {t("settings.audio.full", { max: audio.max_app_tracks })}
           </p>
         )}
         {pickError && (
@@ -592,7 +608,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
         )}
         {available.length === 0 && (
           <p className="border-t border-line px-5 py-3 text-[13px] text-ink-2">
-            {needle ? "Aucune appli ne correspond." : "Aucune autre appli ouverte."}
+            {needle ? t("settings.audio.noMatch") : t("settings.audio.noOther")}
           </p>
         )}
       </section>

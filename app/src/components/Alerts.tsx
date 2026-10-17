@@ -1,5 +1,6 @@
 import { CircleAlert, Info, TriangleAlert, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { message, useT } from "../lib/i18n.ts";
 import type { ActiveAlert } from "../lib/ipc.ts";
 
 const ICONS = { info: Info, warning: TriangleAlert, error: CircleAlert };
@@ -7,6 +8,7 @@ const TONE = { info: "text-ink-2", warning: "text-warn", error: "text-warn" };
 const FOCUS_FALLBACK = "roster-title";
 
 export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
+  const t = useT();
   const [dismissed, setDismissed] = useState<Record<string, string>>({});
   const list = useRef<HTMLUListElement>(null);
   const visible = alerts.filter((alert) => dismissed[alert.code] !== alert.message);
@@ -21,7 +23,7 @@ export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
   return (
     <ul
       ref={list}
-      aria-label="Alertes"
+      aria-label={t("alerts.label")}
       aria-live="assertive"
       className={visible.length > 0 ? "flex flex-col border-b border-line" : "sr-only"}
     >
@@ -33,12 +35,12 @@ export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
             className="alert-item flex items-start gap-3 border-b border-line bg-surface-2 px-5 py-3 last:border-b-0"
           >
             <Icon size={18} className={`mt-0.5 shrink-0 ${TONE[alert.severity]}`} aria-hidden />
-            <p className="max-w-[90ch] flex-1 text-ink">{alert.message}</p>
+            <p className="max-w-[90ch] flex-1 text-ink">{message(alert)}</p>
             <button
               type="button"
               onClick={() => dismiss(alert, index)}
               className="pressable -m-1 rounded-md p-1 text-ink-3 hover:bg-surface-hover hover:text-ink"
-              aria-label="Masquer cette alerte"
+              aria-label={t("alerts.dismiss")}
             >
               <X size={16} aria-hidden />
             </button>

@@ -2,15 +2,8 @@ import { HardDrive, Monitor, Save } from "lucide-react";
 import type { ReactNode } from "react";
 import type { CaptureTarget } from "../lib/ipc.ts";
 import { bytes, clock } from "../lib/format.ts";
+import { message, t, useT } from "../lib/i18n.ts";
 import type { Engine, ReplayPhase } from "../lib/useEngine.ts";
-
-const PHASE_LABEL: Record<ReplayPhase, string> = {
-  armed: "Replay armé",
-  idle: "Replay désarmé",
-  arming: "Armement du replay…",
-  disarming: "Arrêt du replay…",
-  error: "Replay arrêté sur erreur",
-};
 
 function Cell({ title, children, wide }: { title: string; children: ReactNode; wide?: boolean }) {
   return (
@@ -32,7 +25,7 @@ function shortPath(path: string): string {
 
 function targetLabel(target: CaptureTarget | undefined): string {
   if (!target) return "—";
-  if (target.kind === "primary_monitor") return "Écran principal";
+  if (target.kind === "primary_monitor") return t("messages.source_primary_screen");
   if (target.kind === "monitor") return target.device_name;
   return target.exe_name;
 }
@@ -50,6 +43,7 @@ function ReplayWitness({ phase }: { phase: ReplayPhase }) {
 }
 
 export function StatusBanner({ engine }: { engine: Engine }) {
+  const t = useT();
   const { status, config, phase, storage } = engine;
   const total = config?.replay.duration_secs ?? 0;
   const buffered = Math.min(status?.buffered_secs ?? 0, total);
@@ -57,14 +51,15 @@ export function StatusBanner({ engine }: { engine: Engine }) {
   const busy = phase === "arming" || phase === "disarming";
   const capture = status?.capture;
   const fellBack = status?.alerts.some((alert) => alert.code === "capture_fallback_monitor");
+  const source = capture ? message(capture.source) : targetLabel(config?.capture);
 
   return (
     <header className="flex border-b border-line bg-surface max-[1000px]:flex-wrap [&>section+section]:border-l [&>section+section]:border-line max-[1000px]:[&>section:nth-child(2)]:border-l-0 max-[1000px]:[&>section:not(:first-child)]:border-t">
-      <Cell title="Replay" wide>
+      <Cell title={t("status.replay")} wide>
         <div className="flex items-center gap-2.5">
           <ReplayWitness phase={phase} />
           <h2 className="text-[15px] font-semibold">
-            <span role="status">{PHASE_LABEL[phase]}</span>
+            <span role="status">{t(`status.phase.${phase}`)}</span>
           </h2>
         </div>
         <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
@@ -73,10 +68,11 @@ export function StatusBanner({ engine }: { engine: Engine }) {
               {clock(buffered)}
             </span>
             <span className="score text-[20px] leading-none font-medium text-ink-3">/ {clock(total)}</span>
-            <span className="text-ink-2">en mémoire</span>
+            <span className="text-ink-2">{t("status.inMemory")}</span>
           </p>
           <p className="pb-1 text-ink-2">
-            <span className="score text-[17px] font-medium text-ink">{bytes(status?.buffer_bytes ?? 0)}</span> en RAM
+            <span className="score text-[17px] font-medium text-ink">{bytes(status?.buffer_bytes ?? 0)}</span>{" "}
+            {t("status.inRam")}
           </p>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -87,7 +83,7 @@ export function StatusBanner({ engine }: { engine: Engine }) {
             className="pressable inline-flex h-9 items-center gap-2 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-3"
           >
             <Save size={16} strokeWidth={2.2} aria-hidden />
-            Sauvegarder
+            {t("status.save")}
             {engine.saveKeys && (
               <span className="score text-[13px] font-medium opacity-70">{engine.saveKeys}</span>
             )}
@@ -98,42 +94,42 @@ export function StatusBanner({ engine }: { engine: Engine }) {
             disabled={busy}
             className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover disabled:cursor-wait disabled:text-ink-3"
           >
-            {armed || phase === "disarming" ? "Désarmer" : "Armer"}
+            {armed || phase === "disarming" ? t("status.disarm") : t("status.arm")}
           </button>
         </div>
       </Cell>
 
-      <Cell title="Enregistrement">
-        <h2 className="text-[15px] font-semibold text-ink-2">Enregistrement arrêté</h2>
+      <Cell title={t("status.recording")}>
+        <h2 className="text-[15px] font-semibold text-ink-2">{t("status.recordingStopped")}</h2>
         <p className="score text-[28px] leading-none font-semibold text-ink-3">00:00</p>
         <button
           type="button"
           disabled
-          title="L'enregistrement manuel arrive avec la galerie."
+          title={t("status.recordingLater")}
           className="pressable mt-auto h-9 self-start rounded-md border border-line-strong px-3.5 font-medium text-ink-3 disabled:cursor-not-allowed"
         >
-          Démarrer
+          {t("status.start")}
         </button>
       </Cell>
 
-      <Cell title="Source">
+      <Cell title={t("status.source")}>
         <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-semibold">
           <Monitor size={16} className="shrink-0 text-ink-3" aria-hidden />
-          <span className="truncate" title={capture?.source ?? targetLabel(config?.capture)}>
-            {capture?.source ?? targetLabel(config?.capture)}
+          <span className="truncate" title={source}>
+            {source}
           </span>
         </h2>
         <p className="score truncate text-[17px] font-medium whitespace-nowrap text-ink-2">
-          {capture ? `${capture.width}×${capture.height} · ${capture.fps} i/s` : "Capture à l'arrêt"}
+          {capture ? `${capture.width}×${capture.height} · ${t("units.fps", { value: capture.fps })}` : t("status.captureStopped")}
         </p>
-        {fellBack && <p className="text-[13px] text-warn">Fenêtre introuvable : l'écran est capturé.</p>}
+        {fellBack && <p className="text-[13px] text-warn">{t("status.fellBack")}</p>}
       </Cell>
 
-      <Cell title="Disque">
+      <Cell title={t("status.disk")}>
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           <HardDrive size={16} className="shrink-0 text-ink-3" aria-hidden />
           <span className="score text-[20px] leading-none">{storage ? bytes(storage.free_bytes) : "—"}</span>
-          <span className="font-normal text-ink-2">libres</span>
+          <span className="font-normal text-ink-2">{t("status.free")}</span>
         </h2>
         <p className="truncate text-[13px] text-ink-3" title={storage?.clips_dir}>
           {storage ? shortPath(storage.clips_dir) : ""}
