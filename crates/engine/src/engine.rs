@@ -18,7 +18,7 @@ use crate::encode::{
     write_thumbnail,
 };
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, EngineState, Severity};
+use crate::events::{EngineEvent, EngineState, Severity, TrackDescriptor};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
@@ -164,7 +164,7 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
             AudioSource::SystemMix {
                 device_id: audio.output_device_id.clone(),
             },
-            "Mix complet".to_owned(),
+            audio.full_mix_label.clone(),
             audio.full_mix_sync_offset_ms,
         ));
     }
@@ -174,7 +174,7 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
                 device_id: audio.microphone_device_id.clone(),
                 gain_db: audio.microphone_gain_db,
             },
-            "Micro".to_owned(),
+            audio.microphone_label.clone(),
             audio.microphone_sync_offset_ms,
         ));
     }
@@ -188,9 +188,23 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
         ));
     }
     if audio.auto_game_track {
-        sources.push((AudioSource::Game(current_game(config)), "Jeu".to_owned(), 0));
+        sources.push((
+            AudioSource::Game(current_game(config)),
+            audio.game_label.clone(),
+            audio.game_sync_offset_ms,
+        ));
     }
     sources
+}
+
+pub fn track_descriptors(config: &EngineConfig) -> Vec<TrackDescriptor> {
+    audio_sources(config)
+        .into_iter()
+        .map(|(source, title, _)| TrackDescriptor {
+            kind: source.kind(),
+            title,
+        })
+        .collect()
 }
 
 fn capture_label(target: &CaptureTarget, fell_back: bool) -> String {
@@ -486,10 +500,7 @@ impl Pipeline {
                 width: video.size.width,
                 height: video.size.height,
                 fps: video.fps,
-                tracks: tracks
-                    .iter()
-                    .map(|track| track.stream().title.clone())
-                    .collect(),
+                tracks: track_descriptors(config),
             })
             .ok();
         tracing::info!(
@@ -842,6 +853,27 @@ mod tests {
                 ("Micro".to_owned(), 0),
                 ("Discord".to_owned(), 0),
                 ("Jeu".to_owned(), 0),
+            ]
+        );
+    }
+
+    #[test]
+    fn renamed_tracks_keep_their_order_and_offsets() {
+        let mut config = EngineConfig::default();
+        config.audio.full_mix_label = "Tout".into();
+        config.audio.microphone_label = "Voix".into();
+        config.audio.game_label = "Partie".into();
+        config.audio.game_sync_offset_ms = 40;
+        let titles: Vec<(String, i32)> = audio_sources(&config)
+            .into_iter()
+            .map(|(_, title, offset)| (title, offset))
+            .collect();
+        assert_eq!(
+            titles,
+            [
+                ("Tout".to_owned(), 0),
+                ("Voix".to_owned(), 0),
+                ("Partie".to_owned(), 40),
             ]
         );
     }

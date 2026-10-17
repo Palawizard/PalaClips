@@ -19,6 +19,21 @@ pub enum Severity {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
+pub enum TrackKind {
+    Mix,
+    Microphone,
+    Application,
+    Game,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TrackDescriptor {
+    pub title: String,
+    pub kind: TrackKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TrackState {
     Waiting,
     Capturing,
@@ -37,7 +52,7 @@ pub enum EngineEvent {
         width: u32,
         height: u32,
         fps: u32,
-        tracks: Vec<String>,
+        tracks: Vec<TrackDescriptor>,
     },
     TrackChanged {
         track: usize,
