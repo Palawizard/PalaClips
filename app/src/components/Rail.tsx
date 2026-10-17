@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import { Clapperboard, Gauge, SlidersHorizontal } from "lucide-react";
-import logo from "../../src-tauri/icons/app-icon.svg";
 
 export type View = "status" | "gallery" | "settings";
 
@@ -10,10 +9,28 @@ const ITEMS: { view: View; label: string; icon: LucideIcon }[] = [
   { view: "settings", label: "Réglages", icon: SlidersHorizontal },
 ];
 
+function Mark() {
+  return (
+    <svg viewBox="200 200 624 624" className="mb-5 size-8 text-ink" role="img" aria-label="PalaClips">
+      <circle cx="512" cy="512" r="276" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="56" />
+      <path d="M512 236 A276 276 0 1 1 268 386" fill="none" stroke="currentColor" strokeWidth="56" strokeLinecap="round" />
+      <path
+        d="M236 300 L282 404 L388 362"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="48"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M452 404 L452 620 L628 512 Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function Rail({ view, onChange }: { view: View; onChange: (view: View) => void }) {
   return (
     <nav aria-label="Navigation" className="flex w-[84px] flex-col items-center gap-1 border-r border-line bg-rail py-4">
-      <img src={logo} alt="PalaClips" className="mb-5 size-9 grayscale" draggable={false} />
+      <Mark />
       {ITEMS.map(({ view: target, label, icon: Icon }) => {
         const current = target === view;
         return (
