@@ -4,6 +4,7 @@ use serde::Serialize;
 use tauri::State;
 use tauri_plugin_autostart::ManagerExt;
 
+use crate::hotkeys::{HotkeyAction, Hotkeys};
 use crate::settings::Feedback;
 use crate::{AppStatus, EngineSlot};
 
@@ -28,6 +29,33 @@ pub fn get_state(slot: State<'_, EngineSlot>) -> Result<AppStatus, String> {
 #[tauri::command]
 pub fn get_config(slot: State<'_, EngineSlot>) -> EngineConfig {
     slot.config()
+}
+
+#[derive(Debug, Serialize)]
+pub struct HotkeysView {
+    hotkeys: Hotkeys,
+    unavailable: Vec<HotkeyAction>,
+}
+
+#[tauri::command]
+pub fn get_hotkeys(slot: State<'_, EngineSlot>) -> HotkeysView {
+    HotkeysView {
+        hotkeys: slot.hotkeys(),
+        unavailable: slot
+            .unavailable
+            .lock()
+            .map(|unavailable| unavailable.clone())
+            .unwrap_or_default(),
+    }
+}
+
+#[tauri::command]
+pub fn set_hotkeys(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    hotkeys: Hotkeys,
+) -> Result<(), String> {
+    slot.set_hotkeys(&app, hotkeys)
 }
 
 #[tauri::command]

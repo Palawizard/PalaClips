@@ -5,6 +5,7 @@ import {
   type EngineConfig,
   type StorageStatus,
   getConfig,
+  getHotkeys,
   getState,
   listRecentClips,
   onEngineEvent,
@@ -26,6 +27,7 @@ export interface Engine {
   freshClip: string | null;
   storage: StorageStatus | null;
   savedAt: number;
+  saveKeys: string | null;
   phase: ReplayPhase;
   actionError: string | null;
   arm: () => void;
@@ -52,6 +54,7 @@ export function useEngine(): Engine {
   const [savedAt, setSavedAt] = useState(0);
   const [pending, setPending] = useState<ReplayPhase | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [saveKeys, setSaveKeys] = useState<string | null>(null);
 
   const refreshState = useCallback(() => {
     getState().then(setStatus, (error) => setActionError(String(error)));
@@ -66,6 +69,10 @@ export function useEngine(): Engine {
     refreshState();
     refreshLibrary();
     getConfig().then(setConfig, () => setConfig(null));
+    getHotkeys().then(
+      (view) => setSaveKeys(view.hotkeys.save_replay),
+      () => setSaveKeys(null),
+    );
     const unlisten = onEngineEvent((event) => {
       switch (event.type) {
         case "audio_levels":
@@ -117,6 +124,7 @@ export function useEngine(): Engine {
     freshClip,
     storage,
     savedAt,
+    saveKeys,
     phase: phaseOf(status, pending),
     actionError,
     arm: () => run(replayArm, "arming"),
