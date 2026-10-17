@@ -29,7 +29,9 @@
     "msUnit": "ms",
     "dbUnit": "dB",
     "mbpsUnit": "Mb/s",
-    "heightUnit": "p"
+    "heightUnit": "p",
+    "minUnit": "min",
+    "mbUnit": "Mo"
   },
   "time": {
     "now": "à l'instant",
@@ -66,13 +68,14 @@
     "disarm": "Désarmer",
     "recording": "Enregistrement",
     "recordingStopped": "Enregistrement arrêté",
-    "recordingLater": "L'enregistrement manuel arrive avec la galerie.",
     "start": "Démarrer",
     "source": "Source",
     "captureStopped": "Capture à l'arrêt",
     "fellBack": "Fenêtre introuvable : l'écran est capturé.",
     "disk": "Disque",
-    "free": "libres"
+    "free": "libres",
+    "recordingRunning": "Enregistrement en cours",
+    "stop": "Arrêter"
   },
   "roster": {
     "title": "Pistes audio",
@@ -113,6 +116,7 @@
       "capture": "Capture",
       "audio": "Audio",
       "replay": "Replay & qualité",
+      "recording": "Enregistrement",
       "hotkeys": "Raccourcis",
       "storage": "Stockage",
       "general": "Général"
@@ -277,6 +281,17 @@
       "reference": "référence, {measure}",
       "referenceMissing": "référence non mesurée : recalibre",
       "ignore": "Ignorer"
+    },
+    "recording": {
+      "includeReplay": "Commencer par le replay en mémoire",
+      "split": "Découpage",
+      "splits": {
+        "never": "Jamais",
+        "duration": "Par durée",
+        "size": "Par taille"
+      },
+      "splitMinutes": "Durée de chaque fichier en minutes",
+      "splitMegabytes": "Taille de chaque fichier en mégaoctets"
     }
   },
   "tray": {
@@ -284,7 +299,9 @@
     "save": "Sauvegarder le replay",
     "arm": "Armer le replay",
     "disarm": "Désarmer le replay",
-    "quit": "Quitter"
+    "quit": "Quitter",
+    "recordStart": "Démarrer l'enregistrement",
+    "recordStop": "Arrêter l'enregistrement"
   },
   "toast": {
     "clipSaved": "Clip sauvegardé",
@@ -363,6 +380,9 @@
     "hotkeys_taken": "{keys} déjà pris par une autre application : tes raccourcis précédents sont gardés.",
     "hotkey_unavailable": "{keys} est déjà pris par une autre application, souvent l'overlay NVIDIA (Alt+F10 et Alt+Shift+F10 y servent au replay). Désactive ce raccourci dans l'overlay (Alt+Z → Paramètres → Raccourcis clavier) ou choisis-en un autre dans Réglages → Raccourcis.",
     "action_save_replay": "Sauvegarder le replay",
-    "action_toggle_replay": "Armer ou désarmer le replay"
+    "action_toggle_replay": "Armer ou désarmer le replay",
+    "recording_failed": "Enregistrement arrêté : {reason}.",
+    "recording_running": "un enregistrement est en cours",
+    "action_toggle_recording": "Démarrer ou arrêter l'enregistrement"
   }
 }

@@ -29,7 +29,9 @@
     "msUnit": "ms",
     "dbUnit": "dB",
     "mbpsUnit": "Mb/s",
-    "heightUnit": "p"
+    "heightUnit": "p",
+    "minUnit": "min",
+    "mbUnit": "MB"
   },
   "time": {
     "now": "just now",
@@ -66,13 +68,14 @@
     "disarm": "Disarm",
     "recording": "Recording",
     "recordingStopped": "Recording stopped",
-    "recordingLater": "Manual recording comes with the gallery.",
     "start": "Start",
     "source": "Source",
     "captureStopped": "Capture stopped",
     "fellBack": "Window not found: the screen is captured.",
     "disk": "Disk",
-    "free": "free"
+    "free": "free",
+    "recordingRunning": "Recording",
+    "stop": "Stop"
   },
   "roster": {
     "title": "Audio tracks",
@@ -113,6 +116,7 @@
       "capture": "Capture",
       "audio": "Audio",
       "replay": "Replay & quality",
+      "recording": "Recording",
       "hotkeys": "Hotkeys",
       "storage": "Storage",
       "general": "General"
@@ -277,6 +281,17 @@
       "reference": "reference, {measure}",
       "referenceMissing": "reference not measured: recalibrate",
       "ignore": "Ignore"
+    },
+    "recording": {
+      "includeReplay": "Start with the replay in memory",
+      "split": "Split",
+      "splits": {
+        "never": "Never",
+        "duration": "By length",
+        "size": "By size"
+      },
+      "splitMinutes": "Length of each file in minutes",
+      "splitMegabytes": "Size of each file in megabytes"
     }
   },
   "tray": {
@@ -284,7 +299,9 @@
     "save": "Save the replay",
     "arm": "Arm the replay",
     "disarm": "Disarm the replay",
-    "quit": "Quit"
+    "quit": "Quit",
+    "recordStart": "Start recording",
+    "recordStop": "Stop recording"
   },
   "toast": {
     "clipSaved": "Clip saved",
@@ -363,6 +380,9 @@
     "hotkeys_taken": "{keys} already used by another application: your previous hotkeys are kept.",
     "hotkey_unavailable": "{keys} is already used by another application, often the NVIDIA overlay (Alt+F10 and Alt+Shift+F10 are its replay keys). Turn this shortcut off in the overlay (Alt+Z → Settings → Keyboard shortcuts) or pick another one in Settings → Hotkeys.",
     "action_save_replay": "Save the replay",
-    "action_toggle_replay": "Arm or disarm the replay"
+    "action_toggle_replay": "Arm or disarm the replay",
+    "recording_failed": "Recording stopped: {reason}.",
+    "recording_running": "a recording is running",
+    "action_toggle_recording": "Start or stop recording"
   }
 }

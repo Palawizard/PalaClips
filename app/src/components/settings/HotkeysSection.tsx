@@ -11,7 +11,7 @@ import {
 } from "../../lib/ipc.ts";
 import { SettingRow } from "./Settings.tsx";
 
-const ACTIONS: HotkeyAction[] = ["save_replay", "toggle_replay"];
+const ACTIONS: HotkeyAction[] = ["save_replay", "toggle_replay", "toggle_recording"];
 
 const MODIFIER_KEYS = new Set(["Control", "Alt", "Shift", "Meta", "AltGraph", "OS"]);
 

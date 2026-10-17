@@ -88,6 +88,9 @@ pub enum EngineError {
     #[error("un calibrage est déjà en cours")]
     CalibrationBusy,
 
+    #[error("un enregistrement est en cours")]
+    RecordingRunning,
+
     #[error("le calibrage s'est arrêté")]
     CalibrationStopped,
 
@@ -158,6 +161,7 @@ impl EngineError {
             Self::VideoCaptureStopped => Localized::new("video_capture_stopped"),
             Self::Io(error) => Localized::new("disk_error").with("detail", error.to_string()),
             Self::CalibrationBusy => Localized::new("calibration_busy"),
+            Self::RecordingRunning => Localized::new("recording_running"),
             Self::CalibrationStopped => Localized::new("calibration_stopped"),
             Self::Stopped => Localized::new("engine_stopped"),
             Self::ReplayNotArmed => Localized::new("replay_not_armed"),

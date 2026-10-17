@@ -12,6 +12,7 @@ pub struct EngineConfig {
     pub video: VideoSettings,
     pub audio: AudioSettings,
     pub replay: ReplaySettings,
+    pub record: RecordSettings,
     pub storage: StorageSettings,
 }
 
@@ -23,6 +24,7 @@ impl Default for EngineConfig {
             video: VideoSettings::default(),
             audio: AudioSettings::default(),
             replay: ReplaySettings::default(),
+            record: RecordSettings::default(),
             storage: StorageSettings::default(),
         }
     }
@@ -33,6 +35,7 @@ impl EngineConfig {
         self.video.validate()?;
         self.audio.validate()?;
         self.replay.validate()?;
+        self.record.validate()?;
         self.storage.validate()?;
         Ok(())
     }
@@ -331,6 +334,47 @@ impl AudioSettings {
             + usize::from(self.record_microphone)
             + self.app_tracks.iter().filter(|t| t.enabled).count()
             + usize::from(self.auto_game_track)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum RecordSplit {
+    #[default]
+    Never,
+    Duration {
+        minutes: u32,
+    },
+    Size {
+        megabytes: u32,
+    },
+}
+
+pub const SPLIT_MINUTES: std::ops::RangeInclusive<u32> = 1..=600;
+pub const SPLIT_MEGABYTES: std::ops::RangeInclusive<u32> = 100..=1_000_000;
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct RecordSettings {
+    pub include_replay: bool,
+    pub split: RecordSplit,
+}
+
+impl RecordSettings {
+    fn validate(&self) -> Result<()> {
+        match self.split {
+            RecordSplit::Duration { minutes } if !SPLIT_MINUTES.contains(&minutes) => {
+                Err(EngineError::InvalidConfig(
+                    "le découpage par durée doit être entre 1 et 600 min".into(),
+                ))
+            }
+            RecordSplit::Size { megabytes } if !SPLIT_MEGABYTES.contains(&megabytes) => {
+                Err(EngineError::InvalidConfig(
+                    "le découpage par taille doit être entre 100 Mo et 1 To".into(),
+                ))
+            }
+            _ => Ok(()),
+        }
     }
 }
 
