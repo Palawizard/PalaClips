@@ -1,4 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+
+export const ENGINE_EVENT = "engine-event";
 
 export function engineVersion(): Promise<string> {
   return invoke<string>("engine_version");
@@ -6,6 +9,38 @@ export function engineVersion(): Promise<string> {
 
 export function defaultConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("default_config");
+}
+
+export function getConfig(): Promise<EngineConfig> {
+  return invoke<EngineConfig>("get_config");
+}
+
+export function getState(): Promise<AppStatus> {
+  return invoke<AppStatus>("get_state");
+}
+
+export function replayArm(): Promise<void> {
+  return invoke("replay_arm");
+}
+
+export function replayDisarm(): Promise<void> {
+  return invoke("replay_disarm");
+}
+
+export function replaySave(): Promise<void> {
+  return invoke("replay_save");
+}
+
+export function listRecentClips(limit: number): Promise<ClipSummary[]> {
+  return invoke<ClipSummary[]>("list_recent_clips", { limit });
+}
+
+export function storageStatus(): Promise<StorageStatus> {
+  return invoke<StorageStatus>("storage_status");
+}
+
+export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<UnlistenFn> {
+  return listen<EngineEvent>(ENGINE_EVENT, (message) => handler(message.payload));
 }
 
 export type VideoCodec = "h264" | "hevc" | "av1";
@@ -65,9 +100,70 @@ export interface EngineConfig {
 export type EngineState = "idle" | "replay_armed" | "recording";
 export type Severity = "info" | "warning" | "error";
 
+export interface ClipSummary {
+  path: string;
+  game: string;
+  modified_ms: number;
+  size_bytes: number;
+  duration_secs: number;
+  tracks: string[];
+  thumbnail: string | null;
+}
+
+export interface StorageStatus {
+  clips_dir: string;
+  free_bytes: number;
+  total_bytes: number;
+}
+
+export interface ActiveAlert {
+  severity: Severity;
+  code: string;
+  message: string;
+}
+
+export type TrackState = "waiting" | "capturing" | "silent" | "unavailable";
+
+export interface CaptureInfo {
+  source: string;
+  width: number;
+  height: number;
+  fps: number;
+}
+
+export interface TrackInfo {
+  title: string;
+  state: TrackState | null;
+  source: string | null;
+}
+
+export interface AppStatus {
+  state: EngineState;
+  buffered_secs: number;
+  buffer_bytes: number;
+  capture: CaptureInfo | null;
+  tracks: TrackInfo[];
+  alerts: ActiveAlert[];
+}
+
 export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
-  | { type: "clip_saved"; path: string; duration_secs: number; save_latency_ms: number }
-  | { type: "audio_levels"; levels: [string, number][] }
+  | {
+      type: "capture_started";
+      source: string;
+      width: number;
+      height: number;
+      fps: number;
+      tracks: string[];
+    }
+  | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
+  | {
+      type: "clip_saved";
+      path: string;
+      duration_secs: number;
+      save_latency_ms: number;
+      thumbnail: string | null;
+    }
+  | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
   | { type: "alert"; severity: Severity; code: string; message: string };

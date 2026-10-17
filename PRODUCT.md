@@ -72,6 +72,11 @@ puis une piste par appli, titrées dans le fichier.
   propre identité.
 - Voix française : tutoiement (« Ton replay est armé », « Choisis les applis à séparer »).
   Messages d'erreur actionnables.
+- Textes de l'interface sobres et fonctionnels : libellés, états, valeurs, instructions
+  utiles. **Aucune phrase qui commente l'écran ou vend la fonctionnalité** (refusées par
+  Palawi : « 3 pistes dans chaque clip, dans cet ordre », « chaque piste déjà séparée »).
+  Avant de livrer un écran, relire chaque phrase : si elle n'informe pas d'un état et ne dit
+  pas quoi faire, la supprimer.
 - Logo actuel (`app/src-tauri/icons/app-icon.svg`, anneau « retour en arrière » rouge
   `#FF4D5E` et triangle lecture sur ardoise) : **provisoire**, peut changer entièrement.
 

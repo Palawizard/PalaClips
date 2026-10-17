@@ -9,30 +9,52 @@ use rsmpeg::avcodec::AVPacket;
 use rsmpeg::avutil::AVRational;
 use rsmpeg::ffi::AV_PKT_FLAG_KEY;
 
-use crate::audio::{AudioSource, AudioTrack, SAMPLE_RATE};
+use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
 use crate::capture::{VideoCapture, VideoStream};
 use crate::clock::{HNS_PER_SECOND, Hns};
-use crate::config::{EngineConfig, ReplayStorage};
-use crate::encode::{hardware_video_encoders, pick_encoder};
+use crate::config::{CaptureTarget, EngineConfig, ReplayStorage};
+use crate::encode::{hardware_video_encoders, pick_encoder, write_thumbnail};
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::paths;
 use crate::replay::{
     PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, plan_clip,
+    share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 
 const COMMAND_QUEUE: usize = 16;
 const EVENT_QUEUE: usize = 256;
 const STATS_INTERVAL: Hns = Hns::from_millis(1_000);
+const LEVELS_FOCUSED: Hns = Hns::from_millis(50);
+const LEVELS_BACKGROUND: Hns = Hns::from_millis(100);
 const AAC_PACKET: Hns = Hns(1_024 * HNS_PER_SECOND / SAMPLE_RATE as i64);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum LevelRate {
+    #[default]
+    Off,
+    Focused,
+    Background,
+}
+
+impl LevelRate {
+    fn interval(self) -> Option<Hns> {
+        match self {
+            Self::Off => None,
+            Self::Focused => Some(LEVELS_FOCUSED),
+            Self::Background => Some(LEVELS_BACKGROUND),
+        }
+    }
+}
 
 enum Command {
     Arm,
     Disarm,
     SaveReplay,
     Configure(Box<EngineConfig>),
+    SetLevelRate(LevelRate),
     Shutdown,
 }
 
@@ -71,6 +93,7 @@ impl Engine {
                     config,
                     events: event_tx,
                     pipeline: None,
+                    level_rate: LevelRate::Off,
                 }
                 .run(&command_rx)
             })?;
@@ -112,6 +135,10 @@ impl EngineHandle {
 
     pub fn save_replay(&self) -> Result<()> {
         self.send(Command::SaveReplay)
+    }
+
+    pub fn set_level_rate(&self, rate: LevelRate) -> Result<()> {
+        self.send(Command::SetLevelRate(rate))
     }
 
     pub fn configure(&self, config: EngineConfig) -> Result<()> {
@@ -163,6 +190,15 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
     sources
 }
 
+fn capture_label(target: &CaptureTarget, fell_back: bool) -> String {
+    match target {
+        CaptureTarget::PrimaryMonitor => "Écran principal".into(),
+        CaptureTarget::Monitor { device_name } => device_name.clone(),
+        CaptureTarget::Window { exe_name, .. } if fell_back => format!("Écran de {exe_name}"),
+        CaptureTarget::Window { exe_name, .. } => exe_name.clone(),
+    }
+}
+
 fn current_game(config: &EngineConfig) -> CurrentGame {
     CurrentGame::new(config.audio.game_exe.clone(), &config.capture)
 }
@@ -185,6 +221,7 @@ struct Core {
     config: EngineConfig,
     events: Sender<EngineEvent>,
     pipeline: Option<Pipeline>,
+    level_rate: LevelRate,
 }
 
 impl Core {
@@ -209,6 +246,12 @@ impl Core {
                 Command::Disarm => self.disarm(),
                 Command::SaveReplay => self.save_replay(),
                 Command::Configure(config) => self.configure(*config),
+                Command::SetLevelRate(rate) => {
+                    self.level_rate = rate;
+                    if let Some(pipeline) = self.pipeline.as_mut() {
+                        pipeline.set_level_interval(rate.interval());
+                    }
+                }
                 Command::Shutdown => {
                     self.disarm();
                     break;
@@ -222,7 +265,8 @@ impl Core {
             return;
         }
         match Pipeline::start(&self.config, &self.events) {
-            Ok(pipeline) => {
+            Ok(mut pipeline) => {
+                pipeline.set_level_interval(self.level_rate.interval());
                 self.pipeline = Some(pipeline);
                 self.emit(EngineEvent::StateChanged {
                     state: EngineState::ReplayArmed,
@@ -299,6 +343,9 @@ struct Pipeline {
     time_bases: Vec<AVRational>,
     receivers: Vec<Receiver<AVPacket>>,
     alerts: Vec<Receiver<EngineEvent>>,
+    meters: Vec<PeakMeter>,
+    level_interval: Option<Hns>,
+    next_levels: Hns,
     rings: Vec<PacketRing<ReplayPacket>>,
     spool: Option<Spool>,
     game: Arc<Mutex<CurrentGame>>,
@@ -317,8 +364,10 @@ impl Pipeline {
         let video = capture.stream().clone();
         let tracks = audio_sources(config)
             .into_iter()
-            .map(|(source, title, offset_ms)| {
+            .enumerate()
+            .map(|(index, (source, title, offset_ms))| {
                 AudioTrack::start(
+                    index,
                     source,
                     title,
                     video.origin,
@@ -359,6 +408,18 @@ impl Pipeline {
         } else {
             None
         };
+        events
+            .try_send(EngineEvent::CaptureStarted {
+                source: capture_label(&config.capture, capture.alert().is_some()),
+                width: video.size.width,
+                height: video.size.height,
+                fps: video.fps,
+                tracks: tracks
+                    .iter()
+                    .map(|track| track.stream().title.clone())
+                    .collect(),
+            })
+            .ok();
         tracing::info!(
             encoder = %encoder.name,
             width = video.size.width,
@@ -373,6 +434,9 @@ impl Pipeline {
             time_bases: specs.iter().map(|spec| spec.time_base).collect(),
             rings: specs.iter().map(|_| PacketRing::new(window)).collect(),
             alerts: tracks.iter().map(|track| track.alerts().clone()).collect(),
+            meters: tracks.iter().map(|track| track.meter().clone()).collect(),
+            level_interval: None,
+            next_levels: Hns::ZERO,
             capture,
             tracks,
             video,
@@ -401,10 +465,10 @@ impl Pipeline {
             select.recv(alert);
         }
         loop {
-            let wait = (self.next_stats - Hns::now()).0.max(0) as u64;
+            let now = Hns::now();
+            self.emit_due(now, events);
+            let wait = (self.next_deadline() - now).0.max(0) as u64;
             let Ok(operation) = select.select_timeout(Duration::from_nanos(wait * 100)) else {
-                self.next_stats = Hns::now() + STATS_INTERVAL;
-                events.try_send(self.stats()).ok();
                 continue;
             };
             let index = operation.index();
@@ -450,6 +514,39 @@ impl Pipeline {
         };
         self.rings[stream].push(stored);
         Ok(())
+    }
+
+    fn emit_due(&mut self, now: Hns, events: &Sender<EngineEvent>) {
+        if now >= self.next_stats {
+            self.next_stats = now + STATS_INTERVAL;
+            events.try_send(self.stats()).ok();
+        }
+        if let Some(interval) = self.level_interval
+            && now >= self.next_levels
+        {
+            self.next_levels = now + interval;
+            events.try_send(self.levels()).ok();
+        }
+    }
+
+    fn next_deadline(&self) -> Hns {
+        match self.level_interval {
+            Some(_) => self.next_stats.min(self.next_levels),
+            None => self.next_stats,
+        }
+    }
+
+    fn set_level_interval(&mut self, interval: Option<Hns>) {
+        if self.level_interval.is_none() {
+            self.next_levels = Hns::now();
+        }
+        self.level_interval = interval;
+    }
+
+    fn levels(&self) -> EngineEvent {
+        EngineEvent::AudioLevels {
+            levels: self.meters.iter().map(PeakMeter::take).collect(),
+        }
     }
 
     fn set_window(&mut self, window: Hns) {
@@ -576,8 +673,13 @@ impl SaveJob {
         }
         let mut writer = Mp4Writer::create(&self.path, &self.specs)?;
         let mut reader = PacketReader::default();
+        let mut last_keyframe = None;
         for (_, stream, packet) in self.packets {
+            let keyframe = stream == 0 && packet.is_keyframe();
             let mut packet = reader.read(packet)?;
+            if keyframe {
+                last_keyframe = Some(share_packet(&packet)?);
+            }
             let shift = self.shifts[stream];
             packet.set_pts(packet.pts - shift);
             packet.set_dts(packet.dts - shift);
@@ -585,6 +687,16 @@ impl SaveJob {
         }
         writer.finish()?;
         let latency = Hns::now() - self.requested;
+        let thumbnail = last_keyframe.and_then(|keyframe| {
+            let path = paths::thumbnail_path(&self.path).ok()?;
+            match write_thumbnail(&self.specs[0].codec_parameters, &keyframe, &path) {
+                Ok(()) => Some(path.to_string_lossy().into_owned()),
+                Err(error) => {
+                    tracing::warn!(%error, "miniature du clip impossible");
+                    None
+                }
+            }
+        });
         tracing::info!(
             path = %self.path.display(),
             duration_s = self.duration.as_secs_f64(),
@@ -595,6 +707,7 @@ impl SaveJob {
             path: self.path.to_string_lossy().into_owned(),
             duration_secs: self.duration.as_secs_f64(),
             save_latency_ms: (latency.0 / 10_000) as u64,
+            thumbnail,
         })
     }
 }
@@ -650,6 +763,26 @@ mod tests {
                 ("Discord".to_owned(), 0),
                 ("Jeu".to_owned(), 0),
             ]
+        );
+    }
+
+    #[test]
+    fn capture_label_names_the_window_or_its_fallback_screen() {
+        let window = CaptureTarget::Window {
+            exe_name: "FortniteClient-Win64-Shipping.exe".into(),
+            title_hint: None,
+        };
+        assert_eq!(
+            capture_label(&window, false),
+            "FortniteClient-Win64-Shipping.exe"
+        );
+        assert_eq!(
+            capture_label(&window, true),
+            "Écran de FortniteClient-Win64-Shipping.exe"
+        );
+        assert_eq!(
+            capture_label(&CaptureTarget::PrimaryMonitor, false),
+            "Écran principal"
         );
     }
 

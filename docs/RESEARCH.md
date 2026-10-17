@@ -346,6 +346,16 @@ privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cl
 - Sélection de piste audio dans une `<video>` Chromium : seulement avec « Experimental Web
   Platform features ». — [asbplayer](https://docs.asbplayer.dev/docs/guides/audio-track-selection)
 - `tauri icon` accepte un SVG source (vérifié localement le 2026-10-15).
+- `tauri-plugin-global-shortcut` : `Shortcut::new` n'est pas `const` (fonction à la place) ;
+  enregistrement et gestion côté Rust seulement, sans permission ni paquet npm. — constaté le
+  2026-10-16
+- Crêtes audio par piste relevées par le pipeline toutes les 50 ms : 19,8 événements/s
+  mesurés (`replay --levels`), un son de test d'amplitude 0,25 lu à −12,0 dB. — mesuré le
+  2026-10-16
+- Relire un MP4 de PalaClips avec FFmpeg (`avformat_open_input`) journalise « UDTA parsing
+  failed retrying raw » par piste audio, puis lit bien le titre (`title`/`handler_name`) :
+  bénin. Miniature 480 px de la dernière image clé : ~15 Ko, écrite après la fermeture du MP4
+  (latence de sauvegarde inchangée, 16 ms en 5 s 1080p). — constaté le 2026-10-16
 
 ## Skills de design
 

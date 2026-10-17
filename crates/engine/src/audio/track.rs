@@ -16,11 +16,11 @@ use windows::Win32::System::Threading::{
 };
 
 use super::filler::{FillStats, GapFiller};
-use super::{AudioSource, CHANNELS, SAMPLE_RATE};
+use super::{AudioSource, CHANNELS, PeakMeter, SAMPLE_RATE};
 use crate::clock::Hns;
 use crate::encode::AacEncoder;
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, Severity};
+use crate::events::{EngineEvent, Severity, TrackState};
 use crate::sources::{self, ForegroundWatch, ForegroundWindow};
 
 const BUFFER_DURATION_HNS: i64 = 2_000_000;
@@ -58,6 +58,7 @@ pub struct AudioTrack {
     stream: AudioStream,
     packets: Receiver<AVPacket>,
     alerts: Receiver<EngineEvent>,
+    meter: PeakMeter,
     stop: Arc<Waitable>,
     end: Arc<AtomicI64>,
     thread: Option<JoinHandle<Result<AudioTrackStats>>>,
@@ -73,6 +74,7 @@ impl std::fmt::Debug for AudioTrack {
 
 impl AudioTrack {
     pub fn start(
+        index: usize,
         source: AudioSource,
         title: impl Into<String>,
         origin: Hns,
@@ -89,7 +91,10 @@ impl AudioTrack {
         let (alert_tx, alerts) = bounded(ALERT_QUEUE);
         let stop = Arc::new(Waitable::event()?);
         let end = Arc::new(AtomicI64::new(i64::MIN));
+        let meter = PeakMeter::default();
         let worker = Worker {
+            index,
+            meter: meter.clone(),
             source,
             title,
             filler: GapFiller::new(origin),
@@ -104,6 +109,7 @@ impl AudioTrack {
             app: None,
             foreground: None,
             silence: SilenceWatch::default(),
+            reported: None,
         };
         let thread = std::thread::Builder::new()
             .name(format!("palaclips-audio-{}", worker.title))
@@ -112,6 +118,7 @@ impl AudioTrack {
             stream,
             packets,
             alerts,
+            meter,
             stop,
             end,
             thread: Some(thread),
@@ -128,6 +135,10 @@ impl AudioTrack {
 
     pub fn alerts(&self) -> &Receiver<EngineEvent> {
         &self.alerts
+    }
+
+    pub fn meter(&self) -> &PeakMeter {
+        &self.meter
     }
 
     pub fn finish_at(&self, until: Hns) {
@@ -163,6 +174,8 @@ impl Drop for AudioTrack {
 }
 
 struct Worker {
+    index: usize,
+    meter: PeakMeter,
     source: AudioSource,
     title: String,
     filler: GapFiller,
@@ -177,6 +190,7 @@ struct Worker {
     app: Option<AttachedApp>,
     foreground: Option<ForegroundSignal>,
     silence: SilenceWatch,
+    reported: Option<(TrackState, Option<String>)>,
 }
 
 #[derive(Clone)]
@@ -289,6 +303,7 @@ impl Worker {
                 match self.attach() {
                     Some(app) => open_app_stream(&app),
                     None => {
+                        self.report(TrackState::Waiting, None);
                         if self.idle(&waits_for_device, Some(APP_RETRY_MS))? {
                             break;
                         }
@@ -305,6 +320,7 @@ impl Worker {
                     if !unavailable_reported {
                         unavailable_reported = true;
                         self.alert_unavailable(&error, in_use);
+                        self.report(TrackState::Unavailable, None);
                     }
                     if self.idle(&waits_for_device, in_use.then_some(EXCLUSIVE_RETRY_MS))? {
                         break;
@@ -313,6 +329,7 @@ impl Worker {
                 }
             };
             unavailable_reported = false;
+            self.report(TrackState::Capturing, Some(stream.name.clone()));
             if self.source.is_application() {
                 tracing::info!(track = %self.title, app = %stream.name, "application rattachée");
                 if current_device.is_some() {
@@ -535,18 +552,42 @@ impl Worker {
             self.title, app.exe_name
         );
         self.alert(Severity::Warning, "app_track_silent", message);
+        let source = self.reported.clone().and_then(|(_, source)| source);
+        self.report(TrackState::Silent, source);
+    }
+
+    fn report(&mut self, state: TrackState, source: Option<String>) {
+        let reported = Some((state, source.clone()));
+        if self.reported == reported {
+            return;
+        }
+        self.reported = reported;
+        self.alerts
+            .try_send(EngineEvent::TrackChanged {
+                track: self.index,
+                title: self.title.clone(),
+                state,
+                source,
+            })
+            .ok();
     }
 
     fn on_packet(&mut self, qpc: Hns, data: &mut [f32]) -> Result<()> {
         self.stats.packets += 1;
         if data.iter().any(|sample| *sample != 0.0) {
             self.silence.on_signal(Hns::now());
+            if let Some((TrackState::Silent, source)) = self.reported.clone() {
+                self.report(TrackState::Capturing, source);
+            }
         }
         let gain = self.gain();
+        let mut peak = 0.0f32;
         for sample in data.iter_mut() {
             *sample *= gain;
-            self.stats.peak = self.stats.peak.max(sample.abs());
+            peak = peak.max(sample.abs());
         }
+        self.stats.peak = self.stats.peak.max(peak);
+        self.meter.record(peak);
         self.filler
             .push(qpc + self.sync_offset, data, &mut self.filled);
         self.flush()
