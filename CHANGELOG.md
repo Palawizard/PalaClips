@@ -114,7 +114,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   point rouge pendant l'enregistrement) sur la même capture que le replay, sans coût en plus ;
   fichier lisible jusqu'à la dernière seconde même après un arrêt brutal ; option pour
   commencer par le replay en mémoire et découpage par durée ou par taille (Réglages >
-  Enregistrement).
+  Enregistrement). Un enregistrement interrompu (plantage, coupure) est réparé au démarrage
+  suivant et apparaît comme un clip normal.
+- Disque plein : alerte sous 2 Go libres pendant un enregistrement, arrêt propre sous 300 Mo
+  (le fichier reste lisible) ; une sauvegarde du replay qui ne tiendrait pas est refusée avec
+  un message clair.
 - Interface en français et en anglais (Réglages > Général > Langue), langue de Windows par
   défaut : écrans, alertes, erreurs, menu de la zone de notification et notifications. Les
   pistes non renommées (Mix, Micro, Jeu) prennent le nom de la langue choisie, à l'écran
