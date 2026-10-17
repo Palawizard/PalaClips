@@ -102,15 +102,15 @@ Front : workflow `/design` obligatoire (impeccable + emil-design-eng).
 
 - [x] Premier écran construit selon la direction de `.impeccable/surfaces/`, puis `DESIGN.md`
       (et `.impeccable/design.json`) produits par le documenteur impeccable, commités.
-- [ ] Shell Tauri : zone de notification + menu, instance unique, fenêtre créée/détruite,
+- [x] Shell Tauri : zone de notification + menu, instance unique, fenêtre créée/détruite,
       `prevent_exit`, raccourcis globaux personnalisables avec conflits.
-- [ ] Toasts sans vol de focus, son de confirmation.
-- [ ] Persistance des réglages (`settings.json` versionné) + migration + réinitialisation.
-- [ ] Écrans : État (accueil), Zone de capture (miniatures en direct), Sources audio
+- [x] Toasts sans vol de focus, son de confirmation.
+- [x] Persistance des réglages (`settings.json` versionné) + migration + réinitialisation.
+- [x] Écrans : État (accueil), Zone de capture (miniatures en direct), Sources audio
       (vumètres, recherche, appli non lancée, renommage), Replay & qualité (estimation RAM
       en direct), Raccourcis, Stockage, Général.
-- [ ] Contrat IPC complet pour ces écrans (`ipc.ts` à jour).
-- [ ] Assistant de calibrage de la synchro (AUD-11) dans Sources audio : émetteur flash + bip
+- [x] Contrat IPC complet pour ces écrans (`ipc.ts` à jour).
+- [x] Assistant de calibrage de la synchro (AUD-11) dans Sources audio : émetteur flash + bip
       (logique de `probe-av-emitter`), capture de test, mesure automatique du décalage par
       piste, valeur proposée puis enregistrée ; relançable en un clic, car le retard d'une
       chaîne Voicemeeter/VST change à chaque lancement (`RESEARCH.md` § Audio).

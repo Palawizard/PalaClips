@@ -1,10 +1,49 @@
 # Phase 5 — Application et sélecteurs
 
-- Branche : `feature/app-shell` (PR #19, en cours)
+- Date de validation : 2026-10-17
+- Commit : `5c0c34c` (`dev`, après #35)
 - Machine : Windows 11 build 26200, NVIDIA GeForce RTX 4070 SUPER pilote 617.42,
   Intel Core i5-13600KF, trois écrans (principal 2560×1440 240 Hz)
 
-**Statut : en cours.** Rapport complété par `/valider-phase` à la fin de la phase.
+**Statut : un critère 👤 reste ouvert** (ressenti des sélecteurs, à voir avec Palawi) ; tous
+les livrables et les autres critères sont faits.
+
+## Critères
+
+| Critère | Type | Résultat | Preuve |
+|---|---|---|---|
+| Fenêtre fermée : un seul processus PalaClips, aucun `msedgewebview2.exe` enfant | 🤖 | ✅ | Build release isolée (`scripts/app-isolated.ps1`) : fenêtre ouverte `msedgewebview2.exe ×6, palaclips-app.exe ×1` → après `CloseMainWindow` : `palaclips-app.exe ×1`, processus toujours vivant (zone de notification) |
+| `/impeccable audit` sans problème bloquant ; navigation clavier complète | 🤖 | ✅ | Audit initial 15/20 (P0 0, P1 3, P2 6, P3 4), détecteur `[]` ; corrections #35 → 18/20 « Excellent », puis derniers P2/P3 corrigés (focus dans la grille Capture, Tab libre pendant la saisie d'un raccourci, focus rendu après confirmations et listes, région live des alertes). Écart assumé : pas de zoom d'interface (P2-6), la mise à l'échelle Windows 100–200 % couvre APP-13 |
+| Sauvegarde en plein écran dans Fortnite : le jeu garde le focus, le toast apparaît | 👤 | ✅ | Tests du 2026-10-17 ci-dessous : focus gardé, carillon entendu en jeu, toast retenu par Windows en plein écran (Ne pas déranger) puis présent dans le centre de notifications, toast visible sur le bureau. Palawi : critère rempli |
+| Palawi valide le ressenti des sélecteurs (« propre et sympa ») | 👤 | ❌ | En attente : Palawi regardera Capture et Audio dans l'app isolée |
+
+## Livrables
+
+- Shell Tauri (zone de notification, instance unique, fenêtre détruite, raccourcis globaux
+  personnalisables avec conflits), toasts sans vol de focus et carillon, `settings.json`
+  versionné avec migration et réinitialisation : PR #19 à #27.
+- Écrans : État, Réglages > Capture (miniatures en direct, ~0,35 % CPU machine pour
+  3 écrans + 6 fenêtres, 0 % hors section), Audio (vumètres, recherche, appli non lancée,
+  renommage), Replay & qualité (estimation en direct, alerte RAM, limites du codec), Raccourcis,
+  Stockage, Général : PR #28 à #33.
+- Assistant de calibrage (AUD-11) : PR #33, corrigé par #34 (ADR-027 : référence = capture par
+  processus de l'émetteur). Trois mesures sur la machine de Palawi : excédent Voicemeeter
+  103–106 ms, Jeu et applis 0 ms.
+- Contrat IPC à jour (`ipc.ts`, `commands.rs`, `events.rs`, `ARCHITECTURE.md` § IPC).
+- Aucun `todo!()` ni usage de `EngineError::NotImplemented` (seule la définition de la variante
+  reste dans `error.rs`).
+
+## Exigences SPEC couvertes
+
+APP-01, APP-02, APP-03, APP-04, APP-05, APP-07, APP-13 ; CAP-02, CAP-03, CAP-05, CAP-06,
+CAP-07 ; AUD-02, AUD-04, AUD-05, AUD-06, AUD-11 ; RPL-01, RPL-02, RPL-03, RPL-04, RPL-06,
+RPL-07 ; ENC-02, ENC-03 ; STO-02, STO-03.
+
+## Écarts et corrections
+
+- Calibrage : la première version alignait chaque piste sur zéro (Mix −138, Jeu −33 ms) ;
+  corrigé par ADR-027 avant toute application (rien n'a été appliqué aux réglages de Palawi).
+- Quota (STO-04) et disque plein (STO-05) : phase 6, comme prévu au PLAN.
 
 ## Mesures en cours de phase
 
