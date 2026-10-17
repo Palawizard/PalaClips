@@ -52,6 +52,14 @@ enum Command {
         limit: usize,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Nom de jeu choisi pour un exe en cours d'exécution (métadonnées, puis nom d'exe nettoyé)"
+    )]
+    GameName {
+        #[arg(help = "Nom d'exe, ex. FortniteClient-Win64-Shipping.exe")]
+        exe_name: String,
+    },
+    #[cfg(windows)]
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
     #[cfg(windows)]
@@ -285,6 +293,19 @@ fn main() -> Result<()> {
                 serde_json::to_string_pretty(
                     &serde_json::json!({ "clips": clips, "disk": space })
                 )?
+            );
+        }
+        #[cfg(windows)]
+        Command::GameName { exe_name } => {
+            let resolved = palaclips_engine::games::resolve(&exe_name);
+            println!(
+                "{} ({})",
+                resolved.name,
+                if resolved.from_metadata_lookup {
+                    "processus trouvé, nom figé à la première sauvegarde"
+                } else {
+                    "processus absent, nom d'exe nettoyé, non figé"
+                }
             );
         }
         #[cfg(windows)]

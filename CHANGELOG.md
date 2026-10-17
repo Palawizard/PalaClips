@@ -57,6 +57,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   l'ordre du fichier avec sa couleur, son vumètre, sa crête et son état (en attente de l'appli,
   muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
 - Menu de la zone de notification : armer et désarmer le replay.
+- Les clips sont rangés sous le vrai nom du jeu (« Fortnite » au lieu de
+  « FortniteClient-Win64-Shipping »), lu dans l'exe ou tiré de son nom ; le nom est gardé une
+  fois choisi.
+- CLI : `game-name` (nom de jeu choisi pour un exe en cours).
 - Les réglages sont enregistrés (`%APPDATA%\PalaClips\settings.json`) et retrouvés au
   démarrage ; un fichier abîmé est mis de côté et remplacé par les réglages par défaut, avec
   une alerte ; retour aux réglages par défaut possible.

@@ -11,9 +11,9 @@ use windows::Win32::UI::Shell::{
 use windows::core::GUID;
 
 use crate::error::{EngineError, Result};
+use crate::games::{DESKTOP_GAME, exe_stem, sanitize};
 
 const APP_DIR: &str = "PalaClips";
-const DESKTOP_GAME: &str = "Bureau";
 
 pub fn default_clips_dir() -> Result<PathBuf> {
     Ok(known_folder(&FOLDERID_Videos)?.join(APP_DIR))
@@ -42,23 +42,10 @@ pub fn thumbnail_path(clip: &Path) -> Result<PathBuf> {
 }
 
 pub fn game_label(exe_name: Option<&str>) -> String {
-    let Some(exe_name) = exe_name else {
-        return DESKTOP_GAME.into();
-    };
-    let stem = match exe_name.rsplit_once('.') {
-        Some((stem, extension)) if extension.eq_ignore_ascii_case("exe") => stem,
-        _ => exe_name,
-    };
-    let clean: String = stem
-        .chars()
-        .filter(|c| !matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'))
-        .collect();
-    let clean = clean.trim_matches([' ', '.']);
-    if clean.is_empty() {
-        DESKTOP_GAME.into()
-    } else {
-        clean.into()
-    }
+    exe_name
+        .map(|exe_name| sanitize(exe_stem(exe_name)))
+        .filter(|label| !label.is_empty())
+        .unwrap_or_else(|| DESKTOP_GAME.to_owned())
 }
 
 pub fn replay_clip_path(root: &Path, game: &str, stamp: &str) -> PathBuf {
