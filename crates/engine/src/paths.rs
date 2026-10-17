@@ -37,6 +37,13 @@ pub fn replay_spool_dir() -> Result<PathBuf> {
         .join("replay"))
 }
 
+pub fn calibration_clip_path() -> Result<PathBuf> {
+    Ok(known_folder(&FOLDERID_LocalAppData)?
+        .join(APP_DIR)
+        .join("cache")
+        .join("calibration.mp4"))
+}
+
 pub fn thumbnail_path(clip: &Path) -> Result<PathBuf> {
     let name = clip.file_stem().unwrap_or_default();
     Ok(known_folder(&FOLDERID_LocalAppData)?

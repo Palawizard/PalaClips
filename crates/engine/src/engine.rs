@@ -10,6 +10,10 @@ use rsmpeg::avutil::AVRational;
 use rsmpeg::ffi::AV_PKT_FLAG_KEY;
 
 use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
+use crate::calibrate::{
+    Calibration, EMIT_SECONDS, TrackMeasurement, calibration_config, emit_flashes, measure_tracks,
+    proposals, read_signals,
+};
 use crate::capture::{VideoCapture, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, EngineConfig, ReplayStorage};
@@ -52,13 +56,24 @@ impl LevelRate {
     }
 }
 
+const CALIBRATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
+const CALIBRATION_WARMUP: std::time::Duration = std::time::Duration::from_millis(800);
+
 enum Command {
     Arm,
     Disarm,
     SaveReplay,
     Configure(Box<EngineConfig>),
     SetLevelRate(LevelRate),
+    Calibrate(Sender<Result<Calibration>>),
+    FinishCalibration(Result<()>),
     Shutdown,
+}
+
+struct PendingCalibration {
+    reply: Sender<Result<Calibration>>,
+    config: EngineConfig,
+    was_armed: bool,
 }
 
 pub struct Engine {
@@ -89,6 +104,7 @@ impl Engine {
         config.validate()?;
         let (commands, command_rx) = bounded(COMMAND_QUEUE);
         let (event_tx, events) = bounded(EVENT_QUEUE);
+        let own_commands = commands.clone();
         let thread = std::thread::Builder::new()
             .name("palaclips-engine".into())
             .spawn(move || {
@@ -97,6 +113,8 @@ impl Engine {
                     events: event_tx,
                     pipeline: None,
                     level_rate: LevelRate::Off,
+                    commands: own_commands,
+                    calibration: None,
                 }
                 .run(&command_rx)
             })?;
@@ -147,6 +165,14 @@ impl EngineHandle {
     pub fn configure(&self, config: EngineConfig) -> Result<()> {
         config.validate()?;
         self.send(Command::Configure(Box::new(config)))
+    }
+
+    pub fn calibrate(&self) -> Result<Calibration> {
+        let (reply, result) = bounded(1);
+        self.send(Command::Calibrate(reply))?;
+        result
+            .recv_timeout(CALIBRATION_TIMEOUT)
+            .map_err(|_| EngineError::Stopped)?
     }
 
     fn send(&self, command: Command) -> Result<()> {
@@ -272,6 +298,8 @@ struct Core {
     events: Sender<EngineEvent>,
     pipeline: Option<Pipeline>,
     level_rate: LevelRate,
+    commands: Sender<Command>,
+    calibration: Option<PendingCalibration>,
 }
 
 impl Core {
@@ -291,11 +319,38 @@ impl Core {
                     }
                 },
             };
+            if self.calibration.is_some() {
+                match command {
+                    Command::FinishCalibration(emitted) => self.finish_calibration(emitted),
+                    Command::Configure(config) => self.config = *config,
+                    Command::Calibrate(reply) => {
+                        reply.send(Err(EngineError::CalibrationBusy)).ok();
+                    }
+                    Command::Arm | Command::Disarm => {
+                        if let Some(pending) = self.calibration.as_mut() {
+                            pending.was_armed = matches!(command, Command::Arm);
+                        }
+                    }
+                    Command::SaveReplay => self.alert(
+                        Severity::Info,
+                        "calibration_running",
+                        "Calibrage en cours : rien n'est sauvegardé.".into(),
+                    ),
+                    Command::SetLevelRate(rate) => self.level_rate = rate,
+                    Command::Shutdown => {
+                        self.disarm();
+                        break;
+                    }
+                }
+                continue;
+            }
             match command {
                 Command::Arm => self.arm(),
                 Command::Disarm => self.disarm(),
                 Command::SaveReplay => self.save_replay(),
                 Command::Configure(config) => self.configure(*config),
+                Command::Calibrate(reply) => self.start_calibration(reply),
+                Command::FinishCalibration(_) => {}
                 Command::SetLevelRate(rate) => {
                     self.level_rate = rate;
                     if let Some(pipeline) = self.pipeline.as_mut() {
@@ -331,6 +386,90 @@ impl Core {
                 );
             }
         }
+    }
+
+    fn start_calibration(&mut self, reply: Sender<Result<Calibration>>) {
+        let own_exe = std::env::current_exe()
+            .ok()
+            .and_then(|path| {
+                path.file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+            })
+            .unwrap_or_else(|| "palaclips-app.exe".into());
+        let config = calibration_config(&self.config, &own_exe);
+        let was_armed = self.pipeline.is_some();
+        self.disarm();
+        match Pipeline::start(&config, &self.events) {
+            Ok(pipeline) => self.pipeline = Some(pipeline),
+            Err(error) => {
+                if was_armed {
+                    self.arm();
+                }
+                reply.send(Err(error)).ok();
+                return;
+            }
+        }
+        let commands = self.commands.clone();
+        let device = config.audio.output_device_id.clone();
+        let spawned = std::thread::Builder::new()
+            .name("palaclips-calibration".into())
+            .spawn(move || {
+                std::thread::sleep(CALIBRATION_WARMUP);
+                let emitted = emit_flashes(EMIT_SECONDS, device.as_deref());
+                std::thread::sleep(CALIBRATION_WARMUP);
+                commands.send(Command::FinishCalibration(emitted)).ok();
+            });
+        if let Err(error) = spawned {
+            self.disarm();
+            if was_armed {
+                self.arm();
+            }
+            reply.send(Err(error.into())).ok();
+            return;
+        }
+        self.calibration = Some(PendingCalibration {
+            reply,
+            config,
+            was_armed,
+        });
+    }
+
+    fn finish_calibration(&mut self, emitted: Result<()>) {
+        let Some(pending) = self.calibration.take() else {
+            return;
+        };
+        let result = emitted.and_then(|()| self.measure_calibration(&pending.config));
+        if let Some(pipeline) = self.pipeline.take() {
+            pipeline.stop();
+        }
+        if pending.was_armed {
+            self.arm();
+        }
+        if let Ok(calibration) = &result {
+            tracing::info!(?calibration, "calibrage terminé");
+        }
+        pending.reply.send(result).ok();
+    }
+
+    fn measure_calibration(&mut self, config: &EngineConfig) -> Result<Calibration> {
+        let pipeline = self
+            .pipeline
+            .as_mut()
+            .ok_or(EngineError::NothingToSave("le calibrage s'est arrêté"))?;
+        let path = paths::calibration_clip_path()?;
+        let job = pipeline.clip_job(Hns::now(), path.clone(), config)?;
+        let signals = job.write().and_then(|_| read_signals(&path));
+        std::fs::remove_file(&path).ok();
+        let tracks = track_descriptors(config)
+            .into_iter()
+            .zip(measure_tracks(&signals?))
+            .map(|(track, measurement)| TrackMeasurement {
+                kind: track.kind,
+                title: track.title,
+                measurement,
+            })
+            .collect();
+        Ok(proposals(&self.config.audio, tracks))
     }
 
     fn disarm(&mut self) {
@@ -656,6 +795,40 @@ impl Pipeline {
         config: &EngineConfig,
         events: &Sender<EngineEvent>,
     ) -> Result<()> {
+        let root = match &config.storage.clips_dir {
+            Some(dir) => dir.clone(),
+            None => paths::default_clips_dir()?,
+        };
+        let path = paths::replay_clip_path(&root, game, &paths::local_timestamp());
+        let job = self.clip_job(requested, path, config)?;
+        let events = events.clone();
+        std::thread::Builder::new()
+            .name("palaclips-replay-save".into())
+            .spawn(move || {
+                let path = job.path.clone();
+                let event = match job.write() {
+                    Ok(event) => event,
+                    Err(error) => {
+                        tracing::warn!(%error, path = %path.display(), "écriture du clip impossible");
+                        std::fs::remove_file(&path).ok();
+                        EngineEvent::Alert {
+                            severity: Severity::Warning,
+                            code: "clip_save_failed".into(),
+                            message: format!("Clip non sauvegardé : {error}."),
+                        }
+                    }
+                };
+                events.try_send(event).ok();
+            })?;
+        Ok(())
+    }
+
+    fn clip_job(
+        &mut self,
+        requested: Hns,
+        path: std::path::PathBuf,
+        config: &EngineConfig,
+    ) -> Result<SaveJob> {
         if let Some(spool) = self.spool.as_mut() {
             spool.flush()?;
         }
@@ -683,11 +856,6 @@ impl Pipeline {
         if let Some((video, audio)) = self.rings.split_first_mut() {
             forget_saved(video, audio, plan.end);
         }
-        let root = match &config.storage.clips_dir {
-            Some(dir) => dir.clone(),
-            None => paths::default_clips_dir()?,
-        };
-        let path = paths::replay_clip_path(&root, game, &paths::local_timestamp());
         let shifts: Vec<i64> = self
             .time_bases
             .iter()
@@ -696,34 +864,14 @@ impl Pipeline {
                     .to_timebase(i64::from(base.num), i64::from(base.den))
             })
             .collect();
-        let job = SaveJob {
+        Ok(SaveJob {
             path,
             specs: self.specs.clone(),
             shifts,
             packets,
             duration: plan.end - plan.start,
             requested,
-        };
-        let events = events.clone();
-        std::thread::Builder::new()
-            .name("palaclips-replay-save".into())
-            .spawn(move || {
-                let path = job.path.clone();
-                let event = match job.write() {
-                    Ok(event) => event,
-                    Err(error) => {
-                        tracing::warn!(%error, path = %path.display(), "écriture du clip impossible");
-                        std::fs::remove_file(&path).ok();
-                        EngineEvent::Alert {
-                            severity: Severity::Warning,
-                            code: "clip_save_failed".into(),
-                            message: format!("Clip non sauvegardé : {error}."),
-                        }
-                    }
-                };
-                events.try_send(event).ok();
-            })?;
-        Ok(())
+        })
     }
 
     fn stop(self) {

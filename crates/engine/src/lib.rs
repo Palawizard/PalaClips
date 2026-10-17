@@ -1,5 +1,6 @@
 #[cfg(windows)]
 pub mod audio;
+pub mod calibrate;
 #[cfg(windows)]
 pub mod capture;
 pub mod clock;
