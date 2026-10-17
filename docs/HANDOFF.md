@@ -5,11 +5,13 @@
 
 ## État actuel
 
-- **Phase en cours :** 5 — Application et sélecteurs. Phase 4 **validée** le 2026-10-16
-  (`docs/reports/phase-4.md`, ADR-020 et ADR-021). Brief du premier écran (État + shell)
-  confirmé par Palawi : `.impeccable/surfaces/app-src-app-tsx.md` § « Brief confirmé ».
-- **Branche :** `feature/hotkeys` (PR à merger) : raccourcis personnalisables + écran Réglages
-  (Raccourcis, Général) ; `dev` contient déjà les PR #21 à #26.
+- **Phase en cours :** 5 — Application et sélecteurs. Tout est livré et validé
+  (`docs/reports/phase-5.md`) sauf un critère 👤 : Palawi valide le ressenti des sélecteurs
+  (Capture, Audio) dans l'app isolée. Puis phase 6.
+- **Socle i18n (APP-08, ADR-028)** fait avant la phase 6 : clés `app/src/locales/fr.json` /
+  `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et erreurs Rust en
+  `Localized { code, params }`, langue dans Réglages > Général, `npm test` refuse les chaînes
+  en dur. Branche `feature/i18n-foundation`.
 - **Dernière mise à jour :** 2026-10-17
 
 ## Ce qui existe
@@ -184,21 +186,16 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 5, suite (une branche par tâche, depuis `dev`) :
-   - merger la PR de `feature/hotkeys` si ce n'est pas fait ;
-   - sections Réglages restantes via `/design` (brief confirmé :
-     `.impeccable/surfaces/app-src-components-settings-tsx.md`, application immédiate sauf
-     redémarrage du tampon → confirmation en ligne RPL-07) : Capture (miniatures en direct),
-     Audio (vumètres, recherche, appli non lancée, renommage, assistant AUD-11), Replay &
-     qualité (estimation RAM RPL-03), Stockage (dossier, quota, noms de jeux modifiables) ;
-   - ⚠️ L'app arme le replay au démarrage : demander à Palawi avant tout lancement ; tests de
-     saisie de raccourcis : jamais de touches synthétiques (elles partent vers la fenêtre au
-     premier plan de Palawi), le faire tester par lui ; une sauvegarde de test écrit un vrai
-     clip : le supprimer après (demander).
-2. Phase 6 (note de Palawi) : la galerie affiche la liste des pistes de chaque clip, noms lus
-   dans le fichier (Resolve ne les montre pas, ADR-021) ; ajouté au PLAN.
-3. Puis les autres écrans de la phase 5 dans l'ordre du PLAN (Réglages : Capture, Audio,
-   Replay & qualité, Raccourcis, Stockage, Général ; assistant de calibrage AUD-11).
+1. Merger la PR `feature/i18n-foundation` (CI verte) ; montrer l'anglais à Palawi dans l'app
+   isolée (`pwsh scripts/app-isolated.ps1 -Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`), en même temps que
+   la revue des sélecteurs (Réglages > Capture et Audio).
+2. Sur son « OK » : critère coché dans `docs/reports/phase-5.md`, phase 5 close.
+3. Phase 6 (PLAN) : tout texte visible directement en clé (ADR-028) ; la galerie affiche la
+   liste des pistes de chaque clip, noms lus dans le fichier (ADR-021) ; le dossier « Bureau »
+   s'affiche par sa clé.
+- ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
+  synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
+  Palawi).
 
 ## Bloquants
 
@@ -298,3 +295,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-17 | 5 | Vumètres indexés par piste, animation plafonnée à 60 i/s et sans boucle hors focus ; PERF-03 mesuré en release (fenêtre ouverte sans focus 0,57 % CPU, fermée 0,27 %) ; test de Palawi : écran OK, `Alt+F10` dans Fortnite sans perte de focus, sauvegarde fenêtre ouverte OK ; consigne de copie dans PRODUCT.md ; PR #19 mergée | Réglages persistants, noms de jeux, toast + son |
 | 2026-10-17 | 5 | PR #21 réglages persistants ; PR #22 noms de jeux (Fortnite sans métadonnées → nom d'exe nettoyé, décision de Palawi, ADR-024) ; PR #23 carillon + toast, test Fortnite ✅ (carillon en jeu, toast bloqué en jeu puis dans le centre de notifications, toast + carillon au bureau, dossier « Fortnite ») ; PR #24 clips sans doublon (RPL-09, ADR-025, 20,2 s puis 10,2 s) | Raccourcis, démarrage avec Windows, écrans Réglages |
 | 2026-10-17 | 5 | PR #25 clip < 3 s ignoré ; PR #26 démarrage avec Windows (0 WebView2) ; raccourcis personnalisables (conflit réel détecté : Alt+Shift+F10 pris par NVIDIA → défaut Ctrl+Alt+F10) ; écran Réglages (Raccourcis, Général, thème) testé par Palawi au clavier ; revue impeccable 2 tours | Sections Réglages restantes |
+| 2026-10-17 | 5 | Socle i18n avant la phase 6 (ADR-028) : fr/en complets, langue de Windows par défaut, codes + paramètres côté Rust, menu de la zone de notification et toasts traduits, test anti-chaînes en dur | Revue de Palawi (anglais + sélecteurs), phase 6 |
