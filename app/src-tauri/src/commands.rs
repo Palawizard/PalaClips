@@ -5,7 +5,7 @@ use tauri::State;
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::hotkeys::{HotkeyAction, Hotkeys};
-use crate::settings::Feedback;
+use crate::settings::{Feedback, Theme};
 use crate::{AppStatus, EngineSlot};
 
 #[tauri::command]
@@ -47,6 +47,16 @@ pub fn get_hotkeys(slot: State<'_, EngineSlot>) -> HotkeysView {
             .map(|unavailable| unavailable.clone())
             .unwrap_or_default(),
     }
+}
+
+#[tauri::command]
+pub fn suspend_hotkeys(app: tauri::AppHandle, slot: State<'_, EngineSlot>) {
+    slot.unregister_hotkeys(&app);
+}
+
+#[tauri::command]
+pub fn resume_hotkeys(app: tauri::AppHandle, slot: State<'_, EngineSlot>) {
+    slot.resume_hotkeys(&app);
 }
 
 #[tauri::command]
@@ -92,9 +102,18 @@ pub fn set_config(slot: State<'_, EngineSlot>, config: EngineConfig) -> Result<(
 }
 
 #[tauri::command]
-pub fn reset_config(slot: State<'_, EngineSlot>) -> Result<EngineConfig, String> {
-    slot.apply(EngineConfig::default())?;
-    Ok(EngineConfig::default())
+pub fn reset_settings(app: tauri::AppHandle, slot: State<'_, EngineSlot>) -> Result<(), String> {
+    slot.reset(&app)
+}
+
+#[tauri::command]
+pub fn get_theme(slot: State<'_, EngineSlot>) -> Theme {
+    slot.theme()
+}
+
+#[tauri::command]
+pub fn set_theme(slot: State<'_, EngineSlot>, theme: Theme) -> Result<(), String> {
+    slot.update(|settings| settings.theme = theme)
 }
 
 #[tauri::command]
