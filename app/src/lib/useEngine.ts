@@ -9,6 +9,8 @@ import {
   getState,
   listRecentClips,
   onEngineEvent,
+  recordStart,
+  recordStop,
   replayArm,
   replayDisarm,
   replaySave,
@@ -29,11 +31,16 @@ export interface Engine {
   storage: StorageStatus | null;
   savedAt: number;
   saveKeys: string | null;
+  recordKeys: string | null;
   phase: ReplayPhase;
+  recording: boolean;
+  recordPending: boolean;
   actionError: string | null;
   arm: () => void;
   disarm: () => void;
   save: () => void;
+  record: () => void;
+  stopRecording: () => void;
 }
 
 function phaseOf(status: AppStatus | null, pending: ReplayPhase | null): ReplayPhase {
@@ -56,6 +63,8 @@ export function useEngine(): Engine {
   const [pending, setPending] = useState<ReplayPhase | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [saveKeys, setSaveKeys] = useState<string | null>(null);
+  const [recordKeys, setRecordKeys] = useState<string | null>(null);
+  const [recordPending, setRecordPending] = useState(false);
 
   const refreshState = useCallback(() => {
     getState().then(setStatus, (error) => setActionError(errorText(error)));
@@ -71,7 +80,10 @@ export function useEngine(): Engine {
     refreshLibrary();
     getConfig().then(setConfig, () => setConfig(null));
     getHotkeys().then(
-      (view) => setSaveKeys(view.hotkeys.save_replay),
+      (view) => {
+        setSaveKeys(view.hotkeys.save_replay);
+        setRecordKeys(view.hotkeys.toggle_recording);
+      },
       () => setSaveKeys(null),
     );
     const unlisten = onEngineEvent((event) => {
@@ -91,13 +103,20 @@ export function useEngine(): Engine {
           setSavedAt(Date.now());
           refreshLibrary();
           break;
+        case "recording_stats":
+          setStatus((current) =>
+            current ? { ...current, recording_secs: event.elapsed_secs, recording_bytes: event.bytes } : current,
+          );
+          break;
         case "state_changed":
           setPending(null);
+          setRecordPending(false);
           if (event.state === "idle") clearLevels();
           refreshState();
           break;
         case "alert":
           if (event.code === "replay_arm_failed") setPending(null);
+          if (event.code === "recording_failed" || event.code === "replay_arm_failed") setRecordPending(false);
           refreshState();
           break;
         default:
@@ -114,6 +133,7 @@ export function useEngine(): Engine {
     if (phase) setPending(phase);
     action().catch((error) => {
       setPending(null);
+      setRecordPending(false);
       setActionError(errorText(error));
     });
   }, []);
@@ -126,10 +146,21 @@ export function useEngine(): Engine {
     storage,
     savedAt,
     saveKeys,
+    recordKeys,
     phase: phaseOf(status, pending),
+    recording: status?.state === "recording",
+    recordPending,
     actionError,
     arm: () => run(replayArm, "arming"),
     disarm: () => run(replayDisarm, "disarming"),
     save: () => run(replaySave, null),
+    record: () => {
+      setRecordPending(true);
+      run(recordStart, null);
+    },
+    stopRecording: () => {
+      setRecordPending(true);
+      run(recordStop, null);
+    },
   };
 }

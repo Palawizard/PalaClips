@@ -181,6 +181,10 @@ Tout est arrêté et les clips supprimés à la fin.
   l'était.
 
 ## T6 — Enregistrement et galerie (phase 6)
+- Enregistrement (app isolée, découpage 1 min) : Démarrer, attendre ~75 s, Arrêter → 2 fichiers
+  `<Jeu>_<date>.mp4` lisibles, le second commence là où le premier finit ; icône de la zone de
+  notification avec un point rouge pendant l'enregistrement. Relancer, tuer le processus après
+  10 s : le fichier se lit jusqu'à la dernière seconde écrite. Fichiers supprimés ensuite.
 - Crash : pendant un enregistrement, `taskkill /F /IM palaclips.exe` → relancer → le clip est
   dans la galerie et se lit jusqu'à la fin.
 - Gros fichier : enregistrement de 4 Go, déplacements rapides dans le lecteur.

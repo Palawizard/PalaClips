@@ -114,6 +114,10 @@ pub enum EngineEvent {
         buffered_secs: f64,
         bytes: u64,
     },
+    RecordingStats {
+        elapsed_secs: f64,
+        bytes: u64,
+    },
     Alert {
         severity: Severity,
         #[serde(flatten)]

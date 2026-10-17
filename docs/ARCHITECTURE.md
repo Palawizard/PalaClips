@@ -271,7 +271,7 @@ d'une erreur système.
 | `list_app_sessions` | 5 ✅ | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
 | `pick_app_exe` | 5 ✅ | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
 | `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = `Localized`) |
-| `record_start` / `record_stop` | 6 | enregistrement |
+| `record_start` / `record_stop` | 6 ✅ | enregistrement manuel (REC-01/02) : même capture et mêmes encodeurs que le replay (arme le pipeline si besoin, désarmé à la fin s'il ne l'était pas) ; état `recording` ; MP4 hybride (`hybrid_fragmented`, fragment d'1 s, `flush_packets`) ; option `record.include_replay` (REC-04) et découpage `record.split` par durée ou taille sur image clé (REC-05) ; un changement de sources pendant l'enregistrement redémarre le replay à la fin ; calibrage refusé (`recording_running`) |
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
 | `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
 | `pick_clips_dir` | 5 ✅ | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
@@ -283,7 +283,7 @@ d'une erreur système.
 | `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
 | `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
 | `list_clips` / `clip_*` | 6 | galerie : renommer, favori, supprimer, copier, exporter |
-| `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 ✅ | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay` (enregistrement en phase 6) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab…), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
+| `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 ✅ | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay`, `toggle_recording` (défaut `Ctrl+Alt+F9`) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab…), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
 | `performance_snapshot` | 7 | panneau de performances |
 | `export_diagnostics` | 8 | archive zip |
 
@@ -301,12 +301,14 @@ le relevé précédent, un nombre par piste dans l'ordre des pistes : le front i
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
 fenêtre),
-`replay_stats`, `alert { severity, code, params, message }` (`code` + `params` pour le texte
+`replay_stats`, `recording_stats { elapsed_secs, bytes }` (chaque seconde pendant un
+enregistrement ; chaque fichier terminé arrive en `clip_saved`), `alert { severity, code, params, message }` (`code` + `params` pour le texte
 affiché, `message` en français pour les journaux et la CLI).
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
-`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `clip_too_short` (info :
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `recording_failed { reason }`
+(écriture impossible : l'enregistrement s'arrête, les fichiers déjà écrits restent lisibles), `clip_too_short` (info :
 moins de 3 s à sauvegarder, aucun clip ; pas de notification), `calibration_running` (info :
 sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_unreadable` /
 `settings_unreadable_kept` (réglages illisibles, mis de côté en `settings.json.bak`),

@@ -24,6 +24,7 @@ use crate::encode::{
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Localized, Severity, TrackDescriptor};
 use crate::mux::{Mp4Writer, MuxStream};
+use crate::record::{LivePacket, RecordLayout, RecordTarget, Recorder};
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
     estimate_buffer_bytes, forget_saved, plan_clip, share_packet,
@@ -36,7 +37,7 @@ const EVENT_QUEUE: usize = 256;
 const STATS_INTERVAL: Hns = Hns::from_millis(1_000);
 const LEVELS_FOCUSED: Hns = Hns::from_millis(50);
 const LEVELS_BACKGROUND: Hns = Hns::from_millis(100);
-const AAC_PACKET: Hns = Hns(1_024 * HNS_PER_SECOND / SAMPLE_RATE as i64);
+pub(crate) const AAC_PACKET: Hns = Hns(1_024 * HNS_PER_SECOND / SAMPLE_RATE as i64);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum LevelRate {
@@ -63,6 +64,9 @@ enum Command {
     Arm,
     Disarm,
     SaveReplay,
+    StartRecording,
+    StopRecording,
+    RecordingEnded,
     Configure(Box<EngineConfig>),
     SetLevelRate(LevelRate),
     Calibrate(Sender<Result<Calibration>>),
@@ -115,6 +119,8 @@ impl Engine {
                     level_rate: LevelRate::Off,
                     commands: own_commands,
                     calibration: None,
+                    recording: None,
+                    restart_pending: false,
                 }
                 .run(&command_rx)
             })?;
@@ -156,6 +162,14 @@ impl EngineHandle {
 
     pub fn save_replay(&self) -> Result<()> {
         self.send(Command::SaveReplay)
+    }
+
+    pub fn start_recording(&self) -> Result<()> {
+        self.send(Command::StartRecording)
+    }
+
+    pub fn stop_recording(&self) -> Result<()> {
+        self.send(Command::StopRecording)
     }
 
     pub fn set_level_rate(&self, rate: LevelRate) -> Result<()> {
@@ -317,6 +331,12 @@ struct Core {
     level_rate: LevelRate,
     commands: Sender<Command>,
     calibration: Option<PendingCalibration>,
+    recording: Option<Recording>,
+    restart_pending: bool,
+}
+
+struct Recording {
+    replay_was_armed: bool,
 }
 
 impl Core {
@@ -348,11 +368,12 @@ impl Core {
                             pending.was_armed = matches!(command, Command::Arm);
                         }
                     }
-                    Command::SaveReplay => self.alert(
+                    Command::SaveReplay | Command::StartRecording => self.alert(
                         Severity::Info,
                         Localized::new("calibration_running"),
                         "Calibrage en cours : rien n'est sauvegardé.".into(),
                     ),
+                    Command::StopRecording | Command::RecordingEnded => {}
                     Command::SetLevelRate(rate) => self.level_rate = rate,
                     Command::Shutdown => {
                         self.disarm();
@@ -365,6 +386,9 @@ impl Core {
                 Command::Arm => self.arm(),
                 Command::Disarm => self.disarm(),
                 Command::SaveReplay => self.save_replay(),
+                Command::StartRecording => self.start_recording(),
+                Command::StopRecording => self.stop_recording(),
+                Command::RecordingEnded => self.recording_ended(),
                 Command::Configure(config) => self.configure(*config),
                 Command::Calibrate(reply) => self.start_calibration(reply),
                 Command::FinishCalibration(_) => {}
@@ -405,7 +429,82 @@ impl Core {
         }
     }
 
+    fn start_recording(&mut self) {
+        if self.recording.is_some() {
+            return;
+        }
+        let replay_was_armed = self.pipeline.is_some();
+        self.arm();
+        let exe_name = self.pipeline.as_ref().and_then(Pipeline::game_exe);
+        let game = self.game_name(exe_name.as_deref());
+        let root = match &self.config.storage.clips_dir {
+            Some(dir) => Ok(dir.clone()),
+            None => paths::default_clips_dir(),
+        };
+        let duration = (self.config.record.include_replay && replay_was_armed)
+            .then(|| Hns(i64::from(self.config.replay.duration_secs) * HNS_PER_SECOND));
+        let result = match (self.pipeline.as_mut(), root) {
+            (None, _) => return,
+            (Some(_), Err(error)) => Err(error),
+            (Some(pipeline), Ok(root)) => pipeline.request_recording(
+                RecordTarget {
+                    root,
+                    game,
+                    split: self.config.record.split,
+                },
+                &self.config,
+                duration,
+                &self.events,
+            ),
+        };
+        if let Err(error) = result {
+            tracing::error!(%error, "enregistrement impossible");
+            self.alert(
+                Severity::Error,
+                Localized::new("recording_failed").with("reason", error.localized()),
+                format!("Enregistrement arrêté : {error}."),
+            );
+            if !replay_was_armed {
+                self.disarm();
+            }
+            return;
+        }
+        self.recording = Some(Recording { replay_was_armed });
+        self.emit(EngineEvent::StateChanged {
+            state: EngineState::Recording,
+        });
+    }
+
+    fn stop_recording(&mut self) {
+        if let Some(pipeline) = self.pipeline.as_mut() {
+            pipeline.stop_recording();
+        }
+        self.recording_ended();
+    }
+
+    fn recording_ended(&mut self) {
+        let Some(recording) = self.recording.take() else {
+            return;
+        };
+        if !recording.replay_was_armed {
+            self.disarm();
+            return;
+        }
+        if std::mem::take(&mut self.restart_pending) {
+            self.disarm();
+            self.arm();
+            return;
+        }
+        self.emit(EngineEvent::StateChanged {
+            state: EngineState::ReplayArmed,
+        });
+    }
+
     fn start_calibration(&mut self, reply: Sender<Result<Calibration>>) {
+        if self.recording.is_some() {
+            reply.send(Err(EngineError::RecordingRunning)).ok();
+            return;
+        }
         let own_exe = std::env::current_exe()
             .ok()
             .and_then(|path| {
@@ -490,6 +589,8 @@ impl Core {
     }
 
     fn disarm(&mut self) {
+        self.recording = None;
+        self.restart_pending = false;
         let Some(pipeline) = self.pipeline.take() else {
             return;
         };
@@ -558,6 +659,11 @@ impl Core {
             pipeline.set_window(ring_window(&config));
         }
         self.config = config;
+        if restart && self.recording.is_some() {
+            tracing::info!("sources changées pendant l'enregistrement : redémarrage à la fin");
+            self.restart_pending = true;
+            return;
+        }
         if renamed && !restart && self.pipeline.is_some() {
             self.emit(EngineEvent::TracksRenamed {
                 tracks: track_descriptors(&self.config),
@@ -599,6 +705,14 @@ struct Pipeline {
     game: Arc<Mutex<CurrentGame>>,
     _foreground: Option<ForegroundWatch>,
     next_stats: Hns,
+    recorder: Option<Recorder>,
+    pending_record: Option<PendingRecord>,
+}
+
+struct PendingRecord {
+    target: RecordTarget,
+    layout: RecordLayout,
+    events: Sender<EngineEvent>,
 }
 
 impl Pipeline {
@@ -691,7 +805,84 @@ impl Pipeline {
             game,
             _foreground: foreground,
             next_stats: Hns::now() + STATS_INTERVAL,
+            recorder: None,
+            pending_record: None,
         })
+    }
+
+    fn request_recording(
+        &mut self,
+        target: RecordTarget,
+        config: &EngineConfig,
+        replay: Option<Hns>,
+        events: &Sender<EngineEvent>,
+    ) -> Result<()> {
+        let pending = PendingRecord {
+            target,
+            layout: RecordLayout {
+                specs: titled(&self.specs, config),
+                time_bases: self.time_bases.clone(),
+                frame: Hns(HNS_PER_SECOND / i64::from(self.video.fps)),
+                audio_packet: AAC_PACKET,
+            },
+            events: events.clone(),
+        };
+        match self.recording_start(replay) {
+            Some(video_from) => self.begin_recording(pending, video_from),
+            None => {
+                self.pending_record = Some(pending);
+                Ok(())
+            }
+        }
+    }
+
+    fn recording_start(&self, replay: Option<Hns>) -> Option<usize> {
+        let (video, audio) = self.rings.split_first()?;
+        match replay {
+            Some(duration) => {
+                let frame = Hns(HNS_PER_SECOND / i64::from(self.video.fps));
+                plan_clip(video, audio, duration, frame, AAC_PACKET).map(|plan| plan.video_from)
+            }
+            None => video.start_index(video.newest()?),
+        }
+    }
+
+    fn begin_recording(&mut self, pending: PendingRecord, video_from: usize) -> Result<()> {
+        if let Some(spool) = self.spool.as_mut() {
+            spool.flush()?;
+        }
+        let (video, audio) = self.rings.split_first().ok_or(EngineError::NoStream)?;
+        let start = video.get(video_from).ok_or(EngineError::NoStream)?.pts();
+        let mut backlog = Vec::new();
+        for packet in video.iter_from(video_from) {
+            backlog.push((packet.pts(), 0, packet.share()?));
+        }
+        for (index, ring) in audio.iter().enumerate() {
+            for packet in ring.iter_from(ring.index_at_or_before(start)) {
+                backlog.push((packet.pts(), index + 1, packet.share()?));
+            }
+        }
+        backlog.sort_by_key(|(pts, stream, _)| (*pts, *stream));
+        self.recorder = Some(Recorder::start(
+            pending.target,
+            pending.layout,
+            start,
+            backlog,
+            pending.events,
+        )?);
+        Ok(())
+    }
+
+    fn stop_recording(&mut self) {
+        self.pending_record = None;
+        if let Some(recorder) = self.recorder.take() {
+            let stopped = std::thread::Builder::new()
+                .name("palaclips-record-stop".into())
+                .spawn(move || recorder.stop());
+            if let Err(error) = stopped {
+                tracing::warn!(%error, "fin de l'enregistrement sur le fil du moteur");
+            }
+        }
     }
 
     fn pump(
@@ -710,6 +901,16 @@ impl Pipeline {
             select.recv(alert);
         }
         loop {
+            if self
+                .recorder
+                .as_ref()
+                .is_some_and(|recorder| !recorder.is_running())
+            {
+                if let Some(recorder) = self.recorder.take() {
+                    recorder.stop();
+                }
+                return Ok(Some(Command::RecordingEnded));
+            }
             let now = Hns::now();
             self.emit_due(now, events);
             let wait = (self.next_deadline() - now).0.max(0) as u64;
@@ -752,11 +953,29 @@ impl Pipeline {
             * i128::from(time_base.num)
             / i128::from(time_base.den)) as i64);
         let keyframe = stream > 0 || packet.flags & AV_PKT_FLAG_KEY as i32 != 0;
+        let live = match &self.recorder {
+            Some(_) => Some(share_packet(&packet)?),
+            None => None,
+        };
         let stored = match self.spool.as_mut() {
             Some(spool) => spool.store(packet, pts, keyframe)?,
             None => ReplayPacket::in_ram(packet, pts, keyframe),
         };
         self.rings[stream].push(stored);
+        if let (Some(recorder), Some(packet)) = (&self.recorder, live) {
+            recorder.send(LivePacket {
+                stream,
+                pts,
+                keyframe,
+                packet,
+            });
+        } else if stream == 0
+            && keyframe
+            && let Some(pending) = self.pending_record.take()
+        {
+            let video_from = self.rings[0].len() - 1;
+            self.begin_recording(pending, video_from)?;
+        }
         Ok(())
     }
 
@@ -764,6 +983,9 @@ impl Pipeline {
         if now >= self.next_stats {
             self.next_stats = now + STATS_INTERVAL;
             events.try_send(self.stats()).ok();
+            if let Some(recorder) = &self.recorder {
+                events.try_send(recorder.stats()).ok();
+            }
         }
         if let Some(interval) = self.level_interval
             && now >= self.next_levels
@@ -899,8 +1121,12 @@ impl Pipeline {
             capture,
             tracks,
             receivers,
+            recorder,
             ..
         } = self;
+        if let Some(recorder) = recorder {
+            recorder.stop();
+        }
         let drain = std::thread::spawn(move || drain_until_closed(&receivers));
         if let Err(error) = capture.stop() {
             tracing::warn!(%error, "arrêt de la capture vidéo");
