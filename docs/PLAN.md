@@ -135,6 +135,7 @@ Critères :
 - [ ] Galerie fluide (virtualisation) avec 5 000 clips.
 - [ ] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
       montre pas, ADR-021).
+- [ ] Tout texte visible en clé i18n, français et anglais (ADR-028).
 
 Critères :
 - 👤 Tuer le processus pendant un enregistrement : fichier lisible, finalisé au redémarrage.
@@ -160,7 +161,10 @@ Critères :
 ## Phase 8 — Release V1 (APP-06, 08–11)
 
 - [ ] Premier lancement guidé.
-- [ ] i18n FR/EN complète (aucune chaîne en dur).
+- [x] Socle i18n FR/EN fait avant la phase 6 (ADR-028) : clés typées, langue du système par
+      défaut, choix dans Réglages > Général, codes + paramètres côté Rust, test contre les
+      chaînes en dur.
+- [ ] i18n FR/EN complète (aucune chaîne en dur) : relecture de l'anglais de toute l'app.
 - [ ] Journaux + export de diagnostic.
 - [ ] Bundle NSIS avec DLL FFmpeg + licences (LGPL), installation par utilisateur.
 - [ ] Updater (clé de signature Tauri générée par Palawi, jamais commitée), workflow de release
