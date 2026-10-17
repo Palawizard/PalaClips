@@ -59,7 +59,7 @@ export function StatusBanner({ engine }: { engine: Engine }) {
   const fellBack = status?.alerts.some((alert) => alert.code === "capture_fallback_monitor");
 
   return (
-    <header className="flex border-b border-line bg-surface max-[1000px]:flex-wrap [&>section+section]:border-l [&>section+section]:border-line">
+    <header className="flex border-b border-line bg-surface max-[1000px]:flex-wrap [&>section+section]:border-l [&>section+section]:border-line max-[1000px]:[&>section:nth-child(2)]:border-l-0 max-[1000px]:[&>section:not(:first-child)]:border-t">
       <Cell title="Replay" wide>
         <div className="flex items-center gap-2.5">
           <ReplayWitness phase={phase} />

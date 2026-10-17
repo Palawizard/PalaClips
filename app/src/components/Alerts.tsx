@@ -4,22 +4,27 @@ import type { ActiveAlert } from "../lib/ipc.ts";
 
 const ICONS = { info: Info, warning: TriangleAlert, error: CircleAlert };
 const TONE = { info: "text-ink-2", warning: "text-warn", error: "text-warn" };
+const FOCUS_FALLBACK = "roster-title";
 
 export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
   const [dismissed, setDismissed] = useState<Record<string, string>>({});
   const list = useRef<HTMLUListElement>(null);
   const visible = alerts.filter((alert) => dismissed[alert.code] !== alert.message);
-  if (visible.length === 0) return null;
 
   const dismiss = (alert: ActiveAlert, index: number) => {
     setDismissed((current) => ({ ...current, [alert.code]: alert.message }));
     const buttons = list.current?.querySelectorAll<HTMLButtonElement>("button");
-    const next = buttons?.[index + 1] ?? buttons?.[index - 1];
+    const next = buttons?.[index + 1] ?? buttons?.[index - 1] ?? document.getElementById(FOCUS_FALLBACK);
     next?.focus();
   };
 
   return (
-    <ul ref={list} aria-label="Alertes" aria-live="polite" className="flex flex-col border-b border-line">
+    <ul
+      ref={list}
+      aria-label="Alertes"
+      aria-live="assertive"
+      className={visible.length > 0 ? "flex flex-col border-b border-line" : "sr-only"}
+    >
       {visible.map((alert, index) => {
         const Icon = ICONS[alert.severity];
         return (
