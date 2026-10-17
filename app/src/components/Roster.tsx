@@ -141,6 +141,14 @@ export function Roster({
             État
           </span>
         </div>
+        {tracks.length === 0 && (
+          <p role="row" className="px-5 py-6 text-ink-2">
+            <span role="cell">
+              Aucune piste audio : les clips seront muets. Active le mix complet, le micro ou une appli dans
+              Réglages → Audio.
+            </span>
+          </p>
+        )}
         {tracks.map((track, index) => (
           <TrackRow
             key={track.title}
