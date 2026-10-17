@@ -45,3 +45,19 @@ Fortnite en plein écran sur l'écran principal.
 - Remarque : les clips de Fortnite sont rangés sous `FortniteClient-Win64-Shipping\` (nom
   d'exe sans `.exe`, STO-03). Un nom lisible (« Fortnite », lu dans les métadonnées de l'exe)
   serait plus propre : à décider avec Palawi.
+
+### Confirmation de sauvegarde et nom du jeu, avec Palawi (2026-10-17)
+
+Build release, Fortnite plein écran.
+
+| Test | Résultat |
+|---|---|
+| `Alt+F10` en partie : carillon de PalaClips, jeu au premier plan | ✅ entendu, focus gardé |
+| Toast pendant la partie | ✅ bloqué par Windows (Ne pas déranger automatique), retrouvé dans le centre de notifications |
+| `Alt+F10` sur le bureau : toast + carillon | ✅ |
+| Dossier et nom du clip | ✅ `Vidéos\PalaClips\Fortnite\Fortnite_2026-10-17_12-28-33_replay.mp4` ; nom figé dans `settings.json` (`fortniteclient-win64-shipping.exe` → `Fortnite`) |
+
+- Le carillon passe par la sortie par défaut : il est enregistré dans la piste « Mix complet »
+  des clips suivants (piste Jeu non touchée).
+- Hors installation (`target\release`), le toast porte l'identité de PowerShell : l'identifiant
+  de l'app ne s'applique qu'une fois installée (phase 8).
