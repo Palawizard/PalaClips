@@ -2,9 +2,19 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
 import type { ClipSummary } from "../lib/ipc.ts";
 import { clock, relativeTime } from "../lib/format.ts";
-import { kindOfTitle, trackColor } from "../lib/tracks.ts";
+import { type TrackLabels, kindOfTitle, trackColor } from "../lib/tracks.ts";
 
-function ClipCard({ clip, appOrder, fresh }: { clip: ClipSummary; appOrder: string[]; fresh: boolean }) {
+function ClipCard({
+  clip,
+  appOrder,
+  labels,
+  fresh,
+}: {
+  clip: ClipSummary;
+  appOrder: string[];
+  labels: TrackLabels | null;
+  fresh: boolean;
+}) {
   return (
     <li
       data-fresh={fresh}
@@ -33,7 +43,7 @@ function ClipCard({ clip, appOrder, fresh }: { clip: ClipSummary; appOrder: stri
               key={title}
               title={title}
               className="h-1.5 w-5 rounded-full"
-              style={{ background: trackColor(kindOfTitle(title), title, appOrder) }}
+              style={{ background: trackColor(kindOfTitle(title, labels), title, appOrder) }}
             />
           ))}
         </ul>
@@ -45,11 +55,13 @@ function ClipCard({ clip, appOrder, fresh }: { clip: ClipSummary; appOrder: stri
 export function RecentClips({
   clips,
   appOrder,
+  labels,
   freshClip,
   saveKeys,
 }: {
   clips: ClipSummary[];
   appOrder: string[];
+  labels: TrackLabels | null;
   freshClip: string | null;
   saveKeys: string | null;
 }) {
@@ -75,7 +87,7 @@ export function RecentClips({
       ) : (
         <ul className="grid grid-cols-1 gap-3 max-[1000px]:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
           {clips.map((clip) => (
-            <ClipCard key={clip.path} clip={clip} appOrder={appOrder} fresh={clip.path === freshClip} />
+            <ClipCard key={clip.path} clip={clip} appOrder={appOrder} labels={labels} fresh={clip.path === freshClip} />
           ))}
         </ul>
       )}

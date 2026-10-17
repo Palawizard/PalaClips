@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { AppWindow, Gamepad2, Layers, Mic } from "lucide-react";
-import type { TrackKind } from "./ipc.ts";
+import type { EngineConfig, TrackKind } from "./ipc.ts";
 
 const APP_COLORS = 11;
 
@@ -16,7 +16,12 @@ function hash(text: string): number {
   return value;
 }
 
-export function kindOfTitle(title: string): TrackKind {
+export type TrackLabels = Pick<EngineConfig["audio"], "full_mix_label" | "microphone_label" | "game_label">;
+
+export function kindOfTitle(title: string, labels?: TrackLabels | null): TrackKind {
+  if (labels?.full_mix_label === title) return "mix";
+  if (labels?.microphone_label === title) return "microphone";
+  if (labels?.game_label === title) return "game";
   return DEFAULT_TITLES[title] ?? "application";
 }
 

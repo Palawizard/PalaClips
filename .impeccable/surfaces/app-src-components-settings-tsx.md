@@ -67,3 +67,21 @@ plaques `kbd`) ; l'état « Appuie sur la combinaison… » est le seul moment a
 - Cible mémorisée dont l'appli est fermée : carte grisée « Pas lancée », toujours
   sélectionnée.
 - Clavier : flèches dans la grille, Entrée pour choisir.
+
+## Audio, brief confirmé (shape, 2026-10-17)
+
+- « Pistes » dans l'ordre du fichier, une ligne par piste, vumètre en direct (style de
+  l'État) et décalage (−1000 à +1000 ms) :
+  - 1 Mix complet : activé, sortie (Défaut ou un périphérique) ;
+  - 2 Micro : activé, périphérique (Défaut suit le micro par défaut), gain −20 à +20 dB ;
+  - 3 Jeu (auto) : activé, jeu suivi affiché (AUD-06) ;
+  - applis : icône, nom renommable (écrit dans le fichier), retirer ;
+  - « Pistes d'applis au maximum » (1–12, défaut 6) ; compteur « 4/6 ».
+- « Ajouter une appli » sous la liste : recherche ; applis qui font du son en tête avec
+  vumètre (rafraîchi seulement pendant que la section est visible) ; puis les autres applis
+  ouvertes ; « Parcourir un .exe… » pour une appli non lancée. Maximum atteint : + désactivé
+  avec la raison.
+- Changement qui redémarre le replay armé → barre de confirmation habituelle.
+- Calibrage (AUD-11) : « Calibrer » en haut → encart d'avertissement en ligne (écran
+  principal ~20 s, bips, rappel Voicemeeter/LightHost) → plein écran flash + bip → valeurs
+  proposées par piste + Appliquer ; « Recalibrer » toujours visible. Deuxième PR.
