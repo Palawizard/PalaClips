@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { AppWindow, Gamepad2, Layers, Mic } from "lucide-react";
 import en from "../locales/en.json";
 import fr from "../locales/fr.json";
+import { t } from "./i18n.ts";
 import type { EngineConfig, TrackKind } from "./ipc.ts";
 
 const APP_COLORS = 11;
@@ -27,6 +28,18 @@ export function kindOfTitle(title: string, labels?: TrackLabels | null): TrackKi
   if (labels?.microphone_label === title) return "microphone";
   if (labels?.game_label === title) return "game";
   return DEFAULT_TITLES.get(title) ?? "application";
+}
+
+export type DefaultKind = "mix" | "microphone" | "game";
+
+export function trackTitle(audio: TrackLabels, kind: DefaultKind): string {
+  if (kind === "mix") return audio.full_mix_label ?? t("tracks.mix");
+  if (kind === "microphone") return audio.microphone_label ?? t("tracks.microphone");
+  return audio.game_label ?? t("tracks.game");
+}
+
+export function chosenName(name: string, kind: DefaultKind): string | null {
+  return name === t(`tracks.${kind}`) ? null : name;
 }
 
 export function trackColor(kind: TrackKind, title: string, appOrder: string[]): string {

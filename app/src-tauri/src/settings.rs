@@ -1,13 +1,14 @@
 use std::path::{Path, PathBuf};
 
 use palaclips_engine::EngineConfig;
+use palaclips_engine::config::{AudioSettings, DefaultTrackNames};
 use palaclips_engine::events::Localized;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::i18n::{self, Language, LanguageSetting};
 
-pub const SETTINGS_VERSION: u32 = 1;
+pub const SETTINGS_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -33,7 +34,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             schema_version: SETTINGS_VERSION,
-            engine: engine_defaults(i18n::system_language()),
+            engine: EngineConfig::default(),
             feedback: Feedback::default(),
             hotkeys: crate::hotkeys::Hotkeys::default(),
             theme: Theme::default(),
@@ -42,12 +43,27 @@ impl Default for Settings {
     }
 }
 
-pub fn engine_defaults(language: Language) -> EngineConfig {
-    let mut engine = EngineConfig::default();
-    engine.audio.full_mix_label = i18n::text(language, "tracks.mix");
-    engine.audio.microphone_label = i18n::text(language, "tracks.microphone");
-    engine.audio.game_label = i18n::text(language, "tracks.game");
-    engine
+pub fn track_names(language: Language) -> DefaultTrackNames {
+    DefaultTrackNames {
+        mix: i18n::text(language, "tracks.mix"),
+        microphone: i18n::text(language, "tracks.microphone"),
+        game: i18n::text(language, "tracks.game"),
+    }
+}
+
+fn forget_default_names(audio: &mut AudioSettings) {
+    let defaults = [Language::Fr, Language::En].map(track_names);
+    let forget = |label: &mut Option<String>, pick: fn(&DefaultTrackNames) -> &String| {
+        if label
+            .as_ref()
+            .is_some_and(|name| defaults.iter().any(|names| pick(names) == name))
+        {
+            *label = None;
+        }
+    };
+    forget(&mut audio.full_mix_label, |names| &names.mix);
+    forget(&mut audio.microphone_label, |names| &names.microphone);
+    forget(&mut audio.game_label, |names| &names.game);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,10 +116,13 @@ pub fn load(path: &Path) -> Loaded {
             problem: Some(Localized::new("settings_newer").with("version", version)),
         };
     }
-    let settings = match serde_json::from_value::<Settings>(value) {
+    let mut settings = match serde_json::from_value::<Settings>(value) {
         Ok(settings) => settings,
         Err(error) => return unreadable(path, &error.to_string()),
     };
+    if version < 2 {
+        forget_default_names(&mut settings.engine.audio);
+    }
     if let Err(error) = settings.engine.validate() {
         return unreadable(path, &error.to_string());
     }
@@ -212,14 +231,41 @@ mod tests {
 
     #[test]
     fn default_track_names_follow_the_language() {
+        assert_eq!(track_names(Language::Fr).mix, "Mix complet");
+        let english = track_names(Language::En);
+        assert_eq!(english.mix, "Full mix");
+        assert_eq!(english.microphone, "Mic");
+        assert_eq!(english.game, "Game");
+    }
+
+    #[test]
+    fn version_one_names_equal_to_a_default_become_default_again() {
+        let path = scratch("migrate-names");
+        std::fs::write(
+            &path,
+            r#"{ "schema_version": 1, "engine": { "audio": {
+                "full_mix_label": "Mix complet", "microphone_label": "Mic", "game_label": "Partie"
+            } } }"#,
+        )
+        .expect("write");
+        let audio = load(&path).settings.engine.audio;
+        assert_eq!(audio.full_mix_label, None);
+        assert_eq!(audio.microphone_label, None);
+        assert_eq!(audio.game_label.as_deref(), Some("Partie"));
+    }
+
+    #[test]
+    fn a_default_name_chosen_after_the_migration_is_kept() {
+        let path = scratch("keep-names");
+        std::fs::write(
+            &path,
+            r#"{ "schema_version": 2, "engine": { "audio": { "game_label": "Jeu" } } }"#,
+        )
+        .expect("write");
         assert_eq!(
-            engine_defaults(Language::Fr).audio.full_mix_label,
-            "Mix complet"
+            load(&path).settings.engine.audio.game_label.as_deref(),
+            Some("Jeu")
         );
-        let english = engine_defaults(Language::En).audio;
-        assert_eq!(english.full_mix_label, "Full mix");
-        assert_eq!(english.microphone_label, "Mic");
-        assert_eq!(english.game_label, "Game");
     }
 
     #[test]

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { errorText, t, useT } from "../../lib/i18n.ts";
 import { type Calibration, type EngineConfig, calibrateAudio } from "../../lib/ipc.ts";
+import { trackTitle } from "../../lib/tracks.ts";
 import { SettingRow } from "./Settings.tsx";
 import type { ConfigDraft } from "./configDraft.tsx";
 
@@ -34,14 +35,14 @@ function resultRows(calibration: Calibration, audio: EngineConfig["audio"]): Res
   if (audio.record_full_mix)
     rows.push({
       key: "mix",
-      title: audio.full_mix_label,
+      title: trackTitle(audio, "mix"),
       measured: measuredOf("mix") ?? t("settings.calibration.notMeasured"),
       proposed: calibration.mix_ms,
     });
   if (audio.record_microphone)
     rows.push({
       key: "microphone",
-      title: audio.microphone_label,
+      title: trackTitle(audio, "microphone"),
       measured: measuredOf("microphone") ?? t("settings.calibration.micNotMeasured"),
       proposed: calibration.microphone_ms,
     });
@@ -55,7 +56,7 @@ function resultRows(calibration: Calibration, audio: EngineConfig["audio"]): Res
   const reference = measuredOf("game");
   rows.push({
     key: "game",
-    title: audio.game_label,
+    title: trackTitle(audio, "game"),
     measured: reference
       ? t("settings.calibration.reference", { measure: reference })
       : t("settings.calibration.referenceMissing"),
