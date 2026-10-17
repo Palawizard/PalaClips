@@ -87,6 +87,20 @@
   capturée (constaté le 2026-10-15).
 - Git Bash réécrit `\\.\DISPLAY1` (perte d'une barre oblique) : lancer la CLI depuis
   PowerShell pour les cibles `monitor:` (constaté le 2026-10-15).
+- **Coût de la capture sur les fps du jeu** (`scripts/fps-impact.ps1`, PresentMon 2.4.1,
+  Fortnite en Créatif immobile, plafonné à ~225 i/s, deux passes avec et sans G-Sync,
+  2026-10-17) : aucune perte mesurable. Fenêtre 60 i/s, écran 60 i/s, fenêtre 30 i/s et WGC
+  seul donnent 224,7–225,0 i/s (1 % bas 178–181 i/s) contre 224,6–224,7 i/s pour l'essai sans
+  capture de fin. **Fortnite reste en Independent Flip** (« Hardware: » ou « Hardware
+  Composed: Independent Flip ») pendant la capture : WGC ne force pas la composition DWM.
+  Retard max d'encodage 0,7–7,7 ms. Le premier essai sans capture est toujours plus bas (212,7
+  et 220,1 i/s, mise en route du jeu) et faussait la référence → essai de mise en route non
+  compté ajouté au script. Limite : jeu sous son plafond, GPU non saturé ; la marge peut
+  masquer le coût de la capture (PERF-03 à valider GPU-bound, PLAN phase 7). Journaux :
+  `docs/reports/phase-7/fps-impact-2026-10-17_10-54.txt` et `_10-58.txt`.
+- Hypothèse non vérifiée : la perte de 50–100 i/s vue le 2026-10-16 pendant
+  `nvenc-quality.ps1` venait d'autre chose que la capture (réencodages et VMAF lancés en
+  parallèle du jeu, CPU et GPU chargés).
 
 ## Audio (`wasapi` 0.26)
 
