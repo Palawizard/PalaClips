@@ -117,13 +117,6 @@
 
 ## Prochaines actions (dans l'ordre)
 
-0. **Test 👤 en attente (Palawi, quand il est dispo)** : pendant la capture de qualité NVENC,
-   Fortnite a perdu 50 à 100 i/s (PERF-03 exige ≤ 2 %). Script prêt sur `chore/fps-impact-test` :
-   Fortnite en Créatif immobile, puis dans un PowerShell **admin**
-   `pwsh -File scriptsps-impact.ps1` (~3 min, PresentMon de CapFrameX, 6 essais de 20 s :
-   sans capture, fenêtre 60, écran 60, fenêtre 30, WGC seul, sans capture). Lire
-   `target/journals/fps-impact-*.txt` : perte par essai et mode de présentation (composition
-   DWM forcée ?). Si la perte vient de WGC, c'est un risque pour la règle n°8 → Palawi décide.
 1. Phase 5 sur `feature/app-shell`, écran État + shell (brief confirmé, `/design` : impeccable
    new-work/build dans la direction ADR-014, puis `emil-design-eng`, critique, audit, polish,
    et `DESIGN.md` par le documenteur impeccable) :
@@ -149,6 +142,14 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 - Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.
 
 ## Points d'attention
+
+- Capture et fps du jeu (2026-10-17, `scripts/fps-impact.ps1`, journaux
+  `docs/reports/phase-7/`) : aucune perte mesurable dans Fortnite plafonné à ~225 i/s, avec et
+  sans G-Sync ; le jeu reste en Independent Flip (WGC ne force pas la composition). Rien à
+  corriger côté capture. La perte de 50–100 i/s du 2026-10-16 venait **probablement** des
+  réencodages et du VMAF lancés en parallèle (hypothèse, non vérifiée). PERF-03 reste à
+  valider GPU-bound en phase 7 (script : mise en route non comptée, GPU relevé par
+  `nvidia-smi`).
 
 - Horloge audio : `pu64QPCPosition` suit QPC à 0,00 ms/h (Apogee) et +0,32 ms/h
   (Voicemeeter) sur 20 min (`clock-drift.ps1`). Les pentes d'`av-drift.ps1` (−19,4 / −2,3 /
@@ -222,3 +223,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-16 | 2→3 | PR #9 : silence comblé quand le périphérique n'envoie rien, pente A/V par régression, `av-drift.ps1`, règle des tests longs. Phase 3 : `sources`, pistes par appli, rattachement, piste Jeu, `app_track_silent`, CLI ; T3 (Zen + VLC), Discord, piste Jeu avec Palawi ; 2 fausses alertes corrigées ; phase 3 validée (PR #10) | Test de dérive Apogee, puis phase 4 |
 | 2026-10-16 | 2→4 | PR #11 : horloge audio contre QPC mesurée (0,00 ms/h Apogee), hypothèse de dérive d'appareil infirmée, AUD-08 maintenu ; règles « test en arrière-plan » et « ≤ 5 min sans accord ». PR #12 : piste Jeu = jeu en cours (ADR-019, `SetWinEventHook`), preuve Alt+Tab. PR #13 : phase 4 (moteur, replay RAM/disque, nom par jeu, redémarrage, CLI `replay`), 20 sauvegardes 146–200 ms, crash COM à la 2e capture corrigé ; Resolve n'affiche pas les noms de pistes → bloquant | Décisions de Palawi : test 2 h, noms Resolve |
 | 2026-10-16 | 4→5 | RPL-08 en test accéléré (ADR-020, corrigé : mise en régime de 10 min exclue) : 30 min, 360 sauvegardes, −1,8 Mo/h ✅ ; noms de pistes dans le fichier seulement (ADR-021) ; phase 4 validée ; `/impeccable shape` de l'écran État + shell, brief confirmé avec 7 corrections | Phase 5 : écran État + shell |
+| 2026-10-17 | 5 | `fps-impact.ps1` lancé par Palawi (avec et sans G-Sync) : aucune perte de fps, Independent Flip conservé ; script corrigé (mise en route non comptée, GPU relevé) ; PERF-03 GPU-bound ajouté au PLAN | Écran État (`/design`) |

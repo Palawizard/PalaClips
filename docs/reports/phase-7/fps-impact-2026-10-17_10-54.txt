@@ -1,0 +1,12 @@
+2026-10-17T10:54:14 fps-impact : FortniteClient-Win64-Shipping.exe, 20 s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger
+sans capture                    220,1 i/s, 1 % bas  140,2 i/s, 4325 présentations, mode « Hardware Composed: Independent Flip » 
+fenêtre 60 i/s                  224,9 i/s, 1 % bas  179,6 i/s, 4497 présentations, mode « Hardware Composed: Independent Flip » frames=1560 captured=2849 duplicated=1 max_lateness_ms=0.9741
+écran principal 60 i/s          224,7 i/s, 1 % bas  180,8 i/s, 4491 présentations, mode « Hardware Composed: Independent Flip » frames=1560 captured=2835 duplicated=0 max_lateness_ms=4.4615
+fenêtre 30 i/s                  224,9 i/s, 1 % bas  181,4 i/s, 4497 présentations, mode « Hardware Composed: Independent Flip » frames=780 captured=1461 duplicated=0 max_lateness_ms=0.969
+WGC seul (sans encodage)        224,9 i/s, 1 % bas  180,7 i/s, 4497 présentations, mode « Hardware Composed: Independent Flip » images reçues : 2840 en 26 s
+sans capture (fin)              224,6 i/s, 1 % bas  180,8 i/s, 4491 présentations, mode « Hardware Composed: Independent Flip » 
+PERTE fenêtre 60 i/s                 -1,1 % (+2,6 i/s)
+PERTE écran principal 60 i/s         -1,0 % (+2,3 i/s)
+PERTE fenêtre 30 i/s                 -1,2 % (+2,6 i/s)
+PERTE WGC seul (sans encodage)       -1,1 % (+2,5 i/s)
+2026-10-17T10:56:43 fin : captures arrêtées et supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\fps-impact-2026-10-17_10-54.txt

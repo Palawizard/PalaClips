@@ -197,4 +197,9 @@ Tout est arrêté et les clips supprimés à la fin.
   mémoire (pas d'autre gros consommateur, RAM libre > 4 Go). Relever aussi la mémoire engagée
   (`PrivateUsage`) pour information dans le rapport.
 - CPU : moyenne sur 5 min (Analyseur de performances ou `typeperf`).
-- Impact en jeu : fps moyen Fortnite (mode créatif, même scène) avec et sans PalaClips, 3 essais.
+- Impact en jeu (PERF-03) : Fortnite en Créatif, scène fixe, **GPU-bound** (limite d'images
+  levée ou scène lourde, GPU ~99 %), puis dans un PowerShell admin
+  `pwsh -File scripts\fps-impact.ps1` : PresentMon 2.4.1 (CapFrameX), un essai de mise en
+  route non compté, puis sans capture / fenêtre 60 / écran 60 / fenêtre 30 / WGC seul / sans
+  capture, 20 s chacun ; référence = moyenne des essais sans capture ; perte par essai, 1 %
+  bas, GPU (`nvidia-smi`) et mode de présentation dans `target\journals\fps-impact-*.txt`.
