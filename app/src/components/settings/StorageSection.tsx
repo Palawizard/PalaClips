@@ -53,7 +53,7 @@ function GameNameRow({
         aria-label={`Nom du dossier pour ${exe}`}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className="h-9 w-full rounded-md border border-line-strong bg-surface px-2.5 text-[14px] text-ink hover:border-ink-3 aria-invalid:border-warn"
+        className="h-9 w-full rounded-md border border-ink-3 bg-surface px-2.5 text-[14px] text-ink hover:border-ink-2 aria-invalid:border-warn"
       />
       <span className="truncate text-[13px] text-ink-3" title={exe}>
         {exe}

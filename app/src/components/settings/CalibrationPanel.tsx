@@ -180,13 +180,13 @@ export function CalibrationPanel({
           <table className="w-full text-left text-[14px]">
             <thead>
               <tr>
-                <th scope="col" className="label pb-2 font-medium">
+                <th scope="col" className="label pb-2 font-medium text-ink-2">
                   Piste
                 </th>
-                <th scope="col" className="label pb-2 font-medium">
+                <th scope="col" className="label pb-2 font-medium text-ink-2">
                   Mesure
                 </th>
-                <th scope="col" className="label pb-2 text-right font-medium">
+                <th scope="col" className="label pb-2 text-right font-medium text-ink-2">
                   Décalage proposé
                 </th>
               </tr>

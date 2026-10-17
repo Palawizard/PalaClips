@@ -133,6 +133,7 @@ function CaptureCard({
   failed,
   onSelect,
   onPreview,
+  onFocus,
 }: {
   card: Card;
   selected: boolean;
@@ -143,6 +144,7 @@ function CaptureCard({
   failed: boolean;
   onSelect: () => void;
   onPreview: () => void;
+  onFocus: () => void;
 }) {
   const [icon, setIcon] = useState<string | null>(null);
   useEffect(() => {
@@ -172,9 +174,9 @@ function CaptureCard({
 
   return (
     <li
-      className={`capture-card relative flex flex-col overflow-hidden rounded-lg border bg-surface ${
-        selected ? "border-ink shadow-[0_0_0_1px_var(--ink)]" : "border-line-strong hover:border-ink-3 hover:bg-surface-hover"
-      } ${card.state === "closed" ? "opacity-70" : ""}`}
+      className={`capture-card relative flex flex-col overflow-hidden rounded-md border bg-surface ${
+        selected ? "border-ink outline outline-ink" : "border-line-strong hover:border-ink-3 hover:bg-surface-hover"
+      }`}
     >
       <div className="relative aspect-video overflow-hidden bg-meter-ground">
         {frame && live && card.state === "live" ? (
@@ -211,10 +213,11 @@ function CaptureCard({
         type="button"
         data-card
         tabIndex={focusable ? 0 : -1}
+        onFocus={onFocus}
         aria-pressed={selected}
         aria-label={`${card.name}, ${card.state === "closed" ? "pas lancée" : card.detail}`}
         onClick={onSelect}
-        className="absolute inset-0 rounded-lg"
+        className="absolute inset-0 rounded-md"
       />
       {!live && card.state === "live" && card.kind === "window" && (
         <button
@@ -238,7 +241,11 @@ export function CaptureSection() {
   const [frames, setFrames] = useState<Record<string, string>>({});
   const [failed, setFailed] = useState<Record<string, boolean>>({});
   const [visible, setVisible] = useState(document.visibilityState === "visible");
+  const [focused, setFocused] = useState(document.hasFocus());
+  const [focusedCard, setFocusedCard] = useState<string | null>(null);
   const running = useRef(new Map<string, Promise<number | null>>());
+  const urls = useRef(new Map<string, string>());
+  const mounted = useRef(true);
   const gridRef = useRef<HTMLDivElement>(null);
   const draft = config?.draft ?? null;
   const cards = draft && targets ? toCards(targets, draft) : [];
@@ -256,13 +263,23 @@ export function CaptureSection() {
   }, []);
 
   useEffect(() => {
+    mounted.current = true;
     refresh();
     const onVisibility = () => setVisible(document.visibilityState === "visible");
-    window.addEventListener("focus", refresh);
+    const onFocus = () => {
+      setFocused(true);
+      refresh();
+    };
+    const onBlur = () => setFocused(false);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
     document.addEventListener("visibilitychange", onVisibility);
     const previews = running.current;
+    const frameUrls = urls.current;
     return () => {
-      window.removeEventListener("focus", refresh);
+      mounted.current = false;
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
       document.removeEventListener("visibilitychange", onVisibility);
       for (const id of previews.values()) {
         id.then((value) => {
@@ -271,10 +288,8 @@ export function CaptureSection() {
       }
       previews.clear();
       stopPreviews().catch(() => undefined);
-      setFrames((current) => {
-        for (const url of Object.values(current)) URL.revokeObjectURL(url);
-        return {};
-      });
+      for (const url of frameUrls.values()) URL.revokeObjectURL(url);
+      frameUrls.clear();
     };
   }, [refresh]);
 
@@ -283,7 +298,7 @@ export function CaptureSection() {
   }, [targets, draft === null]);
 
   useEffect(() => {
-    const wanted = new Set(visible ? live : []);
+    const wanted = new Set(visible && focused ? live : []);
     for (const [key, id] of running.current) {
       if (wanted.has(key)) continue;
       running.current.delete(key);
@@ -295,19 +310,19 @@ export function CaptureSection() {
       const card = byKey.current.get(key);
       if (!card || running.current.has(key)) continue;
       const started = startPreview(card.target, (jpeg) => {
+        if (!mounted.current || !running.current.has(key)) return;
         const url = URL.createObjectURL(new Blob([jpeg], { type: "image/jpeg" }));
-        setFrames((current) => {
-          const old = current[key];
-          if (old) URL.revokeObjectURL(old);
-          return { ...current, [key]: url };
-        });
+        const old = urls.current.get(key);
+        if (old) URL.revokeObjectURL(old);
+        urls.current.set(key, url);
+        setFrames((current) => ({ ...current, [key]: url }));
       }).catch(() => {
         setFailed((current) => ({ ...current, [key]: true }));
         return null;
       });
       running.current.set(key, started);
     }
-  }, [live, visible]);
+  }, [live, visible, focused]);
 
   if (!config || !draft) return <LoadError message={loadError} />;
 
@@ -329,7 +344,11 @@ export function CaptureSection() {
       : null;
   const monitors = cards.filter((card) => card.kind === "monitor");
   const windows = [...(closed ? [closed] : []), ...cards.filter((card) => card.kind === "window")];
-  const focusKey = closed?.key ?? selected ?? cards[0]?.key;
+  const focusKey =
+    (focusedCard && (byKey.current.has(focusedCard) || focusedCard === closed?.key) ? focusedCard : null) ??
+    closed?.key ??
+    selected ??
+    cards[0]?.key;
 
   const choose = (card: Card) => config.change({ ...draft, capture: card.target });
   const preview = (key: string) =>
@@ -361,6 +380,7 @@ export function CaptureSection() {
                 if (card.key !== selected && card.key !== closed?.key) choose(card);
               }}
               onPreview={() => preview(card.key)}
+              onFocus={() => setFocusedCard(card.key)}
             />
           ))}
         </ul>

@@ -376,7 +376,7 @@
         "role": "tertiary",
         "displayName": "Jersey App 6",
         "canonical": "#6fd6e8",
-        "light": "#0e7f93",
+        "light": "#0d778a",
         "tonalRamp": [
           "oklch(15% 0.099 210.3)",
           "oklch(26% 0.099 210.3)",

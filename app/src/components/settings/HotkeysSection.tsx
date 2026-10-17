@@ -70,6 +70,10 @@ function HotkeyField({
 }) {
   const handleKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (!listening) return;
+    if (event.key === "Tab") {
+      onCancel();
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     if (MODIFIER_KEYS.has(event.key)) return;
