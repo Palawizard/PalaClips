@@ -4,12 +4,12 @@ import {
   type CaptureTarget,
   type EngineConfig,
   type TargetInfo,
-  appIcon,
   listCaptureTargets,
   startPreview,
   stopPreview,
   stopPreviews,
 } from "../../lib/ipc.ts";
+import { iconUrl } from "../../lib/appIcons.ts";
 import { SettingRow, Switch } from "./Settings.tsx";
 import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
@@ -24,21 +24,6 @@ interface Card {
   processId: number | null;
   exe: string | null;
   state: "live" | "minimized" | "closed";
-}
-
-const icons = new Map<string, Promise<string | null>>();
-
-function iconUrl(exe: string, processId: number): Promise<string | null> {
-  const key = exe.toLowerCase();
-  let icon = icons.get(key);
-  if (!icon) {
-    icon = appIcon(processId).then(
-      (png) => URL.createObjectURL(new Blob([png], { type: "image/png" })),
-      () => null,
-    );
-    icons.set(key, icon);
-  }
-  return icon;
 }
 
 function exeStem(exe: string): string {

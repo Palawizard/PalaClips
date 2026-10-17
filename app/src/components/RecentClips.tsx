@@ -2,7 +2,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
 import type { ClipSummary } from "../lib/ipc.ts";
 import { clock, relativeTime } from "../lib/format.ts";
-import { trackColor } from "../lib/tracks.ts";
+import { kindOfTitle, trackColor } from "../lib/tracks.ts";
 
 function ClipCard({ clip, appOrder, fresh }: { clip: ClipSummary; appOrder: string[]; fresh: boolean }) {
   return (
@@ -33,7 +33,7 @@ function ClipCard({ clip, appOrder, fresh }: { clip: ClipSummary; appOrder: stri
               key={title}
               title={title}
               className="h-1.5 w-5 rounded-full"
-              style={{ background: trackColor(title, appOrder) }}
+              style={{ background: trackColor(kindOfTitle(title), title, appOrder) }}
             />
           ))}
         </ul>
