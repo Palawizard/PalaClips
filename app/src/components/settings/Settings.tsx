@@ -118,13 +118,14 @@ export function Segmented<T extends string>({
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => move(event, index)}
-            className={`pressable rounded-[4px] border px-3 py-1.5 text-[13px] font-medium ${
+            className={`pressable relative rounded-[4px] border px-3 py-1.5 text-[13px] font-medium ${
               selected
                 ? "border-line-strong bg-surface-2 font-semibold text-ink"
                 : "border-transparent text-ink-2 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-3 disabled:line-through"
             }`}
           >
             {option.label}
+            {selected && <span aria-hidden className="absolute inset-x-2 bottom-0.5 h-0.5 rounded-full bg-ink" />}
           </button>
         );
       })}
@@ -153,7 +154,7 @@ export function Select<T extends string | number>({
         const picked = options.find((option) => String(option.value) === event.target.value);
         if (picked) onChange(picked.value);
       }}
-      className={`pressable h-9 rounded-md border border-line-strong bg-surface px-2.5 text-[14px] text-ink hover:border-ink-3 ${className}`}
+      className={`pressable h-9 rounded-md border border-ink-3 bg-surface px-2.5 text-[14px] text-ink hover:border-ink-2 ${className}`}
     >
       {options.map((option) => (
         <option key={String(option.value)} value={String(option.value)}>
@@ -197,7 +198,7 @@ export function NumberField({
         onChange={(event) => setText(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => event.key === "Enter" && commit()}
-        className="score h-9 w-20 rounded-md border border-line-strong bg-surface px-2 text-right text-[15px] text-ink"
+        className="score h-9 w-20 rounded-md border border-ink-3 bg-surface px-2 text-right text-[15px] text-ink hover:border-ink-2"
         aria-label={label}
       />
       {unit}
@@ -206,7 +207,7 @@ export function NumberField({
 }
 
 export function Settings({ status }: { status: AppStatus | null }) {
-  const [section, setSection] = useState<SectionId>("hotkeys");
+  const [section, setSection] = useState<SectionId>("capture");
   const label = SECTIONS.find((item) => item.id === section)?.label ?? "";
 
   return (

@@ -103,6 +103,11 @@ pub fn parse(keys: &str) -> Result<Shortcut, String> {
         .map_err(|_| format!("« {keys} » n'est pas un raccourci reconnu."))?;
     let mods = shortcut.mods;
     let key = shortcut.key;
+    if key == Code::Tab {
+        return Err(format!(
+            "« {keys} » : Tab sert à passer d'un élément à l'autre ; choisis une autre touche."
+        ));
+    }
     if mods.contains(Modifiers::SUPER) {
         return Err(format!(
             "« {keys} » : Windows réserve les raccourcis avec la touche Windows."
@@ -201,6 +206,13 @@ mod tests {
             assert!(parse(keys).is_err(), "{keys}");
         }
         assert!(parse("Ctrl+Shift+R").is_ok());
+    }
+
+    #[test]
+    fn tab_stays_free_for_keyboard_navigation() {
+        for keys in ["Shift+Tab", "Ctrl+Tab", "Ctrl+Alt+Tab"] {
+            assert!(parse(keys).is_err(), "{keys}");
+        }
     }
 
     #[test]
