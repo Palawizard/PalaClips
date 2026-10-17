@@ -40,6 +40,9 @@ pub enum EngineError {
     #[error("erreur disque : {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("un calibrage est déjà en cours")]
+    CalibrationBusy,
+
     #[error("le moteur PalaClips est arrêté")]
     Stopped,
 
