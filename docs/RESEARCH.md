@@ -292,6 +292,16 @@
   — [OBS, même article](https://obsproject.com/blog/obs-studio-hybrid-mp4)
 - DaVinci Resolve gère mal le framerate variable : sortir en CFR. — [forum Blackmagic](https://forum.blackmagicdesign.com/viewtopic.php?p=474782)
 
+### Calibrage intégré (AUD-11, mesuré le 2026-10-17, machine de Palawi)
+
+`palaclips-cli calibrate --settings settings.json` (même chemin que Réglages > Audio) : 12,5 s
+au total, 9 paires flash/bip par piste. Mix « Voicemeeter Input » : son en retard de
++138,0 ms (dispersion 0 ms) → proposé −138 ms, cohérent avec les +103 à +136 ms mesurés plus
+haut (la chaîne varie d'une relance à l'autre). Piste Jeu (capture par processus) : +33,4 ms
+→ −33 ms, proposé aussi aux pistes d'applis. Micro « CABLE Output » : non mesuré (le micro
+n'entend pas les bips au casque), comme prévu. Fichier temporaire supprimé, réglages
+seulement lus.
+
 ### Aperçus en direct du sélecteur de capture (mesuré le 2026-10-17)
 
 `palaclips-cli preview --target <cible> --seconds <n> --out <dossier>` : une session WGC par
