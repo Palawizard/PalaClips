@@ -259,7 +259,9 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `get_theme` / `set_theme { theme }` | 5 ✅ | `system` / `dark` / `light` ; le front pose `data-theme` sur `<html>` (système suivi par `matchMedia`) |
 | `suspend_hotkeys` / `resume_hotkeys` | 5 ✅ | pendant la saisie d'un raccourci : sinon `RegisterHotKey` intercepte la combinaison avant la fenêtre |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
-| `list_audio_sources` | 5 | sessions audio, processus, périphériques |
+| `list_audio_devices { input }` | 5 ✅ | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
+| `list_app_sessions` | 5 ✅ | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
+| `pick_app_exe` | 5 ✅ | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
 | `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = message français) |
 | `record_start` / `record_stop` | 6 | enregistrement |
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
@@ -282,7 +284,7 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 Émis tels quels sur l'événement Tauri `engine-event` par le fil `palaclips-events`, qui tient
 aussi l'`AppStatus` renvoyé par `get_state`.
 
-`state_changed`, `capture_started { source, width, height, fps, tracks }` (à l'armement),
+`state_changed`, `capture_started { source, width, height, fps, tracks: [{ title, kind }] }` (à l'armement ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
 `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
 périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis

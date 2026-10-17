@@ -202,6 +202,10 @@ body {
   border-radius: inherit;
 }
 
+.session-meter {
+  transition: transform 90ms linear;
+}
+
 .capture-frame {
   transition: opacity 200ms var(--ease-out);
 
@@ -243,7 +247,8 @@ body {
   .clip-card,
   .alert-item,
   .switch-thumb,
-  .capture-card {
+  .capture-card,
+  .session-meter {
     transition-duration: 0ms !important;
   }
 

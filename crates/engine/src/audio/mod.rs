@@ -6,6 +6,7 @@ pub use filler::{FillStats, GapFiller};
 pub use meter::PeakMeter;
 pub use track::{AudioStream, AudioTrack, AudioTrackStats};
 
+use crate::events::TrackKind;
 use crate::sources::CurrentGame;
 
 pub const SAMPLE_RATE: u32 = 48_000;
@@ -37,6 +38,15 @@ impl AudioSource {
                 .unwrap_or(exe_name)
                 .into(),
             Self::Game(_) => "Jeu".into(),
+        }
+    }
+
+    pub fn kind(&self) -> TrackKind {
+        match self {
+            Self::SystemMix { .. } => TrackKind::Mix,
+            Self::Microphone { .. } => TrackKind::Microphone,
+            Self::Application { .. } => TrackKind::Application,
+            Self::Game(_) => TrackKind::Game,
         }
     }
 

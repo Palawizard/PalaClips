@@ -43,6 +43,7 @@ export default function App() {
               <RecentClips
                 clips={engine.clips}
                 appOrder={appOrder}
+                labels={engine.config?.audio ?? null}
                 freshClip={engine.freshClip}
                 saveKeys={engine.saveKeys}
               />
@@ -52,7 +53,7 @@ export default function App() {
         {view === "gallery" && (
           <Pending title="Galerie" text="Galerie en préparation." />
         )}
-        {view === "settings" && <Settings />}
+        {view === "settings" && <Settings status={engine.status} />}
       </main>
     </div>
   );
