@@ -1,9 +1,12 @@
 use palaclips_engine::EngineConfig;
+use palaclips_engine::capture::{PreviewCapture, TargetInfo, list_targets};
+use palaclips_engine::config::CaptureTarget;
 use palaclips_engine::encode::{HardwareEncoder, hardware_video_encoders};
 use palaclips_engine::engine::ReplayEstimate;
 use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
 use serde::Serialize;
 use tauri::State;
+use tauri::ipc::{Channel, InvokeResponseBody, Response};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::hotkeys::{HotkeyAction, Hotkeys};
@@ -206,6 +209,46 @@ pub fn open_clips_dir(slot: State<'_, EngineSlot>) -> Result<(), String> {
         .spawn()
         .map(|_| ())
         .map_err(|error| format!("Explorateur impossible à ouvrir : {error}."))
+}
+
+#[tauri::command]
+pub async fn list_capture_targets() -> Result<Vec<TargetInfo>, String> {
+    list_targets().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn app_icon(process_id: u32) -> Result<Response, String> {
+    palaclips_engine::capture::app_icon(process_id)
+        .map(Response::new)
+        .ok_or_else(|| "Icône introuvable.".to_owned())
+}
+
+#[tauri::command]
+pub async fn start_preview(
+    slot: State<'_, EngineSlot>,
+    target: CaptureTarget,
+    channel: Channel<InvokeResponseBody>,
+) -> Result<u32, String> {
+    let preview = PreviewCapture::start(
+        &target,
+        Box::new(move |jpeg| {
+            if let Err(error) = channel.send(InvokeResponseBody::Raw(jpeg)) {
+                tracing::debug!(%error, "aperçu non transmis");
+            }
+        }),
+    )
+    .map_err(|error| error.to_string())?;
+    slot.add_preview(preview)
+}
+
+#[tauri::command]
+pub fn stop_preview(slot: State<'_, EngineSlot>, id: u32) {
+    slot.stop_preview(id);
+}
+
+#[tauri::command]
+pub fn stop_previews(slot: State<'_, EngineSlot>) {
+    slot.stop_previews();
 }
 
 #[tauri::command]

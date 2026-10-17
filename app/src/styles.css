@@ -186,6 +186,30 @@ body {
   }
 }
 
+.capture-card {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.capture-card:has(> [data-card]:active) {
+  transform: scale(0.98);
+}
+
+.capture-card > [data-card]:focus-visible {
+  outline-offset: -3px;
+  border-radius: inherit;
+}
+
+.capture-frame {
+  transition: opacity 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
 .switch-thumb {
   transition:
     transform 160ms var(--ease-out),
@@ -218,8 +242,13 @@ body {
   .roster-row,
   .clip-card,
   .alert-item,
-  .switch-thumb {
+  .switch-thumb,
+  .capture-card {
     transition-duration: 0ms !important;
+  }
+
+  .capture-card:has(> [data-card]:active) {
+    transform: none;
   }
 
   .hotkey-field[data-listening="true"] {
