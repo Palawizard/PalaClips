@@ -57,6 +57,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   l'ordre du fichier avec sa couleur, son vumètre, sa crête et son état (en attente de l'appli,
   muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
 - Menu de la zone de notification : armer et désarmer le replay.
+- Sauvegarde confirmée par un petit carillon joué par PalaClips, même en jeu quand Windows
+  bloque les notifications, et par une notification ; les deux sont désactivables.
 - Les clips sont rangés sous le vrai nom du jeu (« Fortnite » au lieu de
   « FortniteClient-Win64-Shipping »), lu dans l'exe ou tiré de son nom ; le nom est gardé une
   fois choisi.
