@@ -6,6 +6,7 @@ const HOLD_MS = 1200;
 const HOLD_FALL_DB_PER_S = 14;
 const TEXT_EVERY_MS = 120;
 const IDLE_AFTER_MS = 600;
+const FRAME_MS = 1000 / 60;
 
 interface Meter {
   fill: HTMLElement;
@@ -19,10 +20,10 @@ interface Meter {
 
 let targets: number[] = [];
 const meters = new Map<number, Meter>();
-const reducedMotion =
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-let frame = 0;
-let previous = 0;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let focused = document.hasFocus();
+let scheduled = false;
+let lastFrame = 0;
 let lastEvent = 0;
 
 function position(db: number): number {
@@ -30,9 +31,9 @@ function position(db: number): number {
   return (Math.min(0, Math.max(FLOOR_DB, db)) - FLOOR_DB) / -FLOOR_DB;
 }
 
-function step(meter: Meter, target: number, now: number, dt: number) {
+function step(meter: Meter, target: number, now: number, dt: number, interpolate: boolean) {
   meter.display =
-    reducedMotion || target >= meter.display
+    !interpolate || target >= meter.display
       ? target
       : Math.max(target, meter.display - RELEASE_DB_PER_S * dt);
   if (meter.display >= meter.peak) {
@@ -43,46 +44,58 @@ function step(meter: Meter, target: number, now: number, dt: number) {
   }
   meter.fill.style.transform = `scaleX(${position(meter.display)})`;
   meter.hold.style.transform = `translateX(${position(meter.peak) * 100}%)`;
-  if (now - meter.textAt >= TEXT_EVERY_MS) {
+  if (!interpolate || now - meter.textAt >= TEXT_EVERY_MS) {
     meter.textAt = now;
     meter.text.textContent = decibelLabel(meter.peak);
   }
 }
 
-function tick(now: number) {
-  const dt = previous ? Math.min(0.1, (now - previous) / 1000) : 0;
-  previous = now;
-  let active = now - lastEvent < IDLE_AFTER_MS;
+function draw(now: number, interpolate: boolean): boolean {
+  const dt = lastFrame ? Math.min(0.5, (now - lastFrame) / 1000) : 0;
+  lastFrame = now;
+  let moving = now - lastEvent < IDLE_AFTER_MS;
   for (const [index, meter] of meters) {
-    step(meter, targets[index] ?? Number.NEGATIVE_INFINITY, now, dt);
-    if (position(meter.display) > 0 || position(meter.peak) > 0) active = true;
+    step(meter, targets[index] ?? Number.NEGATIVE_INFINITY, now, dt, interpolate);
+    if (position(meter.display) > 0 || position(meter.peak) > 0) moving = true;
   }
-  frame = active ? requestAnimationFrame(tick) : 0;
-  if (!frame) previous = 0;
+  return moving;
 }
 
-function wake() {
-  if (!frame) frame = requestAnimationFrame(tick);
+function tick(now: number) {
+  scheduled = false;
+  if (draw(now, !reducedMotion) && focused) schedule();
 }
+
+function schedule() {
+  if (scheduled) return;
+  scheduled = true;
+  const wait = Math.max(0, FRAME_MS - (performance.now() - lastFrame));
+  window.setTimeout(() => requestAnimationFrame(tick), wait);
+}
+
+window.addEventListener("focus", () => {
+  focused = true;
+  schedule();
+});
+window.addEventListener("blur", () => {
+  focused = false;
+});
 
 export function pushLevels(levels: number[]) {
   targets = levels.map(decibels);
   lastEvent = performance.now();
-  wake();
+  if (focused) schedule();
+  else draw(lastEvent, false);
 }
 
 export function clearLevels() {
   targets = [];
-  wake();
+  if (focused) schedule();
+  else draw(performance.now(), false);
 }
 
-export function registerMeter(
-  index: number,
-  fill: HTMLElement,
-  hold: HTMLElement,
-  text: HTMLElement,
-): () => void {
-  meters.set(index, {
+export function registerMeter(index: number, fill: HTMLElement, hold: HTMLElement, text: HTMLElement): () => void {
+  const meter: Meter = {
     fill,
     hold,
     text,
@@ -90,9 +103,9 @@ export function registerMeter(
     peak: Number.NEGATIVE_INFINITY,
     peakUntil: 0,
     textAt: 0,
-  });
-  wake();
+  };
+  meters.set(index, meter);
   return () => {
-    if (meters.get(index)?.fill === fill) meters.delete(index);
+    if (meters.get(index) === meter) meters.delete(index);
   };
 }
