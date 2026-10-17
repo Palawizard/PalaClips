@@ -192,14 +192,18 @@ body {
     background-color 160ms ease;
 }
 
-.hotkey-field[data-listening="true"] {
+.hotkey-field[data-listening="true"],
+.hotkey-field[data-listening="true"]:focus-visible {
   border-color: var(--ink);
-  animation: listening 1.4s ease-in-out infinite;
+  background-color: var(--surface-2);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  animation: listening 1.2s var(--ease-out) infinite alternate;
 }
 
 @keyframes listening {
-  50% {
-    border-color: var(--line-strong);
+  to {
+    outline-color: transparent;
   }
 }
 

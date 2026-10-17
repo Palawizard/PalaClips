@@ -89,7 +89,7 @@ export function GeneralSection() {
   return (
     <>
       {error && (
-        <p role="alert" className="border-b border-line bg-surface-2 px-6 py-3 text-[13px] text-warn">
+        <p role="alert" className="border-b border-line bg-surface-2 px-5 py-3 text-[13px] text-warn">
           {error}
         </p>
       )}

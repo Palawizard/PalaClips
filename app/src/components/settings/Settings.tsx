@@ -25,7 +25,7 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1 border-b border-line px-6 py-4">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1 border-b border-line px-5 py-3">
       <div className="min-w-0">
         <p className="text-[15px] font-semibold">{label}</p>
         {help && <p className="mt-0.5 max-w-[62ch] text-[13px] text-ink-2">{help}</p>}
@@ -109,7 +109,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => move(event, index)}
             className={`pressable rounded-[4px] px-3 py-1.5 text-[13px] font-medium ${
-              selected ? "bg-ink text-ground" : "text-ink-2 hover:text-ink"
+              selected ? "bg-surface-2 font-semibold text-ink" : "text-ink-2 hover:text-ink"
             }`}
           >
             {option.label}
@@ -122,7 +122,7 @@ export function Segmented<T extends string>({
 
 function Pending({ title }: { title: string }) {
   return (
-    <div className="px-6 py-6 text-ink-2">
+    <div className="px-5 py-5 text-ink-2">
       <p>Section en préparation.</p>
       <p className="sr-only">{title}</p>
     </div>
@@ -158,7 +158,7 @@ export function Settings() {
         </ul>
       </nav>
       <section aria-labelledby="settings-section-title" className="min-w-0">
-        <h2 id="settings-section-title" className="border-b border-line px-6 pt-6 pb-4 text-[22px] font-semibold">
+        <h2 id="settings-section-title" className="border-b border-line px-5 pt-6 pb-4 text-[22px] font-semibold">
           {label}
         </h2>
         {section === "hotkeys" && <HotkeysSection />}
