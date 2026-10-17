@@ -276,6 +276,7 @@ impl ReplaySettings {
 #[serde(default)]
 pub struct StorageSettings {
     pub clips_dir: Option<std::path::PathBuf>,
+    pub game_names: std::collections::BTreeMap<String, String>,
 }
 
 #[cfg(test)]

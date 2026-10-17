@@ -45,6 +45,10 @@ pub enum EngineEvent {
         state: TrackState,
         source: Option<String>,
     },
+    GameNamed {
+        exe_name: String,
+        name: String,
+    },
     ClipSaved {
         path: String,
         duration_secs: f64,

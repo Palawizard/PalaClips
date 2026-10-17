@@ -184,6 +184,10 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         println!("alerte {severity:?} {code} : {message}");
                     }
                     EngineEvent::StateChanged { state } => println!("état : {state:?}"),
+                    EngineEvent::GameNamed { exe_name, name } => {
+                        println!("nom de jeu : {exe_name} → {name}");
+                        config.storage.game_names.insert(exe_name, name);
+                    }
                     EngineEvent::CaptureStarted { source, width, height, fps, tracks } => {
                         println!("capture : {source}, {width}x{height} à {fps} i/s, pistes {}", tracks.join(", "));
                     }
