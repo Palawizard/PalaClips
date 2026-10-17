@@ -287,3 +287,21 @@ premier plan » de la phase 3.
   n'a de sens que machine non saturée (`TESTING.md` § PERF). Une fuite qui engage sans
   toucher ne se verrait pas : RPL-08 (ADR-020) reste mesuré en mémoire engagée.
 - Écarté : relever le seuil en mémoire engagée (~200 Mo) ; `dpb_size=1` (−7 Mo seulement).
+
+## ADR-024 — Nom du jeu : métadonnées de l'exe, figé par exe (STO-02, STO-03)
+**Statut :** acceptée (2026-10-17, décision de Palawi).
+- Contexte : les clips étaient rangés sous le nom d'exe (`FortniteClient-Win64-Shipping\`).
+  L'exe de Fortnite n'a ni `ProductName` ni `FileDescription` (constaté sur la machine de
+  Palawi), comme beaucoup de jeux Unreal.
+- Décision : nom = `ProductName` de l'exe, sinon `FileDescription`, sinon nom d'exe nettoyé
+  (suffixes de build Unreal `-Win64-Shipping`, `-WinGDK-Shipping`, `_EAC_EOS`…, puis
+  « Client » final) ; les noms génériques sont ignorés (vide, « Unreal Engine », « UE4 »,
+  « Shipping », noms de moteurs, « Launcher »…) ; nettoyage pour le système de fichiers (™,
+  ®, ©, `:` et caractères interdits, entités XML décodées). Le nom est **figé par exe** à la
+  première sauvegarde (`storage.game_names`, clé = exe en minuscules, `settings.json`), jamais
+  recalculé ; modifiable dans Réglages > Stockage ; même nom pour le dossier, le fichier et la
+  galerie (`engine::games`).
+- Prudence : si le processus n'est plus là au moment de la sauvegarde (métadonnées
+  illisibles), le nom d'exe nettoyé sert pour ce clip **sans être figé**.
+- Écarté : lire les manifestes des lanceurs (Epic `.item`, Steam `appmanifest`) : plus de code
+  et de cas pour un gain que le nettoyage du nom d'exe couvre (choix de Palawi).
