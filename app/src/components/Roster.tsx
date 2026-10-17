@@ -116,9 +116,6 @@ export function Roster({
         <h2 id="roster-title" className="text-[17px] font-semibold">
           Pistes audio
         </h2>
-        <p className="text-[13px] text-ink-3">
-          {tracks.length} {tracks.length > 1 ? "pistes" : "piste"} dans chaque clip, dans cet ordre
-        </p>
       </div>
       <div role="table" aria-label="Pistes audio capturées" className="text-[14px]">
         <div

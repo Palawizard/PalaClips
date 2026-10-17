@@ -60,8 +60,8 @@ export function RecentClips({
         <div className="rounded-md border border-dashed border-line-strong px-4 py-6 text-ink-2">
           <p className="font-semibold text-ink">Aucun clip pour l'instant</p>
           <p className="mt-1">
-            Appuie sur <kbd className="score font-semibold text-ink">Alt+F10</kbd> en jeu : les dernières secondes
-            arrivent ici, chaque piste déjà séparée.
+            Appuie sur <kbd className="score font-semibold text-ink">Alt+F10</kbd> en jeu pour sauvegarder les
+            dernières secondes.
           </p>
         </div>
       ) : (
