@@ -108,8 +108,8 @@ export function Segmented<T extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => move(event, index)}
-            className={`pressable rounded-[4px] px-3 py-1.5 text-[13px] font-medium ${
-              selected ? "bg-surface-2 font-semibold text-ink" : "text-ink-2 hover:text-ink"
+            className={`pressable rounded-[4px] border px-3 py-1.5 text-[13px] font-medium ${
+              selected ? "border-line-strong bg-surface-2 font-semibold text-ink" : "border-transparent text-ink-2 hover:text-ink"
             }`}
           >
             {option.label}
