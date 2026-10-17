@@ -58,7 +58,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
 - Menu de la zone de notification : armer et désarmer le replay.
 - Un nouveau clip commence où le précédent s'est arrêté : plus de minute répétée d'un clip à
-  l'autre ; le temps en mémoire repart de zéro après chaque sauvegarde.
+  l'autre ; le temps en mémoire repart de zéro après chaque sauvegarde. Un double appui sur
+  le raccourci ne crée plus de clip d'une seconde.
 - Sauvegarde confirmée par un petit carillon joué par PalaClips, même en jeu quand Windows
   bloque les notifications, et par une notification ; les deux sont désactivables.
 - Les clips sont rangés sous le vrai nom du jeu (« Fortnite » au lieu de

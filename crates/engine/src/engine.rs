@@ -18,8 +18,8 @@ use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::replay::{
-    PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, forget_saved,
-    plan_clip, share_packet,
+    ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
+    forget_saved, plan_clip, share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -301,13 +301,24 @@ impl Core {
             Some(pipeline) => pipeline.save(requested, &game, &self.config, &self.events),
             None => Err(EngineError::NothingToSave("le replay n'est pas armé")),
         };
-        if let Err(error) = result {
-            tracing::warn!(%error, "sauvegarde du replay impossible");
-            self.alert(
-                Severity::Warning,
-                "clip_save_failed",
-                format!("Clip non sauvegardé : {error}."),
-            );
+        match result {
+            Ok(()) => {}
+            Err(EngineError::ClipTooShort) => {
+                tracing::info!("sauvegarde ignorée : moins de 3 s depuis le dernier clip");
+                self.alert(
+                    Severity::Info,
+                    "clip_too_short",
+                    "Rien de nouveau à sauvegarder : moins de 3 s depuis le dernier clip.".into(),
+                );
+            }
+            Err(error) => {
+                tracing::warn!(%error, "sauvegarde du replay impossible");
+                self.alert(
+                    Severity::Warning,
+                    "clip_save_failed",
+                    format!("Clip non sauvegardé : {error}."),
+                );
+            }
         }
     }
 
@@ -608,7 +619,8 @@ impl Pipeline {
             .split_first()
             .ok_or(EngineError::NothingToSave("aucun flux"))?;
         let plan = plan_clip(video, audio, duration, frame, AAC_PACKET)
-            .ok_or(EngineError::NothingToSave("le tampon est encore vide"))?;
+            .filter(ClipPlan::worth_saving)
+            .ok_or(EngineError::ClipTooShort)?;
         let mut packets = Vec::new();
         for (stream, ring) in self.rings.iter().enumerate() {
             let from = if stream == 0 {

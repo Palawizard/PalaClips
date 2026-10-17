@@ -111,6 +111,9 @@ impl AppStatus {
                 self.buffered_secs = *buffered_secs;
                 self.buffer_bytes = *bytes;
             }
+            EngineEvent::ClipSaved { .. } => {
+                self.alerts.retain(|alert| alert.code != "clip_too_short");
+            }
             EngineEvent::Alert {
                 severity,
                 code,
@@ -561,6 +564,23 @@ mod tests {
         });
         assert_eq!(status.alerts.len(), 1);
         assert_eq!(status.alerts[0].code, "hotkey_unavailable");
+    }
+
+    #[test]
+    fn a_saved_clip_clears_the_too_short_notice() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::Alert {
+            severity: Severity::Info,
+            code: "clip_too_short".into(),
+            message: "Rien de nouveau à sauvegarder.".into(),
+        });
+        status.apply(&EngineEvent::ClipSaved {
+            path: "clip.mp4".into(),
+            duration_secs: 12.0,
+            save_latency_ms: 20,
+            thumbnail: None,
+        });
+        assert!(status.alerts.is_empty());
     }
 
     #[test]
