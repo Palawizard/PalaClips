@@ -18,7 +18,7 @@ tauri-build = { version = "2.7", features = [] }
 
 [dependencies]
 palaclips-engine.workspace = true
-tauri = { version = "2.12", features = ["tray-icon"] }
+tauri = { version = "2.12", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-global-shortcut = "2.4"
 tauri-plugin-single-instance = "2.5"
 serde.workspace = true

@@ -61,6 +61,11 @@ impl AppStatus {
         match event {
             EngineEvent::StateChanged { state } => {
                 self.state = *state;
+                if *state != EngineState::Idle {
+                    self.alerts.retain(|alert| {
+                        alert.code != "replay_arm_failed" && alert.code != "replay_stopped"
+                    });
+                }
                 if *state == EngineState::Idle {
                     self.buffered_secs = 0.0;
                     self.buffer_bytes = 0;
@@ -252,8 +257,10 @@ pub fn run() {
 fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Ouvrir PalaClips", true, None::<&str>)?;
     let save = MenuItem::with_id(app, "save", "Sauvegarder le replay", true, Some("Alt+F10"))?;
+    let arm = MenuItem::with_id(app, "arm", "Armer le replay", true, None::<&str>)?;
+    let disarm = MenuItem::with_id(app, "disarm", "Désarmer le replay", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quitter", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&open, &save, &quit])?;
+    let menu = Menu::with_items(app, &[&open, &save, &arm, &disarm, &quit])?;
     let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("PalaClips")
         .menu(&menu)
@@ -262,9 +269,16 @@ fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
             "open" => {
                 open_main_window(app).ok();
             }
-            "save" => {
+            "save" | "arm" | "disarm" => {
                 if let Some(slot) = app.try_state::<EngineSlot>() {
-                    slot.handle.save_replay().ok();
+                    let result = match event.id().as_ref() {
+                        "save" => slot.handle.save_replay(),
+                        "arm" => slot.handle.arm(),
+                        _ => slot.handle.disarm(),
+                    };
+                    if let Err(error) = result {
+                        tracing::warn!(%error, "action du menu impossible");
+                    }
                 }
             }
             "quit" => app.exit(0),
@@ -380,6 +394,22 @@ mod tests {
         assert!(status.capture.is_none());
         assert_eq!(status.tracks.len(), 2);
         assert_eq!(status.tracks[1].state, None);
+    }
+
+    #[test]
+    fn rearming_clears_the_previous_replay_failure() {
+        let mut status = AppStatus::default();
+        status.apply(&EngineEvent::Alert {
+            severity: Severity::Error,
+            code: "replay_stopped".into(),
+            message: "Le replay s'est arrêté.".into(),
+        });
+        status.apply(&hotkey_unavailable_alert("Alt+F10"));
+        status.apply(&EngineEvent::StateChanged {
+            state: EngineState::ReplayArmed,
+        });
+        assert_eq!(status.alerts.len(), 1);
+        assert_eq!(status.alerts[0].code, "hotkey_unavailable");
     }
 
     #[test]
