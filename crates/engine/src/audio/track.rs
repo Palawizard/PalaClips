@@ -20,7 +20,7 @@ use super::{AudioSource, CHANNELS, PeakMeter, SAMPLE_RATE};
 use crate::clock::Hns;
 use crate::encode::AacEncoder;
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, Severity, TrackState};
+use crate::events::{EngineEvent, Localized, Severity, TrackState};
 use crate::sources::{self, ForegroundWatch, ForegroundWindow};
 
 const BUFFER_DURATION_HNS: i64 = 2_000_000;
@@ -343,7 +343,9 @@ impl Worker {
                     self.stats.device_switches += 1;
                     self.alert(
                         Severity::Info,
-                        "audio_device_changed",
+                        Localized::new("audio_device_changed")
+                            .with("track", &self.title)
+                            .with("device", &stream.name),
                         format!(
                             "Piste « {} » : la capture suit maintenant « {} ».",
                             self.title, stream.name
@@ -551,7 +553,13 @@ impl Worker {
             "Piste « {} » : {} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
             self.title, app.exe_name
         );
-        self.alert(Severity::Warning, "app_track_silent", message);
+        self.alert(
+            Severity::Warning,
+            Localized::new("app_track_silent")
+                .with("track", &self.title)
+                .with("app", &app.exe_name),
+            message,
+        );
         let source = self.reported.clone().and_then(|(_, source)| source);
         self.report(TrackState::Silent, source);
     }
@@ -626,6 +634,11 @@ impl Worker {
     }
 
     fn alert_unavailable(&self, error: &WasapiError, in_use: bool) {
+        let reason = if in_use {
+            Localized::new("device_in_exclusive_use")
+        } else {
+            Localized::new("no_audio_device").with("detail", error.to_string())
+        };
         let message = if in_use {
             format!(
                 "Piste « {} » : le périphérique est utilisé en mode exclusif par une autre application. PalaClips réessaie chaque seconde ; désactive le mode exclusif de cette application pour l'enregistrer.",
@@ -638,14 +651,20 @@ impl Worker {
             )
         };
         tracing::warn!(track = %self.title, %error, "périphérique audio indisponible");
-        self.alert(Severity::Warning, "audio_device_unavailable", message);
+        self.alert(
+            Severity::Warning,
+            Localized::new("audio_device_unavailable")
+                .with("track", &self.title)
+                .with("reason", reason),
+            message,
+        );
     }
 
-    fn alert(&self, severity: Severity, code: &str, message: String) {
+    fn alert(&self, severity: Severity, text: Localized, message: String) {
         self.alerts
             .try_send(EngineEvent::Alert {
                 severity,
-                code: code.into(),
+                text,
                 message,
             })
             .ok();

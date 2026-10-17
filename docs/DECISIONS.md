@@ -366,3 +366,42 @@ point.
   `the_emitter_buffer_measured_by_the_game_track_is_not_compensated`,
   `earlier_wrong_offsets_are_corrected_from_their_current_value`,
   `nothing_is_proposed_without_a_reference`.
+
+## ADR-028 — Socle i18n : clés côté front, codes + paramètres côté Rust (APP-08)
+**Statut :** acceptée (2026-10-17, demande de Palawi : avant la phase 6, sans attendre la
+phase 8).
+- Contexte : APP-08 (français et anglais, langue du système par défaut) était prévu en phase 8.
+  Le faire après la galerie aurait obligé à repasser sur toutes les chaînes de la phase 6.
+- Front : `app/src/locales/fr.json` et `en.json`, module maison `app/src/lib/i18n.ts` sans
+  dépendance (une centaine de lignes) : `t(clé, paramètres)` avec des clés typées depuis
+  `fr.json` (une clé inconnue ne compile pas ; `en.json` doit avoir la même forme), pluriels
+  `{ one, other }` choisis par `Intl.PluralRules`, `{nom}` remplacé par le paramètre,
+  `useT()` (re-rendu au changement de langue par `useSyncExternalStore`). Nombres, dates et
+  tris suivent la langue (`Intl`, `localeCompare`). Écartés : i18next + react-i18next (lourds
+  pour deux langues, typage des clés à configurer), Lingui (macros et étape de compilation).
+- Langue : réglage `language` (`system` | `fr` | `en`) dans `settings.json`, choisi dans
+  Réglages > Général. `system` = langue d'affichage de Windows (`GetUserDefaultUILanguage`) :
+  français si la langue principale est le français, anglais sinon. Le shell la résout
+  (`get_language` renvoie le réglage et la langue retenue) ; le front attend au plus 250 ms au
+  démarrage, comme pour le thème.
+- Moteur et shell : tout texte affiché part en `Localized { code, params }`
+  (`palaclips_engine::events::Localized`). Les alertes portent `code` + `params` en plus du
+  `message` français (journaux, CLI) ; les erreurs des commandes Tauri sont des `Localized` ;
+  `EngineError::localized()` donne le code de chaque erreur (les variantes utiles à
+  l'utilisateur sont structurées : cible introuvable, sortie refusée, piste arrêtée…). Un
+  paramètre peut être un autre `Localized` (raison d'un échec), traduit à son tour. Le texte
+  est produit côté front sous `messages.<code>`. Seul le détail technique d'une erreur
+  système (`{detail}` : message de Windows ou de FFmpeg) reste tel quel.
+- Le shell lit les mêmes fichiers (`include_str!`) pour ce qu'il affiche sans WebView : menu de
+  la zone de notification (reconstruit au changement de langue), notifications, titres des
+  sélecteurs de fichier.
+- Noms par défaut des pistes (Mix complet / Full mix, Micro / Mic, Jeu / Game) : écrits dans la
+  langue du système à la création ou à la réinitialisation des réglages, puis traités comme
+  des noms choisis par l'utilisateur (ils vont dans les fichiers). Le dossier des clips hors
+  jeu garde le nom « Bureau » sur le disque.
+- Garde-fou : `npm test` (`app/tests/i18n.test.mjs`, CI) échoue si un texte visible est écrit
+  en dur dans `app/src` (texte JSX, attributs `aria-label`/`title`/`placeholder`/`alt`, props
+  `label`/`help`/`error`/`unit`…, toute chaîne avec une lettre accentuée), si `fr.json` et
+  `en.json` n'ont pas les mêmes clés et paramètres, ou si un code `Localized::new("…")` du
+  Rust n'a pas de texte dans les deux langues.
+- Conséquence : à partir de la phase 6, tout texte visible s'écrit directement en clé.

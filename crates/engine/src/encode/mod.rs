@@ -80,14 +80,6 @@ pub fn pick_encoder(encoders: &[HardwareEncoder], codec: VideoCodec) -> Result<&
         .ok_or(EngineError::CodecUnavailable(codec))
 }
 
-pub fn codec_label(codec: VideoCodec) -> &'static str {
-    match codec {
-        VideoCodec::H264 => "H.264",
-        VideoCodec::Hevc => "HEVC",
-        VideoCodec::Av1 => "AV1",
-    }
-}
-
 pub fn max_output_side(codec: VideoCodec) -> u32 {
     match codec {
         VideoCodec::H264 => 4096,
@@ -98,12 +90,12 @@ pub fn max_output_side(codec: VideoCodec) -> u32 {
 pub fn check_output_size(codec: VideoCodec, size: Size) -> Result<()> {
     let limit = max_output_side(codec);
     if size.width > limit || size.height > limit {
-        return Err(EngineError::OutputRefused(format!(
-            "{} est limité à {limit} px de côté et la vidéo ferait {}×{} : choisis une résolution de sortie plus basse ou un autre codec",
-            codec_label(codec),
-            size.width,
-            size.height
-        )));
+        return Err(EngineError::OutputTooLarge {
+            codec,
+            limit,
+            width: size.width,
+            height: size.height,
+        });
     }
     Ok(())
 }
@@ -137,12 +129,12 @@ pub fn probe_output(
             reason = %failure_reason(&error, &logs),
             "sortie vidéo refusée par l'encodeur"
         );
-        EngineError::OutputRefused(format!(
-            "la carte graphique refuse d'encoder {}×{} à {fps} i/s en {} : choisis une résolution de sortie plus basse ou un autre codec",
-            size.width,
-            size.height,
-            codec_label(codec)
-        ))
+        EngineError::OutputUnsupported {
+            codec,
+            width: size.width,
+            height: size.height,
+            fps,
+        }
     })
 }
 

@@ -1,14 +1,8 @@
 import { type CSSProperties, useEffect, useState } from "react";
+import { useT } from "../lib/i18n.ts";
 import type { TrackInfo, TrackState } from "../lib/ipc.ts";
 import { trackColor, trackIcon } from "../lib/tracks.ts";
 import { MeterBar, useTrackMeter } from "./MeterBar.tsx";
-
-const STATE_LABEL: Record<TrackState, string> = {
-  capturing: "Capture",
-  waiting: "En attente de l'appli",
-  silent: "Muette : vérifie la sortie",
-  unavailable: "Périphérique indisponible",
-};
 
 const STATE_TONE: Record<TrackState, string> = {
   capturing: "text-ink-2",
@@ -31,6 +25,7 @@ function TrackRow({
   color: string;
   flashing: boolean;
 }) {
+  const t = useT();
   const { fill, hold, peak } = useTrackMeter(index);
   const Icon = trackIcon(track.kind);
 
@@ -64,7 +59,7 @@ function TrackRow({
         −∞
       </span>
       <span role="cell" className={`truncate text-[13px] ${track.state ? STATE_TONE[track.state] : "text-ink-3"}`}>
-        {track.state ? STATE_LABEL[track.state] : "—"}
+        {track.state ? t(`roster.states.${track.state}`) : "—"}
       </span>
     </div>
   );
@@ -79,6 +74,7 @@ export function Roster({
   appOrder: string[];
   flashAt: number;
 }) {
+  const t = useT();
   const [flashing, setFlashing] = useState(false);
 
   useEffect(() => {
@@ -92,36 +88,33 @@ export function Roster({
     <section aria-labelledby="roster-title" className="min-w-0 border-r border-line max-[1000px]:border-r-0">
       <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
         <h2 id="roster-title" tabIndex={-1} className="text-[17px] font-semibold outline-none">
-          Pistes audio
+          {t("roster.title")}
         </h2>
       </div>
-      <div role="table" aria-label="Pistes audio capturées" className="text-[14px]">
+      <div role="table" aria-label={t("roster.table")} className="text-[14px]">
         <div
           role="row"
           className={`${COLUMNS} border-y border-line px-5 py-2`}
         >
           <span role="columnheader" className="label">
-            N°
+            {t("roster.number")}
           </span>
           <span role="columnheader" className="label">
-            Piste
+            {t("roster.track")}
           </span>
           <span role="columnheader" className="label">
-            Niveau
+            {t("roster.level")}
           </span>
           <span role="columnheader" className="label text-right">
-            Crête
+            {t("roster.peak")}
           </span>
           <span role="columnheader" className="label">
-            État
+            {t("roster.state")}
           </span>
         </div>
         {tracks.length === 0 && (
           <p role="row" className="px-5 py-6 text-ink-2">
-            <span role="cell">
-              Aucune piste audio : les clips seront muets. Active le mix complet, le micro ou une appli dans
-              Réglages → Audio.
-            </span>
+            <span role="cell">{t("roster.empty")}</span>
           </p>
         )}
         {tracks.map((track, index) => (

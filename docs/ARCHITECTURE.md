@@ -244,6 +244,12 @@ Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contie
 Source de vérité : `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`,
 miroir TypeScript `app/src/lib/ipc.ts`.
 
+Textes (ADR-028) : aucune phrase affichée ne traverse l'IPC. Une erreur de commande est un
+`Localized { code, params }` ; le front l'affiche par `messages.<code>` de
+`app/src/locales/fr.json` / `en.json` (`errorText`, `message` de `lib/i18n.ts`). Un paramètre
+peut être un autre `Localized` (`reason`), traduit à son tour ; `detail` est le texte brut
+d'une erreur système.
+
 ### Commandes (front → app)
 
 | Commande | Phase | Rôle |
@@ -252,18 +258,19 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 | `default_config` | 0 ✅ | configuration par défaut |
 | `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
 | `get_config` | 5 ✅ | configuration en cours |
-| `set_config { config }` | 5 ✅ | si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = message français, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `set_config { config }` | 5 ✅ | si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
 | `get_autostart` / `set_autostart { enabled }` | 5 ✅ | démarrage avec Windows (APP-04, `tauri-plugin-autostart` 2.7, clé `Run` de l'utilisateur) ; lancé avec `--autostart` : zone de notification seulement, aucune fenêtre ni WebView2, puis « armer au démarrage » comme d'habitude |
 | `get_feedback` / `set_feedback { feedback }` | 5 ✅ | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
 | `reset_settings` | 5 ✅ | tous les réglages par défaut (APP-07) : moteur, confirmation, raccourcis, thème, démarrage avec Windows désactivé |
 | `get_theme` / `set_theme { theme }` | 5 ✅ | `system` / `dark` / `light` ; le front pose `data-theme` sur `<html>` (système suivi par `matchMedia`) |
+| `get_language` / `set_language { language }` | 5 ✅ | APP-08, ADR-028 : `system` / `fr` / `en` ; `get_language` renvoie `{ setting, resolved }` (`system` = langue d'affichage de Windows, français si elle est française, anglais sinon), `set_language` renvoie la langue retenue et retraduit le menu de la zone de notification |
 | `suspend_hotkeys` / `resume_hotkeys` | 5 ✅ | pendant la saisie d'un raccourci : sinon `RegisterHotKey` intercepte la combinaison avant la fenêtre |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
 | `calibrate_audio` | 5 ✅ | assistant de calibrage (AUD-11, ADR-026) : capture temporaire de l'écran principal, flash + bip 10 s, mesure par piste, replay réarmé ; renvoie mesures et décalages proposés (rien n'est appliqué) |
 | `list_audio_devices { input }` | 5 ✅ | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
 | `list_app_sessions` | 5 ✅ | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
 | `pick_app_exe` | 5 ✅ | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
-| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = message français) |
+| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = `Localized`) |
 | `record_start` / `record_stop` | 6 | enregistrement |
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
 | `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
@@ -285,7 +292,7 @@ miroir TypeScript `app/src/lib/ipc.ts`.
 Émis tels quels sur l'événement Tauri `engine-event` par le fil `palaclips-events`, qui tient
 aussi l'`AppStatus` renvoyé par `get_state`.
 
-`state_changed`, `capture_started { source, width, height, fps, tracks: [{ title, kind }] }` (à l'armement ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
+`state_changed`, `capture_started { source, width, height, fps, tracks: [{ title, kind }] }` (à l'armement ; `source` = `Localized` : `source_primary_screen`, `source_screen { name }`, `source_window { exe }`, `source_window_fallback { exe }` ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
 `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
 périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
@@ -293,14 +300,20 @@ le relevé précédent, un nombre par piste dans l'ordre des pistes : le front i
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
 fenêtre),
-`replay_stats`, `alert { severity, code, message }`.
+`replay_stats`, `alert { severity, code, params, message }` (`code` + `params` pour le texte
+affiché, `message` en français pour les journaux et la CLI).
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
 `hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `clip_too_short` (info :
 moins de 3 s à sauvegarder, aucun clip ; pas de notification), `calibration_running` (info :
-sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_reset` (réglages
-illisibles mis de côté en `settings.json.bak`, ou venant d'une version plus récente).
+sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_unreadable` /
+`settings_unreadable_kept` (réglages illisibles, mis de côté en `settings.json.bak`),
+`settings_newer` (version plus récente, fichier laissé intact), `settings_dir_missing`.
+Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }` ;
+`clip_too_short { seconds }` ; `capture_fallback_monitor { title }` ; `audio_device_changed
+{ track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
+reason }` ; `hotkey_unavailable { keys }`.
 
 Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
 `save_replay` (personnalisable avec la persistance des réglages).
@@ -309,7 +322,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 
 | Quoi | Où |
 |---|---|
-| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme }`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
+| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |

@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use palaclips_engine::events::Localized;
 use serde::{Deserialize, Serialize};
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut};
 
@@ -11,10 +12,10 @@ pub enum HotkeyAction {
 }
 
 impl HotkeyAction {
-    pub fn label(self) -> &'static str {
+    pub fn text(self) -> Localized {
         match self {
-            Self::SaveReplay => "Sauvegarder le replay",
-            Self::ToggleReplay => "Armer ou désarmer le replay",
+            Self::SaveReplay => Localized::new("action_save_replay"),
+            Self::ToggleReplay => Localized::new("action_toggle_replay"),
         }
     }
 }
@@ -98,38 +99,30 @@ fn types_text(code: Code) -> bool {
         )
 }
 
-pub fn parse(keys: &str) -> Result<Shortcut, String> {
-    let shortcut = Shortcut::from_str(keys.trim())
-        .map_err(|_| format!("« {keys} » n'est pas un raccourci reconnu."))?;
+pub fn parse(keys: &str) -> Result<Shortcut, Localized> {
+    let refused = |text: Localized| Err(text.with("keys", keys));
+    let Ok(shortcut) = Shortcut::from_str(keys.trim()) else {
+        return refused(Localized::new("hotkey_unrecognized"));
+    };
     let mods = shortcut.mods;
     let key = shortcut.key;
     if key == Code::Tab {
-        return Err(format!(
-            "« {keys} » : Tab sert à passer d'un élément à l'autre ; choisis une autre touche."
-        ));
+        return refused(Localized::new("hotkey_tab"));
     }
     if mods.contains(Modifiers::SUPER) {
-        return Err(format!(
-            "« {keys} » : Windows réserve les raccourcis avec la touche Windows."
-        ));
+        return refused(Localized::new("hotkey_windows_key"));
     }
     if SYSTEM_SHORTCUTS
         .iter()
         .any(|(system_mods, system_key)| *system_mods == mods && *system_key == key)
     {
-        return Err(format!(
-            "« {keys} » est un raccourci de Windows ou des jeux."
-        ));
+        return refused(Localized::new("hotkey_system"));
     }
     if mods.is_empty() && !is_function_key(key) {
-        return Err(format!(
-            "« {keys} » : ajoute Ctrl, Alt ou Maj, sinon la touche ne servirait plus en jeu."
-        ));
+        return refused(Localized::new("hotkey_needs_modifier"));
     }
     if mods == Modifiers::SHIFT && types_text(key) {
-        return Err(format!(
-            "« {keys} » : Maj seul avec une lettre ou un chiffre écrit du texte ; ajoute Ctrl ou Alt."
-        ));
+        return refused(Localized::new("hotkey_shift_types"));
     }
     Ok(shortcut)
 }
@@ -155,12 +148,14 @@ pub fn canonical(shortcut: &Shortcut) -> String {
     parts.join("+")
 }
 
-pub fn validate(hotkeys: &Hotkeys) -> Result<Vec<(HotkeyAction, Shortcut)>, String> {
+pub fn validate(hotkeys: &Hotkeys) -> Result<Vec<(HotkeyAction, Shortcut)>, Localized> {
     let mut parsed: Vec<(HotkeyAction, Shortcut)> = Vec::new();
     for (action, keys) in hotkeys.bindings() {
         let shortcut = parse(keys)?;
         if let Some((other, _)) = parsed.iter().find(|(_, taken)| *taken == shortcut) {
-            return Err(format!("« {keys} » sert déjà à « {} ».", other.label()));
+            return Err(Localized::new("hotkey_duplicate")
+                .with("keys", keys)
+                .with("action", other.text()));
         }
         parsed.push((action, shortcut));
     }
@@ -228,7 +223,8 @@ mod tests {
             toggle_replay: Some("alt+f10".into()),
         };
         let error = validate(&hotkeys).expect_err("duplicate");
-        assert!(error.contains("Sauvegarder le replay"), "{error}");
+        assert_eq!(error.code, "hotkey_duplicate");
+        assert_eq!(error.params["action"]["code"], "action_save_replay");
     }
 
     #[test]

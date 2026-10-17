@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { bytes } from "../../lib/format.ts";
+import { errorText, localeCompare, useT } from "../../lib/i18n.ts";
 import {
   type EngineConfig,
   type StorageStatus,
@@ -27,6 +28,7 @@ function GameNameRow({
   onCommit: (name: string) => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [text, setText] = useState(name);
   const errorId = useId();
   useEffect(() => setText(name), [name]);
@@ -50,7 +52,7 @@ function GameNameRow({
             onCancel();
           }
         }}
-        aria-label={`Nom du dossier pour ${exe}`}
+        aria-label={t("settings.storage.folderFor", { exe })}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className="h-9 w-full rounded-md border border-ink-3 bg-surface px-2.5 text-[14px] text-ink hover:border-ink-2 aria-invalid:border-warn"
@@ -68,6 +70,7 @@ function GameNameRow({
 }
 
 export function StorageSection() {
+  const t = useT();
   const [config, setConfigState] = useState<EngineConfig | null>(null);
   const [status, setStatus] = useState<StorageStatus | null>(null);
   const [folderError, setFolderError] = useState<string | null>(null);
@@ -76,7 +79,7 @@ export function StorageSection() {
   const refreshStatus = () => storageStatus().then(setStatus, () => setStatus(null));
 
   useEffect(() => {
-    getConfig().then(setConfigState, (failure) => setFolderError(String(failure)));
+    getConfig().then(setConfigState, (failure) => setFolderError(errorText(failure)));
     refreshStatus();
   }, []);
 
@@ -97,35 +100,35 @@ export function StorageSection() {
         if (!dir) return;
         return save({ ...config, storage: { ...config.storage, clips_dir: dir } }).then(refreshStatus);
       })
-      .catch((failure) => setFolderError(String(failure)));
+      .catch((failure) => setFolderError(errorText(failure)));
   };
 
   const openFolder = () => {
     setFolderError(null);
-    openClipsDir().catch((failure) => setFolderError(String(failure)));
+    openClipsDir().catch((failure) => setFolderError(errorText(failure)));
   };
 
   const rename = (exe: string, name: string) => {
     setNameError(null);
     const game_names = { ...config.storage.game_names, [exe]: name };
     save({ ...config, storage: { ...config.storage, game_names } }).catch((failure) =>
-      setNameError({ exe, message: String(failure) }),
+      setNameError({ exe, message: errorText(failure) }),
     );
   };
 
-  const games = Object.entries(config.storage.game_names).sort(([, a], [, b]) => a.localeCompare(b, "fr"));
+  const games = Object.entries(config.storage.game_names).sort(([, a], [, b]) => localeCompare(a, b));
 
   return (
     <>
       <SettingRow
-        label="Dossier des clips"
+        label={t("settings.storage.folder")}
         error={folderError}
         help={
           <>
             <span className="block break-all">{status?.clips_dir ?? "—"}</span>
             {status && (
               <span className="score mt-0.5 block text-[14px]">
-                {bytes(status.free_bytes)} libres sur {bytes(status.total_bytes)}
+                {t("settings.storage.freeOf", { free: bytes(status.free_bytes), total: bytes(status.total_bytes) })}
               </span>
             )}
           </>
@@ -133,10 +136,10 @@ export function StorageSection() {
       >
         <span className="flex gap-2">
           <button type="button" onClick={changeFolder} className={BUTTON}>
-            Changer…
+            {t("settings.storage.change")}
           </button>
           <button type="button" onClick={openFolder} className={BUTTON}>
-            Ouvrir
+            {t("settings.storage.open")}
           </button>
         </span>
       </SettingRow>
@@ -144,20 +147,20 @@ export function StorageSection() {
       <section aria-labelledby="game-names-title">
         <div className="border-b border-line px-5 pt-5 pb-3">
           <h3 id="game-names-title" className="text-[15px] font-semibold">
-            Noms des jeux
+            {t("settings.storage.gameNames")}
           </h3>
-          <p className="mt-0.5 text-[13px] text-ink-2">Les prochains clips de chaque jeu vont dans un sous-dossier à ce nom.</p>
+          <p className="mt-0.5 text-[13px] text-ink-2">{t("settings.storage.gameNamesHelp")}</p>
         </div>
         {games.length === 0 ? (
-          <p className="border-b border-line px-5 py-3 text-[13px] text-ink-2">Aucun jeu pour l'instant.</p>
+          <p className="border-b border-line px-5 py-3 text-[13px] text-ink-2">{t("settings.storage.noGames")}</p>
         ) : (
           <ul>
             <li
               aria-hidden="true"
               className="grid grid-cols-[minmax(0,16rem)_minmax(0,1fr)] gap-x-6 border-b border-line px-5 py-2"
             >
-              <span className="label">Dossier</span>
-              <span className="label">Exécutable</span>
+              <span className="label">{t("settings.storage.folderColumn")}</span>
+              <span className="label">{t("settings.storage.exeColumn")}</span>
             </li>
             {games.map(([exe, name]) => (
               <GameNameRow
