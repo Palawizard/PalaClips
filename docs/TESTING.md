@@ -197,6 +197,10 @@ Tout est arrêté et les clips supprimés à la fin.
   mémoire (pas d'autre gros consommateur, RAM libre > 4 Go). Relever aussi la mémoire engagée
   (`PrivateUsage`) pour information dans le rapport.
 - CPU : moyenne sur 5 min (Analyseur de performances ou `typeperf`).
+- Charge de l'app (PERF-03, 🤖, ~2 min 30, fenêtre sur un écran secondaire, focus rendu à la
+  fenêtre de Palawi) : après `npx tauri build --no-bundle` (dans `app`), `pwsh
+  scripts\app-load.ps1` → CPU (app + WebView2) et GPU par moteur, fenêtre ouverte sans focus
+  puis fenêtre fermée, replay armé ; journal `target\journals\app-load-*.txt`.
 - Impact en jeu (PERF-03) : Fortnite en Créatif, scène fixe, **GPU-bound** (limite d'images
   levée ou scène lourde, GPU ~99 %), puis dans un PowerShell admin
   `pwsh -File scripts\fps-impact.ps1` : PresentMon 2.4.1 (CapFrameX), un essai de mise en
