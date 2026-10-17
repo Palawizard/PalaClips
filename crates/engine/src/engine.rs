@@ -23,8 +23,11 @@ use crate::encode::{
 };
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Localized, Severity, TrackDescriptor};
+use crate::library::ensure_free_space;
 use crate::mux::{Mp4Writer, MuxStream};
-use crate::record::{LivePacket, RecordLayout, RecordTarget, Recorder};
+use crate::record::{
+    Journal, LivePacket, RecordLayout, RecordTarget, Recorder, recover_interrupted,
+};
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
     estimate_buffer_bytes, forget_saved, plan_clip, share_packet,
@@ -109,6 +112,14 @@ impl Engine {
         let (commands, command_rx) = bounded(COMMAND_QUEUE);
         let (event_tx, events) = bounded(EVENT_QUEUE);
         let own_commands = commands.clone();
+        if let Ok(journal) = Journal::open_default()
+            && !journal.entries().is_empty()
+        {
+            let recovered = event_tx.clone();
+            std::thread::Builder::new()
+                .name("palaclips-recover".into())
+                .spawn(move || recover_interrupted(&journal, &recovered))?;
+        }
         let thread = std::thread::Builder::new()
             .name("palaclips-engine".into())
             .spawn(move || {
@@ -440,7 +451,8 @@ impl Core {
         let root = match &self.config.storage.clips_dir {
             Some(dir) => Ok(dir.clone()),
             None => paths::default_clips_dir(),
-        };
+        }
+        .and_then(|root| ensure_free_space(&root, 0).map(|_| root));
         let duration = (self.config.record.include_replay && replay_was_armed)
             .then(|| Hns(i64::from(self.config.replay.duration_secs) * HNS_PER_SECOND));
         let result = match (self.pipeline.as_mut(), root) {
@@ -1043,6 +1055,8 @@ impl Pipeline {
             Some(dir) => dir.clone(),
             None => paths::default_clips_dir()?,
         };
+        let buffered: u64 = self.rings.iter().map(|ring| ring.bytes() as u64).sum();
+        ensure_free_space(&root, buffered)?;
         let path = paths::replay_clip_path(&root, game, &paths::local_timestamp());
         let job = self.clip_job(requested, path, config)?;
         let events = events.clone();

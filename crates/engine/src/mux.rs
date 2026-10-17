@@ -17,10 +17,13 @@ pub struct MuxStream {
 }
 
 const FRAGMENT_MICROSECONDS: &std::ffi::CStr = c"1000000";
+const NO_SPACE_LEFT: i32 = -28;
 
 pub struct Mp4Writer {
     output: AVFormatContextOutput,
     time_bases: Vec<(AVRational, AVRational)>,
+    #[cfg(test)]
+    budget: Option<u64>,
 }
 
 impl std::fmt::Debug for Mp4Writer {
@@ -69,7 +72,32 @@ impl Mp4Writer {
             .zip(output.streams().iter())
             .map(|(spec, stream)| (spec.time_base, stream.time_base))
             .collect();
-        Ok(Self { output, time_bases })
+        Ok(Self {
+            output,
+            time_bases,
+            #[cfg(test)]
+            budget: None,
+        })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fail_after(&mut self, bytes: u64) {
+        self.budget = Some(bytes);
+    }
+
+    #[cfg(test)]
+    fn spend(&mut self, bytes: u64) -> Result<()> {
+        match self.budget.as_mut() {
+            Some(left) if *left < bytes => {
+                *left = 0;
+                Err(EngineError::DiskFull)
+            }
+            Some(left) => {
+                *left -= bytes;
+                Ok(())
+            }
+            None => Ok(()),
+        }
     }
 
     pub fn write(&mut self, stream: usize, mut packet: AVPacket) -> Result<()> {
@@ -80,6 +108,8 @@ impl Mp4Writer {
         if packet.duration == 0 {
             packet.set_duration(1);
         }
+        #[cfg(test)]
+        self.spend(crate::replay::packet_data(&packet).len() as u64)?;
         packet.rescale_ts(packet_time_base, stream_time_base);
         packet.set_stream_index(stream as i32);
         self.output
@@ -88,11 +118,16 @@ impl Mp4Writer {
     }
 
     pub fn finish(mut self) -> Result<()> {
+        #[cfg(test)]
+        self.spend(1)?;
         self.output.write_trailer().map_err(mux_error)
     }
 }
 
 fn mux_error(error: rsmpeg::error::RsmpegError) -> EngineError {
+    if error.raw_error() == Some(NO_SPACE_LEFT) {
+        return EngineError::DiskFull;
+    }
     EngineError::Mux(error.to_string())
 }
 
