@@ -26,12 +26,20 @@ pub fn estimate_buffer_bytes(video_kbps: u32, audio_tracks: usize, window: Hns) 
     bytes * (100 + BUFFER_OVERHEAD_PERCENT) / 100
 }
 
+pub const MIN_CLIP: Hns = Hns::from_millis(3_000);
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClipPlan {
     pub start: Hns,
     pub end: Hns,
     pub video_from: usize,
     pub audio_from: Vec<usize>,
+}
+
+impl ClipPlan {
+    pub fn worth_saving(&self) -> bool {
+        self.end - self.start >= MIN_CLIP
+    }
 }
 
 pub fn plan_clip<P: TimedPacket>(
@@ -230,6 +238,34 @@ mod tests {
         for (ring, from) in audio.iter().zip(&second.audio_from) {
             assert!(ring.get(*from).expect("audio").pts() <= second.start);
         }
+    }
+
+    #[test]
+    fn a_save_one_second_after_another_is_too_short_to_keep() {
+        let duration = Hns::from_millis(60_000);
+        let (mut video, mut audio) = rings(90, duration);
+        let first = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("first");
+        forget_saved(&mut video, &mut audio, first.end);
+        let mut pts = video.newest().expect("video");
+        let mut next_audio = audio[0].newest().expect("audio") + AAC_PACKET;
+        for frame in 1..=60 {
+            pts = pts + FRAME;
+            while next_audio <= pts {
+                for ring in &mut audio {
+                    ring.push(Pkt {
+                        pts: next_audio,
+                        key: true,
+                    });
+                }
+                next_audio = next_audio + AAC_PACKET;
+            }
+            video.push(Pkt {
+                pts,
+                key: frame % 60 == 0,
+            });
+        }
+        let second = plan_clip(&video, &audio, duration, FRAME, AAC_PACKET).expect("second");
+        assert!(!second.worth_saving(), "{:?}", second.end - second.start);
     }
 
     #[test]
