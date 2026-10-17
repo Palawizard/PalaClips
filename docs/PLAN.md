@@ -124,6 +124,10 @@ Critères :
 ## Phase 6 — Enregistrement, galerie, lecteur (REC-01–06 ; STO-02, 04, 05 ; GAL-01–08)
 
 - [ ] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
+- [ ] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
+      fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi).
+- [ ] Quota (STO-04) appliqué : jamais un favori supprimé ; ce qui sera supprimé (les plus
+      anciens) dit clairement, confirmation demandée la première fois.
 - [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota.
 - [ ] Protocole `palaclips://` avec `Range`.
 - [ ] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
