@@ -82,7 +82,7 @@ function TrackRow({
           <span className="absolute inset-y-0 left-0 w-[2px] -translate-x-full" style={{ background: color }} />
         </span>
       </span>
-      <span role="cell" ref={peak} className="score text-right text-[15px] font-medium text-ink-2">
+      <span role="cell" ref={peak} className="score text-right text-[19px] leading-none font-semibold text-ink">
         −∞
       </span>
       <span role="cell" className={`truncate text-[13px] ${track.state ? STATE_TONE[track.state] : "text-ink-3"}`}>

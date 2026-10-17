@@ -7,11 +7,11 @@ import type { Engine, ReplayPhase } from "../lib/useEngine.ts";
 const SAVE_SHORTCUT = "Alt+F10";
 
 const PHASE_LABEL: Record<ReplayPhase, string> = {
-  armed: "Armé",
-  idle: "Désarmé",
-  arming: "Armement…",
-  disarming: "Arrêt…",
-  error: "Arrêté sur erreur",
+  armed: "Replay armé",
+  idle: "Replay désarmé",
+  arming: "Armement du replay…",
+  disarming: "Arrêt du replay…",
+  error: "Replay arrêté sur erreur",
 };
 
 function Cell({ title, children, wide }: { title: string; children: ReactNode; wide?: boolean }) {
@@ -20,10 +20,14 @@ function Cell({ title, children, wide }: { title: string; children: ReactNode; w
       aria-label={title}
       className={`flex min-w-0 flex-col gap-2 px-5 py-4 ${wide ? "flex-[2.2]" : "flex-1"}`}
     >
-      <h2 className="label">{title}</h2>
       {children}
     </section>
   );
+}
+
+function shortPath(path: string): string {
+  const parts = path.split("\\").filter(Boolean);
+  return parts.length > 3 ? [parts[0], "…", ...parts.slice(-2)].join("\\") : path;
 }
 
 function targetLabel(target: CaptureTarget | undefined): string {
@@ -59,17 +63,17 @@ export function StatusBanner({ engine }: { engine: Engine }) {
       <Cell title="Replay" wide>
         <div className="flex items-center gap-2.5">
           <ReplayWitness phase={phase} />
-          <span className="text-[15px] font-semibold" role="status">
+          <h2 className="text-[15px] font-semibold" role="status">
             {PHASE_LABEL[phase]}
-          </span>
+          </h2>
         </div>
         <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
           <p className="flex items-baseline gap-2">
-            <span className="sr-only">En mémoire :</span>
             <span className={`score text-[40px] leading-none font-semibold ${armed ? "text-ink" : "text-ink-3"}`}>
               {clock(buffered)}
             </span>
             <span className="score text-[20px] leading-none font-medium text-ink-3">/ {clock(total)}</span>
+            <span className="text-ink-2">en mémoire</span>
           </p>
           <p className="pb-1 text-ink-2">
             <span className="score text-[17px] font-medium text-ink">{bytes(status?.buffer_bytes ?? 0)}</span> en RAM
@@ -98,7 +102,7 @@ export function StatusBanner({ engine }: { engine: Engine }) {
       </Cell>
 
       <Cell title="Enregistrement">
-        <p className="text-[15px] font-semibold text-ink-2">Arrêté</p>
+        <h2 className="text-[15px] font-semibold text-ink-2">Enregistrement arrêté</h2>
         <p className="score text-[28px] leading-none font-semibold text-ink-3">00:00</p>
         <button
           type="button"
@@ -111,12 +115,12 @@ export function StatusBanner({ engine }: { engine: Engine }) {
       </Cell>
 
       <Cell title="Source">
-        <p className="flex min-w-0 items-center gap-2 text-[15px] font-semibold">
+        <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-semibold">
           <Monitor size={16} className="shrink-0 text-ink-3" aria-hidden />
           <span className="truncate" title={capture?.source ?? targetLabel(config?.capture)}>
             {capture?.source ?? targetLabel(config?.capture)}
           </span>
-        </p>
+        </h2>
         <p className="score truncate text-[17px] font-medium whitespace-nowrap text-ink-2">
           {capture ? `${capture.width}×${capture.height} · ${capture.fps} i/s` : "Capture à l'arrêt"}
         </p>
@@ -124,13 +128,13 @@ export function StatusBanner({ engine }: { engine: Engine }) {
       </Cell>
 
       <Cell title="Disque">
-        <p className="flex items-center gap-2 text-[15px] font-semibold">
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           <HardDrive size={16} className="shrink-0 text-ink-3" aria-hidden />
           <span className="score text-[20px] leading-none">{storage ? bytes(storage.free_bytes) : "—"}</span>
           <span className="font-normal text-ink-2">libres</span>
-        </p>
+        </h2>
         <p className="truncate text-[13px] text-ink-3" title={storage?.clips_dir}>
-          {storage?.clips_dir ?? ""}
+          {storage ? shortPath(storage.clips_dir) : ""}
         </p>
       </Cell>
     </header>
