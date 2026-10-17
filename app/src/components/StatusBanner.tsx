@@ -16,7 +16,9 @@ function Cell({ title, children, wide }: { title: string; children: ReactNode; w
   return (
     <section
       aria-label={title}
-      className={`flex min-w-0 flex-col gap-2 px-5 py-4 ${wide ? "flex-[2.2]" : "flex-1"}`}
+      className={`flex min-w-0 flex-col gap-2 px-5 py-4 ${
+        wide ? "flex-[2.2] max-[1000px]:basis-full" : "flex-1 max-[1000px]:basis-[220px]"
+      }`}
     >
       {children}
     </section>
@@ -61,8 +63,8 @@ export function StatusBanner({ engine }: { engine: Engine }) {
       <Cell title="Replay" wide>
         <div className="flex items-center gap-2.5">
           <ReplayWitness phase={phase} />
-          <h2 className="text-[15px] font-semibold" role="status">
-            {PHASE_LABEL[phase]}
+          <h2 className="text-[15px] font-semibold">
+            <span role="status">{PHASE_LABEL[phase]}</span>
           </h2>
         </div>
         <div className="flex flex-wrap items-end gap-x-6 gap-y-2">

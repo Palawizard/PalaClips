@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type EngineConfig,
   type Feedback,
@@ -29,6 +29,18 @@ export function GeneralSection() {
   const [theme, setThemeState] = useState<Theme>("system");
   const [error, setError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const resetTrigger = useRef<HTMLButtonElement>(null);
+  const resetCancel = useRef<HTMLButtonElement>(null);
+  const resetOpened = useRef(false);
+
+  useEffect(() => {
+    if (confirmReset) {
+      resetOpened.current = true;
+      resetCancel.current?.focus();
+    } else if (resetOpened.current) {
+      resetTrigger.current?.focus();
+    }
+  }, [confirmReset]);
 
   const load = () => {
     getAutostart().then(setAutostartState, (failure) => setError(String(failure)));
@@ -149,6 +161,7 @@ export function GeneralSection() {
               Réinitialiser
             </button>
             <button
+              ref={resetCancel}
               type="button"
               onClick={() => setConfirmReset(false)}
               className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
@@ -158,6 +171,7 @@ export function GeneralSection() {
           </span>
         ) : (
           <button
+            ref={resetTrigger}
             type="button"
             onClick={() => setConfirmReset(true)}
             className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
