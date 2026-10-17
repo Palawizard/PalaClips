@@ -179,7 +179,7 @@ Under `prefers-color-scheme: light` every role is remapped, never re-chosen: gro
 
 **The Fixed Jersey Rule.** A track's colour is assigned once (Mix ink, Micro amber, Jeu green, apps track-1..11 in config order, unknown titles hashed) and never reassigned or reused for anything else. The same colour follows the track to every screen: roster, clip cards, audio sources, player, toast.
 
-**The Ink Is The Accent Rule.** No interface accent colour exists. The primary action is an ink fill; everything else is tonal.
+**The Ink Is The Accent Rule.** No interface accent colour exists. The primary action is an ink fill; everything else is tonal. One exception: a switch in the on state is an ink fill, because a tonal fill would fall under the 3:1 non-text contrast a control state needs. Selected segments stay tonal (surface-raised, ink text, semibold).
 
 ## Typography
 

@@ -4,8 +4,6 @@ import type { CaptureTarget } from "../lib/ipc.ts";
 import { bytes, clock } from "../lib/format.ts";
 import type { Engine, ReplayPhase } from "../lib/useEngine.ts";
 
-const SAVE_SHORTCUT = "Alt+F10";
-
 const PHASE_LABEL: Record<ReplayPhase, string> = {
   armed: "Replay armé",
   idle: "Replay désarmé",
@@ -88,7 +86,9 @@ export function StatusBanner({ engine }: { engine: Engine }) {
           >
             <Save size={16} strokeWidth={2.2} aria-hidden />
             Sauvegarder
-            <span className="score text-[13px] font-medium opacity-70">{SAVE_SHORTCUT}</span>
+            {engine.saveKeys && (
+              <span className="score text-[13px] font-medium opacity-70">{engine.saveKeys}</span>
+            )}
           </button>
           <button
             type="button"

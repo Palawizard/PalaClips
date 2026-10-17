@@ -19,8 +19,46 @@ export function setConfig(config: EngineConfig): Promise<void> {
   return invoke("set_config", { config });
 }
 
-export function resetConfig(): Promise<EngineConfig> {
-  return invoke<EngineConfig>("reset_config");
+export function resetSettings(): Promise<void> {
+  return invoke("reset_settings");
+}
+
+export type Theme = "system" | "dark" | "light";
+
+export function getTheme(): Promise<Theme> {
+  return invoke<Theme>("get_theme");
+}
+
+export function setTheme(theme: Theme): Promise<void> {
+  return invoke("set_theme", { theme });
+}
+
+export type HotkeyAction = "save_replay" | "toggle_replay";
+
+export interface Hotkeys {
+  save_replay: string | null;
+  toggle_replay: string | null;
+}
+
+export interface HotkeysView {
+  hotkeys: Hotkeys;
+  unavailable: HotkeyAction[];
+}
+
+export function getHotkeys(): Promise<HotkeysView> {
+  return invoke<HotkeysView>("get_hotkeys");
+}
+
+export function setHotkeys(hotkeys: Hotkeys): Promise<void> {
+  return invoke("set_hotkeys", { hotkeys });
+}
+
+export function suspendHotkeys(): Promise<void> {
+  return invoke("suspend_hotkeys");
+}
+
+export function resumeHotkeys(): Promise<void> {
+  return invoke("resume_hotkeys");
 }
 
 export function getAutostart(): Promise<boolean> {
