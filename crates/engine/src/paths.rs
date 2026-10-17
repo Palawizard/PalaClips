@@ -72,6 +72,17 @@ pub fn replay_clip_path(root: &Path, game: &str, stamp: &str) -> PathBuf {
     path
 }
 
+pub fn recording_path(root: &Path, game: &str, stamp: &str) -> PathBuf {
+    let dir = root.join(game);
+    let mut path = dir.join(format!("{game}_{stamp}.mp4"));
+    let mut index = 2;
+    while path.exists() {
+        path = dir.join(format!("{game}_{stamp}_{index}.mp4"));
+        index += 1;
+    }
+    path
+}
+
 pub fn local_timestamp() -> String {
     // SAFETY: GetLocalTime only returns the current local time.
     let now = unsafe { GetLocalTime() };

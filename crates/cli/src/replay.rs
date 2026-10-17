@@ -5,7 +5,9 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use crossbeam_channel::{Receiver, select};
 use palaclips_engine::EngineConfig;
-use palaclips_engine::config::{AppTrack, AudioSettings, ReplaySettings, ReplayStorage};
+use palaclips_engine::config::{
+    AppTrack, AudioSettings, RecordSettings, RecordSplit, ReplaySettings, ReplayStorage,
+};
 use palaclips_engine::engine::{Engine, LevelRate};
 use palaclips_engine::events::{EngineEvent, EngineState};
 use palaclips_engine::paths::private_bytes;
@@ -44,6 +46,12 @@ pub struct ReplayArgs {
         help = "Demande les niveaux audio (20 i/s) et affiche leur cadence"
     )]
     pub levels: bool,
+    #[arg(long, help = "Enregistrement : commence par le replay en mémoire")]
+    pub record_include_replay: bool,
+    #[arg(long, help = "Enregistrement : nouveau fichier toutes les N minutes")]
+    pub record_split_minutes: Option<u32>,
+    #[arg(long, help = "Enregistrement : nouveau fichier tous les N Mo")]
+    pub record_split_mb: Option<u32>,
 }
 
 impl ReplayArgs {
@@ -84,6 +92,14 @@ impl ReplayArgs {
                     ReplayStorage::Ram
                 },
             },
+            record: RecordSettings {
+                include_replay: self.record_include_replay,
+                split: match (self.record_split_minutes, self.record_split_mb) {
+                    (Some(minutes), _) => RecordSplit::Duration { minutes },
+                    (None, Some(megabytes)) => RecordSplit::Size { megabytes },
+                    (None, None) => RecordSplit::Never,
+                },
+            },
             ..EngineConfig::default()
         };
         config.storage.clips_dir = self.clips_dir.clone();
@@ -105,7 +121,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     }
     let started = Instant::now();
     println!(
-        "replay de {} s ({}) : Entrée = sauvegarder, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",
+        "replay de {} s ({}) : Entrée = sauvegarder, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",
         args.duration,
         if args.disk { "disque" } else { "RAM" }
     );
@@ -117,6 +133,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let mut level_events = 0u32;
     let mut last_levels = Vec::new();
     let mut quitting = false;
+    let mut recording = false;
     loop {
         if quitting && finished >= requested {
             break;
@@ -132,6 +149,15 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     config.audio.auto_game_track = !config.audio.auto_game_track;
                     println!("sources changées : piste Jeu {}", if config.audio.auto_game_track { "ajoutée" } else { "retirée" });
                     handle.configure(config.clone())?;
+                }
+                Ok(line) if line.trim() == "e" => {
+                    if recording {
+                        requested += 1;
+                        handle.stop_recording()?;
+                    } else {
+                        handle.start_recording()?;
+                    }
+                    recording = !recording;
                 }
                 Ok(line) if line.trim() != "q" => {
                     requested += 1;
@@ -150,6 +176,9 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                             started.elapsed().as_secs(),
                             private_bytes().unwrap_or_default() as f64 / 1e6
                         );
+                    }
+                    EngineEvent::RecordingStats { elapsed_secs, bytes } => {
+                        println!("enregistrement : {elapsed_secs:.0} s, {:.1} Mo", bytes as f64 / 1e6);
                     }
                     EngineEvent::ReplayStats { buffered_secs, bytes } => {
                         stats_seen += 1;
