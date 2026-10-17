@@ -292,6 +292,16 @@
   — [OBS, même article](https://obsproject.com/blog/obs-studio-hybrid-mp4)
 - DaVinci Resolve gère mal le framerate variable : sortir en CFR. — [forum Blackmagic](https://forum.blackmagicdesign.com/viewtopic.php?p=474782)
 
+### Aperçus en direct du sélecteur de capture (mesuré le 2026-10-17)
+
+`palaclips-cli preview --target <cible> --seconds <n> --out <dossier>` : une session WGC par
+cible avec `MinimumUpdateInterval` à 900 ms, copie de la trame, réduction NV12 par le
+processeur vidéo D3D11 (le même que la capture), lecture d'une petite surface (≤ 384×216)
+puis JPEG : ~1 image/s, 10–13 Ko par image, couleurs correctes. Dans l'app, 3 écrans +
+6 fenêtres en aperçu coûtent ~7 % d'un cœur (0,35 % de la machine, i5 13e gen) et
+retombent à 0 % en quittant la section. Les icônes viennent de `SHDefExtractIconW` (48 px),
+encodées en PNG par FFmpeg (encodeur présent dans la build LGPL).
+
 ### Taille de sortie acceptée par NVENC (mesuré le 2026-10-17, RTX 4070 Super)
 
 `palaclips-cli try-output --codec <c> --width <l> --height <h> [--fps <n>] [--skip-limit]`

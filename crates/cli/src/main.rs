@@ -63,6 +63,16 @@ enum Command {
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
     #[cfg(windows)]
+    #[command(about = "Capture des aperçus (JPEG ~1/s) et l'icône d'une cible dans un dossier")]
+    Preview {
+        #[arg(long, value_parser = parse_target, default_value = "primary")]
+        target: CaptureTarget,
+        #[arg(long, default_value_t = 3)]
+        seconds: u64,
+        #[arg(long)]
+        out: std::path::PathBuf,
+    },
+    #[cfg(windows)]
     #[command(about = "Essaie d'ouvrir l'encodeur matériel à une taille et un fps donnés")]
     TryOutput {
         #[arg(long, value_parser = parse_codec, default_value = "h264")]
@@ -325,6 +335,12 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
+        Command::Preview {
+            target,
+            seconds,
+            out,
+        } => preview(&target, seconds, &out)?,
+        #[cfg(windows)]
         Command::TryOutput {
             codec,
             width,
@@ -525,10 +541,63 @@ fn list_targets(json: bool) -> Result<()> {
                 title,
                 width,
                 height,
+                minimized,
                 ..
-            } => println!("window:{exe_name:<30} {width}x{height}  {title}"),
+            } => {
+                let minimized = if *minimized { " (réduite)" } else { "" };
+                println!("window:{exe_name:<30} {width}x{height}  {title}{minimized}")
+            }
         }
     }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn preview(target: &CaptureTarget, seconds: u64, out: &std::path::Path) -> Result<()> {
+    use palaclips_engine::capture::{PreviewCapture, TargetInfo, app_icon, list_targets};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    std::fs::create_dir_all(out)?;
+    if let CaptureTarget::Window { exe_name, .. } = target {
+        let process_id = list_targets()?.into_iter().find_map(|info| match info {
+            TargetInfo::Window {
+                exe_name: name,
+                process_id,
+                ..
+            } if name.eq_ignore_ascii_case(exe_name) => Some(process_id),
+            _ => None,
+        });
+        match process_id.and_then(app_icon) {
+            Some(png) => {
+                std::fs::write(out.join("icon.png"), &png)?;
+                println!("icône : {} octets", png.len());
+            }
+            None => println!("icône : aucune"),
+        }
+    }
+    let count = std::sync::Arc::new(AtomicUsize::new(0));
+    let written = count.clone();
+    let dir = out.to_path_buf();
+    let started = std::time::Instant::now();
+    let capture = PreviewCapture::start(
+        target,
+        Box::new(move |jpeg| {
+            let index = written.fetch_add(1, Ordering::Relaxed);
+            let path = dir.join(format!("preview-{index}.jpg"));
+            println!(
+                "{:>5} ms  {} octets  {}",
+                started.elapsed().as_millis(),
+                jpeg.len(),
+                path.display()
+            );
+            if let Err(error) = std::fs::write(&path, jpeg) {
+                eprintln!("écriture impossible : {error}");
+            }
+        }),
+    )?;
+    std::thread::sleep(std::time::Duration::from_secs(seconds));
+    drop(capture);
+    println!("{} aperçus en {seconds} s", count.load(Ordering::Relaxed));
     Ok(())
 }
 
