@@ -17,12 +17,12 @@ use crate::encode::{hardware_video_encoders, pick_encoder, write_thumbnail};
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, EngineState, Severity};
 use crate::mux::{Mp4Writer, MuxStream};
-use crate::paths;
 use crate::replay::{
     PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window, plan_clip,
     share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
+use crate::{games, paths};
 
 const COMMAND_QUEUE: usize = 16;
 const EVENT_QUEUE: usize = 256;
@@ -295,8 +295,10 @@ impl Core {
 
     fn save_replay(&mut self) {
         let requested = Hns::now();
+        let exe_name = self.pipeline.as_ref().and_then(Pipeline::game_exe);
+        let game = self.game_name(exe_name.as_deref());
         let result = match self.pipeline.as_mut() {
-            Some(pipeline) => pipeline.save(requested, &self.config, &self.events),
+            Some(pipeline) => pipeline.save(requested, &game, &self.config, &self.events),
             None => Err(EngineError::NothingToSave("le replay n'est pas armé")),
         };
         if let Err(error) = result {
@@ -307,6 +309,29 @@ impl Core {
                 format!("Clip non sauvegardé : {error}."),
             );
         }
+    }
+
+    fn game_name(&mut self, exe_name: Option<&str>) -> String {
+        let Some(exe_name) = exe_name else {
+            return paths::game_label(None);
+        };
+        let key = exe_name.to_lowercase();
+        if let Some(name) = self.config.storage.game_names.get(&key) {
+            return name.clone();
+        }
+        let resolved = games::resolve(exe_name);
+        if resolved.from_metadata_lookup {
+            tracing::info!(exe = %exe_name, name = %resolved.name, "nom de jeu choisi");
+            self.config
+                .storage
+                .game_names
+                .insert(key.clone(), resolved.name.clone());
+            self.emit(EngineEvent::GameNamed {
+                exe_name: key,
+                name: resolved.name.clone(),
+            });
+        }
+        resolved.name
     }
 
     fn configure(&mut self, config: EngineConfig) {
@@ -562,9 +587,14 @@ impl Pipeline {
         }
     }
 
+    fn game_exe(&self) -> Option<String> {
+        self.game.lock().exe_name().map(str::to_owned)
+    }
+
     fn save(
         &mut self,
         requested: Hns,
+        game: &str,
         config: &EngineConfig,
         events: &Sender<EngineEvent>,
     ) -> Result<()> {
@@ -595,8 +625,7 @@ impl Pipeline {
             Some(dir) => dir.clone(),
             None => paths::default_clips_dir()?,
         };
-        let game = paths::game_label(self.game.lock().exe_name());
-        let path = paths::replay_clip_path(&root, &game, &paths::local_timestamp());
+        let path = paths::replay_clip_path(&root, game, &paths::local_timestamp());
         let shifts: Vec<i64> = self
             .time_bases
             .iter()
