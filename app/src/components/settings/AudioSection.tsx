@@ -62,6 +62,11 @@ function rowsOf(audio: Audio): Row[] {
   ];
 }
 
+function rank(order: string[], exe: string): number {
+  const index = order.indexOf(exe);
+  return index < 0 ? order.length : index;
+}
+
 function exeStem(exe: string): string {
   return exe.replace(/\.exe$/i, "");
 }
@@ -224,6 +229,8 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const peaks = useRef(new Map<string, number>());
   const meters = useRef(new Map<string, HTMLSpanElement>());
   const membership = useRef("");
+  const candidateOrder = useRef<string[]>([]);
+  const [focusInList, setFocusInList] = useState(false);
   const [query, setQuery] = useState("");
   const [calibrating, setCalibrating] = useState(false);
   const [pickError, setPickError] = useState<string | null>(null);
@@ -440,7 +447,12 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
     .filter((candidate) => !needle || candidate.name.toLowerCase().includes(needle) || candidate.exe.toLowerCase().includes(needle))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
   const sounding = available.filter((candidate) => now - (lastSound.current.get(candidate.exe.toLowerCase()) ?? 0) < RECENT_SOUND_MS);
-  const ordered = [...sounding, ...available.filter((candidate) => !sounding.includes(candidate))];
+  const fresh = [...sounding, ...available.filter((candidate) => !sounding.includes(candidate))];
+  const previous = candidateOrder.current;
+  const ordered = focusInList
+    ? [...fresh].sort((a, b) => rank(previous, a.exe) - rank(previous, b.exe))
+    : fresh;
+  candidateOrder.current = ordered.map((candidate) => candidate.exe);
 
   const add = (exe: string, label: string) => {
     setAudio({ app_tracks: [...audio.app_tracks, { exe_name: exe, label, enabled: true, sync_offset_ms: 0 }] });
@@ -567,7 +579,17 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
             {pickError}
           </p>
         )}
-        {ordered.length > 0 && <ul className="border-t border-line">{ordered.map(candidateRow)}</ul>}
+        {ordered.length > 0 && (
+          <ul
+            className="border-t border-line"
+            onFocus={() => setFocusInList(true)}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusInList(false);
+            }}
+          >
+            {ordered.map(candidateRow)}
+          </ul>
+        )}
         {available.length === 0 && (
           <p className="border-t border-line px-5 py-3 text-[13px] text-ink-2">
             {needle ? "Aucune appli ne correspond." : "Aucune autre appli ouverte."}
