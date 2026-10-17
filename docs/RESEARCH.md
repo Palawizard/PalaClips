@@ -306,6 +306,10 @@ non mesuré au casque.
   −105 ms ; Jeu et applis 0 ms.
 - La première version proposait −138 et −33 ms (alignement sur zéro) : faux, rien n'a été
   appliqué.
+- Depuis l'app (config isolée, même machine, quelques minutes plus tard) : Mix +148 ms, Jeu
+  (référence) +45 ms → Mix −103 ms, Jeu et applis 0 ms ; 14 s de bout en bout. Le tampon de
+  l'émetteur varie (33 → 45 ms) mais l'excédent de Voicemeeter reste ~103–105 ms : la
+  référence absorbe bien ce qui n'est pas la chaîne.
 
 ### Aperçus en direct du sélecteur de capture (mesuré le 2026-10-17)
 
