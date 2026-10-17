@@ -91,6 +91,9 @@ pub enum EngineError {
     #[error("un enregistrement est en cours")]
     RecordingRunning,
 
+    #[error("le disque des clips est plein")]
+    DiskFull,
+
     #[error("le calibrage s'est arrêté")]
     CalibrationStopped,
 
@@ -162,6 +165,7 @@ impl EngineError {
             Self::Io(error) => Localized::new("disk_error").with("detail", error.to_string()),
             Self::CalibrationBusy => Localized::new("calibration_busy"),
             Self::RecordingRunning => Localized::new("recording_running"),
+            Self::DiskFull => Localized::new("disk_full"),
             Self::CalibrationStopped => Localized::new("calibration_stopped"),
             Self::Stopped => Localized::new("engine_stopped"),
             Self::ReplayNotArmed => Localized::new("replay_not_armed"),

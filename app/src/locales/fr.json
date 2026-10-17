@@ -383,6 +383,9 @@
     "action_toggle_replay": "Armer ou désarmer le replay",
     "recording_failed": "Enregistrement arrêté : {reason}.",
     "recording_running": "un enregistrement est en cours",
-    "action_toggle_recording": "Démarrer ou arrêter l'enregistrement"
+    "action_toggle_recording": "Démarrer ou arrêter l'enregistrement",
+    "disk_full": "le disque des clips est plein",
+    "disk_almost_full": "Disque des clips presque plein : {free_mb} Mo libres. L'enregistrement s'arrête sous 300 Mo.",
+    "recording_recovered": "Enregistrement interrompu récupéré : {name}."
   }
 }
