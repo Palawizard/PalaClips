@@ -2,6 +2,7 @@ import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
 import { GeneralSection } from "./GeneralSection.tsx";
 import { HotkeysSection } from "./HotkeysSection.tsx";
 import { ReplaySection } from "./ReplaySection.tsx";
+import { StorageSection } from "./StorageSection.tsx";
 
 type SectionId = "capture" | "audio" | "replay" | "hotkeys" | "storage" | "general";
 
@@ -202,7 +203,8 @@ export function Settings() {
         {section === "hotkeys" && <HotkeysSection />}
         {section === "general" && <GeneralSection />}
         {section === "replay" && <ReplaySection />}
-        {(section === "capture" || section === "audio" || section === "storage") && <Pending title={label} />}
+        {section === "storage" && <StorageSection />}
+        {(section === "capture" || section === "audio") && <Pending title={label} />}
       </section>
     </div>
   );

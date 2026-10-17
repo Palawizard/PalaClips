@@ -167,6 +167,48 @@ pub async fn storage_status(slot: State<'_, EngineSlot>) -> Result<StorageStatus
 }
 
 #[tauri::command]
+pub async fn pick_clips_dir(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+) -> Result<Option<String>, String> {
+    use tauri::Manager;
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app
+        .dialog()
+        .file()
+        .set_title("Dossier des clips")
+        .set_can_create_directories(true);
+    if let Ok(root) = slot.clips_root() {
+        dialog = dialog.set_directory(root);
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        dialog = dialog.set_parent(&window);
+    }
+    dialog
+        .blocking_pick_folder()
+        .map(|picked| {
+            picked
+                .into_path()
+                .map(|path| path.to_string_lossy().into_owned())
+                .map_err(|error| format!("Dossier illisible : {error}."))
+        })
+        .transpose()
+}
+
+#[tauri::command]
+pub fn open_clips_dir(slot: State<'_, EngineSlot>) -> Result<(), String> {
+    let root = slot.clips_root().map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(&root)
+        .map_err(|error| format!("Dossier des clips impossible à créer : {error}."))?;
+    std::process::Command::new("explorer")
+        .arg(&root)
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| format!("Explorateur impossible à ouvrir : {error}."))
+}
+
+#[tauri::command]
 pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<HardwareEncoder>, String> {
     cached_encoders(&slot)
 }

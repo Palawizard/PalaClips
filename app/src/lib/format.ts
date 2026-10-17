@@ -11,6 +11,7 @@ export function clock(totalSeconds: number): string {
 }
 
 export function bytes(value: number): string {
+  if (value >= 1e12) return `${decimal.format(value / 1e12)} To`;
   if (value >= 1e9) return `${decimal.format(value / 1e9)} Go`;
   if (value >= 1e6) return `${whole.format(value / 1e6)} Mo`;
   return `${whole.format(value / 1e3)} Ko`;
