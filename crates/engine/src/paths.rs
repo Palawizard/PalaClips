@@ -21,10 +21,14 @@ pub fn default_clips_dir() -> Result<PathBuf> {
     Ok(known_folder(&FOLDERID_Videos)?.join(APP_DIR))
 }
 
+pub const CONFIG_DIR_ENV: &str = "PALACLIPS_CONFIG_DIR";
+
 pub fn settings_path() -> Result<PathBuf> {
-    Ok(known_folder(&FOLDERID_RoamingAppData)?
-        .join(APP_DIR)
-        .join("settings.json"))
+    let dir = match std::env::var_os(CONFIG_DIR_ENV) {
+        Some(dir) if !dir.is_empty() => PathBuf::from(dir),
+        _ => known_folder(&FOLDERID_RoamingAppData)?.join(APP_DIR),
+    };
+    Ok(dir.join("settings.json"))
 }
 
 pub fn replay_spool_dir() -> Result<PathBuf> {

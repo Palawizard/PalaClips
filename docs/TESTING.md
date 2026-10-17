@@ -165,6 +165,9 @@ Tout est arrêté et les clips supprimés à la fin.
   piste est séparée, nommée et alignée sur la vidéo.
 
 ## T5 — Application (phase 5)
+- Tout essai de l'app : `pwsh scriptspp-isolated.ps1 [-Settings '{"engine":{...}}']` lance
+  la build release avec `PALACLIPS_CONFIG_DIR=target	est-config` (réglages et clips du test
+  dans ce dossier). Le refermer et supprimer ce dossier à la fin.
 - Fortnite en plein écran, appuyer sur le raccourci de sauvegarde : le jeu ne perd pas le focus
   (pas de minimisation, pas de clignotement), toast visible.
 - Fenêtre fermée : Gestionnaire des tâches → un seul `palaclips.exe`, aucun `msedgewebview2.exe`
