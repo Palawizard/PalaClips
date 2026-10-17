@@ -1,4 +1,5 @@
 use palaclips_engine::EngineConfig;
+use palaclips_engine::calibrate::Calibration;
 use palaclips_engine::capture::{PreviewCapture, TargetInfo, list_targets};
 use palaclips_engine::config::CaptureTarget;
 use palaclips_engine::encode::{HardwareEncoder, hardware_video_encoders};
@@ -210,6 +211,15 @@ pub fn open_clips_dir(slot: State<'_, EngineSlot>) -> Result<(), String> {
         .spawn()
         .map(|_| ())
         .map_err(|error| format!("Explorateur impossible à ouvrir : {error}."))
+}
+
+#[tauri::command]
+pub async fn calibrate_audio(slot: State<'_, EngineSlot>) -> Result<Calibration, String> {
+    let handle = slot.handle.clone();
+    tauri::async_runtime::spawn_blocking(move || handle.calibrate())
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| format!("Calibrage impossible : {error}."))
 }
 
 #[tauri::command]

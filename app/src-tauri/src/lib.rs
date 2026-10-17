@@ -529,6 +529,7 @@ pub fn run() {
             commands::open_clips_dir,
             commands::list_capture_targets,
             commands::list_audio_devices,
+            commands::calibrate_audio,
             commands::list_app_sessions,
             commands::pick_app_exe,
             commands::app_icon,
