@@ -72,6 +72,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | RPL-06 | La sauvegarde ne vole **jamais** le focus du jeu ; confirmation par toast Windows + son (désactivable). |
 | RPL-07 | Changer de sources ou de zone redémarre le buffer ; l'UI le dit avant d'appliquer. |
 | RPL-08 | RAM stable en replay armé : pas de croissance avec le temps ni avec le nombre de sauvegardes. |
+| RPL-09 | Deux sauvegardes successives ne se répètent pas : le clip suivant commence où le précédent s'est arrêté (au plus un intervalle d'images clés en commun) ; « En mémoire » repart de zéro après chaque sauvegarde. |
 
 ### 2.5 Enregistrement manuel (REC)
 
