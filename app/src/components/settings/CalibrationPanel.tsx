@@ -73,7 +73,13 @@ function withProposals(config: EngineConfig, calibration: Calibration): EngineCo
   };
 }
 
-export function CalibrationPanel({ config }: { config: ConfigDraft }) {
+export function CalibrationPanel({
+  config,
+  onRunning,
+}: {
+  config: ConfigDraft;
+  onRunning: (running: boolean) => void;
+}) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<Calibration | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +94,7 @@ export function CalibrationPanel({ config }: { config: ConfigDraft }) {
       settled.current = true;
       return;
     }
+    onRunning(phase === "running");
     if (phase === "running") running.current?.focus();
     else if (phase === "done") results.current?.focus();
     else if (phase === "idle") trigger.current?.focus();
