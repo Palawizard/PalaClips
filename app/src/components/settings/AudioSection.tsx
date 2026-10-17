@@ -160,7 +160,7 @@ function TrackRow({
       </div>
       <div className="flex min-w-0 items-center gap-2">
         <MeterBar color={color} fill={fill} hold={hold} className="h-2 flex-1" />
-        <span ref={peak} aria-hidden className="score w-9 text-right text-[14px] text-ink-2">
+        <span ref={peak} aria-hidden className="score w-14 shrink-0 text-right text-[14px] whitespace-nowrap text-ink-2">
           −∞
         </span>
       </div>
@@ -192,6 +192,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const [windows, setWindows] = useState<TargetInfo[]>([]);
   const [visible, setVisible] = useState(document.visibilityState === "visible");
   const [query, setQuery] = useState("");
+  const [calibrating, setCalibrating] = useState(false);
   const [pickError, setPickError] = useState<string | null>(null);
   const lastSound = useRef(new Map<string, number>());
   const listRef = useRef<HTMLUListElement>(null);
@@ -245,7 +246,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const rows = rowsOf(audio);
   let next = 0;
   const indexes = rows.map((row) => (row.enabled ? next++ : null));
-  const running = config.armed ? rowsOf(config.saved.audio).filter((row) => row.enabled).map((row) => row.key) : [];
+  const running = config.armed && !calibrating ? rowsOf(config.saved.audio).filter((row) => row.enabled).map((row) => row.key) : [];
   const meterIndexOf = (key: string) => (running.includes(key) ? running.indexOf(key) : null);
   const isTakenBy = (row: Row) => (name: string) =>
     rows.some((other) => other.key !== row.key && other.label.toLowerCase() === name.toLowerCase());
@@ -426,7 +427,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
 
   return (
     <>
-      <CalibrationPanel config={config} />
+      <CalibrationPanel config={config} onRunning={setCalibrating} />
       <section aria-labelledby="tracks-title">
         <div className={`${ROW_COLUMNS} px-5 pt-5 pb-3`}>
           <div className="col-span-3 flex items-baseline gap-3">

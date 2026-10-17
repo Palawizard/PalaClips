@@ -175,8 +175,10 @@ Tout est arrêté et les clips supprimés à la fin.
 
 - Calibrage (AUD-11) : `palaclips-cli calibrate --settings %APPDATA%\PalaClips\settings.json`
   (lecture seule) ou Réglages > Audio > Calibrer… ; écran principal libre, pas de jeu lancé ;
-  attendu : Mix et Jeu mesurés (≥ 5 paires, dispersion ≤ 20 ms), micro « non mesuré » au
-  casque, total < 30 s, replay réarmé s'il l'était.
+  attendu : Mix et Jeu mesurés (≥ 5 paires, dispersion ≤ 20 ms), Jeu = référence → 0 ms,
+  Mix proposé = −(mesure Mix − mesure Jeu) (ADR-027), micro mesuré si un écouteur est collé
+  contre lui, sinon « non mesuré » avec la consigne ; total < 30 s, replay réarmé s'il
+  l'était.
 
 ## T6 — Enregistrement et galerie (phase 6)
 - Crash : pendant un enregistrement, `taskkill /F /IM palaclips.exe` → relancer → le clip est

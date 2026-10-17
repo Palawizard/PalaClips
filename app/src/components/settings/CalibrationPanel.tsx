@@ -36,17 +36,23 @@ function resultRows(calibration: Calibration, audio: EngineConfig["audio"]): Res
     rows.push({
       key: "microphone",
       title: audio.microphone_label,
-      measured: measuredOf("microphone") ?? "non mesuré : le micro n'a pas entendu les bips",
+      measured: measuredOf("microphone") ?? "non mesuré : au casque, colle un écouteur contre le micro puis recalibre",
       proposed: calibration.microphone_ms,
     });
   for (const track of audio.app_tracks)
     rows.push({
       key: `app:${track.exe_name}`,
       title: track.label,
-      measured: "comme la piste Jeu",
+      measured: "même capture que la référence",
       proposed: calibration.apps.find((app) => app.exe_name === track.exe_name)?.offset_ms ?? null,
     });
-  rows.push({ key: "game", title: audio.game_label, measured: measuredOf("game") ?? "non mesuré", proposed: calibration.game_ms });
+  const reference = measuredOf("game");
+  rows.push({
+    key: "game",
+    title: audio.game_label,
+    measured: reference ? `référence, ${reference}` : "référence non mesurée : recalibre",
+    proposed: calibration.game_ms,
+  });
   return rows;
 }
 
@@ -67,7 +73,13 @@ function withProposals(config: EngineConfig, calibration: Calibration): EngineCo
   };
 }
 
-export function CalibrationPanel({ config }: { config: ConfigDraft }) {
+export function CalibrationPanel({
+  config,
+  onRunning,
+}: {
+  config: ConfigDraft;
+  onRunning: (running: boolean) => void;
+}) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<Calibration | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +94,7 @@ export function CalibrationPanel({ config }: { config: ConfigDraft }) {
       settled.current = true;
       return;
     }
+    onRunning(phase === "running");
     if (phase === "running") running.current?.focus();
     else if (phase === "done") results.current?.focus();
     else if (phase === "idle") trigger.current?.focus();
@@ -126,6 +139,11 @@ export function CalibrationPanel({ config }: { config: ConfigDraft }) {
             L'écran principal devient noir et clignote, avec un bip chaque seconde, pendant environ 15 s.
             {config.armed ? " Le replay redémarre ensuite : les secondes en mémoire seront perdues." : ""}
           </p>
+          {config.draft.audio.record_microphone && (
+            <p className="text-[13px] text-ink-2">
+              Au casque, colle un écouteur contre le micro pour qu'il entende les bips.
+            </p>
+          )}
           <p className="text-[13px] text-ink-2">
             Le retard d'une chaîne Voicemeeter ou LightHost peut changer à chaque relance : recalibre après l'avoir
             relancée.
