@@ -13,7 +13,7 @@ const ITEMS: { view: View; label: string; icon: LucideIcon }[] = [
 export function Rail({ view, onChange }: { view: View; onChange: (view: View) => void }) {
   return (
     <nav aria-label="Navigation" className="flex w-[84px] flex-col items-center gap-1 border-r border-line bg-rail py-4">
-      <img src={logo} alt="PalaClips" className="mb-5 size-9" draggable={false} />
+      <img src={logo} alt="PalaClips" className="mb-5 size-9 grayscale" draggable={false} />
       {ITEMS.map(({ view: target, label, icon: Icon }) => {
         const current = target === view;
         return (
