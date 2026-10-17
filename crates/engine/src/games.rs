@@ -34,6 +34,8 @@ const GENERIC_NAMES: &[&str] = &[
     "launcher",
     "bootstrapper",
     "application",
+    "microsoft windows operating system",
+    "système d'exploitation microsoft windows",
 ];
 
 const BUILD_SUFFIXES: &[&str] = &[
@@ -155,6 +157,11 @@ fn exe_path(pid: u32) -> Option<PathBuf> {
     }
 }
 
+pub fn app_name(path: &Path, exe_name: &str) -> String {
+    let (product, description) = version_strings(path);
+    pick_name(product.as_deref(), description.as_deref(), exe_name)
+}
+
 fn version_strings(path: &Path) -> (Option<String>, Option<String>) {
     let file = HSTRING::from(path.as_os_str());
     // SAFETY: the size query only reads the path.
@@ -240,6 +247,26 @@ mod tests {
         assert_eq!(
             pick_name(Some("Unreal Engine"), Some("Some Game™"), "x.exe"),
             "Some Game"
+        );
+    }
+
+    #[test]
+    fn windows_component_uses_its_description() {
+        assert_eq!(
+            pick_name(
+                Some("Système d'exploitation Microsoft® Windows®"),
+                Some("Explorateur Windows"),
+                "explorer.exe"
+            ),
+            "Explorateur Windows"
+        );
+        assert_eq!(
+            pick_name(
+                Some("Microsoft® Windows® Operating System"),
+                Some("Windows Explorer"),
+                "explorer.exe"
+            ),
+            "Windows Explorer"
         );
     }
 
