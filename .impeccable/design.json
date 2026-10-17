@@ -1,0 +1,685 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T09:35:18.008Z",
+  "title": "Design System: PalaClips",
+  "extensions": {
+    "colorMeta": {
+      "stadium-night": {
+        "role": "neutral",
+        "displayName": "Stadium Night",
+        "canonical": "#0f1420",
+        "light": "#eef1f6",
+        "tonalRamp": [
+          "oklch(15% 0.026 266.6)",
+          "oklch(26% 0.026 266.6)",
+          "oklch(38% 0.026 266.6)",
+          "oklch(50% 0.026 266.6)",
+          "oklch(62% 0.026 266.6)",
+          "oklch(74% 0.026 266.6)",
+          "oklch(85% 0.026 266.6)",
+          "oklch(95% 0.026 266.6)"
+        ]
+      },
+      "rail-night": {
+        "role": "neutral",
+        "displayName": "Rail Night",
+        "canonical": "#0a0e17",
+        "light": "#e2e7ef",
+        "tonalRamp": [
+          "oklch(15% 0.020 265.8)",
+          "oklch(26% 0.020 265.8)",
+          "oklch(38% 0.020 265.8)",
+          "oklch(50% 0.020 265.8)",
+          "oklch(62% 0.020 265.8)",
+          "oklch(74% 0.020 265.8)",
+          "oklch(85% 0.020 265.8)",
+          "oklch(95% 0.020 265.8)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#171d2b",
+        "light": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.029 266.3)",
+          "oklch(26% 0.029 266.3)",
+          "oklch(38% 0.029 266.3)",
+          "oklch(50% 0.029 266.3)",
+          "oklch(62% 0.029 266.3)",
+          "oklch(74% 0.029 266.3)",
+          "oklch(85% 0.029 266.3)",
+          "oklch(95% 0.029 266.3)"
+        ]
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Surface Raised",
+        "canonical": "#1e2536",
+        "light": "#f5f7fb",
+        "tonalRamp": [
+          "oklch(15% 0.034 266.9)",
+          "oklch(26% 0.034 266.9)",
+          "oklch(38% 0.034 266.9)",
+          "oklch(50% 0.034 266.9)",
+          "oklch(62% 0.034 266.9)",
+          "oklch(74% 0.034 266.9)",
+          "oklch(85% 0.034 266.9)",
+          "oklch(95% 0.034 266.9)"
+        ]
+      },
+      "surface-hover": {
+        "role": "neutral",
+        "displayName": "Surface Hover",
+        "canonical": "#232b3e",
+        "light": "#edf1f7",
+        "tonalRamp": [
+          "oklch(15% 0.037 266.5)",
+          "oklch(26% 0.037 266.5)",
+          "oklch(38% 0.037 266.5)",
+          "oklch(50% 0.037 266.5)",
+          "oklch(62% 0.037 266.5)",
+          "oklch(74% 0.037 266.5)",
+          "oklch(85% 0.037 266.5)",
+          "oklch(95% 0.037 266.5)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "#262e40",
+        "light": "#d9dfe9",
+        "tonalRamp": [
+          "oklch(15% 0.035 265.8)",
+          "oklch(26% 0.035 265.8)",
+          "oklch(38% 0.035 265.8)",
+          "oklch(50% 0.035 265.8)",
+          "oklch(62% 0.035 265.8)",
+          "oklch(74% 0.035 265.8)",
+          "oklch(85% 0.035 265.8)",
+          "oklch(95% 0.035 265.8)"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Line Strong",
+        "canonical": "#343d52",
+        "light": "#c3cbd9",
+        "tonalRamp": [
+          "oklch(15% 0.038 266.5)",
+          "oklch(26% 0.038 266.5)",
+          "oklch(38% 0.038 266.5)",
+          "oklch(50% 0.038 266.5)",
+          "oklch(62% 0.038 266.5)",
+          "oklch(74% 0.038 266.5)",
+          "oklch(85% 0.038 266.5)",
+          "oklch(95% 0.038 266.5)"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Stadium Ink",
+        "canonical": "#e8ecf4",
+        "light": "#121826",
+        "tonalRamp": [
+          "oklch(15% 0.012 264.5)",
+          "oklch(26% 0.012 264.5)",
+          "oklch(38% 0.012 264.5)",
+          "oklch(50% 0.012 264.5)",
+          "oklch(62% 0.012 264.5)",
+          "oklch(74% 0.012 264.5)",
+          "oklch(85% 0.012 264.5)",
+          "oklch(95% 0.012 264.5)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Ink Muted",
+        "canonical": "#a7b0c3",
+        "light": "#445066",
+        "tonalRamp": [
+          "oklch(15% 0.029 265.4)",
+          "oklch(26% 0.029 265.4)",
+          "oklch(38% 0.029 265.4)",
+          "oklch(50% 0.029 265.4)",
+          "oklch(62% 0.029 265.4)",
+          "oklch(74% 0.029 265.4)",
+          "oklch(85% 0.029 265.4)",
+          "oklch(95% 0.029 265.4)"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "#7b869c",
+        "light": "#536076",
+        "tonalRamp": [
+          "oklch(15% 0.036 264.3)",
+          "oklch(26% 0.036 264.3)",
+          "oklch(38% 0.036 264.3)",
+          "oklch(50% 0.036 264.3)",
+          "oklch(62% 0.036 264.3)",
+          "oklch(74% 0.036 264.3)",
+          "oklch(85% 0.036 264.3)",
+          "oklch(95% 0.036 264.3)"
+        ]
+      },
+      "rec-red": {
+        "role": "secondary",
+        "displayName": "Recording Red",
+        "canonical": "#ff4d5e",
+        "light": "#d92639",
+        "tonalRamp": [
+          "oklch(15% 0.213 19.8)",
+          "oklch(26% 0.213 19.8)",
+          "oklch(38% 0.213 19.8)",
+          "oklch(50% 0.213 19.8)",
+          "oklch(62% 0.213 19.8)",
+          "oklch(74% 0.213 19.8)",
+          "oklch(85% 0.213 19.8)",
+          "oklch(95% 0.213 19.8)"
+        ]
+      },
+      "rec-ink": {
+        "role": "secondary",
+        "displayName": "Recording White",
+        "canonical": "#ffffff",
+        "light": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(38% 0.000 89.9)",
+          "oklch(50% 0.000 89.9)",
+          "oklch(62% 0.000 89.9)",
+          "oklch(74% 0.000 89.9)",
+          "oklch(85% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "warn-amber": {
+        "role": "secondary",
+        "displayName": "Caution Amber",
+        "canonical": "#f2b84b",
+        "light": "#9a6200",
+        "tonalRamp": [
+          "oklch(15% 0.140 80.1)",
+          "oklch(26% 0.140 80.1)",
+          "oklch(38% 0.140 80.1)",
+          "oklch(50% 0.140 80.1)",
+          "oklch(62% 0.140 80.1)",
+          "oklch(74% 0.140 80.1)",
+          "oklch(85% 0.140 80.1)",
+          "oklch(95% 0.140 80.1)"
+        ]
+      },
+      "focus-blue": {
+        "role": "secondary",
+        "displayName": "Focus Blue",
+        "canonical": "#8fb8ff",
+        "light": "#2f6fd8",
+        "tonalRamp": [
+          "oklch(15% 0.111 261.1)",
+          "oklch(26% 0.111 261.1)",
+          "oklch(38% 0.111 261.1)",
+          "oklch(50% 0.111 261.1)",
+          "oklch(62% 0.111 261.1)",
+          "oklch(74% 0.111 261.1)",
+          "oklch(85% 0.111 261.1)",
+          "oklch(95% 0.111 261.1)"
+        ]
+      },
+      "meter-ground": {
+        "role": "neutral",
+        "displayName": "Meter Ground",
+        "canonical": "#0b0f18",
+        "light": "#e4e9f1",
+        "tonalRamp": [
+          "oklch(15% 0.020 265.8)",
+          "oklch(26% 0.020 265.8)",
+          "oklch(38% 0.020 265.8)",
+          "oklch(50% 0.020 265.8)",
+          "oklch(62% 0.020 265.8)",
+          "oklch(74% 0.020 265.8)",
+          "oklch(85% 0.020 265.8)",
+          "oklch(95% 0.020 265.8)"
+        ]
+      },
+      "track-mix": {
+        "role": "tertiary",
+        "displayName": "Jersey Mix",
+        "canonical": "#e8ecf4",
+        "light": "#2b3345",
+        "tonalRamp": [
+          "oklch(15% 0.012 264.5)",
+          "oklch(26% 0.012 264.5)",
+          "oklch(38% 0.012 264.5)",
+          "oklch(50% 0.012 264.5)",
+          "oklch(62% 0.012 264.5)",
+          "oklch(74% 0.012 264.5)",
+          "oklch(85% 0.012 264.5)",
+          "oklch(95% 0.012 264.5)"
+        ]
+      },
+      "track-mic": {
+        "role": "tertiary",
+        "displayName": "Jersey Micro",
+        "canonical": "#f2b84b",
+        "light": "#8a5f00",
+        "tonalRamp": [
+          "oklch(15% 0.140 80.1)",
+          "oklch(26% 0.140 80.1)",
+          "oklch(38% 0.140 80.1)",
+          "oklch(50% 0.140 80.1)",
+          "oklch(62% 0.140 80.1)",
+          "oklch(74% 0.140 80.1)",
+          "oklch(85% 0.140 80.1)",
+          "oklch(95% 0.140 80.1)"
+        ]
+      },
+      "track-game": {
+        "role": "tertiary",
+        "displayName": "Jersey Jeu",
+        "canonical": "#7fd18b",
+        "light": "#23703a",
+        "tonalRamp": [
+          "oklch(15% 0.127 147.8)",
+          "oklch(26% 0.127 147.8)",
+          "oklch(38% 0.127 147.8)",
+          "oklch(50% 0.127 147.8)",
+          "oklch(62% 0.127 147.8)",
+          "oklch(74% 0.127 147.8)",
+          "oklch(85% 0.127 147.8)",
+          "oklch(95% 0.127 147.8)"
+        ]
+      },
+      "track-1": {
+        "role": "tertiary",
+        "displayName": "Jersey App 1",
+        "canonical": "#4fc1b9",
+        "light": "#127a73",
+        "tonalRamp": [
+          "oklch(15% 0.103 188.8)",
+          "oklch(26% 0.103 188.8)",
+          "oklch(38% 0.103 188.8)",
+          "oklch(50% 0.103 188.8)",
+          "oklch(62% 0.103 188.8)",
+          "oklch(74% 0.103 188.8)",
+          "oklch(85% 0.103 188.8)",
+          "oklch(95% 0.103 188.8)"
+        ]
+      },
+      "track-2": {
+        "role": "tertiary",
+        "displayName": "Jersey App 2",
+        "canonical": "#8f86f5",
+        "light": "#5b4fd6",
+        "tonalRamp": [
+          "oklch(15% 0.160 285.0)",
+          "oklch(26% 0.160 285.0)",
+          "oklch(38% 0.160 285.0)",
+          "oklch(50% 0.160 285.0)",
+          "oklch(62% 0.160 285.0)",
+          "oklch(74% 0.160 285.0)",
+          "oklch(85% 0.160 285.0)",
+          "oklch(95% 0.160 285.0)"
+        ]
+      },
+      "track-3": {
+        "role": "tertiary",
+        "displayName": "Jersey App 3",
+        "canonical": "#5aa9e6",
+        "light": "#1f6fb3",
+        "tonalRamp": [
+          "oklch(15% 0.119 243.9)",
+          "oklch(26% 0.119 243.9)",
+          "oklch(38% 0.119 243.9)",
+          "oklch(50% 0.119 243.9)",
+          "oklch(62% 0.119 243.9)",
+          "oklch(74% 0.119 243.9)",
+          "oklch(85% 0.119 243.9)",
+          "oklch(95% 0.119 243.9)"
+        ]
+      },
+      "track-4": {
+        "role": "tertiary",
+        "displayName": "Jersey App 4",
+        "canonical": "#e58fb8",
+        "light": "#b23f78",
+        "tonalRamp": [
+          "oklch(15% 0.115 350.2)",
+          "oklch(26% 0.115 350.2)",
+          "oklch(38% 0.115 350.2)",
+          "oklch(50% 0.115 350.2)",
+          "oklch(62% 0.115 350.2)",
+          "oklch(74% 0.115 350.2)",
+          "oklch(85% 0.115 350.2)",
+          "oklch(95% 0.115 350.2)"
+        ]
+      },
+      "track-5": {
+        "role": "tertiary",
+        "displayName": "Jersey App 5",
+        "canonical": "#c9b458",
+        "light": "#7d6a00",
+        "tonalRamp": [
+          "oklch(15% 0.115 96.7)",
+          "oklch(26% 0.115 96.7)",
+          "oklch(38% 0.115 96.7)",
+          "oklch(50% 0.115 96.7)",
+          "oklch(62% 0.115 96.7)",
+          "oklch(74% 0.115 96.7)",
+          "oklch(85% 0.115 96.7)",
+          "oklch(95% 0.115 96.7)"
+        ]
+      },
+      "track-6": {
+        "role": "tertiary",
+        "displayName": "Jersey App 6",
+        "canonical": "#6fd6e8",
+        "light": "#0e7f93",
+        "tonalRamp": [
+          "oklch(15% 0.099 210.3)",
+          "oklch(26% 0.099 210.3)",
+          "oklch(38% 0.099 210.3)",
+          "oklch(50% 0.099 210.3)",
+          "oklch(62% 0.099 210.3)",
+          "oklch(74% 0.099 210.3)",
+          "oklch(85% 0.099 210.3)",
+          "oklch(95% 0.099 210.3)"
+        ]
+      },
+      "track-7": {
+        "role": "tertiary",
+        "displayName": "Jersey App 7",
+        "canonical": "#b98cf2",
+        "light": "#7d3fc7",
+        "tonalRamp": [
+          "oklch(15% 0.150 303.2)",
+          "oklch(26% 0.150 303.2)",
+          "oklch(38% 0.150 303.2)",
+          "oklch(50% 0.150 303.2)",
+          "oklch(62% 0.150 303.2)",
+          "oklch(74% 0.150 303.2)",
+          "oklch(85% 0.150 303.2)",
+          "oklch(95% 0.150 303.2)"
+        ]
+      },
+      "track-8": {
+        "role": "tertiary",
+        "displayName": "Jersey App 8",
+        "canonical": "#e6a16a",
+        "light": "#a85314",
+        "tonalRamp": [
+          "oklch(15% 0.109 58.7)",
+          "oklch(26% 0.109 58.7)",
+          "oklch(38% 0.109 58.7)",
+          "oklch(50% 0.109 58.7)",
+          "oklch(62% 0.109 58.7)",
+          "oklch(74% 0.109 58.7)",
+          "oklch(85% 0.109 58.7)",
+          "oklch(95% 0.109 58.7)"
+        ]
+      },
+      "track-9": {
+        "role": "tertiary",
+        "displayName": "Jersey App 9",
+        "canonical": "#9cc2ff",
+        "light": "#2f5fbf",
+        "tonalRamp": [
+          "oklch(15% 0.096 259.7)",
+          "oklch(26% 0.096 259.7)",
+          "oklch(38% 0.096 259.7)",
+          "oklch(50% 0.096 259.7)",
+          "oklch(62% 0.096 259.7)",
+          "oklch(74% 0.096 259.7)",
+          "oklch(85% 0.096 259.7)",
+          "oklch(95% 0.096 259.7)"
+        ]
+      },
+      "track-10": {
+        "role": "tertiary",
+        "displayName": "Jersey App 10",
+        "canonical": "#8fd1a6",
+        "light": "#2d7a4c",
+        "tonalRamp": [
+          "oklch(15% 0.091 155.3)",
+          "oklch(26% 0.091 155.3)",
+          "oklch(38% 0.091 155.3)",
+          "oklch(50% 0.091 155.3)",
+          "oklch(62% 0.091 155.3)",
+          "oklch(74% 0.091 155.3)",
+          "oklch(85% 0.091 155.3)",
+          "oklch(95% 0.091 155.3)"
+        ]
+      },
+      "track-11": {
+        "role": "tertiary",
+        "displayName": "Jersey App 11",
+        "canonical": "#d6a0e0",
+        "light": "#9a3fa8",
+        "tonalRamp": [
+          "oklch(15% 0.106 321.1)",
+          "oklch(26% 0.106 321.1)",
+          "oklch(38% 0.106 321.1)",
+          "oklch(50% 0.106 321.1)",
+          "oklch(62% 0.106 321.1)",
+          "oklch(74% 0.106 321.1)",
+          "oklch(85% 0.106 321.1)",
+          "oklch(95% 0.106 321.1)"
+        ]
+      }
+    },
+    "themes": {
+      "default": "dark",
+      "light": {
+        "media": "(prefers-color-scheme: light)",
+        "note": "Every role remapped to its colorMeta.light value; jersey colours darkened for contrast."
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Buffered replay clock in the status banner; one per screen."
+      },
+      "score": {
+        "displayName": "Score",
+        "purpose": "Every glanceable figure (time, size, dB, jersey number, shortcut), 13–28px, tabular lining numerals."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section titles."
+      },
+      "title-cell": {
+        "displayName": "Cell Title",
+        "purpose": "Banner cell heading carrying the current state."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text, tabular numerals on by default."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Metadata, track source and state, relative time."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase table column headers only."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "The single curve for every eased transition."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.97) on :active, 140ms ease-out; colours 140ms ease",
+        "purpose": "Every pressable."
+      },
+      {
+        "name": "save-flash",
+        "value": "background 16% of track colour, 80ms in, 600ms out",
+        "purpose": "Roster rows on clip save; meters never freeze."
+      },
+      {
+        "name": "clip-enter",
+        "value": "@starting-style opacity 0, translateY(-12px) scale(0.98), 240ms",
+        "purpose": "Freshly saved clip card."
+      },
+      {
+        "name": "alert-enter",
+        "value": "@starting-style opacity 0, translateY(-4px), 200ms",
+        "purpose": "Alert rows."
+      },
+      {
+        "name": "meter",
+        "value": "~20 Hz levels, one shared rAF loop; attack instant, release 26 dB/s, peak hold 1.2 s then 14 dB/s, text every 120 ms, -60 dB floor",
+        "purpose": "Roster meters."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0ms",
+        "purpose": "prefers-reduced-motion: transitions instant, no press scale, meters jump to target."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "1000px"
+      },
+      {
+        "name": "window-min",
+        "value": "900x600"
+      },
+      {
+        "name": "window-target",
+        "value": "1180x760"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one ink-filled action per area, shortcut inline.",
+      "html": "<button class=\"ds-btn-primary\">Sauvegarder <span class=\"ds-kbd\">Alt+F10</span></button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:0;border-radius:6px;background:var(--ink,#e8ecf4);color:var(--ground,#0f1420);font:600 14px Barlow,'Segoe UI',sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1),background-color 140ms ease,color 140ms ease}.ds-btn-primary:hover{background:color-mix(in srgb,var(--ink,#e8ecf4) 90%,transparent)}.ds-btn-primary:active{transform:scale(0.97)}.ds-btn-primary:focus-visible{outline:2px solid var(--focus,#8fb8ff);outline-offset:2px}.ds-btn-primary:disabled{background:var(--surface-2,#1e2536);color:var(--ink-3,#7b869c);cursor:not-allowed}.ds-kbd{font:500 13px 'Barlow Condensed',Barlow,sans-serif;font-variant-numeric:tabular-nums lining-nums;opacity:.7}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined tonal action (Armer / Désarmer).",
+      "html": "<button class=\"ds-btn-secondary\">Armer</button>",
+      "css": ".ds-btn-secondary{height:36px;padding:0 14px;border:1px solid var(--line-strong,#343d52);border-radius:6px;background:transparent;color:var(--ink,#e8ecf4);font:500 14px Barlow,'Segoe UI',sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1),background-color 140ms ease,color 140ms ease}.ds-btn-secondary:hover{background:var(--surface-hover,#232b3e)}.ds-btn-secondary:active{transform:scale(0.97)}.ds-btn-secondary:focus-visible{outline:2px solid var(--focus,#8fb8ff);outline-offset:2px}"
+    },
+    {
+      "name": "Rail",
+      "kind": "nav",
+      "refersTo": "rail-item",
+      "description": "Icon-over-label navigation in the 84px rail.",
+      "html": "<nav class=\"ds-rail\"><button class=\"ds-rail-item\" aria-current=\"page\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 14 4-4\"/><path d=\"M3.34 19a10 10 0 1 1 17.32 0\"/></svg>État</button><button class=\"ds-rail-item\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\"/><line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\"/><line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\"/><line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\"/><line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\"/><line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\"/><line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\"/><line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\"/><line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\"/></svg>Réglages</button></nav>",
+      "css": ".ds-rail{display:flex;flex-direction:column;align-items:center;gap:4px;width:84px;padding:16px 0;background:var(--rail,#0a0e17);border-right:1px solid var(--line,#262e40)}.ds-rail-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:68px;padding:10px 0;border:0;border-radius:6px;background:transparent;color:var(--ink-3,#7b869c);font:500 12px Barlow,'Segoe UI',sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1),background-color 140ms ease,color 140ms ease}.ds-rail-item:hover{background:var(--surface,#171d2b);color:var(--ink,#e8ecf4)}.ds-rail-item[aria-current=page]{background:var(--surface-2,#1e2536);color:var(--ink,#e8ecf4)}.ds-rail-item:active{transform:scale(0.97)}.ds-rail-item:focus-visible{outline:2px solid var(--focus,#8fb8ff);outline-offset:2px}"
+    },
+    {
+      "name": "Roster Row",
+      "kind": "custom",
+      "refersTo": "jersey-plate",
+      "description": "Signature: one audio track as a scoreboard row with jersey plate, meter and peak. Hover previews the save flash.",
+      "html": "<div class=\"ds-row\" style=\"--row-color:#f2b84b\"><span class=\"ds-plate\">02</span><span class=\"ds-name\">Micro<small>Casque USB</small></span><span class=\"ds-meter\"><span class=\"ds-fill\"></span></span><span class=\"ds-peak\">−12,4 dB</span><span class=\"ds-state\">Capture</span></div>",
+      "css": ".ds-row{display:grid;grid-template-columns:52px minmax(0,1.3fr) minmax(140px,2fr) 76px minmax(0,1fr);align-items:center;column-gap:16px;padding:12px 20px;border-bottom:1px solid var(--line,#262e40);color:var(--ink,#e8ecf4);font:400 14px/1.45 Barlow,'Segoe UI',sans-serif;transition:background-color 600ms cubic-bezier(0.23,1,0.32,1)}.ds-row:hover{background:color-mix(in srgb,var(--row-color) 16%,transparent);transition-duration:80ms}.ds-plate{display:flex;align-items:center;justify-content:center;width:44px;height:32px;border-radius:4px;background:var(--row-color);color:var(--ground,#0f1420);font:600 18px 'Barlow Condensed',Barlow,sans-serif;font-variant-numeric:tabular-nums lining-nums}.ds-name{font-weight:600}.ds-name small{display:block;font-weight:400;font-size:12px;color:var(--ink-3,#7b869c)}.ds-meter{position:relative;height:10px;border-radius:2px;overflow:hidden;background:var(--meter-ground,#0b0f18)}.ds-fill{position:absolute;inset:0;background:var(--row-color);transform-origin:left;transform:scaleX(.72)}.ds-peak{text-align:right;font:600 19px/1 'Barlow Condensed',Barlow,sans-serif;font-variant-numeric:tabular-nums lining-nums}.ds-state{font-size:13px;color:var(--ink-2,#a7b0c3)}"
+    },
+    {
+      "name": "Clip Card",
+      "kind": "card",
+      "refersTo": "clip-card",
+      "description": "Recap card for a saved clip with duration chip and jersey track dots.",
+      "html": "<article class=\"ds-clip\"><div class=\"ds-thumb\"><span class=\"ds-dur\">00:30</span></div><div class=\"ds-body\"><p><b>Fortnite</b><small>il y a 2 min</small></p><ul><li style=\"background:#e8ecf4\"></li><li style=\"background:#f2b84b\"></li><li style=\"background:#4fc1b9\"></li><li style=\"background:#7fd18b\"></li></ul></div></article>",
+      "css": ".ds-clip{width:280px;overflow:hidden;border:1px solid var(--line,#262e40);border-radius:6px;background:var(--surface,#171d2b);color:var(--ink,#e8ecf4);font:400 14px/1.45 Barlow,'Segoe UI',sans-serif}.ds-thumb{position:relative;aspect-ratio:16/9;background:var(--meter-ground,#0b0f18)}.ds-dur{position:absolute;right:6px;bottom:6px;padding:0 6px;border-radius:3px;background:color-mix(in srgb,var(--ground,#0f1420) 85%,transparent);font:600 14px 'Barlow Condensed',Barlow,sans-serif;font-variant-numeric:tabular-nums lining-nums}.ds-body{display:flex;flex-direction:column;gap:6px;padding:10px 12px}.ds-body p{display:flex;justify-content:space-between;align-items:baseline;margin:0}.ds-body small{font-size:12px;color:var(--ink-3,#7b869c)}.ds-body ul{display:flex;gap:4px;margin:0;padding:0;list-style:none}.ds-body li{width:20px;height:6px;border-radius:9999px}"
+    },
+    {
+      "name": "Status Banner Cell",
+      "kind": "custom",
+      "refersTo": "status-banner",
+      "description": "Banner cell led by its state, with the armed ring witness and the scoreboard clock.",
+      "html": "<section class=\"ds-cell\"><h2><span class=\"ds-ring\"></span>Replay armé</h2><p><span class=\"ds-clock\">00:47</span><span class=\"ds-total\">/ 01:00</span> en mémoire</p></section>",
+      "css": ".ds-cell{display:flex;flex-direction:column;gap:8px;padding:16px 20px;background:var(--surface,#171d2b);color:var(--ink-2,#a7b0c3);font:400 14px/1.45 Barlow,'Segoe UI',sans-serif}.ds-cell h2{display:flex;align-items:center;gap:10px;margin:0;color:var(--ink,#e8ecf4);font:600 15px Barlow,'Segoe UI',sans-serif}.ds-ring{width:12px;height:12px;box-sizing:border-box;border:2px solid var(--rec,#ff4d5e);border-radius:9999px}.ds-cell p{display:flex;align-items:baseline;gap:8px;margin:0}.ds-clock{color:var(--ink,#e8ecf4);font:600 40px/1 'Barlow Condensed',Barlow,sans-serif;font-variant-numeric:tabular-nums lining-nums;letter-spacing:.01em}.ds-total{color:var(--ink-3,#7b869c);font:500 20px/1 'Barlow Condensed',Barlow,sans-serif;font-variant-numeric:tabular-nums lining-nums}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The After-Match Scoreboard",
+    "overview": "Every audio track is a player on the team, lined up in a roster like the scoreboard a competitive shooter shows at the end of a round. The window is read at a glance, then closed: it states whether the replay is armed, how many seconds are held, what that costs, and which tracks will land in the clip. Density is high but calm; figures are large, condensed and tabular, prose is short and in the second person.\n\nThe world is stadium night: a blue-black ground with flat tonal surfaces, a single ink, hairline rules that cut the window into whole cells, and one fixed jersey colour per track that never changes meaning. It deliberately refuses the category's default of dark cards with one neon accent; colour carries identity (which track) or one state (it records), never decoration. Native Windows 11 in spirit: restrained, gently rounded, quiet motion, offline fonts.",
+    "keyCharacteristics": [
+      "Recomposition by whole cells on a strict grid, separated by 1 px rules, no floating cards on the home screen.",
+      "Scoreboard figures in Barlow Condensed with tabular lining numerals; text in Barlow.",
+      "One fixed colour per audio track, shown as a jersey number plate and repeated as dots wherever that track appears.",
+      "Red is a single word: \"it records\".",
+      "Dark by default with a full light theme derived from the same roles."
+    ],
+    "rules": [
+      {
+        "name": "The One Meaning Red Rule",
+        "body": "Red says \"it records\" and nothing else. Outlined ring = replay armed; solid red = manual recording in progress. Brand marks, errors and emphasis never borrow it; the rail mark is drawn in ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Fixed Jersey Rule",
+        "body": "A track's colour is assigned once (Mix ink, Micro amber, Jeu green, apps track-1..11 in config order, unknown titles hashed) and never reassigned or reused for anything else. The same colour follows the track to every screen: roster, clip cards, audio sources, player, toast.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Is The Accent Rule",
+        "body": "No interface accent colour exists. The primary action is an ink fill; everything else is tonal.",
+        "section": "colors"
+      },
+      {
+        "name": "The Figures Are Condensed Rule",
+        "body": "Any number the user reads at a glance (time, size, dB, track number, shortcut) is set in Barlow Condensed with tabular lining numerals. Body copy never uses the condensed face.",
+        "section": "typography"
+      },
+      {
+        "name": "The State Is The Heading Rule",
+        "body": "A banner cell is introduced by its current state (\"Replay armé\", \"Enregistrement arrêté\", the source name, the free space), never by an uppercase category label. Uppercase labels exist only as table column headers.",
+        "section": "typography"
+      },
+      {
+        "name": "The Whole Cell Rule",
+        "body": "Content recomposes by whole cells on the grid, divided by 1 px line rules. Cells do not float, overlap or carry their own shadows.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Scoreboard Rule",
+        "body": "If a surface needs to stand apart, step its tone or rule it off; do not add a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Jersey Plate Rule",
+        "body": "A track's colour is carried by its numbered plate (and its icon and meter), never by a coloured stripe on the row edge.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do set every glanceable figure in Barlow Condensed with tabular lining numerals.",
+      "Do give each audio track its fixed jersey colour and repeat it wherever that track appears.",
+      "Do lead banner cells with their current state as the heading.",
+      "Do divide the window into whole cells with 1 px line rules on a 20 px inset.",
+      "Do keep the primary action an ink fill and everything else tonal.",
+      "Do drop every transition to 0 ms under `prefers-reduced-motion`."
+    ],
+    "donts": [
+      "Don't use red for anything except recording: not for errors, brand marks or emphasis. Armed replay is an outlined ring; solid red is recording in progress only.",
+      "Don't reassign or reuse a track colour for another track or for interface chrome.",
+      "Don't mark tracks with a coloured stripe on the row edge; use the jersey plate.",
+      "Don't put uppercase eyebrow labels above banner cells or sections; uppercase labels are for table column headers only.",
+      "Don't add shadows or neon accents; depth is tonal and flat.",
+      "Don't load fonts or icons from the network, or mix icon families."
+    ]
+  }
+}
