@@ -30,7 +30,7 @@ impl Default for Hotkeys {
     fn default() -> Self {
         Self {
             save_replay: Some("Alt+F10".into()),
-            toggle_replay: Some("Alt+Shift+F10".into()),
+            toggle_replay: Some("Ctrl+Alt+F10".into()),
         }
     }
 }
@@ -171,7 +171,7 @@ mod tests {
         let parsed = validate(&Hotkeys::default()).expect("defaults");
         assert_eq!(parsed.len(), 2);
         assert_eq!(canonical(&parsed[0].1), "Alt+F10");
-        assert_eq!(canonical(&parsed[1].1), "Alt+Shift+F10");
+        assert_eq!(canonical(&parsed[1].1), "Ctrl+Alt+F10");
     }
 
     #[test]
