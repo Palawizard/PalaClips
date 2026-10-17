@@ -161,6 +161,11 @@ impl EngineSlot {
             .name("palaclips-events".into())
             .spawn(move || {
                 for event in events.iter() {
+                    if let EngineEvent::GameNamed { exe_name, name } = &event
+                        && let Some(slot) = app.try_state::<EngineSlot>()
+                    {
+                        slot.remember_game(exe_name, name);
+                    }
                     if let Ok(mut status) = relay_status.lock() {
                         status.apply(&event);
                     }
@@ -205,6 +210,27 @@ impl EngineSlot {
             *current = config;
         }
         Ok(())
+    }
+
+    fn remember_game(&self, exe_name: &str, name: &str) {
+        let Ok(mut config) = self.config.lock() else {
+            return;
+        };
+        config
+            .storage
+            .game_names
+            .insert(exe_name.to_owned(), name.to_owned());
+        if let (true, Some(path)) = (self.settings_writable, &self.settings_path)
+            && let Err(error) = settings::save(
+                path,
+                &settings::Settings {
+                    engine: config.clone(),
+                    ..settings::Settings::default()
+                },
+            )
+        {
+            tracing::warn!(%error, "nom de jeu non enregistré");
+        }
     }
 
     fn clips_root(&self) -> palaclips_engine::Result<std::path::PathBuf> {
