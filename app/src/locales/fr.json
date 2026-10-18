@@ -31,7 +31,8 @@
     "mbpsUnit": "Mb/s",
     "heightUnit": "p",
     "minUnit": "min",
-    "mbUnit": "Mo"
+    "mbUnit": "Mo",
+    "gbUnit": "Go"
   },
   "time": {
     "now": "à l'instant",
@@ -173,7 +174,15 @@
       "noGames": "Aucun jeu pour l'instant.",
       "folderColumn": "Dossier",
       "exeColumn": "Exécutable",
-      "folderFor": "Nom du dossier pour {exe}"
+      "folderFor": "Nom du dossier pour {exe}",
+      "quota": "Quota",
+      "quotaHelp": "Au-delà, les plus anciens clips non favoris sont supprimés définitivement, sans passer par la Corbeille.",
+      "quotaLabel": "Quota en gigaoctets",
+      "quotaConfirm": {
+        "one": "{count} clip, le plus ancien, sera supprimé définitivement ({size}). Il ne passera pas par la Corbeille.",
+        "other": "{count} clips, les plus anciens, seront supprimés définitivement ({size}). Ils ne passeront pas par la Corbeille."
+      },
+      "quotaApply": "Supprimer et appliquer"
     },
     "replay": {
       "estimate": "Estimation du tampon",
@@ -386,6 +395,14 @@
     "action_toggle_recording": "Démarrer ou arrêter l'enregistrement",
     "disk_full": "le disque des clips est plein",
     "disk_almost_full": "Disque des clips presque plein : {free_mb} Mo libres. L'enregistrement s'arrête sous 300 Mo.",
-    "recording_recovered": "Enregistrement interrompu récupéré : {name}."
+    "recording_recovered": "Enregistrement interrompu récupéré : {name}.",
+    "library_loading": "La bibliothèque des clips se charge encore : réessaie dans un instant.",
+    "library_failed": "bibliothèque des clips : {detail}",
+    "name_empty": "Le nom ne peut pas être vide.",
+    "name_forbidden_characters": "« {name} » ne peut pas servir de nom de fichier : retire les caractères < > : \" / \\ | ? * ™ ® ©, les doubles espaces et les points ou espaces en début et fin.",
+    "name_reserved": "« {name} » est un nom réservé par Windows : choisis-en un autre.",
+    "clip_name_taken": "Un clip porte déjà le nom « {name} ».",
+    "clip_unknown": "Ce clip n'est plus dans la bibliothèque.",
+    "quota_deleted": "Quota atteint : clips les plus anciens supprimés définitivement : {count} ({size_mb} Mo libérés)."
   }
 }

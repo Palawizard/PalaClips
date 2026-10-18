@@ -175,6 +175,71 @@ export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<Un
   return listen<EngineEvent>(ENGINE_EVENT, (message) => handler(message.payload));
 }
 
+export const LIBRARY_EVENT = "library-changed";
+
+export function onLibraryChanged(handler: () => void): Promise<UnlistenFn> {
+  return listen(LIBRARY_EVENT, handler);
+}
+
+export type ClipKind = "replay" | "recording";
+export type ClipSort = "newest" | "oldest" | "largest" | "longest" | "name";
+
+export interface Clip {
+  path: string;
+  name: string;
+  game: string;
+  kind: ClipKind;
+  modified_ms: number;
+  size_bytes: number;
+  duration_secs: number;
+  tracks: string[];
+  thumbnail: string | null;
+  favorite: boolean;
+}
+
+export interface ClipQuery {
+  game?: string | null;
+  kind?: ClipKind | null;
+  favorites?: boolean;
+  since_ms?: number | null;
+  search?: string | null;
+  sort?: ClipSort;
+  limit?: number | null;
+}
+
+export function listClips(query: ClipQuery): Promise<Clip[]> {
+  return invoke<Clip[]>("list_clips", { query });
+}
+
+export function clipGames(): Promise<string[]> {
+  return invoke<string[]>("clip_games");
+}
+
+export function setClipFavorite(path: string, favorite: boolean): Promise<void> {
+  return invoke("set_clip_favorite", { path, favorite });
+}
+
+export function renameClip(path: string, name: string): Promise<string> {
+  return invoke<string>("rename_clip", { path, name });
+}
+
+export function trashClip(path: string): Promise<void> {
+  return invoke("trash_clip", { path });
+}
+
+export function revealClip(path: string): Promise<void> {
+  return invoke("reveal_clip", { path });
+}
+
+export interface QuotaPreview {
+  total_bytes: number;
+  deleted: Clip[];
+}
+
+export function quotaPreview(quotaGb: number): Promise<QuotaPreview> {
+  return invoke<QuotaPreview>("quota_preview", { quotaGb });
+}
+
 export type VideoCodec = "h264" | "hevc" | "av1";
 export type VideoQuality = "quality" | "balanced" | "light" | "custom";
 export type ReplayStorage = "ram" | "disk";
@@ -334,6 +399,7 @@ export interface EngineConfig {
   storage: {
     clips_dir: string | null;
     game_names: Record<string, string>;
+    quota_gb: number | null;
   };
 }
 
