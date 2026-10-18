@@ -164,7 +164,8 @@ charges :
 | `windows` | 0.62 | capture, audio, sources | 1 |
 | `rsmpeg` | 0.18 (FFmpeg 8.x, ADR-004) | encode, mux | 0–1 |
 | `wasapi` | 0.26 | audio, sources | 2 |
-| `rusqlite` (feature `bundled`) | dernière stable | library | 6 |
+| `rusqlite` (feature `bundled`) | 0.40 | library | 6 ✅ |
+| `notify` | 8.2 (9 encore en RC) | library (surveillance du dossier, GAL-08) | 6 ✅ |
 | `tauri-plugin-*` | voir `docs/RESEARCH.md` § UI | app | 5–8 |
 
 ## 3. Threads et flux de données
@@ -282,7 +283,11 @@ d'une erreur système.
 | `list_encoders` | 5 ✅ | encodeurs matériels détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur est grisé dans Réglages |
 | `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
 | `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
-| `list_clips` / `clip_*` | 6 | galerie : renommer, favori, supprimer, copier, exporter |
+| `list_clips { query }` | 6 ✅ | clips de la bibliothèque (index SQLite) : filtres `game`, `kind` (`replay` / `recording`, d'après le nom), `favorites`, `since_ms`, `search` (nom ou jeu), tri `newest` / `oldest` / `largest` / `longest` / `name`, `limit` ; seuls les clips du dossier courant (racine + un niveau) |
+| `clip_games` | 6 ✅ | jeux (sous-dossiers) présents dans la bibliothèque |
+| `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 ✅ | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
+| `quota_preview { quotaGb }` | 6 ✅ | STO-04 : taille totale et clips qui seraient supprimés (plus anciens, jamais un favori ni un enregistrement en cours) |
+| `clip_*` (copier, exporter) | 6 | galerie : copier dans le presse-papiers, exporter |
 | `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 ✅ | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay`, `toggle_recording` (défaut `Ctrl+Alt+F9`) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab…), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
 | `performance_snapshot` | 7 | panneau de performances |
 | `export_diagnostics` | 8 | archive zip |
@@ -301,6 +306,9 @@ le relevé précédent, un nombre par piste dans l'ordre des pistes : le front i
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
 fenêtre),
+Événement Tauri `library-changed` (sans contenu) : la bibliothèque a changé (synchro au
+démarrage, surveillance du dossier, renommage, Corbeille, quota) ; la galerie relit `list_clips`.
+
 `replay_stats`, `recording_stats { elapsed_secs, bytes }` (chaque seconde pendant un
 enregistrement ; chaque fichier terminé arrive en `clip_saved`), `alert { severity, code, params, message }` (`code` + `params` pour le texte
 affiché, `message` en français pour les journaux et la CLI).
@@ -315,7 +323,8 @@ démarrage, REC-06), `clip_too_short` (info :
 moins de 3 s à sauvegarder, aucun clip ; pas de notification), `calibration_running` (info :
 sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_unreadable` /
 `settings_unreadable_kept` (réglages illisibles, mis de côté en `settings.json.bak`),
-`settings_newer` (version plus récente, fichier laissé intact), `settings_dir_missing`.
+`settings_newer` (version plus récente, fichier laissé intact), `settings_dir_missing`,
+`quota_deleted { count, size_mb }` (clips supprimés définitivement par le quota).
 Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }` ;
 `clip_too_short { seconds }` ; `capture_fallback_monitor { title }` ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
@@ -330,7 +339,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 |---|---|
 | Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
-| Index de la bibliothèque (SQLite) | `%APPDATA%\PalaClips\library.db` |
+| Index de la bibliothèque (SQLite, table `clips` : chemin, nom, jeu, type, date, taille, durée, pistes, miniature, favori ; WAL) | `library.db` à côté de `settings.json` (`%APPDATA%\PalaClips\`, ou `PALACLIPS_CONFIG_DIR`) ; le dossier des clips reste la source de vérité |
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |
 | Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
