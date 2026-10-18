@@ -9,7 +9,55 @@
     "settings": "Réglages"
   },
   "gallery": {
-    "pending": "Galerie en préparation."
+    "count": {
+      "one": "{count} clip",
+      "other": "{count} clips"
+    },
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "search": "Rechercher",
+    "searchLabel": "Rechercher un clip par nom ou par jeu",
+    "game": "Jeu",
+    "allGames": "Tous les jeux",
+    "kind": "Type de clip",
+    "kinds": {
+      "all": "Tous",
+      "replay": "Replays",
+      "recording": "Enregistrements"
+    },
+    "favorites": "Favoris",
+    "period": "Période",
+    "periods": {
+      "all": "Toute période",
+      "today": "Aujourd'hui",
+      "week": "7 derniers jours",
+      "month": "30 derniers jours"
+    },
+    "sort": "Tri",
+    "sorts": {
+      "newest": "Plus récents",
+      "oldest": "Plus anciens",
+      "largest": "Plus lourds",
+      "longest": "Plus longs",
+      "name": "Nom"
+    },
+    "loading": "Chargement de la galerie",
+    "noMatch": "Aucun clip ne correspond aux filtres.",
+    "clearFilters": "Effacer les filtres",
+    "recordingChip": "Enr.",
+    "card": "{name}, {game}, {date}, {duration}, {tracks}",
+    "favorite": "Ajouter aux favoris",
+    "unfavorite": "Retirer des favoris",
+    "actions": "Actions pour {name}",
+    "rename": "Renommer",
+    "renameLabel": "Nouveau nom pour {name}",
+    "copy": "Copier le fichier",
+    "reveal": "Ouvrir l'emplacement",
+    "trash": "Mettre à la Corbeille",
+    "copied": "Fichier copié : colle-le dans Discord ou dans l'Explorateur.",
+    "openItem": "Ouvrir",
+    "trashPending": "« {name} » part à la Corbeille.",
+    "undo": "Annuler"
   },
   "units": {
     "kb": "{value} Ko",
@@ -32,7 +80,8 @@
     "heightUnit": "p",
     "minUnit": "min",
     "mbUnit": "Mo",
-    "gbUnit": "Go"
+    "gbUnit": "Go",
+    "percent": "{value} %"
   },
   "time": {
     "now": "à l'instant",
@@ -46,7 +95,15 @@
   },
   "keys": {
     "shift": "Maj",
-    "super": "Win"
+    "super": "Win",
+    "enter": "Entrée",
+    "delete": "Suppr",
+    "escape": "Échap",
+    "space": "Espace",
+    "home": "Début",
+    "end": "Fin",
+    "menu": "Maj+F10",
+    "arrows": "Flèches"
   },
   "alerts": {
     "label": "Alertes",
@@ -406,5 +463,65 @@
     "quota_deleted": "Quota atteint : clips les plus anciens supprimés définitivement : {count} ({size_mb} Mo libérés).",
     "export_too_short": "la découpe doit durer au moins une demi-seconde",
     "export_cancelled": "export annulé"
+  },
+  "player": {
+    "back": "Retour à la galerie",
+    "play": "Lecture",
+    "pause": "Pause",
+    "cutStart": "Début de la découpe",
+    "cutEnd": "Fin de la découpe",
+    "tracks": "Pistes du clip",
+    "preparing": "Préparation des pistes…",
+    "noAudio": "Ce clip n'a pas de piste audio.",
+    "untitled": "Piste {number}",
+    "mute": "Couper {name}",
+    "muteShort": "M",
+    "solo": "Isoler {name}",
+    "soloShort": "S",
+    "volume": "Volume de {name}",
+    "position": "Position de lecture",
+    "retry": "Réessayer"
+  },
+  "export": {
+    "title": "Découpe",
+    "mode": "Mode de découpe",
+    "fast": "Rapide",
+    "precise": "Précise",
+    "fastHelp": "Rapide : commence à l'image clé précédente, sans réencodage.",
+    "preciseHelp": "Précise : réencodée à partir de l'image exacte, plus longue à exporter.",
+    "audio": "Pistes audio",
+    "separate": "Séparées",
+    "mixed": "Mixées",
+    "tracks": "Pistes à garder",
+    "noTracks": "Aucune piste : l'extrait sera muet.",
+    "name": "Nom du fichier",
+    "suffix": "extrait",
+    "start": "Exporter",
+    "progress": "Export en cours",
+    "done": "Exporté : {name}",
+    "show": "Montrer",
+    "copy": "Copier",
+    "duration": "Durée {value}",
+    "options": "Pistes {count}/{total}",
+    "mixDoubled": "Le mix complet contient déjà le son des applis : en « Mixées », elles seront doublées.",
+    "followMix": "Suivre le mixage du lecteur",
+    "extension": ".mp4"
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "withKey": "{label} ({key})",
+    "move": "Passer d'un clip à l'autre",
+    "open": "Ouvrir le clip",
+    "favorite": "Ajouter ou retirer des favoris",
+    "rename": "Renommer",
+    "copy": "Copier le fichier",
+    "trash": "Mettre à la Corbeille",
+    "menu": "Toutes les actions du clip",
+    "playPause": "Lecture ou pause",
+    "seek": "Reculer ou avancer d'une seconde",
+    "frame": "Image précédente ou suivante",
+    "cutPoints": "Début ou fin de la découpe à la position actuelle",
+    "jumpCut": "Aller au début ou à la fin de la découpe",
+    "back": "Retour à la galerie"
   }
 }
