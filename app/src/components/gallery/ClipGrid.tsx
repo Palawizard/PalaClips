@@ -56,6 +56,7 @@ export function ClipGrid({
   const [width, setWidth] = useState(0);
   const [viewport, setViewport] = useState({ top: 0, height: 800 });
   const pendingFocus = useRef(false);
+  const root = useRef<HTMLDivElement>(null);
   const layout = layoutFor(width);
   const rows = useMemo(() => gridRows(clips, layout.columns, sort), [clips, layout.columns, sort]);
   const offsets = useMemo(() => {
@@ -69,7 +70,7 @@ export function ClipGrid({
   const total = rows.length ? (offsets[offsets.length - 1] ?? 0) + (rows[rows.length - 1]?.kind === "day" ? DAY_ROW : layout.cardRow) : 0;
 
   useLayoutEffect(() => {
-    const element = scroller.current;
+    const element = root.current?.parentElement;
     if (!element) return;
     let frame = 0;
     const measure = () => {
@@ -89,7 +90,7 @@ export function ClipGrid({
       observer.disconnect();
       element.removeEventListener("scroll", onScroll);
     };
-  }, [scroller]);
+  }, []);
 
   useEffect(() => {
     if (!pendingFocus.current) return;
@@ -162,7 +163,7 @@ export function ClipGrid({
   });
 
   return (
-    <div role="grid" aria-rowcount={rows.length} className="relative" style={{ height: total + INSET }}>
+    <div ref={root} role="grid" aria-rowcount={rows.length} className="relative" style={{ height: total + INSET }}>
       {visible.map(({ row, at, index: rowIndex }) =>
         row.kind === "day" ? (
           <div
