@@ -419,6 +419,7 @@ impl ReplaySettings {
 pub struct StorageSettings {
     pub clips_dir: Option<std::path::PathBuf>,
     pub game_names: std::collections::BTreeMap<String, String>,
+    pub quota_gb: Option<u32>,
 }
 
 impl StorageSettings {
@@ -431,24 +432,52 @@ impl StorageSettings {
             ));
         }
         for name in self.game_names.values() {
-            if name.trim().is_empty() {
-                return Err(EngineError::InvalidConfig(
-                    "un nom de jeu ne peut pas être vide".into(),
-                ));
-            }
-            if crate::games::sanitize(name) != *name {
-                return Err(EngineError::InvalidConfig(format!(
-                    "« {name} » ne peut pas servir de nom de dossier : retire les caractères < > : \" / \\ | ? * ™ ® ©, les doubles espaces et les points ou espaces en début et fin"
-                )));
-            }
-            if is_reserved_folder_name(name) {
-                return Err(EngineError::InvalidConfig(format!(
-                    "« {name} » est un nom réservé par Windows, choisis-en un autre"
-                )));
-            }
+            check_file_name(name)?;
+        }
+        if let Some(quota) = self.quota_gb
+            && !QUOTA_GB.contains(&quota)
+        {
+            return Err(EngineError::InvalidConfig(
+                "le quota doit être entre 1 et 100 000 Go".into(),
+            ));
         }
         Ok(())
     }
+
+    pub fn quota_bytes(&self) -> Option<u64> {
+        self.quota_gb.map(|gb| u64::from(gb) * 1_000_000_000)
+    }
+}
+
+pub const QUOTA_GB: std::ops::RangeInclusive<u32> = 1..=100_000;
+
+pub fn check_file_name(name: &str) -> Result<()> {
+    if name.trim().is_empty() {
+        return Err(EngineError::InvalidName(
+            NameProblem::Empty,
+            name.to_owned(),
+        ));
+    }
+    if crate::games::sanitize(name) != name {
+        return Err(EngineError::InvalidName(
+            NameProblem::ForbiddenCharacters,
+            name.to_owned(),
+        ));
+    }
+    if is_reserved_folder_name(name) {
+        return Err(EngineError::InvalidName(
+            NameProblem::Reserved,
+            name.to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NameProblem {
+    Empty,
+    ForbiddenCharacters,
+    Reserved,
 }
 
 fn is_reserved_folder_name(name: &str) -> bool {

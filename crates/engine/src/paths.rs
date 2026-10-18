@@ -31,6 +31,10 @@ pub fn settings_path() -> Result<PathBuf> {
     Ok(dir.join("settings.json"))
 }
 
+pub fn library_db() -> Result<PathBuf> {
+    Ok(settings_path()?.with_file_name("library.db"))
+}
+
 pub fn recordings_journal() -> Result<PathBuf> {
     Ok(settings_path()?.with_file_name("recordings.txt"))
 }

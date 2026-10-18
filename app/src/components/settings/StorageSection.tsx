@@ -3,14 +3,16 @@ import { bytes } from "../../lib/format.ts";
 import { errorText, localeCompare, useT } from "../../lib/i18n.ts";
 import {
   type EngineConfig,
+  type QuotaPreview,
   type StorageStatus,
   getConfig,
   openClipsDir,
   pickClipsDir,
+  quotaPreview,
   setConfig,
   storageStatus,
 } from "../../lib/ipc.ts";
-import { SettingRow } from "./Settings.tsx";
+import { NumberField, SettingRow, Switch } from "./Settings.tsx";
 
 const BUTTON =
   "pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover";
@@ -66,6 +68,73 @@ function GameNameRow({
         </p>
       )}
     </li>
+  );
+}
+
+const DEFAULT_QUOTA_GB = 100;
+
+function QuotaRow({ quota, onApply }: { quota: number | null; onApply: (quota: number | null) => Promise<void> }) {
+  const t = useT();
+  const [pending, setPending] = useState<{ quota: number; preview: QuotaPreview } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const apply = (next: number | null) =>
+    onApply(next).then(
+      () => setPending(null),
+      (failure) => setError(errorText(failure)),
+    );
+  const request = (next: number | null) => {
+    setError(null);
+    setPending(null);
+    if (next === null) {
+      apply(null);
+      return;
+    }
+    quotaPreview(next).then(
+      (preview) => (preview.deleted.length > 0 ? setPending({ quota: next, preview }) : apply(next)),
+      (failure) => setError(errorText(failure)),
+    );
+  };
+  const freed = pending?.preview.deleted.reduce((sum, clip) => sum + clip.size_bytes, 0) ?? 0;
+
+  return (
+    <>
+      <SettingRow label={t("settings.storage.quota")} help={t("settings.storage.quotaHelp")} error={error}>
+        <span className="flex items-center gap-3">
+          {quota !== null && (
+            <NumberField
+              value={quota}
+              min={1}
+              max={100_000}
+              unit={t("units.gbUnit")}
+              label={t("settings.storage.quotaLabel")}
+              onCommit={request}
+            />
+          )}
+          <Switch
+            checked={quota !== null || pending !== null}
+            label={t("settings.storage.quota")}
+            onChange={(on) => request(on ? DEFAULT_QUOTA_GB : null)}
+          />
+        </span>
+      </SettingRow>
+      {pending && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-line bg-surface-2 px-5 py-4">
+          <p className="flex-1 text-[14px] text-ink">
+            {t("settings.storage.quotaConfirm", { count: pending.preview.deleted.length, size: bytes(freed) })}
+          </p>
+          <button
+            type="button"
+            onClick={() => apply(pending.quota)}
+            className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
+          >
+            {t("settings.storage.quotaApply")}
+          </button>
+          <button type="button" onClick={() => setPending(null)} className={BUTTON}>
+            {t("settings.cancel")}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -143,6 +212,11 @@ export function StorageSection() {
           </button>
         </span>
       </SettingRow>
+
+      <QuotaRow
+        quota={config.storage.quota_gb}
+        onApply={(quota_gb) => save({ ...config, storage: { ...config.storage, quota_gb } }).then(refreshStatus)}
+      />
 
       <section aria-labelledby="game-names-title">
         <div className="border-b border-line px-5 pt-5 pb-3">

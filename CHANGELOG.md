@@ -116,6 +116,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   commencer par le replay en mémoire et découpage par durée ou par taille (Réglages >
   Enregistrement). Un enregistrement interrompu (plantage, coupure) est réparé au démarrage
   suivant et apparaît comme un clip normal.
+- Bibliothèque des clips : index rapide du dossier des clips, mis à jour tout seul quand un clip
+  est ajouté, renommé ou supprimé hors de l'app ; favoris ; renommer, mettre à la Corbeille,
+  montrer dans l'Explorateur.
+- Quota de disque (Réglages > Stockage) : au-delà, les plus anciens clips non favoris sont
+  supprimés définitivement ; PalaClips dit combien et quelle taille avant d'appliquer.
 - Disque plein : alerte sous 2 Go libres pendant un enregistrement, arrêt propre sous 300 Mo
   (le fichier reste lisible) ; une sauvegarde du replay qui ne tiendrait pas est refusée avec
   un message clair.
