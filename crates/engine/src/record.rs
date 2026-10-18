@@ -121,11 +121,7 @@ pub fn finalize(path: &Path) -> Result<()> {
             time_base: stream.time_base,
             frame_rate: (stream.avg_frame_rate.num > 0 && stream.avg_frame_rate.den > 0)
                 .then(|| (stream.avg_frame_rate.num / stream.avg_frame_rate.den) as u32),
-            title: stream
-                .metadata()
-                .as_ref()
-                .and_then(|metadata| metadata.get(c"title", None, 0))
-                .map(|entry| entry.value().to_string_lossy().into_owned()),
+            title: crate::library::stream_title(stream),
         })
         .collect();
     let finished = path.with_extension("recovering.mp4");
