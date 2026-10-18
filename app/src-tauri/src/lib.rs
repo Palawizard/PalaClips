@@ -183,6 +183,8 @@ pub struct EngineSlot {
     library_watch: Mutex<Option<palaclips_engine::library::LibraryWatch>>,
     track_cache: Mutex<Option<palaclips_engine::library::TrackCache>>,
     extracting: Mutex<()>,
+    exports: Mutex<HashMap<u32, Arc<std::sync::atomic::AtomicBool>>>,
+    next_export: AtomicU32,
 }
 
 impl EngineSlot {
@@ -239,6 +241,8 @@ impl EngineSlot {
             library_watch: Mutex::new(None),
             track_cache: Mutex::new(None),
             extracting: Mutex::new(()),
+            exports: Mutex::new(HashMap::new()),
+            next_export: AtomicU32::new(1),
         })
     }
 
@@ -620,6 +624,8 @@ pub fn run() {
             commands::quota_preview,
             commands::prepare_player,
             commands::copy_clip,
+            commands::start_export,
+            commands::cancel_export,
             commands::list_recent_clips,
             commands::list_encoders,
             commands::memory_status,

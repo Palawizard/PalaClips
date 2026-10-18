@@ -19,7 +19,7 @@ pub use d3d11::{create_device, frame_texture, render_texture, staging_texture};
 pub use hdr::HdrToSdr;
 pub use log::route_ffmpeg_logs;
 pub use thumbnail::{THUMBNAIL_WIDTH, encode_jpeg, encode_png_rgba, write_thumbnail};
-pub use video::{VideoEncoder, VideoEncoderSettings};
+pub use video::{SystemFrameEncoder, VideoEncoder, VideoEncoderSettings};
 
 use crate::config::VideoCodec;
 use crate::error::{EngineError, Result};
@@ -161,7 +161,11 @@ fn accepts_d3d11_frames(codec: &AVCodec) -> bool {
 }
 
 fn video_codec(codec: &AVCodec) -> Option<VideoCodec> {
-    match codec.id {
+    codec_of_id(codec.id)
+}
+
+pub fn codec_of_id(id: ffi::AVCodecID) -> Option<VideoCodec> {
+    match id {
         ffi::AV_CODEC_ID_H264 => Some(VideoCodec::H264),
         ffi::AV_CODEC_ID_HEVC => Some(VideoCodec::Hevc),
         ffi::AV_CODEC_ID_AV1 => Some(VideoCodec::Av1),

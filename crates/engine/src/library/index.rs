@@ -137,6 +137,9 @@ struct Scanned {
 fn is_clip(path: &Path) -> bool {
     path.extension()
         .is_some_and(|extension| extension.eq_ignore_ascii_case("mp4"))
+        && !path
+            .file_stem()
+            .is_some_and(|stem| stem.to_string_lossy().ends_with(".part"))
 }
 
 fn scan(root: &Path) -> Vec<Scanned> {

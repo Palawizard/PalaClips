@@ -403,6 +403,8 @@
     "name_reserved": "“{name}” is reserved by Windows: pick another one.",
     "clip_name_taken": "A clip is already named “{name}”.",
     "clip_unknown": "This clip is no longer in the library.",
-    "quota_deleted": "Quota reached: oldest clips deleted for good: {count} ({size_mb} MB freed)."
+    "quota_deleted": "Quota reached: oldest clips deleted for good: {count} ({size_mb} MB freed).",
+    "export_too_short": "the cut must last at least half a second",
+    "export_cancelled": "export cancelled"
   }
 }
