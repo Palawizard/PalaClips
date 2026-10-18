@@ -287,7 +287,9 @@ d'une erreur système.
 | `clip_games` | 6 ✅ | jeux (sous-dossiers) présents dans la bibliothèque |
 | `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 ✅ | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
 | `quota_preview { quotaGb }` | 6 ✅ | STO-04 : taille totale et clips qui seraient supprimés (plus anciens, jamais un favori ni un enregistrement en cours) |
-| `clip_*` (copier, exporter) | 6 | galerie : copier dans le presse-papiers, exporter |
+| `prepare_player { path }` | 6 ✅ | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\PalaClips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
+| `copy_clip { path }` | 6 ✅ | GAL-05 : copie le fichier dans le presse-papiers (`CF_HDROP`) pour le coller dans Discord ou l'Explorateur |
+| `clip_*` (exporter) | 6 | galerie : découpe et export |
 | `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 ✅ | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay`, `toggle_recording` (défaut `Ctrl+Alt+F9`) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab…), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
 | `performance_snapshot` | 7 | panneau de performances |
 | `export_diagnostics` | 8 | archive zip |
@@ -306,6 +308,11 @@ le relevé précédent, un nombre par piste dans l'ordre des pistes : le front i
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
 fenêtre),
+Protocole `palaclips` (ADR-007, `register_asynchronous_uri_scheme_protocol`) :
+`http://palaclips.localhost/<chemin encodé>` (`convertFileSrc(path, "palaclips")`), sert un clip
+de la bibliothèque ou une piste du cache, et rien d'autre (403 ; `..` refusé) ; réponses `206`
+par plages, 4 Mo au plus par réponse ; lecture sur un fil bloquant de Tauri.
+
 Événement Tauri `library-changed` (sans contenu) : la bibliothèque a changé (synchro au
 démarrage, surveillance du dossier, renommage, Corbeille, quota) ; la galerie relit `list_clips`.
 
