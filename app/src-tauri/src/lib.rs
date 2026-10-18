@@ -832,17 +832,42 @@ fn hotkey_unavailable_alert(keys: &str) -> EngineEvent {
     shell_alert(Localized::new("hotkey_unavailable").with("keys", keys))
 }
 
+const TEST_WINDOW_ENV: &str = "PALACLIPS_TEST_WINDOW";
+
+fn show_without_focus(window: &tauri::WebviewWindow) -> tauri::Result<()> {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{SW_SHOWNOACTIVATE, ShowWindow};
+
+    let handle = HWND(window.hwnd()?.0);
+    // SAFETY: `handle` is the live top-level window Tauri just created on this thread.
+    unsafe { ShowWindow(handle, SW_SHOWNOACTIVATE) }.ok().ok();
+    Ok(())
+}
+
+fn test_window_position() -> Option<(i32, i32)> {
+    let value = std::env::var(TEST_WINDOW_ENV).ok()?;
+    let (x, y) = value.split_once(',')?;
+    Some((x.trim().parse().ok()?, y.trim().parse().ok()?))
+}
+
 pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         window.show()?;
         window.set_focus()?;
         return Ok(());
     }
+    let placed = test_window_position();
     let window = WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
         .title("PalaClips")
         .inner_size(1180.0, 760.0)
         .min_inner_size(900.0, 600.0)
+        .visible(placed.is_none())
+        .focused(placed.is_none())
         .build()?;
+    if let Some((x, y)) = placed {
+        window.set_position(tauri::PhysicalPosition::new(x, y))?;
+        show_without_focus(&window)?;
+    }
     set_level_rate(app, LevelRate::Focused);
     let watched = window.clone();
     window.on_window_event(move |event| {
