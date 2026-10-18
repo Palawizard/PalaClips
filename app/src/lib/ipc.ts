@@ -240,6 +240,21 @@ export function quotaPreview(quotaGb: number): Promise<QuotaPreview> {
   return invoke<QuotaPreview>("quota_preview", { quotaGb });
 }
 
+export const MEDIA_SCHEME = "palaclips";
+
+export interface TrackFile {
+  title: string;
+  path: string;
+}
+
+export function preparePlayer(path: string): Promise<TrackFile[]> {
+  return invoke<TrackFile[]>("prepare_player", { path });
+}
+
+export function copyClip(path: string): Promise<void> {
+  return invoke("copy_clip", { path });
+}
+
 export type VideoCodec = "h264" | "hevc" | "av1";
 export type VideoQuality = "quality" | "balanced" | "light" | "custom";
 export type ReplayStorage = "ram" | "disk";
