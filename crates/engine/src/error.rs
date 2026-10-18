@@ -103,6 +103,12 @@ pub enum EngineError {
     #[error("le disque des clips est plein")]
     DiskFull,
 
+    #[error("la découpe doit durer au moins une demi-seconde")]
+    ExportTooShort,
+
+    #[error("export annulé")]
+    ExportCancelled,
+
     #[error("le calibrage s'est arrêté")]
     CalibrationStopped,
 
@@ -184,6 +190,8 @@ impl EngineError {
             Self::CalibrationBusy => Localized::new("calibration_busy"),
             Self::RecordingRunning => Localized::new("recording_running"),
             Self::DiskFull => Localized::new("disk_full"),
+            Self::ExportTooShort => Localized::new("export_too_short"),
+            Self::ExportCancelled => Localized::new("export_cancelled"),
             Self::CalibrationStopped => Localized::new("calibration_stopped"),
             Self::Stopped => Localized::new("engine_stopped"),
             Self::ReplayNotArmed => Localized::new("replay_not_armed"),

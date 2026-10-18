@@ -12,10 +12,12 @@ use crate::encode::route_ffmpeg_logs;
 use crate::error::{EngineError, Result};
 use crate::paths;
 
+mod export;
 mod index;
 mod media;
 mod watch;
 
+pub use export::{ExportRequest, export_clip, partial_path};
 pub use index::{Clip, ClipKind, ClipQuery, ClipSort, Library, SyncReport};
 pub use media::{TrackCache, TrackFile, copy_file_to_clipboard, thumbnail_from_file};
 pub use watch::{LibraryWatch, watch};

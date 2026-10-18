@@ -255,6 +255,20 @@ pub fn copy_clip(slot: State<'_, EngineSlot>, path: String) -> Result<(), Locali
 }
 
 #[tauri::command]
+pub fn start_export(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    export: crate::clips::ExportInput,
+) -> Result<u32, Localized> {
+    slot.start_export(&app, export)
+}
+
+#[tauri::command]
+pub fn cancel_export(slot: State<'_, EngineSlot>, id: u32) {
+    slot.cancel_export(id);
+}
+
+#[tauri::command]
 pub async fn list_recent_clips(
     slot: State<'_, EngineSlot>,
     limit: usize,
@@ -428,7 +442,7 @@ pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<HardwareEn
     cached_encoders(&slot)
 }
 
-fn cached_encoders(slot: &EngineSlot) -> Result<Vec<HardwareEncoder>, Localized> {
+pub(crate) fn cached_encoders(slot: &EngineSlot) -> Result<Vec<HardwareEncoder>, Localized> {
     if let Some(encoders) = slot.encoders.lock().ok().and_then(|cache| cache.clone()) {
         return Ok(encoders);
     }

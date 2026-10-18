@@ -148,6 +148,8 @@ Critères :
       limité, lues en continu par des `<audio>` branchés sur Web Audio, recalées au-delà de
       ~40 ms ; jamais de piste entière en `AudioBuffer`.
 - [ ] Découpe rapide / précise, export pistes choisies ou mixées, copier dans le presse-papiers.
+      Fait côté moteur et commandes (tests : coupe rapide sur image clé, pistes choisies, mix,
+      annulation ; coupe précise à l'image près sur NVENC, test `--ignored`). Reste : l'UI.
 - [ ] Galerie fluide (virtualisation) avec 5 000 clips.
 - [ ] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
       montre pas, ADR-021).
