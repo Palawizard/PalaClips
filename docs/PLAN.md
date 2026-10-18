@@ -139,8 +139,10 @@ Critères :
       dans la galerie va à la Corbeille (GAL-05).
 - [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota. Fait : index,
       synchro au démarrage, surveillance (`notify`), quota, favori / renommer / Corbeille /
-      Explorateur. Reste : miniature des clips ajoutés hors de l'app (avec la galerie).
-- [ ] Protocole `palaclips://` avec `Range`.
+      Explorateur, miniature des clips ajoutés hors de l'app.
+- [ ] Protocole `palaclips://` avec `Range`. Fait (plages de 4 Mo, chemins limités à la
+      bibliothèque et au cache des pistes) ; reste la mesure sur un clip de 4 Go avec le
+      lecteur.
 - [ ] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
       ADR-008 précisé : pistes extraites en `.m4a` par copie de flux dans un cache disque
       limité, lues en continu par des `<audio>` branchés sur Web Audio, recalées au-delà de

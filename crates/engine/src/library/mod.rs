@@ -13,9 +13,11 @@ use crate::error::{EngineError, Result};
 use crate::paths;
 
 mod index;
+mod media;
 mod watch;
 
 pub use index::{Clip, ClipKind, ClipQuery, ClipSort, Library, SyncReport};
+pub use media::{TrackCache, TrackFile, copy_file_to_clipboard, thumbnail_from_file};
 pub use watch::{LibraryWatch, watch};
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -41,6 +43,14 @@ pub struct DiskSpace {
     pub total_bytes: u64,
 }
 
+pub(crate) fn stream_title(stream: &rsmpeg::avformat::AVStreamRef) -> Option<String> {
+    let metadata = stream.metadata();
+    [c"title", c"handler_name"]
+        .into_iter()
+        .find_map(|key| metadata.as_ref()?.get(key, None, 0))
+        .map(|entry| entry.value().to_string_lossy().into_owned())
+}
+
 pub fn probe_clip(path: &Path) -> Result<ClipInfo> {
     route_ffmpeg_logs();
     let url = CString::new(path.to_string_lossy().as_bytes())
@@ -51,15 +61,7 @@ pub fn probe_clip(path: &Path) -> Result<ClipInfo> {
         .streams()
         .iter()
         .filter(|stream| stream.codecpar().codec_type == ffi::AVMEDIA_TYPE_AUDIO)
-        .enumerate()
-        .map(|(index, stream)| {
-            let metadata = stream.metadata();
-            [c"title", c"handler_name"]
-                .into_iter()
-                .find_map(|key| metadata.as_ref()?.get(key, None, 0))
-                .map(|entry| entry.value().to_string_lossy().into_owned())
-                .unwrap_or_else(|| format!("Piste {}", index + 1))
-        })
+        .map(|stream| stream_title(stream).unwrap_or_default())
         .collect();
     Ok(ClipInfo {
         duration_secs: input.duration.max(0) as f64 / f64::from(ffi::AV_TIME_BASE),

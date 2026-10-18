@@ -5,7 +5,7 @@ use std::time::UNIX_EPOCH;
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 
-use super::probe_clip;
+use super::{probe_clip, thumbnail_from_file};
 use crate::config::check_file_name;
 use crate::error::{EngineError, Result};
 use crate::paths;
@@ -319,10 +319,15 @@ impl Library {
             .filter(|parent| *parent != self.root)
             .and_then(Path::file_name)
             .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
-        let thumbnail = paths::thumbnail_path(&file.path)
-            .ok()
-            .filter(|thumbnail| thumbnail.exists())
-            .map(|thumbnail| key(&thumbnail));
+        let thumbnail = paths::thumbnail_path(&file.path).ok().filter(|thumbnail| {
+            thumbnail.exists()
+                || thumbnail_from_file(&file.path, thumbnail)
+                    .inspect_err(|error| {
+                        tracing::debug!(%error, path = %file.path.display(), "miniature non créée");
+                    })
+                    .is_ok()
+        });
+        let thumbnail = thumbnail.map(|thumbnail| key(&thumbnail));
         let tracks = serde_json::to_string(&info.tracks)
             .map_err(|error| EngineError::Library(error.to_string()))?;
         self.conn
