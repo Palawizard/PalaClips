@@ -233,7 +233,7 @@ export function ExportBar({
                 value={name}
                 spellCheck={false}
                 onChange={(event) => setName(event.target.value)}
-                className="h-9 w-72 max-w-full rounded-md bg-transparent px-2.5 text-[14px] text-ink outline-none"
+                className="h-9 w-[26rem] max-w-full rounded-md bg-transparent px-2.5 text-[14px] text-ink outline-none"
               />
               <span className="text-[14px] text-ink-3">{t("export.extension")}</span>
             </span>

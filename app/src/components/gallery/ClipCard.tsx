@@ -208,9 +208,16 @@ export function ClipCard({
   return (
     <div
       data-favorite={clip.favorite}
-      className="gallery-card group relative flex h-full flex-col overflow-hidden rounded-md border border-line bg-surface hover:border-line-strong hover:bg-surface-hover"
+      onContextMenu={(event) => {
+        event.preventDefault();
+        card.current?.focus();
+        setMenuOpen(true);
+      }}
+      className={`gallery-card group @container relative flex h-full flex-col rounded-md border border-line bg-surface hover:border-line-strong hover:bg-surface-hover ${
+        menuOpen ? "z-20" : ""
+      }`}
     >
-      <div className="relative aspect-video overflow-hidden bg-meter-ground">
+      <div className="relative aspect-video overflow-hidden rounded-t-[5px] bg-meter-ground">
         {clip.thumbnail ? (
           <img
             src={convertFileSrc(clip.thumbnail)}
@@ -288,7 +295,7 @@ export function ClipCard({
         onKeyDown={keyDown}
         className="absolute inset-0 rounded-md"
       />
-      <div className="absolute top-[calc(56.25%+4px)] right-1.5 z-10 flex items-center">
+      <div className="absolute top-[calc(56.25cqw+4px)] right-1.5 z-10 flex items-center">
         <button
           type="button"
           tabIndex={-1}
