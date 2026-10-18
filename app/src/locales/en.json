@@ -9,7 +9,55 @@
     "settings": "Settings"
   },
   "gallery": {
-    "pending": "Gallery coming soon."
+    "count": {
+      "one": "{count} clip",
+      "other": "{count} clips"
+    },
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "search": "Search",
+    "searchLabel": "Search clips by name or game",
+    "game": "Game",
+    "allGames": "All games",
+    "kind": "Clip type",
+    "kinds": {
+      "all": "All",
+      "replay": "Replays",
+      "recording": "Recordings"
+    },
+    "favorites": "Favorites",
+    "period": "Period",
+    "periods": {
+      "all": "Any time",
+      "today": "Today",
+      "week": "Last 7 days",
+      "month": "Last 30 days"
+    },
+    "sort": "Sort",
+    "sorts": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "largest": "Largest",
+      "longest": "Longest",
+      "name": "Name"
+    },
+    "loading": "Loading the gallery",
+    "noMatch": "No clip matches the filters.",
+    "clearFilters": "Clear filters",
+    "recordingChip": "Rec.",
+    "card": "{name}, {game}, {date}, {duration}, {tracks}",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites",
+    "actions": "Actions for {name}",
+    "rename": "Rename",
+    "renameLabel": "New name for {name}",
+    "copy": "Copy file",
+    "reveal": "Show in folder",
+    "trash": "Move to Recycle Bin",
+    "copied": "File copied: paste it in Discord or File Explorer.",
+    "openItem": "Open",
+    "trashPending": "“{name}” is going to the Recycle Bin.",
+    "undo": "Undo"
   },
   "units": {
     "kb": "{value} KB",
@@ -32,7 +80,8 @@
     "heightUnit": "p",
     "minUnit": "min",
     "mbUnit": "MB",
-    "gbUnit": "GB"
+    "gbUnit": "GB",
+    "percent": "{value}%"
   },
   "time": {
     "now": "just now",
@@ -46,7 +95,15 @@
   },
   "keys": {
     "shift": "Shift",
-    "super": "Win"
+    "super": "Win",
+    "enter": "Enter",
+    "delete": "Del",
+    "escape": "Esc",
+    "space": "Space",
+    "home": "Home",
+    "end": "End",
+    "menu": "Shift+F10",
+    "arrows": "Arrows"
   },
   "alerts": {
     "label": "Alerts",
@@ -406,5 +463,65 @@
     "quota_deleted": "Quota reached: oldest clips deleted for good: {count} ({size_mb} MB freed).",
     "export_too_short": "the cut must last at least half a second",
     "export_cancelled": "export cancelled"
+  },
+  "player": {
+    "back": "Back to the gallery",
+    "play": "Play",
+    "pause": "Pause",
+    "cutStart": "Cut start",
+    "cutEnd": "Cut end",
+    "tracks": "Clip tracks",
+    "preparing": "Preparing tracks…",
+    "noAudio": "This clip has no audio track.",
+    "untitled": "Track {number}",
+    "mute": "Mute {name}",
+    "muteShort": "M",
+    "solo": "Solo {name}",
+    "soloShort": "S",
+    "volume": "{name} volume",
+    "position": "Playback position",
+    "retry": "Retry"
+  },
+  "export": {
+    "title": "Cut",
+    "mode": "Cut mode",
+    "fast": "Fast",
+    "precise": "Exact",
+    "fastHelp": "Fast: starts at the previous keyframe, without re-encoding.",
+    "preciseHelp": "Exact: re-encoded from the exact frame, slower to export.",
+    "audio": "Audio tracks",
+    "separate": "Separate",
+    "mixed": "Mixed",
+    "tracks": "Tracks to keep",
+    "noTracks": "No track: the cut will be silent.",
+    "name": "File name",
+    "suffix": "cut",
+    "start": "Export",
+    "progress": "Exporting",
+    "done": "Exported: {name}",
+    "show": "Show",
+    "copy": "Copy",
+    "duration": "Length {value}",
+    "options": "Tracks {count}/{total}",
+    "mixDoubled": "The full mix already contains the apps' sound: in “Mixed”, they will be doubled.",
+    "followMix": "Follow the player's mix",
+    "extension": ".mp4"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "withKey": "{label} ({key})",
+    "move": "Move between clips",
+    "open": "Open the clip",
+    "favorite": "Add to or remove from favorites",
+    "rename": "Rename",
+    "copy": "Copy the file",
+    "trash": "Move to the Recycle Bin",
+    "menu": "All clip actions",
+    "playPause": "Play or pause",
+    "seek": "Back or forward one second",
+    "frame": "Previous or next frame",
+    "cutPoints": "Cut start or end at the current position",
+    "jumpCut": "Go to the cut start or end",
+    "back": "Back to the gallery"
   }
 }

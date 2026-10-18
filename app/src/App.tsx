@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Alerts } from "./components/Alerts.tsx";
+import { Gallery } from "./components/gallery/Gallery.tsx";
 import { Rail, type View } from "./components/Rail.tsx";
 import { RecentClips } from "./components/RecentClips.tsx";
 import { Roster } from "./components/Roster.tsx";
@@ -7,15 +8,6 @@ import { Settings } from "./components/settings/Settings.tsx";
 import { StatusBanner } from "./components/StatusBanner.tsx";
 import { useT } from "./lib/i18n.ts";
 import { useEngine } from "./lib/useEngine.ts";
-
-function Pending({ title, text }: { title: string; text: string }) {
-  return (
-    <section className="max-w-[60ch] px-8 py-10">
-      <h1 className="text-[22px] font-semibold">{title}</h1>
-      <p className="mt-2 text-ink-2">{text}</p>
-    </section>
-  );
-}
 
 export default function App() {
   const t = useT();
@@ -52,9 +44,7 @@ export default function App() {
             </div>
           </>
         )}
-        {view === "gallery" && (
-          <Pending title={t("nav.gallery")} text={t("gallery.pending")} />
-        )}
+        {view === "gallery" && <Gallery config={engine.config} saveKeys={engine.saveKeys} />}
         {view === "settings" && <Settings status={engine.status} />}
       </main>
     </div>
