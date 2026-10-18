@@ -146,6 +146,78 @@ impl VideoEncoder {
     }
 }
 
+pub struct SystemFrameEncoder {
+    context: AVCodecContext,
+}
+
+impl std::fmt::Debug for SystemFrameEncoder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SystemFrameEncoder")
+            .field("encoder", &self.context.codec().name())
+            .finish_non_exhaustive()
+    }
+}
+
+impl SystemFrameEncoder {
+    pub fn open(
+        encoder: &str,
+        size: Size,
+        time_base: AVRational,
+        frame_rate: AVRational,
+        bitrate_kbps: u32,
+    ) -> Result<Self> {
+        route_ffmpeg_logs();
+        let name = CString::new(encoder)
+            .map_err(|_| EngineError::Encoder("nom d'encodeur invalide".into()))?;
+        let codec = AVCodec::find_encoder_by_name(&name)
+            .ok_or_else(|| EngineError::Encoder(format!("encodeur {encoder} absent de FFmpeg")))?;
+        let fps = (f64::from(frame_rate.num) / f64::from(frame_rate.den.max(1))).round() as u32;
+        let bit_rate = i64::from(bitrate_kbps) * 1_000;
+        let mut context = AVCodecContext::new(&codec);
+        context.set_width(size.width as i32);
+        context.set_height(size.height as i32);
+        context.set_pix_fmt(ffi::AV_PIX_FMT_NV12);
+        context.set_time_base(time_base);
+        context.set_framerate(frame_rate);
+        context.set_gop_size((fps * 2).max(1) as i32);
+        context.set_max_b_frames(0);
+        context.set_bit_rate(bit_rate);
+        context.set_flags(context.flags | ffi::AV_CODEC_FLAG_GLOBAL_HEADER as i32);
+        // SAFETY: plain field writes on an allocated, not yet opened codec context.
+        unsafe {
+            let raw = &mut *context.as_mut_ptr();
+            raw.rc_max_rate = bit_rate;
+            raw.rc_buffer_size = bit_rate.min(i32::MAX as i64) as i32;
+        }
+        set_private_options(&mut context, encoder, fps.max(1))?;
+        context
+            .open(None)
+            .map_err(|error| EngineError::Encoder(format!("{encoder} : {error}")))?;
+        Ok(Self { context })
+    }
+
+    pub fn codec_parameters(&self) -> AVCodecParameters {
+        self.context.extract_codecpar()
+    }
+
+    pub fn encode(
+        &mut self,
+        frame: Option<&AVFrame>,
+        on_packet: &mut impl FnMut(AVPacket) -> Result<()>,
+    ) -> Result<()> {
+        self.context.send_frame(frame).map_err(ffmpeg_error)?;
+        loop {
+            match self.context.receive_packet() {
+                Ok(packet) => on_packet(packet)?,
+                Err(RsmpegError::EncoderDrainError | RsmpegError::EncoderFlushedError) => {
+                    return Ok(());
+                }
+                Err(error) => return Err(ffmpeg_error(error)),
+            }
+        }
+    }
+}
+
 fn qsv_frames_context(
     hw_device: &AVHWDeviceContext,
     frames: &AVHWFramesContext,

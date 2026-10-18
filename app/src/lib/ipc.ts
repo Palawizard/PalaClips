@@ -255,6 +255,41 @@ export function copyClip(path: string): Promise<void> {
   return invoke("copy_clip", { path });
 }
 
+export interface ExportInput {
+  path: string;
+  name: string;
+  start_secs: number;
+  end_secs: number;
+  precise: boolean;
+  tracks: number[];
+  mix: boolean;
+  mix_title: string;
+}
+
+export interface ExportFinished {
+  id: number;
+  path: string | null;
+  error: Localized | null;
+}
+
+export function startExport(exportInput: ExportInput): Promise<number> {
+  return invoke<number>("start_export", { export: exportInput });
+}
+
+export function cancelExport(id: number): Promise<void> {
+  return invoke("cancel_export", { id });
+}
+
+export function onExportProgress(handler: (id: number, progress: number) => void): Promise<UnlistenFn> {
+  return listen<{ id: number; progress: number }>("export-progress", (message) =>
+    handler(message.payload.id, message.payload.progress),
+  );
+}
+
+export function onExportFinished(handler: (finished: ExportFinished) => void): Promise<UnlistenFn> {
+  return listen<ExportFinished>("export-finished", (message) => handler(message.payload));
+}
+
 export type VideoCodec = "h264" | "hevc" | "av1";
 export type VideoQuality = "quality" | "balanced" | "light" | "custom";
 export type ReplayStorage = "ram" | "disk";
