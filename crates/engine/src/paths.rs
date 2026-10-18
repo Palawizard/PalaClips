@@ -52,6 +52,13 @@ pub fn calibration_clip_path() -> Result<PathBuf> {
         .join("calibration.mp4"))
 }
 
+pub fn track_cache_dir() -> Result<PathBuf> {
+    Ok(known_folder(&FOLDERID_LocalAppData)?
+        .join(APP_DIR)
+        .join("cache")
+        .join("tracks"))
+}
+
 pub fn thumbnail_path(clip: &Path) -> Result<PathBuf> {
     let name = clip.file_stem().unwrap_or_default();
     Ok(known_folder(&FOLDERID_LocalAppData)?

@@ -242,6 +242,19 @@ pub async fn quota_preview(
 }
 
 #[tauri::command]
+pub async fn prepare_player(
+    slot: State<'_, EngineSlot>,
+    path: String,
+) -> Result<Vec<palaclips_engine::library::TrackFile>, Localized> {
+    slot.prepare_player(&path)
+}
+
+#[tauri::command]
+pub fn copy_clip(slot: State<'_, EngineSlot>, path: String) -> Result<(), Localized> {
+    slot.copy_clip(&path)
+}
+
+#[tauri::command]
 pub async fn list_recent_clips(
     slot: State<'_, EngineSlot>,
     limit: usize,

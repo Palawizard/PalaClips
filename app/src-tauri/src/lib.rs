@@ -181,6 +181,8 @@ pub struct EngineSlot {
     status: Arc<Mutex<AppStatus>>,
     library: Mutex<Option<palaclips_engine::library::Library>>,
     library_watch: Mutex<Option<palaclips_engine::library::LibraryWatch>>,
+    track_cache: Mutex<Option<palaclips_engine::library::TrackCache>>,
+    extracting: Mutex<()>,
 }
 
 impl EngineSlot {
@@ -235,6 +237,8 @@ impl EngineSlot {
             status,
             library: Mutex::new(None),
             library_watch: Mutex::new(None),
+            track_cache: Mutex::new(None),
+            extracting: Mutex::new(()),
         })
     }
 
@@ -556,6 +560,12 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
+        .register_asynchronous_uri_scheme_protocol(
+            clips::MEDIA_SCHEME,
+            |context, request, responder| {
+                clips::serve_media(context.app_handle(), request, responder);
+            },
+        )
         .plugin(
             tauri_plugin_autostart::Builder::new()
                 .args([AUTOSTART_ARG])
@@ -608,6 +618,8 @@ pub fn run() {
             commands::trash_clip,
             commands::reveal_clip,
             commands::quota_preview,
+            commands::prepare_player,
+            commands::copy_clip,
             commands::list_recent_clips,
             commands::list_encoders,
             commands::memory_status,
