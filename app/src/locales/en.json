@@ -31,7 +31,8 @@
     "mbpsUnit": "Mb/s",
     "heightUnit": "p",
     "minUnit": "min",
-    "mbUnit": "MB"
+    "mbUnit": "MB",
+    "gbUnit": "GB"
   },
   "time": {
     "now": "just now",
@@ -173,7 +174,15 @@
       "noGames": "No games yet.",
       "folderColumn": "Folder",
       "exeColumn": "Executable",
-      "folderFor": "Folder name for {exe}"
+      "folderFor": "Folder name for {exe}",
+      "quota": "Quota",
+      "quotaHelp": "Above it, the oldest non-favorite clips are deleted for good, without going to the Recycle Bin.",
+      "quotaLabel": "Quota in gigabytes",
+      "quotaConfirm": {
+        "one": "{count} clip, the oldest, will be deleted for good ({size}). It won't go to the Recycle Bin.",
+        "other": "{count} clips, the oldest, will be deleted for good ({size}). They won't go to the Recycle Bin."
+      },
+      "quotaApply": "Delete and apply"
     },
     "replay": {
       "estimate": "Buffer estimate",
@@ -386,6 +395,14 @@
     "action_toggle_recording": "Start or stop recording",
     "disk_full": "the clips drive is full",
     "disk_almost_full": "Clips drive almost full: {free_mb} MB free. Recording stops below 300 MB.",
-    "recording_recovered": "Interrupted recording recovered: {name}."
+    "recording_recovered": "Interrupted recording recovered: {name}.",
+    "library_loading": "The clip library is still loading: try again in a moment.",
+    "library_failed": "clip library: {detail}",
+    "name_empty": "The name can't be empty.",
+    "name_forbidden_characters": "“{name}” can't be used as a file name: remove the characters < > : \" / \\ | ? * ™ ® ©, double spaces and leading or trailing dots or spaces.",
+    "name_reserved": "“{name}” is reserved by Windows: pick another one.",
+    "clip_name_taken": "A clip is already named “{name}”.",
+    "clip_unknown": "This clip is no longer in the library.",
+    "quota_deleted": "Quota reached: oldest clips deleted for good: {count} ({size_mb} MB freed)."
   }
 }

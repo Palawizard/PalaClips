@@ -1,3 +1,4 @@
+mod clips;
 mod commands;
 mod feedback;
 mod hotkeys;
@@ -178,6 +179,8 @@ pub struct EngineSlot {
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
     status: Arc<Mutex<AppStatus>>,
+    library: Mutex<Option<palaclips_engine::library::Library>>,
+    library_watch: Mutex<Option<palaclips_engine::library::LibraryWatch>>,
 }
 
 impl EngineSlot {
@@ -230,6 +233,8 @@ impl EngineSlot {
             engine: Mutex::new(Some(engine)),
             handle,
             status,
+            library: Mutex::new(None),
+            library_watch: Mutex::new(None),
         })
     }
 
@@ -278,11 +283,19 @@ impl EngineSlot {
         Ok(())
     }
 
-    fn apply(&self, mut config: EngineConfig) -> Result<(), Localized> {
+    fn apply(&self, app: &tauri::AppHandle, mut config: EngineConfig) -> Result<(), Localized> {
         config.audio.default_names = settings::track_names(self.language());
         config.validate()?;
+        let previous = self.config().storage;
         self.update(|settings| settings.engine = config.clone())?;
-        Ok(self.handle.configure(config)?)
+        let storage = config.storage.clone();
+        self.handle.configure(config)?;
+        if previous.clips_dir != storage.clips_dir {
+            clips::start_library(app);
+        } else if previous.quota_gb != storage.quota_gb {
+            self.library_changed(app, &[]);
+        }
+        Ok(())
     }
 
     fn set_language(
@@ -424,7 +437,7 @@ impl EngineSlot {
     fn reset(&self, app: &tauri::AppHandle) -> Result<(), Localized> {
         let defaults = settings::Settings::default();
         self.set_hotkeys(app, defaults.hotkeys.clone())?;
-        self.apply(defaults.engine.clone())?;
+        self.apply(app, defaults.engine.clone())?;
         self.update(|settings| *settings = defaults)?;
         refresh_tray(app, self.language(), self.state() == EngineState::Recording);
         tauri_plugin_autostart::ManagerExt::autolaunch(app)
@@ -455,6 +468,7 @@ impl EngineSlot {
                 duration_secs,
                 ..
             } => {
+                self.library_changed(app, &[std::path::PathBuf::from(path)]);
                 let feedback = self.feedback();
                 if feedback.sound {
                     feedback::play_chime();
@@ -587,6 +601,13 @@ pub fn run() {
             commands::replay_save,
             commands::record_start,
             commands::record_stop,
+            commands::list_clips,
+            commands::clip_games,
+            commands::set_clip_favorite,
+            commands::rename_clip,
+            commands::trash_clip,
+            commands::reveal_clip,
+            commands::quota_preview,
             commands::list_recent_clips,
             commands::list_encoders,
             commands::memory_status,
@@ -634,6 +655,7 @@ pub fn run() {
             }
             let language = slot.language();
             app.manage(slot);
+            clips::start_library(app.handle());
             build_tray(app.handle(), language)?;
             if !std::env::args().any(|arg| arg == AUTOSTART_ARG) {
                 open_main_window(app.handle())?;

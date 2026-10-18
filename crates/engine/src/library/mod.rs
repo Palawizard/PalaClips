@@ -12,6 +12,12 @@ use crate::encode::route_ffmpeg_logs;
 use crate::error::{EngineError, Result};
 use crate::paths;
 
+mod index;
+mod watch;
+
+pub use index::{Clip, ClipKind, ClipQuery, ClipSort, Library, SyncReport};
+pub use watch::{LibraryWatch, watch};
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClipInfo {
     pub duration_secs: f64,
@@ -59,6 +65,31 @@ pub fn probe_clip(path: &Path) -> Result<ClipInfo> {
         duration_secs: input.duration.max(0) as f64 / f64::from(ffi::AV_TIME_BASE),
         tracks,
     })
+}
+
+pub fn move_to_recycle_bin(path: &Path) -> Result<()> {
+    use windows::Win32::UI::Shell::{
+        FO_DELETE, FOF_ALLOWUNDO, FOF_NOCONFIRMATION, FOF_NOERRORUI, FOF_SILENT, SHFILEOPSTRUCTW,
+        SHFileOperationW,
+    };
+
+    use std::os::windows::ffi::OsStrExt;
+
+    let mut from: Vec<u16> = path.as_os_str().encode_wide().chain([0, 0]).collect();
+    let mut operation = SHFILEOPSTRUCTW {
+        wFunc: FO_DELETE,
+        pFrom: windows::core::PCWSTR(from.as_mut_ptr()),
+        fFlags: (FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT).0 as u16,
+        ..Default::default()
+    };
+    // SAFETY: `from` is a double-null-terminated wide path that outlives the call.
+    let status = unsafe { SHFileOperationW(&mut operation) };
+    if status != 0 || operation.fAnyOperationsAborted.as_bool() {
+        return Err(EngineError::Io(std::io::Error::other(format!(
+            "Corbeille : code {status}"
+        ))));
+    }
+    Ok(())
 }
 
 pub fn recent_clips(root: &Path, limit: usize) -> Vec<ClipSummary> {

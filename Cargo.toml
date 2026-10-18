@@ -26,6 +26,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 crossbeam-channel = "0.5"
 parking_lot = "0.12"
 clap = { version = "4.6", features = ["derive"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+notify = "8.2"
 
 windows = "0.62.2"
 windows-capture = "2.0.1"
