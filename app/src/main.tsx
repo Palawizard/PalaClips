@@ -11,6 +11,10 @@ const STARTUP_WAIT_MS = 250;
 const root = document.getElementById("root");
 if (!root) throw new Error("#root");
 
+document.addEventListener("contextmenu", (event) => {
+  if (!(event.target as HTMLElement).closest("input, textarea")) event.preventDefault();
+});
+
 const savedTheme = getTheme().catch(() => "system" as const);
 savedTheme.then(applyTheme);
 const savedLanguage = getLanguage().then(

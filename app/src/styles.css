@@ -210,6 +210,83 @@ body {
   transition: transform 90ms linear;
 }
 
+.gallery-card {
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.gallery-card > [data-clip]:focus-visible {
+  outline-offset: -3px;
+  border-radius: inherit;
+}
+
+.gallery-card:has(> [data-clip]:active) {
+  transform: scale(0.985);
+  transition: transform 140ms var(--ease-out);
+}
+
+.card-play {
+  transition: opacity 160ms var(--ease-out);
+}
+
+.clip-menu {
+  transform-origin: top right;
+  transition:
+    opacity 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.skeleton {
+  animation: skeleton 1.2s var(--ease-out) infinite alternate;
+}
+
+@keyframes skeleton {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.player {
+  animation: player-in 160ms var(--ease-out);
+}
+
+@keyframes player-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.export-fill {
+  transition: transform 200ms linear;
+}
+
+.cut-handle:focus-visible {
+  outline-offset: 0;
+}
+
+.waveform {
+  transition: opacity 160ms var(--ease-out);
+}
+
+.track-lane[data-audible="false"] .waveform {
+  opacity: 0.3;
+}
+
+.export-chevron {
+  transition: transform 160ms var(--ease-out);
+}
+
+.volume-slider {
+  height: 20px;
+  cursor: pointer;
+}
+
 .capture-frame {
   transition: opacity 200ms var(--ease-out);
 
@@ -253,8 +330,23 @@ body {
   .switch-thumb,
   .capture-card,
   .capture-frame,
-  .session-meter {
+  .session-meter,
+  .gallery-card,
+  .card-play,
+  .clip-menu,
+  .export-fill,
+  .export-chevron,
+  .waveform {
     transition-duration: 0ms !important;
+  }
+
+  .skeleton,
+  .player {
+    animation: none;
+  }
+
+  .gallery-card:has(> [data-clip]:active) {
+    transform: none;
   }
 
   .capture-card:has(> [data-card]:active) {

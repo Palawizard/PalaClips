@@ -192,6 +192,7 @@ export interface Clip {
   modified_ms: number;
   size_bytes: number;
   duration_secs: number;
+  fps: number;
   tracks: string[];
   thumbnail: string | null;
   favorite: boolean;
@@ -251,6 +252,10 @@ export function preparePlayer(path: string): Promise<TrackFile[]> {
   return invoke<TrackFile[]>("prepare_player", { path });
 }
 
+export function trackPeaks(path: string): Promise<ArrayBuffer> {
+  return invoke<ArrayBuffer>("track_peaks", { path });
+}
+
 export function copyClip(path: string): Promise<void> {
   return invoke("copy_clip", { path });
 }
@@ -262,6 +267,7 @@ export interface ExportInput {
   end_secs: number;
   precise: boolean;
   tracks: number[];
+  gains: number[];
   mix: boolean;
   mix_title: string;
 }

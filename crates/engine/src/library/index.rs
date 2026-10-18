@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS clips (
     modified_ms INTEGER NOT NULL,
     size_bytes INTEGER NOT NULL,
     duration_secs REAL NOT NULL,
+    fps REAL NOT NULL DEFAULT -1,
     tracks TEXT NOT NULL,
     thumbnail TEXT,
     favorite INTEGER NOT NULL DEFAULT 0
@@ -64,6 +65,7 @@ pub struct Clip {
     pub modified_ms: u64,
     pub size_bytes: u64,
     pub duration_secs: f64,
+    pub fps: f64,
     pub tracks: Vec<String>,
     pub thumbnail: Option<String>,
     pub favorite: bool,
@@ -191,6 +193,14 @@ impl Library {
         conn.pragma_update(None, "journal_mode", "WAL")
             .map_err(db_error)?;
         conn.execute_batch(SCHEMA).map_err(db_error)?;
+        let has_fps = conn
+            .prepare("SELECT 1 FROM pragma_table_info('clips') WHERE name = 'fps'")
+            .and_then(|mut statement| statement.exists([]))
+            .map_err(db_error)?;
+        if !has_fps {
+            conn.execute_batch("ALTER TABLE clips ADD COLUMN fps REAL NOT NULL DEFAULT -1")
+                .map_err(db_error)?;
+        }
         Ok(Self {
             conn,
             root,
@@ -230,13 +240,18 @@ impl Library {
     fn known(&self) -> Result<HashMap<String, (u64, u64)>> {
         let mut statement = self
             .conn
-            .prepare("SELECT path, modified_ms, size_bytes FROM clips")
+            .prepare("SELECT path, modified_ms, size_bytes, fps FROM clips")
             .map_err(db_error)?;
         let rows = statement
             .query_map([], |row| {
+                let probed = row.get::<_, f64>(3)? >= 0.0;
                 Ok((
                     row.get::<_, String>(0)?,
-                    (row.get::<_, i64>(1)? as u64, row.get::<_, i64>(2)? as u64),
+                    if probed {
+                        (row.get::<_, i64>(1)? as u64, row.get::<_, i64>(2)? as u64)
+                    } else {
+                        (0, 0)
+                    },
                 ))
             })
             .map_err(db_error)?;
@@ -335,10 +350,10 @@ impl Library {
             .map_err(|error| EngineError::Library(error.to_string()))?;
         self.conn
             .execute(
-                "INSERT INTO clips (path, name, game, kind, modified_ms, size_bytes, duration_secs, tracks, thumbnail)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                "INSERT INTO clips (path, name, game, kind, modified_ms, size_bytes, duration_secs, tracks, thumbnail, fps)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
                  ON CONFLICT(path) DO UPDATE SET name = ?2, game = ?3, kind = ?4, modified_ms = ?5,
-                     size_bytes = ?6, duration_secs = ?7, tracks = ?8, thumbnail = ?9",
+                     size_bytes = ?6, duration_secs = ?7, tracks = ?8, thumbnail = ?9, fps = ?10",
                 params![
                     key(&file.path),
                     name,
@@ -349,6 +364,7 @@ impl Library {
                     info.duration_secs,
                     tracks,
                     thumbnail,
+                    info.fps,
                 ],
             )
             .map_err(db_error)?;
@@ -365,7 +381,7 @@ impl Library {
 
     pub fn query(&self, query: &ClipQuery) -> Result<Vec<Clip>> {
         let sql = format!(
-            "SELECT path, name, game, kind, modified_ms, size_bytes, duration_secs, tracks, thumbnail, favorite
+            "SELECT path, name, game, kind, modified_ms, size_bytes, duration_secs, tracks, thumbnail, favorite, fps
              FROM clips
              WHERE (?1 IS NULL OR game = ?1)
                AND (?2 IS NULL OR kind = ?2)
@@ -410,6 +426,7 @@ impl Library {
                         tracks: serde_json::from_str(&tracks).unwrap_or_default(),
                         thumbnail: row.get(8)?,
                         favorite: row.get(9)?,
+                        fps: row.get(10)?,
                     })
                 },
             )
