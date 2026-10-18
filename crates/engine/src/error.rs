@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::config::VideoCodec;
+use crate::config::{NameProblem, VideoCodec};
 use crate::events::Localized;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,6 +24,15 @@ impl std::fmt::Display for MissingTarget {
 pub enum EngineError {
     #[error("réglage invalide : {0}")]
     InvalidConfig(String),
+
+    #[error("nom refusé « {1} » : {0:?}")]
+    InvalidName(NameProblem, String),
+
+    #[error("un clip porte déjà le nom « {0} »")]
+    ClipNameTaken(String),
+
+    #[error("bibliothèque des clips : {0}")]
+    Library(String),
 
     #[error(
         "aucun encodeur vidéo matériel n'a fonctionné : PalaClips encode uniquement avec la carte          graphique (NVIDIA NVENC, AMD AMF ou Intel Quick Sync). Mets à jour le pilote de ta carte          graphique puis relance PalaClips"
@@ -121,6 +130,15 @@ impl EngineError {
     pub fn localized(&self) -> Localized {
         match self {
             Self::InvalidConfig(detail) => Localized::new("invalid_config").with("detail", detail),
+            Self::InvalidName(NameProblem::Empty, _) => Localized::new("name_empty"),
+            Self::InvalidName(NameProblem::ForbiddenCharacters, name) => {
+                Localized::new("name_forbidden_characters").with("name", name)
+            }
+            Self::InvalidName(NameProblem::Reserved, name) => {
+                Localized::new("name_reserved").with("name", name)
+            }
+            Self::ClipNameTaken(name) => Localized::new("clip_name_taken").with("name", name),
+            Self::Library(detail) => Localized::new("library_failed").with("detail", detail),
             Self::NoHardwareEncoder => Localized::new("no_hardware_encoder"),
             Self::CodecUnavailable(codec) => {
                 Localized::new("codec_unavailable").with("codec", codec.label())

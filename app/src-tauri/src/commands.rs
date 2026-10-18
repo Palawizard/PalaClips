@@ -107,6 +107,7 @@ pub fn set_feedback(slot: State<'_, EngineSlot>, feedback: Feedback) -> Result<(
 
 #[tauri::command]
 pub async fn set_config(
+    app: tauri::AppHandle,
     slot: State<'_, EngineSlot>,
     config: EngineConfig,
 ) -> Result<(), Localized> {
@@ -115,7 +116,7 @@ pub async fn set_config(
         let encoders = cached_encoders(&slot)?;
         palaclips_engine::engine::try_video_output(&config, &encoders)?;
     }
-    slot.apply(config)
+    slot.apply(&app, config)
 }
 
 #[tauri::command]
@@ -184,6 +185,60 @@ pub fn record_start(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
 #[tauri::command]
 pub fn record_stop(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
     Ok(slot.handle.stop_recording()?)
+}
+
+#[tauri::command]
+pub async fn list_clips(
+    slot: State<'_, EngineSlot>,
+    query: palaclips_engine::library::ClipQuery,
+) -> Result<Vec<palaclips_engine::library::Clip>, Localized> {
+    slot.list_clips(&query)
+}
+
+#[tauri::command]
+pub async fn clip_games(slot: State<'_, EngineSlot>) -> Result<Vec<String>, Localized> {
+    slot.clip_games()
+}
+
+#[tauri::command]
+pub async fn set_clip_favorite(
+    slot: State<'_, EngineSlot>,
+    path: String,
+    favorite: bool,
+) -> Result<(), Localized> {
+    slot.set_clip_favorite(&path, favorite)
+}
+
+#[tauri::command]
+pub async fn rename_clip(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    path: String,
+    name: String,
+) -> Result<String, Localized> {
+    slot.rename_clip(&app, &path, &name)
+}
+
+#[tauri::command]
+pub async fn trash_clip(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    path: String,
+) -> Result<(), Localized> {
+    slot.trash_clip(&app, &path)
+}
+
+#[tauri::command]
+pub fn reveal_clip(slot: State<'_, EngineSlot>, path: String) -> Result<(), Localized> {
+    slot.reveal_clip(&path)
+}
+
+#[tauri::command]
+pub async fn quota_preview(
+    slot: State<'_, EngineSlot>,
+    quota_gb: u32,
+) -> Result<crate::clips::QuotaPreview, Localized> {
+    slot.quota_preview(quota_gb)
 }
 
 #[tauri::command]
