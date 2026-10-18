@@ -624,6 +624,7 @@ pub fn run() {
             commands::quota_preview,
             commands::prepare_player,
             commands::copy_clip,
+            commands::track_peaks,
             commands::start_export,
             commands::cancel_export,
             commands::list_recent_clips,

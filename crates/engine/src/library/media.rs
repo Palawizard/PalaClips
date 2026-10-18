@@ -196,6 +196,90 @@ impl TrackCache {
     }
 }
 
+pub const PEAK_BINS: usize = 1_600;
+const PEAKS_EXTENSION: &str = "peaks";
+
+pub fn track_peaks(track: &Path) -> Result<Vec<u8>> {
+    let cached = track.with_extension(PEAKS_EXTENSION);
+    if let Ok(peaks) = std::fs::read(&cached)
+        && peaks.len() == PEAK_BINS
+    {
+        return Ok(peaks);
+    }
+    let peaks = compute_peaks(track)?;
+    std::fs::write(&cached, &peaks).ok();
+    Ok(peaks)
+}
+
+fn compute_peaks(track: &Path) -> Result<Vec<u8>> {
+    use rsmpeg::avcodec::{AVCodec, AVCodecContext};
+    use rsmpeg::error::RsmpegError;
+
+    let decode_error = |error: RsmpegError| EngineError::Mux(error.to_string());
+    let mut input = open_input(track)?;
+    let (index, parameters, time_base) = input
+        .streams()
+        .iter()
+        .enumerate()
+        .find(|(_, stream)| stream.codecpar().codec_type == ffi::AVMEDIA_TYPE_AUDIO)
+        .map(|(index, stream)| (index, stream.codecpar().clone(), stream.time_base))
+        .ok_or_else(|| EngineError::Mux("aucune piste audio".into()))?;
+    let duration = input.duration.max(1) as f64 / f64::from(ffi::AV_TIME_BASE);
+    let codec = AVCodec::find_decoder(parameters.codec_id)
+        .ok_or_else(|| EngineError::Mux("décodeur absent".into()))?;
+    let mut decoder = AVCodecContext::new(&codec);
+    decoder.apply_codecpar(&parameters).map_err(decode_error)?;
+    decoder.set_pkt_timebase(time_base);
+    decoder.open(None).map_err(decode_error)?;
+    let mut peaks = vec![0f32; PEAK_BINS];
+    let drain = |decoder: &mut AVCodecContext, peaks: &mut [f32]| -> Result<()> {
+        loop {
+            let frame = match decoder.receive_frame() {
+                Ok(frame) => frame,
+                Err(RsmpegError::DecoderDrainError | RsmpegError::DecoderFlushedError) => {
+                    return Ok(());
+                }
+                Err(error) => return Err(decode_error(error)),
+            };
+            if frame.format != ffi::AV_SAMPLE_FMT_FLTP {
+                continue;
+            }
+            let rate = f64::from(frame.sample_rate.max(1));
+            let start = frame.best_effort_timestamp as f64 * f64::from(time_base.num)
+                / f64::from(time_base.den.max(1));
+            let samples = frame.nb_samples.max(0) as usize;
+            for channel in 0..frame.ch_layout.nb_channels.max(0) as usize {
+                // SAFETY: an FLTP frame holds `nb_samples` f32 values in each channel plane.
+                let plane = unsafe {
+                    std::slice::from_raw_parts(
+                        frame.extended_data.add(channel).read().cast::<f32>(),
+                        samples,
+                    )
+                };
+                for (offset, value) in plane.iter().enumerate() {
+                    let at = start + offset as f64 / rate;
+                    let bin = ((at / duration) * PEAK_BINS as f64) as usize;
+                    if let Some(peak) = peaks.get_mut(bin.min(PEAK_BINS - 1)) {
+                        *peak = peak.max(value.abs());
+                    }
+                }
+            }
+        }
+    };
+    while let Some(packet) = input.read_packet().map_err(decode_error)? {
+        if packet.stream_index as usize == index {
+            decoder.send_packet(Some(&packet)).map_err(decode_error)?;
+            drain(&mut decoder, &mut peaks)?;
+        }
+    }
+    decoder.send_packet(None).map_err(decode_error)?;
+    drain(&mut decoder, &mut peaks)?;
+    Ok(peaks
+        .into_iter()
+        .map(|peak| (peak.clamp(0.0, 1.0) * 255.0).round() as u8)
+        .collect())
+}
+
 pub fn copy_file_to_clipboard(path: &Path) -> Result<()> {
     use std::os::windows::ffi::OsStrExt;
     use windows::Win32::Foundation::{GlobalFree, HANDLE, HGLOBAL};
@@ -315,6 +399,32 @@ mod tests {
         let again = cache.tracks(&clip)?;
         assert_eq!(again, tracks);
         assert_eq!(std::fs::metadata(&again[0].path)?.len(), first);
+        std::fs::remove_dir_all(&dir).ok();
+        Ok(())
+    }
+
+    #[test]
+    fn peaks_follow_the_loudness_of_the_track_and_are_cached() -> Result<()> {
+        let dir = scratch("peaks");
+        let clip = dir.join("clip.mp4");
+        two_track_clip(&clip, 2);
+        let cache = TrackCache::new(dir.join("tracks"), u64::MAX);
+        let tracks = cache.tracks(&clip)?;
+        let quiet = track_peaks(Path::new(&tracks[0].path))?;
+        let loud = track_peaks(Path::new(&tracks[1].path))?;
+        assert_eq!(quiet.len(), PEAK_BINS);
+        let middle = PEAK_BINS / 2;
+        assert!(
+            loud[middle] > quiet[middle],
+            "{} {}",
+            loud[middle],
+            quiet[middle]
+        );
+        assert!(
+            Path::new(&tracks[0].path)
+                .with_extension(PEAKS_EXTENSION)
+                .exists()
+        );
         std::fs::remove_dir_all(&dir).ok();
         Ok(())
     }

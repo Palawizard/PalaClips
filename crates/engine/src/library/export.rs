@@ -31,6 +31,8 @@ pub struct ExportRequest {
     pub end_secs: f64,
     pub precise: bool,
     pub tracks: Vec<usize>,
+    #[serde(default)]
+    pub gains: Vec<f32>,
     pub mix: bool,
     pub mix_title: String,
 }
@@ -114,7 +116,7 @@ impl Mixer {
         }
     }
 
-    fn add(&mut self, track: usize, first: i64, samples: &[f32]) {
+    fn add(&mut self, track: usize, first: i64, samples: &[f32], gain: f32) {
         let (first, samples) = if first < self.origin {
             let skip = ((self.origin - first) as usize * MIX_CHANNELS).min(samples.len());
             (self.origin, &samples[skip..])
@@ -126,7 +128,7 @@ impl Mixer {
             self.mixed.resize(offset + samples.len(), 0.0);
         }
         for (slot, sample) in self.mixed[offset..].iter_mut().zip(samples) {
-            *slot += sample;
+            *slot += sample * gain;
         }
         let end = first + (samples.len() / MIX_CHANNELS) as i64;
         if let Some(reached) = self.reached.get_mut(track) {
@@ -433,7 +435,8 @@ impl<'a> Export<'a> {
             let first = ((seconds(frame.best_effort_timestamp, base) - begin) * f64::from(MIX_RATE))
                 .round() as i64;
             let samples = interleaved(&frame, resampler)?;
-            mixer.add(position, first, &samples);
+            let gain = self.request.gains.get(position).copied().unwrap_or(1.0);
+            mixer.add(position, first, &samples, gain);
         }
         self.flush_mix(false)
     }
@@ -524,11 +527,11 @@ mod tests {
     #[test]
     fn mixed_tracks_add_up_and_wait_for_the_slowest_track() {
         let mut mixer = Mixer::new(2);
-        mixer.add(0, 0, &[0.25; 8]);
+        mixer.add(0, 0, &[0.25; 8], 1.0);
         assert!(mixer.take(false).is_empty());
-        mixer.add(1, 0, &[0.5; 4]);
+        mixer.add(1, 0, &[1.0; 4], 0.5);
         assert_eq!(mixer.take(false), [0.75; 4]);
-        mixer.add(1, 2, &[0.5; 4]);
+        mixer.add(1, 2, &[0.5; 4], 1.0);
         assert_eq!(mixer.take(false), [0.75; 4]);
         assert!(mixer.take(true).is_empty());
     }
@@ -536,8 +539,8 @@ mod tests {
     #[test]
     fn a_loud_mix_is_clamped_and_samples_before_the_cut_are_dropped() {
         let mut mixer = Mixer::new(1);
-        mixer.add(0, -2, &[0.9; 8]);
-        mixer.add(0, 0, &[0.9; 4]);
+        mixer.add(0, -2, &[0.9; 8], 1.0);
+        mixer.add(0, 0, &[0.9; 4], 1.0);
         assert_eq!(mixer.take(true), [1.0; 4]);
     }
 }
@@ -637,6 +640,7 @@ mod file_tests {
             end_secs: 3.0,
             precise: false,
             tracks,
+            gains: Vec::new(),
             mix,
             mix_title: "Mix".into(),
         }
@@ -753,6 +757,7 @@ mod hardware_tests {
             end_secs: 3.0,
             precise: true,
             tracks: Vec::new(),
+            gains: Vec::new(),
             mix: false,
             mix_title: String::new(),
         };

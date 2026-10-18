@@ -250,6 +250,11 @@ pub async fn prepare_player(
 }
 
 #[tauri::command]
+pub async fn track_peaks(slot: State<'_, EngineSlot>, path: String) -> Result<Response, Localized> {
+    slot.track_peaks(&path).map(Response::new)
+}
+
+#[tauri::command]
 pub fn copy_clip(slot: State<'_, EngineSlot>, path: String) -> Result<(), Localized> {
     slot.copy_clip(&path)
 }

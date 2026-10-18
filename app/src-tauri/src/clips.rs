@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use palaclips_engine::events::{EngineEvent, Localized, Severity};
 use palaclips_engine::library::{
     Clip, ClipQuery, Library, TrackCache, TrackFile, copy_file_to_clipboard, move_to_recycle_bin,
-    watch,
+    track_peaks, watch,
 };
 use serde::Serialize;
 use tauri::{Emitter, Manager};
@@ -26,6 +26,8 @@ pub struct ExportInput {
     pub end_secs: f64,
     pub precise: bool,
     pub tracks: Vec<usize>,
+    #[serde(default)]
+    pub gains: Vec<f32>,
     pub mix: bool,
     pub mix_title: String,
 }
@@ -190,6 +192,19 @@ impl EngineSlot {
         Ok(cache.tracks(&path)?)
     }
 
+    pub fn track_peaks(&self, path: &str) -> Result<Vec<u8>, Localized> {
+        let path = PathBuf::from(path);
+        let cache = self.track_cache()?;
+        let inside = path.starts_with(cache.dir())
+            && !path
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir));
+        if !inside {
+            return Err(Localized::new("clip_unknown"));
+        }
+        Ok(track_peaks(&path)?)
+    }
+
     pub fn copy_clip(&self, path: &str) -> Result<(), Localized> {
         let path = self.known_clip(path)?;
         Ok(copy_file_to_clipboard(&path)?)
@@ -243,6 +258,7 @@ impl EngineSlot {
             end_secs: input.end_secs,
             precise: input.precise,
             tracks: input.tracks,
+            gains: input.gains,
             mix: input.mix,
             mix_title: input.mix_title,
         };
@@ -275,10 +291,13 @@ impl EngineSlot {
                 if let Err(error) = &result {
                     tracing::warn!(%error, source = %request.source.display(), "export impossible");
                 }
-                if let Some(slot) = app.try_state::<EngineSlot>()
-                    && let Ok(mut exports) = slot.exports.lock()
-                {
-                    exports.remove(&id);
+                if let Some(slot) = app.try_state::<EngineSlot>() {
+                    if let Ok(mut exports) = slot.exports.lock() {
+                        exports.remove(&id);
+                    }
+                    if result.is_ok() {
+                        slot.library_changed(&app, std::slice::from_ref(&request.output));
+                    }
                 }
                 app.emit(
                     EXPORT_FINISHED_EVENT,
@@ -421,6 +440,7 @@ fn media_response(
         .status(StatusCode::PARTIAL_CONTENT)
         .header(header::CONTENT_TYPE, mime)
         .header(header::ACCEPT_RANGES, "bytes")
+        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .header(
             header::CONTENT_RANGE,
             format!("bytes {start}-{end}/{length}"),

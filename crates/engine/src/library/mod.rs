@@ -19,12 +19,15 @@ mod watch;
 
 pub use export::{ExportRequest, export_clip, partial_path};
 pub use index::{Clip, ClipKind, ClipQuery, ClipSort, Library, SyncReport};
-pub use media::{TrackCache, TrackFile, copy_file_to_clipboard, thumbnail_from_file};
+pub use media::{
+    PEAK_BINS, TrackCache, TrackFile, copy_file_to_clipboard, thumbnail_from_file, track_peaks,
+};
 pub use watch::{LibraryWatch, watch};
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClipInfo {
     pub duration_secs: f64,
+    pub fps: f64,
     pub tracks: Vec<String>,
 }
 
@@ -65,8 +68,16 @@ pub fn probe_clip(path: &Path) -> Result<ClipInfo> {
         .filter(|stream| stream.codecpar().codec_type == ffi::AVMEDIA_TYPE_AUDIO)
         .map(|stream| stream_title(stream).unwrap_or_default())
         .collect();
+    let fps = input
+        .streams()
+        .iter()
+        .find(|stream| stream.codecpar().codec_type == ffi::AVMEDIA_TYPE_VIDEO)
+        .map(|stream| stream.avg_frame_rate)
+        .filter(|rate| rate.num > 0 && rate.den > 0)
+        .map_or(0.0, |rate| f64::from(rate.num) / f64::from(rate.den));
     Ok(ClipInfo {
         duration_secs: input.duration.max(0) as f64 / f64::from(ffi::AV_TIME_BASE),
+        fps,
         tracks,
     })
 }
