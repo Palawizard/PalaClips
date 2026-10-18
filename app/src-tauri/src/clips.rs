@@ -11,9 +11,37 @@ use tauri::{Emitter, Manager};
 use crate::{EngineSlot, i18n, internal_error};
 
 pub const LIBRARY_EVENT: &str = "library-changed";
+pub const EXPORT_PROGRESS_EVENT: &str = "export-progress";
+pub const EXPORT_FINISHED_EVENT: &str = "export-finished";
+const PROGRESS_STEP: f64 = 0.01;
 pub const MEDIA_SCHEME: &str = "palaclips";
 const TRACK_CACHE_BYTES: u64 = 2_000_000_000;
 const RANGE_CHUNK: u64 = 4 * 1024 * 1024;
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct ExportInput {
+    pub path: String,
+    pub name: String,
+    pub start_secs: f64,
+    pub end_secs: f64,
+    pub precise: bool,
+    pub tracks: Vec<usize>,
+    pub mix: bool,
+    pub mix_title: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ExportProgress {
+    id: u32,
+    progress: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ExportFinished {
+    id: u32,
+    path: Option<String>,
+    error: Option<Localized>,
+}
 
 #[derive(Debug, Serialize)]
 pub struct QuotaPreview {
@@ -194,6 +222,89 @@ impl EngineSlot {
                 .unwrap_or(false)
     }
 
+    pub fn start_export(
+        &self,
+        app: &tauri::AppHandle,
+        input: ExportInput,
+    ) -> Result<u32, Localized> {
+        let source = self.known_clip(&input.path)?;
+        let name = input.name.trim();
+        palaclips_engine::config::check_file_name(name)?;
+        let output = unique_path(&source.with_file_name(format!("{name}.mp4")));
+        let encoders = if input.precise {
+            crate::commands::cached_encoders(self)?
+        } else {
+            Vec::new()
+        };
+        let request = palaclips_engine::library::ExportRequest {
+            source,
+            output,
+            start_secs: input.start_secs,
+            end_secs: input.end_secs,
+            precise: input.precise,
+            tracks: input.tracks,
+            mix: input.mix,
+            mix_title: input.mix_title,
+        };
+        let id = self
+            .next_export
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        self.exports
+            .lock()
+            .map_err(|_| internal_error())?
+            .insert(id, cancel.clone());
+        let app = app.clone();
+        std::thread::Builder::new()
+            .name("palaclips-export".into())
+            .spawn(move || {
+                let mut reported = -1.0;
+                let mut report = |progress: f64| {
+                    if progress - reported >= PROGRESS_STEP || progress >= 1.0 {
+                        reported = progress;
+                        app.emit(EXPORT_PROGRESS_EVENT, ExportProgress { id, progress })
+                            .ok();
+                    }
+                };
+                let result = palaclips_engine::library::export_clip(
+                    &request,
+                    &encoders,
+                    &mut report,
+                    &cancel,
+                );
+                if let Err(error) = &result {
+                    tracing::warn!(%error, source = %request.source.display(), "export impossible");
+                }
+                if let Some(slot) = app.try_state::<EngineSlot>()
+                    && let Ok(mut exports) = slot.exports.lock()
+                {
+                    exports.remove(&id);
+                }
+                app.emit(
+                    EXPORT_FINISHED_EVENT,
+                    ExportFinished {
+                        id,
+                        path: result
+                            .as_ref()
+                            .ok()
+                            .map(|()| request.output.to_string_lossy().into_owned()),
+                        error: result.err().map(|error| error.localized()),
+                    },
+                )
+                .ok();
+            })
+            .map_err(|_| internal_error())?;
+        Ok(id)
+    }
+
+    pub fn cancel_export(&self, id: u32) {
+        if let Ok(exports) = self.exports.lock()
+            && let Some(cancel) = exports.get(&id)
+        {
+            cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+        }
+    }
+
     pub fn quota_preview(&self, quota_gb: u32) -> Result<QuotaPreview, Localized> {
         let quota = u64::from(quota_gb) * 1_000_000_000;
         self.with_library(|library| {
@@ -203,6 +314,20 @@ impl EngineSlot {
             })
         })
     }
+}
+
+fn unique_path(wanted: &Path) -> PathBuf {
+    let stem = wanted
+        .file_stem()
+        .map(|stem| stem.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let mut path = wanted.to_path_buf();
+    let mut index = 2;
+    while path.exists() {
+        path = wanted.with_file_name(format!("{stem}_{index}.mp4"));
+        index += 1;
+    }
+    path
 }
 
 fn reveal(path: &Path) -> Result<(), Localized> {

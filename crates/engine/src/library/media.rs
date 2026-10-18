@@ -13,7 +13,7 @@ use crate::mux::{Mp4Writer, MuxStream};
 const TRACK_EXTENSION: &str = "m4a";
 const PARTIAL_SUFFIX: &str = ".part";
 
-fn open_input(path: &Path) -> Result<AVFormatContextInput> {
+pub(super) fn open_input(path: &Path) -> Result<AVFormatContextInput> {
     route_ffmpeg_logs();
     let url = CString::new(path.to_string_lossy().as_bytes())
         .map_err(|_| EngineError::Mux("chemin de fichier invalide".into()))?;
