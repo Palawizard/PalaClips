@@ -133,11 +133,13 @@ Critères :
       par injection d'erreur dans l'écriture, puis vrai test sur un petit disque virtuel
       (VHDX de quelques Go) créé et supprimé par un script, avec l'accord de Palawi. Jamais
       remplir le disque C:.
-- [ ] Quota (STO-04) appliqué : jamais un favori supprimé ; ce qui sera supprimé (les plus
+- [x] Quota (STO-04) appliqué : jamais un favori supprimé ; ce qui sera supprimé (les plus
       anciens) dit clairement, confirmation demandée la première fois. Suppression
       **définitive** (la Corbeille ne libère rien), dite clairement ; la suppression manuelle
       dans la galerie va à la Corbeille (GAL-05).
-- [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota.
+- [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota. Fait : index,
+      synchro au démarrage, surveillance (`notify`), quota, favori / renommer / Corbeille /
+      Explorateur. Reste : miniature des clips ajoutés hors de l'app (avec la galerie).
 - [ ] Protocole `palaclips://` avec `Range`.
 - [ ] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
       ADR-008 précisé : pistes extraites en `.m4a` par copie de flux dans un cache disque
