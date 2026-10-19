@@ -348,8 +348,8 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 | Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
 | Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
 | Index de la bibliothèque (SQLite, table `clips` : chemin, nom, jeu, type, date, taille, durée, pistes, miniature, favori ; WAL) | `library.db` à côté de `settings.json` (`%APPDATA%\PalaClips\`, ou `PALACLIPS_CONFIG_DIR`) ; le dossier des clips reste la source de vérité |
-| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) |
-| Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` |
+| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\local\cache\`, pour qu'aucun fichier de test ne sorte du dossier isolé ; le dossier des miniatures est autorisé au protocole `asset` au démarrage |
+| Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` (ou `<dossier>\local\replay\`) |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | Enregistrements en cours (`recordings.txt` : `PID<tab>chemin`, une ligne par fichier ouvert ; au démarrage, ceux d'un processus mort sont remuxés en MP4 classique) | à côté de `settings.json` |
 | DLL FFmpeg (LGPL) | à côté de `palaclips.exe` (ressources du bundle) |
