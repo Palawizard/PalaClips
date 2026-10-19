@@ -181,26 +181,44 @@ Tout est arrêté et les clips supprimés à la fin.
   l'était.
 
 ## T6 — Enregistrement et galerie (phase 6)
-- Enregistrement (app isolée, découpage 1 min) : Démarrer, attendre ~75 s, Arrêter → 2 fichiers
-  `<Jeu>_<date>.mp4` lisibles, le second commence là où le premier finit ; icône de la zone de
-  notification avec un point rouge pendant l'enregistrement. Relancer, tuer le processus après
-  10 s : le fichier se lit jusqu'à la dernière seconde écrite. Fichiers supprimés ensuite.
-- Crash : pendant un enregistrement, `taskkill /F /IM palaclips.exe` → relancer → le clip est
-  dans la galerie et se lit jusqu'à la fin.
-- Gros fichier : enregistrement de 4 Go, déplacements rapides dans le lecteur.
-- Discord : copier un clip depuis la galerie, coller dans Discord, vérifier le son.
-- Disque plein (STO-05) : tests unitaires par injection d'erreur d'écriture
-  (`a_full_disk_stops_the_recording_and_the_file_is_recovered_at_startup`) ; puis
-  `pwsh scripts/disk-full.ps1` dans un terminal **administrateur** (~3 min, accord de
-  Palawi) : VHDX de 1 Go dans `target\`, monté sur une lettre libre, enregistrement à 80 Mb/s
-  d'une fenêtre de bruit ffplay (aucun son, aucune fenêtre de Palawi) jusqu'à l'arrêt sous
-  300 Mo libres ; attendu : alertes `disk_almost_full` et `recording_failed`, sauvegarde du
-  replay refusée, fichier lisible (ffprobe), journal des enregistrements vide. Le VHDX est
-  démonté et supprimé à la fin, même en cas d'échec ; jamais d'écriture sur C: au-delà du
-  VHDX (le script vérifie 6 Go libres avant). Journal : `target/journals/disk-full-*.txt`.
-- Galerie à 5 000 clips : clips factices écrits seulement dans le dossier isolé
-  (`PALACLIPS_CONFIG_DIR`, dossier de clips de test), supprimés à la fin du test.
-- Lecteur : RAM mesurée en lisant un enregistrement d'1 h à 6 pistes (doit rester stable).
+
+Automatisés (🤖, après `npx tauri build --no-bundle` dans `app`) : l'app isolée est pilotée par
+le protocole de débogage de WebView2 (`scripts/cdp.mjs`, port local, aucune touche simulée),
+fenêtre sur l'écran principal sans prise de focus (`app-isolated.ps1 -MainScreen`, ou
+`-LeftScreen` quand Palawi joue). Caches (miniatures, pistes extraites) dans le dossier isolé.
+
+- `pwsh scripts/recording-crash.ps1` (~2 min) : capture d'une fenêtre ffplay (testsrc, aucun
+  son produit), découpage 1 min. Démarrer, 75 s, Arrêter → 2 fichiers, ~75 s au total. Puis
+  Démarrer, 12 s, `taskkill /F /T` : le fichier se lit (≥ 10 s) avant tout redémarrage ;
+  relance → journal `recordings.txt` vidé, fichier finalisé, clip `recording` dans la
+  galerie. Tout est supprimé à la fin. Journal : `target/journals/recording-crash-*.txt`.
+- `pwsh scripts/gallery-bench.ps1` (~10 min, 12 Go libres exigés) : génère un enregistrement
+  factice d'1 h à 6 pistes (testsrc2 720p30 NVENC CBR 9 Mb/s + 6 sinusoïdes AAC, MP4
+  hybride, ~4,4 Go) et 5 000 clips factices de 2 s (copies, dates étalées), le tout sous
+  `target\`. Mesures : indexation, `list_clips`, ouverture de la galerie (6 fois, < 500 ms),
+  défilement par `requestAnimationFrame` à 24 et 120 px par image (≥ 60 i/s ou la cadence de
+  l'écran), ouverture du lecteur, 12 déplacements à l'arrêt et 12 en lecture (image affichée
+  et 6 pistes recalées, < 300 ms), RAM privée (app + WebView2) après 20 s de lecture à 0, 15,
+  30, 45 et 59 min (croissance ≤ 50 Mo). Pistes lues en sourdine. Tout est supprimé à la fin,
+  et le script vérifie que `%LOCALAPPDATA%\PalaClips\cache` n'a pas bougé. Journal :
+  `target/journals/gallery-bench-*.txt`.
+
+Séance avec Palawi (👤, ~10 min, une seule fois) :
+
+1. `pwsh scripts/app-isolated.ps1` (PalaClips fermé avant) ; en jeu, `Ctrl+Alt+F9`, jouer
+   2 à 3 min, `Ctrl+Alt+F9` ; point rouge dans la zone de notification pendant
+   l'enregistrement. Dans la galerie : le clip est là, se lit, pistes séparées, déplacements.
+2. Discord : sur ce clip, `Ctrl+C` dans la galerie, coller dans un salon privé : envoi OK,
+   le son entendu est le mix. Quitter PalaClips (zone de notification > Quitter).
+3. Disque plein (STO-05), dans un terminal **administrateur** : `pwsh -File
+   scripts\disk-full.ps1` (~3 min) : VHDX de 1 Go dans `target\`, monté sur une lettre
+   libre, enregistrement à 80 Mb/s d'une fenêtre de bruit ffplay (aucun son) jusqu'à l'arrêt
+   sous 300 Mo libres ; attendu : alertes `disk_almost_full` et `recording_failed`, sauvegarde
+   du replay refusée, fichier lisible (ffprobe), journal des enregistrements vide. Le VHDX est
+   démonté et supprimé à la fin, même en cas d'échec ; jamais d'écriture sur C: au-delà du
+   VHDX (6 Go libres vérifiés avant). Journal : `target/journals/disk-full-*.txt`. Avant :
+   tests unitaires par injection d'erreur
+   (`a_full_disk_stops_the_recording_and_the_file_is_recovered_at_startup`).
 
 ## T7 — Robustesse (phase 7)
 
