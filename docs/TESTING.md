@@ -182,6 +182,12 @@ Tout est arrêté et les clips supprimés à la fin.
 
 ## T6 — Enregistrement et galerie (phase 6)
 
+Installateur sans l'installer : `npx tauri build` (dans `app`), puis extraire
+`target\release\bundle\nsis\PalaClips_*-setup.exe` avec 7-Zip dans `target\`, lancer
+`palaclips-app.exe` extrait avec `PALACLIPS_CONFIG_DIR` et un PATH sans FFmpeg : l'app arme le
+replay et charge `avcodec`, `avformat`, `avutil` depuis son dossier. Toujours depuis une branche à
+jour de `dev` (isolation du WebView, #56).
+
 Migration des données (ADR-032) : `pwsh scripts/migration-check.ps1` copie les dossiers
 `%APPDATA%\PalaClips` et `%LOCALAPPDATA%\PalaClips` réels dans `target\`, migre la copie et
 vérifie chaque fichier en SHA-256 au nouvel emplacement ; les dossiers réels ne bougent pas.
@@ -242,6 +248,28 @@ Séance avec Palawi (👤, ~10 min, une seule fois) :
 | Cadence limitée (G-Sync) | Fortnite à 225 i/s, G-Sync actif, autre écran à 165 Hz, capture à 240 i/s ; puis G-Sync coupé et jeu plafonné à 120 i/s | `capture_source_rate_limited` (165 Hz) dans le premier cas, aucune alerte dans le second |
 
 ## PERF — mesures (phase 7)
+
+Build installée (accord de Palawi avant d'installer ; PalaClips de dev fermé, même identifiant) :
+
+1. `target\release\bundle\nsis\PalaClips_*-setup.exe /S` : installation silencieuse par
+   utilisateur dans `%LOCALAPPDATA%\PalaClips\`.
+2. `pwsh scripts\perf-installed.ps1` (~5 min) : exe installé lancé avec des réglages isolés
+   (`target\perf-config`), dans la zone de notification (`--autostart`) puis fenêtre ouverte sans
+   focus sur l'écran principal. PERF-01 : working set privé et CPU, replay désarmé, sans fenêtre.
+   PERF-04 : de la relance (instance unique) au premier rendu avec l'état, une fois à froid puis
+   trois fois à chaud. PERF-02 : replay armé (écran principal 1440p60, pistes par défaut, 30 s),
+   fenêtre fermée, working set privé − tampon × 1,07. PERF-03 (part CPU) : CPU replay armé.
+   Journal `target\journals\perf-installed-*.txt`. `-Exe` pour viser une autre build (répétition
+   sur `target\release`).
+3. Désinstallation sans la case : `%LOCALAPPDATA%\PalaClips\uninstall.exe /S` ; attendu :
+   programme et raccourcis retirés, `%APPDATA%\com.palawi.palaclips`,
+   `%LOCALAPPDATA%\com.palawi.palaclips` et le dossier des clips inchangés.
+4. Désinstallation avec la case (👤, accord de Palawi) : réinstaller (étape 1), PalaClips fermé,
+   `pwsh scripts\uninstall-check.ps1 -Step Backup` (copie complète des deux dossiers de
+   l'identifiant + empreinte SHA-256 du dossier des clips), Palawi désinstalle depuis Paramètres
+   > Applications en cochant « Supprimer aussi les réglages… », puis
+   `pwsh scripts\uninstall-check.ps1 -Step Verify` : dossiers de l'identifiant supprimés, clips
+   intacts, données restaurées et comparées en SHA-256 (sauvegarde gardée en cas d'écart).
 - Build release **installée** (pas `tauri dev`).
 - RAM (PERF-01, PERF-02, ADR-023) : mémoire privée réellement occupée (*private working
   set*), colonne « Mémoire (jeu de travail privé) » du Gestionnaire des tâches ou
