@@ -23,12 +23,25 @@ pub fn default_clips_dir() -> Result<PathBuf> {
 
 pub const CONFIG_DIR_ENV: &str = "PALACLIPS_CONFIG_DIR";
 
+fn isolated_dir() -> Option<PathBuf> {
+    std::env::var_os(CONFIG_DIR_ENV)
+        .filter(|dir| !dir.is_empty())
+        .map(PathBuf::from)
+}
+
 pub fn settings_path() -> Result<PathBuf> {
-    let dir = match std::env::var_os(CONFIG_DIR_ENV) {
-        Some(dir) if !dir.is_empty() => PathBuf::from(dir),
-        _ => known_folder(&FOLDERID_RoamingAppData)?.join(APP_DIR),
+    let dir = match isolated_dir() {
+        Some(dir) => dir,
+        None => known_folder(&FOLDERID_RoamingAppData)?.join(APP_DIR),
     };
     Ok(dir.join("settings.json"))
+}
+
+fn local_dir() -> Result<PathBuf> {
+    match isolated_dir() {
+        Some(dir) => Ok(dir.join("local")),
+        None => Ok(known_folder(&FOLDERID_LocalAppData)?.join(APP_DIR)),
+    }
 }
 
 pub fn library_db() -> Result<PathBuf> {
@@ -40,33 +53,24 @@ pub fn recordings_journal() -> Result<PathBuf> {
 }
 
 pub fn replay_spool_dir() -> Result<PathBuf> {
-    Ok(known_folder(&FOLDERID_LocalAppData)?
-        .join(APP_DIR)
-        .join("replay"))
+    Ok(local_dir()?.join("replay"))
 }
 
 pub fn calibration_clip_path() -> Result<PathBuf> {
-    Ok(known_folder(&FOLDERID_LocalAppData)?
-        .join(APP_DIR)
-        .join("cache")
-        .join("calibration.mp4"))
+    Ok(local_dir()?.join("cache").join("calibration.mp4"))
 }
 
 pub fn track_cache_dir() -> Result<PathBuf> {
-    Ok(known_folder(&FOLDERID_LocalAppData)?
-        .join(APP_DIR)
-        .join("cache")
-        .join("tracks"))
+    Ok(local_dir()?.join("cache").join("tracks"))
+}
+
+pub fn thumbnail_dir() -> Result<PathBuf> {
+    Ok(local_dir()?.join("cache").join("thumbnails"))
 }
 
 pub fn thumbnail_path(clip: &Path) -> Result<PathBuf> {
     let name = clip.file_stem().unwrap_or_default();
-    Ok(known_folder(&FOLDERID_LocalAppData)?
-        .join(APP_DIR)
-        .join("cache")
-        .join("thumbnails")
-        .join(name)
-        .with_extension("jpg"))
+    Ok(thumbnail_dir()?.join(name).with_extension("jpg"))
 }
 
 pub fn game_label(exe_name: Option<&str>) -> String {

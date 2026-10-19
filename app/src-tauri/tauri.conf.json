@@ -14,7 +14,7 @@
     "security": {
       "assetProtocol": {
         "enable": true,
-        "scope": ["$LOCALDATA/PalaClips/cache/thumbnails/**"]
+        "scope": []
       },
       "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; media-src 'self' asset: http://asset.localhost http://palaclips.localhost blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost"
     }

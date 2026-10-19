@@ -70,8 +70,8 @@ function Waveform({ path, color, duration, range }: { path: string; color: strin
       <div aria-hidden className="absolute inset-y-0 right-0 bg-ground/55" style={{ width: `${(1 - range.end / span) * 100}%` }} />
       <span
         aria-hidden
-        className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-ink"
-        style={{ left: "calc(var(--progress, 0) * 100%)" }}
+        data-playhead
+        className="absolute inset-y-0 left-0 w-0.5 -translate-x-1/2 bg-ink"
       />
     </div>
   );

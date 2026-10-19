@@ -120,7 +120,9 @@ export function Player({
     const paint = () => {
       const span = element.duration || duration || 1;
       const now = element.currentTime;
-      container.style.setProperty("--progress", String(Math.min(1, now / span)));
+      const played = `${Math.min(1, now / span) * 100}%`;
+      for (const head of container.querySelectorAll<HTMLElement>("[data-playhead]")) head.style.left = played;
+      for (const bar of container.querySelectorAll<HTMLElement>("[data-played]")) bar.style.width = played;
       const shown = element.paused ? preciseTime(now, fps) : clock(now);
       if (timeText.current) timeText.current.textContent = shown;
       position.current?.setAttribute("aria-valuenow", String(Math.round(now)));
@@ -161,7 +163,7 @@ export function Player({
       element.removeEventListener("seeked", paint);
       element.removeEventListener("loadedmetadata", metadata);
     };
-  }, [duration, fps]);
+  }, [duration, fps, tracks]);
 
   const seek = (seconds: number) => {
     const element = video.current;
