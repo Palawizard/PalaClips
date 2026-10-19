@@ -79,6 +79,9 @@ pub fn set_hotkeys(
 
 #[tauri::command]
 pub fn get_autostart(app: tauri::AppHandle) -> Result<bool, Localized> {
+    if palaclips_engine::paths::isolated_dir().is_some() {
+        return Ok(false);
+    }
     app.autolaunch()
         .is_enabled()
         .map_err(|error| Localized::new("autostart_unreadable").with("detail", error.to_string()))
@@ -86,6 +89,9 @@ pub fn get_autostart(app: tauri::AppHandle) -> Result<bool, Localized> {
 
 #[tauri::command]
 pub fn set_autostart(app: tauri::AppHandle, enabled: bool) -> Result<(), Localized> {
+    if palaclips_engine::paths::isolated_dir().is_some() {
+        return Ok(());
+    }
     let autolaunch = app.autolaunch();
     if enabled {
         autolaunch.enable()

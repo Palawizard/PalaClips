@@ -1,8 +1,9 @@
 param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [switch]$LeftScreen, [switch]$MainScreen)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-if (Get-Process palaclips-app -ErrorAction SilentlyContinue) {
-    throw "PalaClips est déjà ouvert : l'instance unique enverrait le test vers lui. Ferme-le d'abord."
+$running = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @('palaclips-app', 'PalaClips') }
+if ($running) {
+    throw "PalaClips est déjà ouvert ($(($running | ForEach-Object Path) -join ', ')) : l'instance unique enverrait le test vers lui, avec ses vrais réglages. Ferme-le d'abord (zone de notification > Quitter)."
 }
 $dir = Join-Path $root 'target\test-config'
 if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
