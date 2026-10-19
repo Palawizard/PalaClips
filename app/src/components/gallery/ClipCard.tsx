@@ -290,7 +290,10 @@ export function ClipCard({
         })}
         aria-description={clip.favorite ? t("gallery.favorites") : undefined}
         aria-keyshortcuts={CARD_SHORTCUTS}
-        onClick={() => onAction("open")}
+        onClick={(event) => {
+          if (event.detail === 0) onAction("open");
+        }}
+        onDoubleClick={() => onAction("open")}
         onFocus={onFocus}
         onKeyDown={keyDown}
         className="absolute inset-0 rounded-md"
