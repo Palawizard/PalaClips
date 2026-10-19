@@ -864,13 +864,17 @@ pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         return Ok(());
     }
     let placed = test_window_position();
-    let window = WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
-        .title("PalaClips")
-        .inner_size(1180.0, 760.0)
-        .min_inner_size(900.0, 600.0)
-        .visible(placed.is_none())
-        .focused(placed.is_none())
-        .build()?;
+    let mut builder =
+        WebviewWindowBuilder::new(app, MAIN_WINDOW, WebviewUrl::App("index.html".into()))
+            .title("PalaClips")
+            .inner_size(1180.0, 760.0)
+            .min_inner_size(900.0, 600.0)
+            .visible(placed.is_none())
+            .focused(placed.is_none());
+    if let Some(dir) = palaclips_engine::paths::isolated_webview_dir() {
+        builder = builder.data_directory(dir);
+    }
+    let window = builder.build()?;
     if let Some((x, y)) = placed {
         window.set_position(tauri::PhysicalPosition::new(x, y))?;
         show_without_focus(&window)?;
