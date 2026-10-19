@@ -26,7 +26,6 @@ $used = (Get-PSDrive -PSProvider FileSystem).Name
 $letter = [char[]]([char]'Z'..[char]'K') | Where-Object { $used -notcontains [string]$_ } | Select-Object -First 1
 if (-not $letter) { throw "aucune lettre de lecteur libre" }
 $started = @()
-$attached = $false
 
 function Invoke-DiskPart([string[]]$Lines) {
     $script = Join-Path $env:TEMP "palaclips-diskpart.txt"
@@ -36,22 +35,25 @@ function Invoke-DiskPart([string[]]$Lines) {
     if ($LASTEXITCODE -ne 0) { throw "diskpart : $($output -join ' ')" }
 }
 
+function Remove-TestDisk {
+    if (-not (Test-Path $vhdx)) { return }
+    Dismount-DiskImage -ImagePath $vhdx -ErrorAction SilentlyContinue | Out-Null
+    Remove-Item $vhdx -Force
+}
+
+Remove-TestDisk
+
 try {
     cargo build --release -q -p palaclips-cli
     if ($LASTEXITCODE -ne 0) { throw "compilation de palaclips-cli impossible" }
     $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
     $cli = Join-Path $root "target\release\palaclips-cli.exe"
 
-    Remove-Item $vhdx -Force -ErrorAction SilentlyContinue
-    Invoke-DiskPart @(
-        "create vdisk file=`"$vhdx`" maximum=$SizeMb type=expandable",
-        "select vdisk file=`"$vhdx`"",
-        "attach vdisk",
-        "create partition primary",
-        "format fs=ntfs quick label=PCFULL",
-        "assign letter=$letter"
-    )
-    $attached = $true
+    Invoke-DiskPart @("create vdisk file=`"$vhdx`" maximum=$SizeMb type=expandable")
+    $disk = Mount-DiskImage -ImagePath $vhdx -PassThru | Get-Disk
+    Initialize-Disk -Number $disk.Number -PartitionStyle GPT
+    New-Partition -DiskNumber $disk.Number -UseMaximumSize -DriveLetter $letter |
+        Format-Volume -FileSystem NTFS -NewFileSystemLabel PCFULL -Confirm:$false | Out-Null
     $clips = "${letter}:\clips"
     Remove-Item $config -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $config | Out-Null
@@ -87,7 +89,7 @@ try {
     if ($replay.HasExited) { throw "replay non armé : $($stdout.Result.Trim()) $($stderr.Result.Trim())" }
     $replay.StandardInput.WriteLine("e")
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-PSDrive $letter).Free -gt 320MB -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
+    while ((Get-Volume -DriveLetter $letter).SizeRemaining -gt 320MB -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
     Start-Sleep -Seconds 10
     $replay.StandardInput.WriteLine("")
     Start-Sleep -Seconds 3
@@ -109,17 +111,14 @@ try {
     }
     $pending = Join-Path $config "recordings.txt"
     if (Test-Path $pending) { $failures += "journal non vidé : $(Get-Content $pending)" }
-    Write-Journal "espace libre restant sur ${letter}: : $([math]::Round((Get-PSDrive $letter).Free / 1MB)) Mo"
+    Write-Journal "espace libre restant sur ${letter}: : $([math]::Round((Get-Volume -DriveLetter $letter).SizeRemaining / 1MB)) Mo"
     if ($failures.Count -eq 0) { Write-Journal "OK" } else { Write-Journal "ÉCHEC : $($failures -join ' ; ')" }
 }
 finally {
     foreach ($process in $started) {
         if ($process -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
     }
-    if ($attached) {
-        Invoke-DiskPart @("select vdisk file=`"$vhdx`"", "detach vdisk")
-    }
-    Remove-Item $vhdx -Force -ErrorAction SilentlyContinue
+    Remove-TestDisk
     Remove-Item $config -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item Env:PALACLIPS_CONFIG_DIR -ErrorAction SilentlyContinue
     Write-Host "journal : $journal"

@@ -123,13 +123,12 @@ Critères :
 
 ## Phase 6 — Enregistrement, galerie, lecteur (REC-01–06 ; STO-02, 04, 05 ; GAL-01–08)
 
-- [ ] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
+- [x] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
       Fait : enregistrement (bouton, raccourci, zone de notification), MP4 hybride relisible
       après un arrêt brutal (test unitaire), replay au début, découpage, récupération au
       démarrage (REC-06, journal `recordings.txt`) ; découpage et arrêt brutal vérifiés sur la
-      build (`scripts/recording-crash.ps1`, 2026-10-19). Reste : essai réel en jeu avec Palawi
-      (TESTING § T6).
-- [ ] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
+      build (`scripts/recording-crash.ps1`, 2026-10-19) ; essai réel en jeu fait avec Palawi.
+- [x] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
       fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi). Tests unitaires
       par injection d'erreur dans l'écriture, puis vrai test sur un petit disque virtuel
       (VHDX de quelques Go) créé et supprimé par un script, avec l'accord de Palawi. Jamais
@@ -138,7 +137,7 @@ Critères :
       anciens) dit clairement, confirmation demandée la première fois. Suppression
       **définitive** (la Corbeille ne libère rien), dite clairement ; la suppression manuelle
       dans la galerie va à la Corbeille (GAL-05).
-- [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota. Fait : index,
+- [x] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota. Fait : index,
       synchro au démarrage, surveillance (`notify`), quota, favori / renommer / Corbeille /
       Explorateur, miniature des clips ajoutés hors de l'app.
 - [x] Protocole `palaclips://` avec `Range` (plages de 4 Mo, chemins limités à la
@@ -147,10 +146,10 @@ Critères :
       ADR-008 précisé : pistes extraites en `.m4a` par copie de flux dans un cache disque
       limité, lues en continu par des `<audio>` branchés sur Web Audio, recalées au-delà de
       ~40 ms ; jamais de piste entière en `AudioBuffer`. RAM stable sur 1 h à 6 pistes.
-- [ ] Découpe rapide / précise, export pistes choisies ou mixées, copier dans le presse-papiers.
+- [x] Découpe rapide / précise, export pistes choisies ou mixées, copier dans le presse-papiers.
       Fait côté moteur et commandes (tests : coupe rapide sur image clé, pistes choisies, mix,
       annulation ; coupe précise à l'image près sur NVENC, test `--ignored`) et UI (#45).
-      Reste : collage dans Discord avec Palawi.
+      Collage dans Discord vérifié avec Palawi, voix comprise (ADR-029).
 - [x] Galerie fluide (virtualisation) avec 5 000 clips (`scripts/gallery-bench.ps1`).
 - [x] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
       montre pas, ADR-021).
@@ -165,7 +164,7 @@ Critères :
   < 500 ms.
 - 🤖 RAM du lecteur mesurée sur un enregistrement d'1 h (6 pistes), sans croissance avec la
   durée (ADR-008).
-- 👤 Glisser un clip copié dans Discord : envoi OK, son = mix.
+- 👤 Glisser un clip copié dans Discord : envoi OK, son = mix complet avec le micro (ADR-029).
 
 ## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
 
@@ -184,7 +183,8 @@ Critères :
 
 ## Phase 8 — Release V1 (APP-06, 08–11)
 
-- [ ] Premier lancement guidé.
+- [ ] Premier lancement guidé (APP-06), avec `/impeccable onboard` : micro et « Micro dans la
+      piste 1 », dossier des clips, replay, raccourcis, test de sauvegarde.
 - [x] Socle i18n FR/EN fait avant la phase 6 (ADR-028) : clés typées, langue du système par
       défaut, choix dans Réglages > Général, codes + paramètres côté Rust, test contre les
       chaînes en dur.

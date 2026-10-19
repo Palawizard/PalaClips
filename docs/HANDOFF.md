@@ -186,10 +186,10 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 6 : critères 🤖 mesurés le 2026-10-19 (`docs/reports/phase-6.md` : 5 000 clips,
-   clip de 4 Go, RAM du lecteur sur 1 h, arrêt brutal). Reste la séance 👤 avec Palawi
-   (`docs/TESTING.md` § T6) : enregistrement réel en jeu, collage Discord, disque plein
-   (`scripts/disk-full.ps1` en administrateur). Puis `/valider-phase`.
+1. Phase 6 : tous les critères vérifiés le 2026-10-19 (`docs/reports/phase-6.md`) ; reste
+   `/valider-phase`. Retours de Palawi intégrés : micro aussi dans la piste 1 (ADR-029,
+   réglage activé par défaut), un clic sélectionne un clip et le double-clic l'ouvre. Le
+   premier lancement guidé (APP-06, phase 8) proposera le micro dans la piste 1.
 2. Bancs : `pwsh scripts/gallery-bench.ps1` (~12 min, 12 Go libres) et
    `pwsh scripts/recording-crash.ps1` (~2 min) ; journaux `target/journals/`.
 3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
