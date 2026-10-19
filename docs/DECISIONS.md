@@ -418,3 +418,21 @@ phase 8).
   `en.json` n'ont pas les mêmes clés et paramètres, ou si un code `Localized::new("…")` du
   Rust n'a pas de texte dans les deux langues.
 - Conséquence : à partir de la phase 6, tout texte visible s'écrit directement en clé.
+
+## ADR-029 — Le micro est aussi dans la piste 1 (AUD-01)
+**Statut :** acceptée (2026-10-19, demande de Palawi après l'essai Discord de la phase 6).
+- Contexte : la piste 1 ne contenait que la sortie audio (« tout ce que l'on entend »). Un clip
+  collé dans Discord, qui ne lit que la piste 1, n'avait donc pas la voix du joueur.
+- Décision : comme la piste 1 d'OBS envoyée au stream, la piste 1 contient tout, micro compris.
+  Les pistes 2 et suivantes restent séparées pour le montage (dans Resolve, on coupe la piste 1
+  et on monte les autres). Réglage `audio.microphone_in_full_mix` (Réglages > Audio, ligne
+  Micro : « Aussi dans Mix complet »), activé par défaut ; il sera proposé par le premier
+  lancement guidé (APP-06, phase 8).
+- Mixage dans le moteur, échantillon par échantillon (`audio::MixBus`), après le comblement des
+  trous : les deux pistes partagent l'origine QPC et l'index d'échantillon, donc le décalage
+  de synchro du micro (AUD-11) s'applique aussi dans la piste 1. Somme bornée à ±1, sans
+  limiteur. Le micro ne retient jamais la piste 1 plus de 200 ms. Le calibrage désactive le
+  mixage.
+- Écartés : mixer seulement à la copie (le clip lu ailleurs que par Ctrl+C restait sans
+  voix) ; une piste 1 « mix + micro » en plus des autres (une piste de plus dans chaque
+  fichier, et Resolve affiche déjà des pistes sans nom, ADR-021).

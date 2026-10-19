@@ -216,6 +216,11 @@ body {
     border-color 140ms ease;
 }
 
+.gallery-card:has(> [data-clip]:focus) {
+  border-color: var(--ink);
+  background-color: var(--surface-hover);
+}
+
 .gallery-card > [data-clip]:focus-visible {
   outline-offset: -3px;
   border-radius: inherit;

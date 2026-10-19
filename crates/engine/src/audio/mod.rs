@@ -1,9 +1,11 @@
 mod filler;
 mod meter;
+mod mixdown;
 mod track;
 
 pub use filler::{FillStats, GapFiller};
 pub use meter::PeakMeter;
+pub use mixdown::{MixBus, Mixdown};
 pub use track::{AudioStream, AudioTrack, AudioTrackStats};
 
 use crate::events::TrackKind;

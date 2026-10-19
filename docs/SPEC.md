@@ -48,7 +48,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 
 | ID | Exigence |
 |---|---|
-| AUD-01 | Piste **Mix complet** (tout ce que l'on entend), toujours en piste 1 si activée. |
+| AUD-01 | Piste **Mix complet** (tout ce que l'on entend, plus le micro si « Micro dans la piste 1 » est activé, ce qui est le réglage par défaut), toujours en piste 1 si activée. Les pistes suivantes restent séparées pour le montage. |
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
 | AUD-03 | Une **piste par logiciel** choisi (jusqu'à 6 par défaut, réglable jusqu'à 12), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
@@ -117,7 +117,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | APP-03 | **Instance unique** : relancer l'app ouvre la fenêtre existante. |
 | APP-04 | **Démarrage avec Windows** (option), directement en zone de notification. |
 | APP-05 | Raccourcis globaux **personnalisables**, avec détection des conflits et touches réservées refusées. |
-| APP-06 | **Premier lancement guidé** : vérifications (Windows, encodeur, WebView2, dossier), choix des sources, du replay et des raccourcis, test de sauvegarde. |
+| APP-06 | **Premier lancement guidé** : vérifications (Windows, encodeur, WebView2, dossier), choix des sources (dont le micro et « Micro dans la piste 1 »), du dossier des clips, du replay et des raccourcis, test de sauvegarde. |
 | APP-07 | Réglages persistants, versionnés avec migration, bouton « Réinitialiser ». |
 | APP-08 | Interface en **français et en anglais** (langue du système par défaut). |
 | APP-09 | Journaux avec rotation ; **Exporter un diagnostic** (zip : logs, réglages anonymisés, infos système). |

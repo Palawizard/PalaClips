@@ -16,6 +16,7 @@ use windows::Win32::System::Threading::{
 };
 
 use super::filler::{FillStats, GapFiller};
+use super::mixdown::{MixBus, MixIn, Mixdown};
 use super::{AudioSource, CHANNELS, PeakMeter, SAMPLE_RATE};
 use crate::clock::Hns;
 use crate::encode::AacEncoder;
@@ -37,6 +38,7 @@ const SILENT_CHECKS_BEFORE_ALERT: u32 = 2;
 const SESSION_SIGNAL_PEAK: f32 = 0.001;
 const PACKET_QUEUE: usize = 256;
 const ALERT_QUEUE: usize = 32;
+const MIXDOWN_END_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
 
 #[derive(Debug, Clone)]
 pub struct AudioStream {
@@ -79,6 +81,7 @@ impl AudioTrack {
         title: impl Into<String>,
         origin: Hns,
         sync_offset: Hns,
+        mixdown: Mixdown,
     ) -> Result<Self> {
         let encoder = AacEncoder::open(SAMPLE_RATE, CHANNELS)?;
         let title = title.into();
@@ -101,6 +104,11 @@ impl AudioTrack {
             sync_offset,
             stats: AudioTrackStats::default(),
             filled: Vec::new(),
+            mixing: match mixdown {
+                Mixdown::None => Mixing::None,
+                Mixdown::Feed(bus) => Mixing::Feed(bus),
+                Mixdown::Mix(bus) => Mixing::Mix(MixIn::new(bus), Vec::new()),
+            },
             encoder,
             packets: packet_tx,
             alerts: alert_tx,
@@ -182,6 +190,7 @@ struct Worker {
     sync_offset: Hns,
     stats: AudioTrackStats,
     filled: Vec<f32>,
+    mixing: Mixing,
     encoder: AacEncoder,
     packets: Sender<AVPacket>,
     alerts: Sender<EngineEvent>,
@@ -191,6 +200,12 @@ struct Worker {
     foreground: Option<ForegroundSignal>,
     silence: SilenceWatch,
     reported: Option<(TrackState, Option<String>)>,
+}
+
+enum Mixing {
+    None,
+    Feed(MixBus),
+    Mix(MixIn, Vec<f32>),
 }
 
 #[derive(Clone)]
@@ -413,7 +428,10 @@ impl Worker {
         let end = Hns(self.end.load(Ordering::Relaxed));
         self.filler.set_end(end);
         self.filler.fill_until(end, &mut self.filled);
-        self.flush()?;
+        self.encode_filled(true)?;
+        if let Mixing::Feed(bus) = &self.mixing {
+            bus.close();
+        }
         let packets = &self.packets;
         self.encoder.finish(&mut |packet| send(packets, packet))?;
         let mut stats = self.stats;
@@ -602,6 +620,27 @@ impl Worker {
     }
 
     fn flush(&mut self) -> Result<()> {
+        self.encode_filled(false)
+    }
+
+    fn encode_filled(&mut self, last: bool) -> Result<()> {
+        let written = self.filler.written_frames();
+        match &mut self.mixing {
+            Mixing::None => {}
+            Mixing::Feed(bus) => bus.push(
+                written - (self.filled.len() / CHANNELS) as i64,
+                &self.filled,
+            ),
+            Mixing::Mix(mix, ready) => {
+                if last {
+                    mix.take_all(&self.filled, written, ready, MIXDOWN_END_WAIT);
+                } else {
+                    mix.take_ready(&self.filled, written, ready);
+                }
+                std::mem::swap(&mut self.filled, ready);
+                ready.clear();
+            }
+        }
         let packets = &self.packets;
         let result = self
             .encoder

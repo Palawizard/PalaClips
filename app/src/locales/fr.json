@@ -304,6 +304,8 @@
       "microphone": "Micro",
       "gain": "Gain",
       "gainLabel": "Gain du micro en décibels",
+      "inFullMix": "Aussi dans {name}",
+      "inFullMixLabel": "Mettre aussi le micro dans la piste {name}",
       "follows": "Suit : {name}",
       "followsWindow": "Suit l'appli de la fenêtre capturée",
       "followsForeground": "Suit le jeu au premier plan",
