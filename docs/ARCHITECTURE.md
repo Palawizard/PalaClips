@@ -294,6 +294,7 @@ d'une erreur système.
 | `pick_clips_dir` | 5 ✅ | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
 | `list_capture_targets` | 5 ✅ | écrans (nom, définition, Hz, principal) et fenêtres (exe, titre, PID, taille, réduite) ; PalaClips, fenêtres invisibles et fenêtres de moins de 160×90 exclues |
 | `app_icon { processId }` | 5 ✅ | icône 48 px de l'exe en PNG (octets bruts, `SHDefExtractIconW` + encodeur PNG de FFmpeg) |
+| `set_performance_panel { open }` | 7 ✅ | panneau de performances (APP-12) ouvert ou fermé : le moteur n'envoie `performance_stats` que si le panneau est ouvert **et** la fenêtre visible (coupé à la réduction et à la destruction de la fenêtre) |
 | `start_preview { target, channel }` / `stop_preview { id }` / `stop_previews` | 5 ✅ | aperçu en direct d'une cible : session WGC à part, sans curseur ni bordure, ~1 image/s, réduite sur le GPU (≤ 384×216) puis JPEG envoyé en octets bruts sur un `Channel` ; 12 au plus ; toutes arrêtées à la destruction de la fenêtre. Jamais utilisé pour la capture réelle |
 | `open_clips_dir` | 5 ✅ | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
 | `list_encoders` | 5 ✅ | encodeurs matériels détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur est grisé dans Réglages |
@@ -333,6 +334,14 @@ par plages, 4 Mo au plus par réponse ; lecture sur un fil bloquant de Tauri.
 Événement Tauri `library-changed` (sans contenu) : la bibliothèque a changé (synchro au
 démarrage, surveillance du dossier, renommage, Corbeille, quota) ; la galerie relit `list_clips`.
 
+`performance_stats { cpu_percent, cpu_max_percent, engine_bytes, buffer_bytes, buffered_secs,
+capture: { encoder, width, height, fps, repeated_percent, late_total, late_last_minute,
+lag_max_ms } | null }` (chaque seconde, seulement sur demande, `EngineHandle::set_performance`) :
+CPU du processus en % de la machine entière (temps CPU ÷ cœurs logiques, comme le Gestionnaire
+des tâches), maximum depuis l'armement ; `engine_bytes` = working set privé − tampon × 1,07
+(surcharge mesurée, même calcul que PERF-02 dans `engine-memory.ps1`) ; images répétées en % des
+10 dernières secondes ; images en retard (encodées plus d'une période après leur instant) depuis
+l'armement et sur la dernière minute ; replay désarmé : CPU et RAM seulement, `capture: null`.
 `replay_stats`, `recording_stats { elapsed_secs, bytes }` (chaque seconde pendant un
 enregistrement ; chaque fichier terminé arrive en `clip_saved`), `alert { severity, code, params, message }` (`code` + `params` pour le texte
 affiché, `message` en français pour les journaux et la CLI).
