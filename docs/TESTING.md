@@ -229,7 +229,7 @@ Séance avec Palawi (👤, ~10 min, une seule fois) :
 | Casque débranché | débrancher le périphérique par défaut | `audio_device_changed`, piste continue |
 | Appli capturée qui crashe | tuer Discord | silence puis rattachement |
 | Disque plein | dossier de clips sur une petite clé USB / VHD de 1 Go | `disk_full`, arrêt propre, aucun fichier corrompu |
-| Redémarrage du pilote GPU | `dxcap -forcetdr` (Outils graphiques Windows) ou Win+Ctrl+Maj+B | `encoder_reset`, reprise automatique |
+| Redémarrage du pilote GPU | **D'abord fermer le navigateur, Discord et tout jeu** (un TDR fait planter tout ce qui utilise le GPU), puis `dxcap -forcetdr` dans un terminal administrateur (Outils graphiques Windows) | `encoder_reset`, reprise automatique (ADR-031), enregistrement repris dans un nouveau fichier |
 | Veille / sortie de veille | mettre le PC en veille avec replay armé | reprise propre au réveil |
 | Cadence limitée (G-Sync) | Fortnite à 225 i/s, G-Sync actif, autre écran à 165 Hz, capture à 240 i/s ; puis G-Sync coupé et jeu plafonné à 120 i/s | `capture_source_rate_limited` (165 Hz) dans le premier cas, aucune alerte dans le second |
 

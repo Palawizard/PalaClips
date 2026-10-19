@@ -356,7 +356,8 @@ après un redémarrage du pilote graphique ; le moteur désarme puis réarme seu
 5 s, tampon de replay vide, et un enregistrement en cours reprend dans un nouveau fichier ; après
 trois échecs, `replay_stopped`, ADR-031) ;
 `capture_source_rate_limited { rate, fps }` (cadence de composition DWM sous le fps demandé
-pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo, ADR-018) ; `audio_device_changed
+pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo ; seules comptent les secondes
+où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l'alerte, ADR-018) ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
 reason }` ; `hotkey_unavailable { keys }`.
 
