@@ -28,4 +28,14 @@ perte de fps en jeu (PERF-03, GPU-bound), les scénarios T7 et l'essai G-Sync (C
   en SHA-256 avant et après (`scripts/real-data-fingerprint.ps1`) ; dossier des clips inchangé.
 - Migration en mode isolé : jamais (`an_isolated_app_never_migrates_the_real_data_folders`), et
   les empreintes ci-dessus le confirment sur la vraie machine.
-- Désinstallation avec la case : à faire avec Palawi (`scripts/uninstall-check.ps1`).
+- Migration avec l'app installée présente (#61) : sur une copie de la vraie installation, les
+  13 fichiers du programme restent en place et identiques, les 5 fichiers de données migrent à
+  l'identique ; installation réelle et entrée de désinstallation inchangées.
+- Désinstallation avec la case (APP-11), faite par Palawi depuis Paramètres > Applications :
+  sauvegarde vérifiée avant (`uninstall-check.ps1 -Step Backup`, 578 fichiers de
+  `%LOCALAPPDATA%\com.palawi.palaclips`, pas de dossier Roaming de l'identifiant), clip témoin
+  copié dans `F:\Fast Documents\Vidéos\PalaClips`. Après : programme, entrée et raccourci
+  retirés ; les deux dossiers `com.palawi.palaclips` supprimés ; `%LOCALAPPDATA%\PalaClips` ne
+  garde que `cache` et `replay` ; clip témoin intact (SHA-256 `E14A67BB…` identique), puis
+  supprimé. Données restaurées, identiques en SHA-256 ; empreinte complète des 583 fichiers de
+  données de Palawi identique à celle d'avant la première installation.
