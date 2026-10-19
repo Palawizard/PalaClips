@@ -351,6 +351,10 @@ sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_un
 `quota_deleted { count, size_mb }` (clips supprimés définitivement par le quota).
 Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }` ;
 `clip_too_short { seconds }` ; `capture_fallback_monitor { title }` ;
+`encoder_reset { reason }` (avertissement : capture, encodage ou piste en panne, par exemple
+après un redémarrage du pilote graphique ; le moteur désarme puis réarme seul après 1, 2 puis
+5 s, tampon de replay vide, et un enregistrement en cours reprend dans un nouveau fichier ; après
+trois échecs, `replay_stopped`, ADR-031) ;
 `capture_source_rate_limited { rate, fps }` (cadence de composition DWM sous le fps demandé
 pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo, ADR-018) ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,

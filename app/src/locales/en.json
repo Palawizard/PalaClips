@@ -409,6 +409,7 @@
     "not_implemented": "feature not implemented yet: {detail}",
     "replay_stopped": "The replay stopped: {reason}. Arm it again once the source is back.",
     "replay_arm_failed": "Can't arm the replay: {reason}.",
+    "encoder_reset": "Capture was interrupted ({reason}): PalaClips is restarting it. A recording in progress continues in a new file.",
     "calibration_running": "Calibrating: nothing is saved.",
     "clip_save_failed": "Clip not saved: {reason}.",
     "capture_fallback_monitor": "The “{title}” window can't be captured: PalaClips captures its screen instead.",

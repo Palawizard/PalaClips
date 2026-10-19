@@ -62,6 +62,11 @@ impl LevelRate {
 
 const CALIBRATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
 const CALIBRATION_WARMUP: std::time::Duration = std::time::Duration::from_millis(800);
+const RECOVERY_DELAYS: [std::time::Duration; 3] = [
+    std::time::Duration::from_secs(1),
+    std::time::Duration::from_secs(2),
+    std::time::Duration::from_secs(5),
+];
 
 enum Command {
     Arm,
@@ -410,6 +415,9 @@ impl Core {
                     Ok(command) => command.unwrap_or(Command::Shutdown),
                     Err(error) => {
                         tracing::error!(%error, "replay interrompu");
+                        if error.is_transient() && self.recover(&error) {
+                            continue;
+                        }
                         self.alert(Severity::Error, Localized::new("replay_stopped").with("reason", error.localized()), format!(
                             "Le replay s'est arrêté : {error}. Réarme-le quand la source est de nouveau disponible."
                         ));
@@ -469,26 +477,57 @@ impl Core {
     }
 
     fn arm(&mut self) {
+        if let Err(error) = self.try_arm() {
+            tracing::error!(%error, "armement du replay impossible");
+            self.alert(
+                Severity::Error,
+                Localized::new("replay_arm_failed").with("reason", error.localized()),
+                format!("Impossible d'armer le replay : {error}."),
+            );
+        }
+    }
+
+    fn try_arm(&mut self) -> Result<()> {
         if self.pipeline.is_some() {
-            return;
+            return Ok(());
         }
-        match Pipeline::start(&self.config, &self.events) {
-            Ok(mut pipeline) => {
-                pipeline.set_level_interval(self.level_rate.interval());
-                self.pipeline = Some(pipeline);
-                self.emit(EngineEvent::StateChanged {
-                    state: EngineState::ReplayArmed,
-                });
-            }
-            Err(error) => {
-                tracing::error!(%error, "armement du replay impossible");
-                self.alert(
-                    Severity::Error,
-                    Localized::new("replay_arm_failed").with("reason", error.localized()),
-                    format!("Impossible d'armer le replay : {error}."),
-                );
+        let mut pipeline = Pipeline::start(&self.config, &self.events)?;
+        pipeline.set_level_interval(self.level_rate.interval());
+        self.pipeline = Some(pipeline);
+        self.emit(EngineEvent::StateChanged {
+            state: EngineState::ReplayArmed,
+        });
+        Ok(())
+    }
+
+    fn recover(&mut self, error: &EngineError) -> bool {
+        let recording = self
+            .recording
+            .as_ref()
+            .map(|recording| recording.replay_was_armed);
+        self.alert(
+            Severity::Warning,
+            Localized::new("encoder_reset").with("reason", error.localized()),
+            format!("La capture s'est interrompue ({error}) : PalaClips la relance. Un enregistrement en cours continue dans un nouveau fichier."),
+        );
+        self.disarm();
+        for delay in RECOVERY_DELAYS {
+            std::thread::sleep(delay);
+            match self.try_arm() {
+                Ok(()) => {
+                    tracing::info!(?delay, "capture relancée après une interruption");
+                    if let Some(replay_was_armed) = recording {
+                        self.start_recording();
+                        if let Some(recording) = self.recording.as_mut() {
+                            recording.replay_was_armed = replay_was_armed;
+                        }
+                    }
+                    return true;
+                }
+                Err(retry) => tracing::warn!(%retry, ?delay, "relance de la capture impossible"),
             }
         }
+        false
     }
 
     fn start_recording(&mut self) {
