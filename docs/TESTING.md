@@ -290,6 +290,7 @@ Avant l'étape 1 et après l'étape 3 : `pwsh scripts\real-data-fingerprint.ps1 
 - Impact en jeu (PERF-03) : Fortnite en Créatif, scène fixe, **GPU-bound** (limite d'images
   levée ou scène lourde, GPU ~99 %), puis dans un PowerShell admin
   `pwsh -File scripts\fps-impact.ps1` : PresentMon 2.4.1 (CapFrameX), un essai de mise en
-  route non compté, puis sans capture / fenêtre 60 / écran 60 / fenêtre 30 / WGC seul / sans
+  route non compté, puis sans capture / fenêtre 60 / écran 60 / écran 1440p60 + 4 pistes (mix, micro,
+  Jeu, `-App`, Discord par défaut : le critère PERF-03 de la SPEC) / fenêtre 30 / WGC seul / sans
   capture, 20 s chacun ; référence = moyenne des essais sans capture ; perte par essai, 1 %
   bas, GPU (`nvidia-smi`) et mode de présentation dans `target\journals\fps-impact-*.txt`.

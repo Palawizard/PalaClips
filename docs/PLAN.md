@@ -185,7 +185,8 @@ Critères :
 Critères :
 - 👤 Chaque scénario de `docs/TESTING.md` § T7 passé, consigné dans le rapport.
 - 🤖/👤 PERF-01 à 04 mesurés et respectés (valeurs dans le rapport).
-- 👤 PERF-03 (perte de fps ≤ 2 %) validé **GPU-bound** : limite d'images du jeu levée ou scène
+- 👤 PERF-03 (perte de fps ≤ 2 %) validé **GPU-bound**, sur l'essai « écran 1440p60 + 4 pistes »
+  (configuration de la SPEC) : limite d'images du jeu levée ou scène
   lourde, GPU à ~99 % (`fps-impact.ps1`, GPU relevé dans le journal) ; sous le plafond de
   225 i/s, la marge masque le coût de la capture (`RESEARCH.md` § Capture vidéo).
 
