@@ -89,13 +89,13 @@ export function Timeline({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-0 h-2 -translate-y-1/2 rounded-[2px] bg-ink"
-        style={{ width: "calc(var(--progress, 0) * 100%)" }}
+        data-played
+        className="pointer-events-none absolute top-1/2 left-0 h-2 w-0 -translate-y-1/2 rounded-[2px] bg-ink"
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-ink"
-        style={{ left: "calc(var(--progress, 0) * 100%)" }}
+        data-playhead
+        className="pointer-events-none absolute inset-y-1 left-0 w-0.5 -translate-x-1/2 rounded-full bg-ink"
       />
       {(["start", "end"] as const).map((kind) => {
         const value = kind === "start" ? range.start : range.end;
