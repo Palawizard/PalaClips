@@ -436,6 +436,18 @@ phase 8).
 - Écartés : mixer seulement à la copie (le clip lu ailleurs que par Ctrl+C restait sans
   voix) ; une piste 1 « mix + micro » en plus des autres (une piste de plus dans chaque
   fichier, et Resolve affiche déjà des pistes sans nom, ADR-021).
+- **Révision du 2026-10-19 (revue de Palawi, `fix/full-mix-sum`).** Attente : le plafond fixe
+  de 200 ms coupait une piste dont le décalage négatif est plus grand (micro de Palawi à
+  ~−410/−470 ms une fois calibré : sa voix arrive ~450 ms après le reste). La piste 1 attend
+  maintenant `max(200 ms, plus grand décalage négatif des pistes ajoutées + 150 ms)`, borné à
+  1 s (plage AUD-11 : ±1 000 ms) ; le clip se termine là où toutes les pistes ont des données
+  (`plan_clip`), comme pour une piste décalée seule. Saturation : la somme passe par un
+  limiteur doux sur la piste 1 seulement (anticipation 3 ms, plafond −1 dBFS, retour 80 ms,
+  gain identique sur les deux canaux) ; en dessous du plafond le signal passe inchangé. Tests :
+  micro à −450 ms entièrement mixé (attente 600 ms), deux sinus à −3 dBFS → crête ≤ −1 dBFS,
+  aucun écrêtage. Vérification réelle (app isolée, micro à −450 ms, piste d'appli à 300 Hz) :
+  micro −36,2 dB RMS sur sa piste, −36,2 dB dans la piste 1, résidu après soustraction du
+  micro aligné −76,3 dB (−33,2 dB s'il était décalé de 450 ms).
 
 ## ADR-030 — Mix complet = somme des pistes choisies (AUD-01)
 **Statut :** acceptée (2026-10-19, demande de Palawi pendant la validation de la phase 6).
@@ -449,4 +461,8 @@ phase 8).
   Le premier lancement guidé (APP-06) proposera ce choix.
 - Conséquence assumée : sans jeu détecté ni appli choisie, la piste 1 ne contient que le micro.
 - Même mécanisme que ADR-029 (`MixBus`, une file par piste ajoutée), généralisé à plusieurs
-  pistes : la piste la plus lente fixe le rythme, au plus 200 ms de retard.
+  pistes : la piste la plus lente fixe le rythme, dans la limite de l'attente d'ADR-029.
+- **Révision du 2026-10-19 (revue de Palawi, `fix/full-mix-sum`).** Doublon : si l'exe suivi
+  par la piste Jeu est aussi une piste d'appli ajoutée à la somme, la piste Jeu envoie du
+  silence au mixage tant que dure ce doublon (la piste Jeu elle-même reste enregistrée). Le
+  test se fait à chaque bloc, car la piste Jeu change de jeu en cours de route ; casse ignorée.

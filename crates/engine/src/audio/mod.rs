@@ -5,7 +5,7 @@ mod track;
 
 pub use filler::{FillStats, GapFiller};
 pub use meter::PeakMeter;
-pub use mixdown::{MixBus, Mixdown};
+pub use mixdown::{MixBus, Mixdown, mix_lag_ms};
 pub use track::{AudioStream, AudioTrack, AudioTrackStats};
 
 use crate::events::TrackKind;
@@ -51,6 +51,19 @@ impl AudioSource {
             Self::Application { .. } => TrackKind::Application,
             Self::Game(_) => TrackKind::Game,
         }
+    }
+
+    pub fn is_one_of(&self, exe_names: &[String]) -> bool {
+        let exe_name = match self {
+            Self::Application { exe_name } => Some(exe_name.as_str()),
+            Self::Game(game) => game.exe_name(),
+            _ => None,
+        };
+        exe_name.is_some_and(|exe_name| {
+            exe_names
+                .iter()
+                .any(|other| other.eq_ignore_ascii_case(exe_name))
+        })
     }
 
     pub fn is_application(&self) -> bool {

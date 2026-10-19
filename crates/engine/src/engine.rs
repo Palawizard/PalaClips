@@ -9,7 +9,7 @@ use rsmpeg::avcodec::AVPacket;
 use rsmpeg::avutil::AVRational;
 use rsmpeg::ffi::AV_PKT_FLAG_KEY;
 
-use crate::audio::{AudioSource, AudioTrack, MixBus, Mixdown, PeakMeter, SAMPLE_RATE};
+use crate::audio::{AudioSource, AudioTrack, MixBus, Mixdown, PeakMeter, SAMPLE_RATE, mix_lag_ms};
 use crate::calibrate::{
     Calibration, EMIT_SECONDS, TrackMeasurement, calibration_config, emit_flashes, measure_tracks,
     proposals, read_signals,
@@ -250,26 +250,50 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
     sources
 }
 
-pub fn mixdowns(audio: &AudioSettings, sources: &[AudioSource]) -> Vec<Mixdown> {
+pub fn mixdowns(audio: &AudioSettings, sources: &[(AudioSource, String, i32)]) -> Vec<Mixdown> {
     let desktop = sources
         .iter()
-        .any(|source| matches!(source, AudioSource::SystemMix { .. }));
+        .any(|(source, ..)| matches!(source, AudioSource::SystemMix { .. }));
     let feeds = |source: &AudioSource| match source.kind() {
         TrackKind::Microphone => audio.microphone_in_full_mix,
         TrackKind::Application | TrackKind::Game => !desktop,
         TrackKind::Mix => false,
     };
+    let fed_apps: Vec<String> = sources
+        .iter()
+        .filter_map(|(source, ..)| match source {
+            AudioSource::Application { exe_name } if feeds(source) => Some(exe_name.clone()),
+            _ => None,
+        })
+        .collect();
     let buses: Vec<Option<MixBus>> = sources
         .iter()
-        .map(|source| feeds(source).then(MixBus::default))
+        .map(|(source, ..)| feeds(source).then(MixBus::default))
         .collect();
     let mix: Vec<MixBus> = buses.iter().flatten().cloned().collect();
+    let lag_ms = mix_lag_ms(
+        sources
+            .iter()
+            .zip(&buses)
+            .filter(|(_, bus)| bus.is_some())
+            .map(|((.., offset_ms), _)| *offset_ms),
+    );
     sources
         .iter()
         .zip(buses)
-        .map(|(source, bus)| match (source.kind(), bus) {
-            (_, Some(bus)) => Mixdown::Feed(bus),
-            (TrackKind::Mix, None) if !mix.is_empty() => Mixdown::Mix(mix.clone()),
+        .map(|((source, ..), bus)| match (source.kind(), bus) {
+            (TrackKind::Game, Some(bus)) => Mixdown::Feed {
+                bus,
+                duplicates: fed_apps.clone(),
+            },
+            (_, Some(bus)) => Mixdown::Feed {
+                bus,
+                duplicates: Vec::new(),
+            },
+            (TrackKind::Mix, None) if !mix.is_empty() => Mixdown::Mix {
+                buses: mix.clone(),
+                lag_ms,
+            },
             _ => Mixdown::None,
         })
         .collect()
@@ -764,13 +788,7 @@ impl Pipeline {
         }
         let video = capture.stream().clone();
         let sources = audio_sources(config);
-        let plan = mixdowns(
-            &config.audio,
-            &sources
-                .iter()
-                .map(|(source, ..)| source.clone())
-                .collect::<Vec<_>>(),
-        );
+        let plan = mixdowns(&config.audio, &sources);
         let tracks = sources
             .into_iter()
             .zip(plan)
@@ -1304,19 +1322,55 @@ mod tests {
     }
 
     fn plan(config: &EngineConfig) -> Vec<&'static str> {
-        let sources: Vec<AudioSource> = audio_sources(config)
-            .into_iter()
-            .map(|(source, ..)| source)
-            .collect();
-        mixdowns(&config.audio, &sources)
+        mixdowns(&config.audio, &audio_sources(config))
             .iter()
             .map(|mixdown| match mixdown {
                 Mixdown::None => "seule",
-                Mixdown::Feed(_) => "dans la piste 1",
-                Mixdown::Mix(buses) if buses.len() == 2 => "somme de 2",
-                Mixdown::Mix(_) => "somme",
+                Mixdown::Feed { .. } => "dans la piste 1",
+                Mixdown::Mix { buses, .. } if buses.len() == 2 => "somme de 2",
+                Mixdown::Mix { .. } => "somme",
             })
             .collect()
+    }
+
+    #[test]
+    fn the_full_mix_waits_for_the_latest_track_it_adds() {
+        let mut config = EngineConfig::default();
+        config.audio.microphone_sync_offset_ms = -450;
+        config.audio.game_sync_offset_ms = 80;
+        let plan = mixdowns(&config.audio, &audio_sources(&config));
+        assert!(matches!(plan[0], Mixdown::Mix { lag_ms: 600, .. }));
+        config.audio.microphone_in_full_mix = false;
+        let plan = mixdowns(&config.audio, &audio_sources(&config));
+        assert!(matches!(plan[0], Mixdown::Mix { lag_ms: 200, .. }));
+    }
+
+    #[test]
+    fn a_game_also_chosen_as_an_app_track_is_added_once() {
+        let mut config = EngineConfig::default();
+        config.audio.game_exe = Some("FortniteClient-Win64-Shipping.exe".into());
+        config.audio.app_tracks = vec![AppTrack {
+            exe_name: "fortniteclient-win64-shipping.exe".into(),
+            label: "Fortnite".into(),
+            enabled: true,
+            sync_offset_ms: 0,
+        }];
+        let sources = audio_sources(&config);
+        let plan = mixdowns(&config.audio, &sources);
+        let Mixdown::Feed { duplicates, .. } = &plan[3] else {
+            panic!("la piste Jeu doit alimenter la piste 1");
+        };
+        assert!(sources[3].0.is_one_of(duplicates));
+        let Mixdown::Feed { duplicates, .. } = &plan[2] else {
+            panic!("la piste d'appli doit alimenter la piste 1");
+        };
+        assert!(!sources[2].0.is_one_of(duplicates));
+        config.audio.game_exe = Some("Discord.exe".into());
+        let sources = audio_sources(&config);
+        let Mixdown::Feed { duplicates, .. } = &mixdowns(&config.audio, &sources)[3] else {
+            panic!("la piste Jeu doit alimenter la piste 1");
+        };
+        assert!(!sources[3].0.is_one_of(duplicates));
     }
 
     #[test]
