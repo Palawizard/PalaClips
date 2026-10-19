@@ -60,6 +60,18 @@ pub enum TrackKind {
     Game,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct CapturePerformance {
+    pub encoder: String,
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+    pub repeated_percent: f64,
+    pub late_total: u64,
+    pub late_last_minute: u64,
+    pub lag_max_ms: f64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TrackDescriptor {
     pub title: String,
@@ -113,6 +125,14 @@ pub enum EngineEvent {
     ReplayStats {
         buffered_secs: f64,
         bytes: u64,
+    },
+    PerformanceStats {
+        cpu_percent: Option<f64>,
+        cpu_max_percent: Option<f64>,
+        engine_bytes: Option<u64>,
+        buffer_bytes: u64,
+        buffered_secs: f64,
+        capture: Option<CapturePerformance>,
     },
     RecordingStats {
         elapsed_secs: f64,

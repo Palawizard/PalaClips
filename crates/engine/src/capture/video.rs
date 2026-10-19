@@ -22,7 +22,7 @@ use super::display::display_color;
 use super::pacer::CfrClock;
 use super::rate::{RateWatch, composition_rate};
 use super::targets::{ResolvedTarget, resolve_target};
-use crate::clock::Hns;
+use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, VideoSettings};
 use crate::encode::{
     GpuConverter, HdrToSdr, Size, VideoEncoder, VideoEncoderSettings, check_output_size,
@@ -30,6 +30,7 @@ use crate::encode::{
 };
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Localized, Severity};
+use crate::perf::CaptureCounters;
 
 const FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(3);
 const SEND_RETRY: Duration = Duration::from_millis(100);
@@ -181,6 +182,10 @@ impl VideoCapture {
         &self.alerts
     }
 
+    pub fn counters(&self) -> CaptureCounters {
+        *self.shared.counters.lock()
+    }
+
     pub fn stop(mut self) -> Result<VideoCaptureStats> {
         self.shutdown()
     }
@@ -253,6 +258,7 @@ struct LatestFrame {
 #[derive(Default)]
 struct Shared {
     latest: Mutex<Option<LatestFrame>>,
+    counters: Mutex<CaptureCounters>,
     closed: AtomicBool,
     stop: AtomicBool,
 }
@@ -478,7 +484,12 @@ fn run_encoder(
             Some(hdr) => hdr.convert(&latest.texture.0)?,
             None => latest.texture.0.clone(),
         };
+        let frame_period = Hns(HNS_PER_SECOND / i64::from(clock.fps()));
+        let mut late = 0;
         for index in due {
+            if now - clock.tick_time(index) > frame_period {
+                late += 1;
+            }
             let frame = encoder.acquire_frame()?;
             let (texture, slice) = frame_texture(&frame)
                 .ok_or_else(|| EngineError::Encoder("image matérielle sans texture".into()))?;
@@ -491,6 +502,13 @@ fn run_encoder(
             last_count = latest.count;
         }
         stats.captured = latest.count;
+        {
+            let mut counters = shared.counters.lock();
+            counters.frames = stats.frames;
+            counters.repeated = stats.duplicated;
+            counters.late += late;
+            counters.max_lateness = stats.max_lateness;
+        }
         if let Some(origin) = origin.take() {
             clock = CfrClock::new(Hns::now(), fps);
             clock.take_due(clock.origin());

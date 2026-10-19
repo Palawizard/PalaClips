@@ -106,7 +106,8 @@ try {
     Write-Journal ("buffer réel (d) − (c) : {0:N1} Mo ; tampon journalisé (d) − (c) : {1:N1} Mo ; écart {2:N1} Mo" -f $realBuffer, $loggedBuffer, ($realBuffer - $loggedBuffer))
     Write-Journal ("hors buffer (c) : {0:N1} Mo, dont tampon de (c) {1:N1} Mo → {2:N1} Mo ; capture seule (b) − (a) : {3:N1} Mo ; moteur à vide (a) : {4:N1} Mo" -f $c.Private, $c.Buffer, ($c.Private - $c.Buffer), ($b.Private - $a.Private), $a.Private)
     Write-Journal ("mémoire engagée (information) : hors buffer (c) {0:N1} Mo, {1:N1} Mo sans le tampon de (c)" -f $c.Private, ($c.Private - $c.Buffer))
-    Write-Journal ("RÉSULTAT PERF-02 (working set privé, ADR-023) : (c) {0:N1} Mo, {1:N1} Mo sans le tampon (seuil 150) → {2}" -f $c.PrivateWorking, ($c.PrivateWorking - $c.Buffer), $(if ($c.PrivateWorking -lt 150) { "OK" } else { "ÉCHEC" }))
+    $engine = $c.PrivateWorking - $c.Buffer * 1.07
+    Write-Journal ("RÉSULTAT PERF-02 (working set privé − tampon × 1,07, ADR-023, même calcul que le panneau de performances) : (c) {0:N1} Mo, {1:N1} Mo hors tampon (seuil 150) → {2}" -f $c.PrivateWorking, $engine, $(if ($engine -lt 150) { "OK" } else { "ÉCHEC" }))
 } catch {
     Write-Journal "ÉCHEC : $_"
 } finally {
