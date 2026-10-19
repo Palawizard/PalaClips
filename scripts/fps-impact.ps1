@@ -1,5 +1,6 @@
 param(
     [string]$Game = "FortniteClient-Win64-Shipping.exe",
+    [string]$App = "vesktop.exe",
     [int]$Seconds = 20,
     [int]$BitrateMbps = 40,
     [string]$PresentMon = "C:\Program Files (x86)\CapFrameX\PresentMon\PresentMon-2.4.1-x64.exe",
@@ -65,6 +66,7 @@ try {
         Measure-Fps "sans capture" @()
         Measure-Fps "fenêtre 60 i/s" (@("capture-video", "--target", $target, "--fps", "60") + $video)
         Measure-Fps "écran principal 60 i/s" (@("capture-video", "--target", "primary", "--fps", "60") + $video)
+        Measure-Fps "écran 1440p60 + 4 pistes" (@("capture-apps", "--target", "primary", "--fps", "60", "--mic", "--game", "--app", $App) + $video)
         Measure-Fps "fenêtre 30 i/s" (@("capture-video", "--target", $target, "--fps", "30") + $video)
         Measure-Fps "WGC seul (sans encodage)" @("probe-wgc", "--target", $target, "--seconds", "$($Seconds + 6)", "--min-interval-ms", "8")
         Measure-Fps "sans capture (fin)" @()

@@ -507,6 +507,9 @@ phase 8).
   `%LOCALAPPDATA%\com.palawi.palaclips\` (à côté des données de WebView2). Les clips restent dans
   le dossier choisi (`Vidéos\PalaClips` par défaut), que le désinstalleur ne touche jamais.
 - Migration automatique au premier lancement (`migrate::migrate_data`) : déplacement sans
-  écraser, chemins des miniatures réécrits dans la base, anciens dossiers supprimés seulement
-  vides. Vérifiée par tests et sur une copie des données réelles de Palawi
+  écraser, chemins des miniatures réécrits dans la base ; seuls les fichiers et sous-dossiers de
+  données connus bougent. `%APPDATA%\PalaClips` est supprimé seulement vide ;
+  `%LOCALAPPDATA%\PalaClips`, qui est aussi le dossier d'installation, n'est jamais supprimé ni
+  renommé (révision du 2026-10-19 : test avec un faux programme installé, puis vérification sur
+  une copie de la vraie installation, exe et entrée de désinstallation intacts). Vérifiée par tests et sur une copie des données réelles de Palawi
   (`scripts/migration-check.ps1` : chaque fichier retrouvé identique en SHA-256).
