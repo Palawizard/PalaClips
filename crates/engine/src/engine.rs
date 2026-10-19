@@ -16,7 +16,7 @@ use crate::calibrate::{
 };
 use crate::capture::{VideoCapture, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
-use crate::config::{CaptureTarget, EngineConfig, ReplayStorage};
+use crate::config::{AudioSettings, CaptureTarget, EngineConfig, ReplayStorage};
 use crate::encode::{
     HardwareEncoder, Size, hardware_video_encoders, output_size, pick_encoder, try_output,
     write_thumbnail,
@@ -210,7 +210,7 @@ impl EngineHandle {
 pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
     let audio = &config.audio;
     let mut sources = Vec::new();
-    if audio.record_full_mix {
+    if audio.record_full_mix && audio.desktop_in_full_mix {
         sources.push((
             AudioSource::SystemMix {
                 device_id: audio.output_device_id.clone(),
@@ -218,6 +218,8 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
             audio.full_mix_title().to_owned(),
             audio.full_mix_sync_offset_ms,
         ));
+    } else if audio.record_full_mix {
+        sources.push((AudioSource::TracksMix, audio.full_mix_title().to_owned(), 0));
     }
     if audio.record_microphone {
         sources.push((
@@ -246,6 +248,31 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
         ));
     }
     sources
+}
+
+pub fn mixdowns(audio: &AudioSettings, sources: &[AudioSource]) -> Vec<Mixdown> {
+    let desktop = sources
+        .iter()
+        .any(|source| matches!(source, AudioSource::SystemMix { .. }));
+    let feeds = |source: &AudioSource| match source.kind() {
+        TrackKind::Microphone => audio.microphone_in_full_mix,
+        TrackKind::Application | TrackKind::Game => !desktop,
+        TrackKind::Mix => false,
+    };
+    let buses: Vec<Option<MixBus>> = sources
+        .iter()
+        .map(|source| feeds(source).then(MixBus::default))
+        .collect();
+    let mix: Vec<MixBus> = buses.iter().flatten().cloned().collect();
+    sources
+        .iter()
+        .zip(buses)
+        .map(|(source, bus)| match (source.kind(), bus) {
+            (_, Some(bus)) => Mixdown::Feed(bus),
+            (TrackKind::Mix, None) if !mix.is_empty() => Mixdown::Mix(mix.clone()),
+            _ => Mixdown::None,
+        })
+        .collect()
 }
 
 pub fn track_descriptors(config: &EngineConfig) -> Vec<TrackDescriptor> {
@@ -737,23 +764,18 @@ impl Pipeline {
         }
         let video = capture.stream().clone();
         let sources = audio_sources(config);
-        let bus = (config.audio.microphone_in_full_mix
-            && sources
+        let plan = mixdowns(
+            &config.audio,
+            &sources
                 .iter()
-                .any(|(source, ..)| source.kind() == TrackKind::Mix)
-            && sources
-                .iter()
-                .any(|(source, ..)| source.kind() == TrackKind::Microphone))
-        .then(MixBus::default);
+                .map(|(source, ..)| source.clone())
+                .collect::<Vec<_>>(),
+        );
         let tracks = sources
             .into_iter()
+            .zip(plan)
             .enumerate()
-            .map(|(index, (source, title, offset_ms))| {
-                let mixdown = match (&bus, source.kind()) {
-                    (Some(bus), TrackKind::Mix) => Mixdown::Mix(bus.clone()),
-                    (Some(bus), TrackKind::Microphone) => Mixdown::Feed(bus.clone()),
-                    _ => Mixdown::None,
-                };
+            .map(|(index, ((source, title, offset_ms), mixdown))| {
                 AudioTrack::start(
                     index,
                     source,
@@ -1264,6 +1286,7 @@ mod tests {
                 sync_offset_ms: 0,
             },
         ];
+        config.audio.desktop_in_full_mix = true;
         config.audio.full_mix_sync_offset_ms = -120;
         let titles: Vec<(String, i32)> = audio_sources(&config)
             .into_iter()
@@ -1278,6 +1301,43 @@ mod tests {
                 ("Jeu".to_owned(), 0),
             ]
         );
+    }
+
+    fn plan(config: &EngineConfig) -> Vec<&'static str> {
+        let sources: Vec<AudioSource> = audio_sources(config)
+            .into_iter()
+            .map(|(source, ..)| source)
+            .collect();
+        mixdowns(&config.audio, &sources)
+            .iter()
+            .map(|mixdown| match mixdown {
+                Mixdown::None => "seule",
+                Mixdown::Feed(_) => "dans la piste 1",
+                Mixdown::Mix(buses) if buses.len() == 2 => "somme de 2",
+                Mixdown::Mix(_) => "somme",
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_full_mix_adds_up_the_chosen_tracks_unless_it_takes_the_desktop() {
+        let mut config = EngineConfig::default();
+        assert!(matches!(
+            audio_sources(&config)[0].0,
+            AudioSource::TracksMix
+        ));
+        assert_eq!(
+            plan(&config),
+            ["somme de 2", "dans la piste 1", "dans la piste 1"]
+        );
+        config.audio.desktop_in_full_mix = true;
+        assert!(matches!(
+            audio_sources(&config)[0].0,
+            AudioSource::SystemMix { .. }
+        ));
+        assert_eq!(plan(&config), ["somme", "dans la piste 1", "seule"]);
+        config.audio.microphone_in_full_mix = false;
+        assert_eq!(plan(&config), ["seule", "seule", "seule"]);
     }
 
     #[test]

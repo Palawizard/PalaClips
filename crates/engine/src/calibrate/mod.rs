@@ -72,6 +72,7 @@ pub fn calibration_config(config: &EngineConfig, own_exe: &str) -> EngineConfig 
     };
     calibration.audio.app_tracks.clear();
     calibration.audio.microphone_in_full_mix = false;
+    calibration.audio.desktop_in_full_mix = true;
     calibration.audio.auto_game_track = true;
     calibration.audio.game_exe = Some(own_exe.to_owned());
     calibration.replay.storage = ReplayStorage::Ram;
@@ -192,6 +193,7 @@ mod tests {
         assert_eq!(calibration.video.codec, VideoCodec::H264);
         assert!(calibration.audio.app_tracks.is_empty());
         assert!(!calibration.audio.microphone_in_full_mix);
+        assert!(calibration.audio.desktop_in_full_mix);
         assert_eq!(
             calibration.audio.game_exe.as_deref(),
             Some("palaclips-app.exe")

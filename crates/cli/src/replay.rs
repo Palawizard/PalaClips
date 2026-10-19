@@ -36,6 +36,11 @@ pub struct ReplayArgs {
     pub no_mic: bool,
     #[arg(
         long,
+        help = "Piste mix complet = somme des autres pistes au lieu de toute la sortie audio"
+    )]
+    pub tracks_mix: bool,
+    #[arg(
+        long,
         help = "Sortie à enregistrer en loopback pour la piste mix (partie du nom) ; absente = sortie par défaut"
     )]
     pub mix_device: Option<String>,
@@ -68,6 +73,7 @@ impl ReplayArgs {
             video: self.video.video_settings(),
             audio: AudioSettings {
                 record_full_mix: !self.no_mix,
+                desktop_in_full_mix: !self.tracks_mix,
                 output_device_id,
                 record_microphone: !self.no_mic,
                 app_tracks: self
