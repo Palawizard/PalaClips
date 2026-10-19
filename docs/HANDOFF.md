@@ -5,9 +5,12 @@
 
 ## État actuel
 
-- **Phase en cours :** 6 — Enregistrement, galerie, lecteur. Phase 5 **validée** le
-  2026-10-17 (`docs/reports/phase-5.md`, dernier critère : ressenti des sélecteurs, « Tout est
-  bon » de Palawi).
+- **Phase en cours :** 7 — Robustesse et performances. Phase 6 **validée** le 2026-10-19
+  (`docs/reports/phase-6.md` : 5 000 clips, clip de 4 Go, RAM du lecteur stable sur 1 h,
+  arrêt brutal, disque plein sur VHDX, collage Discord avec la voix).
+- **Piste 1 (ADR-029, ADR-030)** : Mix complet = somme des pistes choisies (micro si « Aussi
+  dans Mix complet », Jeu, applis) ; « Audio du bureau » (désactivé par défaut) = toute la
+  sortie + micro. La CLI garde la sortie entière (`--tracks-mix` pour le nouveau mode).
 - **Socle i18n (APP-08, ADR-028)** mergé (#37) avant la phase 6 : clés
   `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
@@ -186,10 +189,10 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 6 : tous les critères vérifiés le 2026-10-19 (`docs/reports/phase-6.md`) ; reste
-   `/valider-phase`. Retours de Palawi intégrés : micro aussi dans la piste 1 (ADR-029,
-   réglage activé par défaut), un clic sélectionne un clip et le double-clic l'ouvre. Le
-   premier lancement guidé (APP-06, phase 8) proposera le micro dans la piste 1.
+1. Phase 7 (PLAN) : scénarios de robustesse de `docs/TESTING.md` § T7 (résolution, alt-tab,
+   plein écran exclusif, casque débranché, appli qui crashe, disque plein, TDR, veille),
+   alerte `capture_source_rate_limited` (CAP-11, ADR-018), panneau de performances (APP-12,
+   écran : `/design`), mesures PERF-01 à 04 sur build release installée.
 2. Bancs : `pwsh scripts/gallery-bench.ps1` (~12 min, 12 Go libres) et
    `pwsh scripts/recording-crash.ps1` (~2 min) ; journaux `target/journals/`.
 3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi

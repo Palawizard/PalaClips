@@ -121,7 +121,7 @@ Critères :
 - 👤 Sauvegarde en plein écran dans Fortnite : le jeu garde le focus, le toast apparaît.
 - 👤 Palawi valide le ressenti des sélecteurs (« propre et sympa »).
 
-## Phase 6 — Enregistrement, galerie, lecteur (REC-01–06 ; STO-02, 04, 05 ; GAL-01–08)
+## Phase 6 — Enregistrement, galerie, lecteur (REC-01–06 ; STO-02, 04, 05 ; GAL-01–08) ✅ ([rapport](reports/phase-6.md))
 
 - [x] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
       Fait : enregistrement (bouton, raccourci, zone de notification), MP4 hybride relisible
