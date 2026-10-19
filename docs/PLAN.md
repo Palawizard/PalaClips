@@ -165,7 +165,7 @@ Critères :
   < 500 ms.
 - 🤖 RAM du lecteur mesurée sur un enregistrement d'1 h (6 pistes), sans croissance avec la
   durée (ADR-008).
-- 👤 Glisser un clip copié dans Discord : envoi OK, son = mix.
+- 👤 Glisser un clip copié dans Discord : envoi OK, son = mix complet avec le micro (ADR-029).
 
 ## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
 
@@ -184,7 +184,8 @@ Critères :
 
 ## Phase 8 — Release V1 (APP-06, 08–11)
 
-- [ ] Premier lancement guidé.
+- [ ] Premier lancement guidé (APP-06), avec `/impeccable onboard` : micro et « Micro dans la
+      piste 1 », dossier des clips, replay, raccourcis, test de sauvegarde.
 - [x] Socle i18n FR/EN fait avant la phase 6 (ADR-028) : clés typées, langue du système par
       défaut, choix dans Réglages > Général, codes + paramètres côté Rust, test contre les
       chaînes en dur.

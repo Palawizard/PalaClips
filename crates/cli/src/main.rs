@@ -751,7 +751,7 @@ fn run_capture(
     args: &CaptureArgs,
     audio: Vec<(palaclips_engine::audio::AudioSource, i32)>,
 ) -> Result<()> {
-    use palaclips_engine::audio::{AudioTrack, SAMPLE_RATE};
+    use palaclips_engine::audio::{AudioTrack, Mixdown, SAMPLE_RATE};
     use palaclips_engine::capture::VideoCapture;
     use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
     use palaclips_engine::encode::{hardware_video_encoders, pick_encoder};
@@ -777,6 +777,7 @@ fn run_capture(
                 title,
                 stream.origin,
                 Hns::from_millis(offset_ms.into()),
+                Mixdown::None,
             )
         })
         .collect::<palaclips_engine::Result<Vec<_>>>()?;

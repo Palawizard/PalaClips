@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 use anyhow::Result;
-use palaclips_engine::audio::{AudioSource, AudioTrack};
+use palaclips_engine::audio::{AudioSource, AudioTrack, Mixdown};
 use palaclips_engine::capture::VideoCapture;
 use palaclips_engine::clock::Hns;
 use palaclips_engine::encode::{create_device, hardware_video_encoders, pick_encoder};
@@ -186,7 +186,7 @@ pub fn probe_memory(args: &ProbeMemoryArgs) -> Result<()> {
     let mut drains = Vec::new();
     for (index, source) in sources.into_iter().enumerate() {
         let title = source.label();
-        let track = AudioTrack::start(index, source, title, origin, Hns::ZERO)?;
+        let track = AudioTrack::start(index, source, title, origin, Hns::ZERO, Mixdown::None)?;
         let packets = track.packets().clone();
         drains.push(std::thread::spawn(move || while packets.recv().is_ok() {}));
         tracks.push(track);

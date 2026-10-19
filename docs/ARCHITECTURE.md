@@ -223,11 +223,17 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
 
 | Ordre | Piste | Titre écrit |
 |---|---|---|
-| 1 | Mix complet | `Mix complet` |
+| 1 | Mix complet (+ micro, réglage `microphone_in_full_mix`, activé par défaut) | `Mix complet` |
 | 2 | Micro | `Micro` |
 | 3… | Appli (choisie ou « Jeu » automatique) | libellé choisi par l'utilisateur |
 
-Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout.
+Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout, micro
+compris (ADR-029, comme la piste 1 d'OBS envoyée au stream). Mixage : la piste Micro publie ses
+échantillons déjà recalés (même origine QPC, même index d'échantillon) sur un `MixBus` ; la
+piste Mix complet les additionne avant l'encodage AAC (somme bornée à ±1). Elle attend le micro
+au plus 200 ms, puis continue sans lui (un micro bloqué ne retient jamais la piste 1) ; à
+l'arrêt, elle attend sa fin au plus 2 s. Le calibrage coupe ce mixage pour mesurer chaque
+source seule.
 
 ## 5. UI et lecture des clips
 

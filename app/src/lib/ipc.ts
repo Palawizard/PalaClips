@@ -436,6 +436,7 @@ export interface EngineConfig {
     microphone_device_id: string | null;
     microphone_gain_db: number;
     microphone_sync_offset_ms: number;
+    microphone_in_full_mix: boolean;
     app_tracks: AppTrack[];
     max_app_tracks: number;
     auto_game_track: boolean;

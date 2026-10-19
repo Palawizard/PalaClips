@@ -9,7 +9,7 @@ use rsmpeg::avcodec::AVPacket;
 use rsmpeg::avutil::AVRational;
 use rsmpeg::ffi::AV_PKT_FLAG_KEY;
 
-use crate::audio::{AudioSource, AudioTrack, PeakMeter, SAMPLE_RATE};
+use crate::audio::{AudioSource, AudioTrack, MixBus, Mixdown, PeakMeter, SAMPLE_RATE};
 use crate::calibrate::{
     Calibration, EMIT_SECONDS, TrackMeasurement, calibration_config, emit_flashes, measure_tracks,
     proposals, read_signals,
@@ -22,7 +22,7 @@ use crate::encode::{
     write_thumbnail,
 };
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, EngineState, Localized, Severity, TrackDescriptor};
+use crate::events::{EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind};
 use crate::library::ensure_free_space;
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::record::{
@@ -736,16 +736,31 @@ impl Pipeline {
             events.try_send(alert.clone()).ok();
         }
         let video = capture.stream().clone();
-        let tracks = audio_sources(config)
+        let sources = audio_sources(config);
+        let bus = (config.audio.microphone_in_full_mix
+            && sources
+                .iter()
+                .any(|(source, ..)| source.kind() == TrackKind::Mix)
+            && sources
+                .iter()
+                .any(|(source, ..)| source.kind() == TrackKind::Microphone))
+        .then(MixBus::default);
+        let tracks = sources
             .into_iter()
             .enumerate()
             .map(|(index, (source, title, offset_ms))| {
+                let mixdown = match (&bus, source.kind()) {
+                    (Some(bus), TrackKind::Mix) => Mixdown::Mix(bus.clone()),
+                    (Some(bus), TrackKind::Microphone) => Mixdown::Feed(bus.clone()),
+                    _ => Mixdown::None,
+                };
                 AudioTrack::start(
                     index,
                     source,
                     title,
                     video.origin,
                     Hns::from_millis(offset_ms.into()),
+                    mixdown,
                 )
             })
             .collect::<Result<Vec<_>>>()?;
