@@ -106,8 +106,10 @@ impl AudioTrack {
             filled: Vec::new(),
             mixing: match mixdown {
                 Mixdown::None => Mixing::None,
-                Mixdown::Feed(bus) => Mixing::Feed(bus),
-                Mixdown::Mix(buses) => Mixing::Mix(MixIn::new(buses), Vec::new()),
+                Mixdown::Feed { bus, duplicates } => Mixing::Feed(bus, duplicates),
+                Mixdown::Mix { buses, lag_ms } => {
+                    Mixing::Mix(MixIn::new(buses, lag_ms), Vec::new())
+                }
             },
             encoder,
             packets: packet_tx,
@@ -204,7 +206,7 @@ struct Worker {
 
 enum Mixing {
     None,
-    Feed(MixBus),
+    Feed(MixBus, Vec<String>),
     Mix(MixIn, Vec<f32>),
 }
 
@@ -434,7 +436,7 @@ impl Worker {
         self.filler.set_end(end);
         self.filler.fill_until(end, &mut self.filled);
         self.encode_filled(true)?;
-        if let Mixing::Feed(bus) = &self.mixing {
+        if let Mixing::Feed(bus, _) = &self.mixing {
             bus.close();
         }
         let packets = &self.packets;
@@ -632,10 +634,14 @@ impl Worker {
         let written = self.filler.written_frames();
         match &mut self.mixing {
             Mixing::None => {}
-            Mixing::Feed(bus) => bus.push(
-                written - (self.filled.len() / CHANNELS) as i64,
-                &self.filled,
-            ),
+            Mixing::Feed(bus, duplicates) => {
+                let start = written - (self.filled.len() / CHANNELS) as i64;
+                if self.source.is_one_of(duplicates) {
+                    bus.push(start, &vec![0.0; self.filled.len()]);
+                } else {
+                    bus.push(start, &self.filled);
+                }
+            }
             Mixing::Mix(mix, ready) => {
                 if last {
                     mix.take_all(&self.filled, written, ready, MIXDOWN_END_WAIT);
