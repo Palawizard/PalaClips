@@ -203,6 +203,12 @@ ADR-027.
   164,9 Hz de la mesure (le texte ci-dessus disait `rateCompose` par erreur). Le fil
   d'encodage vidéo le lit une fois par seconde (`capture::RateWatch`) ; « cadence qui change »
   = valeur arrondie au Hz différente de la dernière alerte.
+- **Révision du 2026-10-19 (revue de Palawi).** Écran immobile : Windows 11 peut baisser la
+  fréquence quand rien ne change (fréquence d'actualisation dynamique). Seules les secondes où
+  WGC livre de nouvelles images comptent pour les 5 s ; une période sans image ne compte pas et
+  ne remet pas le compteur à zéro. Mesure sur la machine de Palawi : fenêtre immobile et
+  fenêtre animée capturées à 240 i/s, DWM reste à 240 Hz, aucune alerte (la baisse vient donc
+  d'autres machines, couverte par le test `a_still_screen_never_alerts_even_when_windows_slows_its_refresh`).
 
 ## ADR-019 — La piste Jeu suit le jeu, pas le premier plan (AUD-06)
 **Statut :** acceptée (2026-10-16, décision de Palawi) ; remplace la piste Jeu « appli au
