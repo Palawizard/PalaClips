@@ -443,6 +443,11 @@ pub fn stop_previews(slot: State<'_, EngineSlot>) {
 }
 
 #[tauri::command]
+pub fn set_performance_panel(slot: State<'_, EngineSlot>, open: bool) {
+    slot.set_performance_panel(open);
+}
+
+#[tauri::command]
 pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<HardwareEncoder>, Localized> {
     cached_encoders(&slot)
 }

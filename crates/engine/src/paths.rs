@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use windows::Win32::System::Com::CoTaskMemFree;
-use windows::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS_EX};
+use windows::Win32::System::ProcessStatus::{
+    GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS_EX, PROCESS_MEMORY_COUNTERS_EX2,
+};
 use windows::Win32::System::SystemInformation::{
     GetLocalTime, GlobalMemoryStatusEx, MEMORYSTATUSEX,
 };
@@ -119,6 +121,23 @@ pub fn physical_memory() -> Option<(u64, u64)> {
     // SAFETY: `status` is sized by `dwLength` as the call requires.
     unsafe { GlobalMemoryStatusEx(&mut status) }.ok()?;
     Some((status.ullTotalPhys, status.ullAvailPhys))
+}
+
+pub fn private_working_set() -> Option<u64> {
+    let mut counters = PROCESS_MEMORY_COUNTERS_EX2 {
+        cb: size_of::<PROCESS_MEMORY_COUNTERS_EX2>() as u32,
+        ..Default::default()
+    };
+    // SAFETY: the pseudo-handle of the current process is always valid and `counters` is sized by `cb`.
+    unsafe {
+        GetProcessMemoryInfo(
+            GetCurrentProcess(),
+            (&mut counters as *mut PROCESS_MEMORY_COUNTERS_EX2).cast(),
+            counters.cb,
+        )
+    }
+    .ok()?;
+    Some(counters.PrivateWorkingSetSize as u64)
 }
 
 pub fn private_bytes() -> Option<u64> {
