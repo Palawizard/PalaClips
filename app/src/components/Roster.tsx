@@ -85,7 +85,7 @@ export function Roster({
   }, [flashAt]);
 
   return (
-    <section aria-labelledby="roster-title" className="min-w-0 border-r border-line max-[1000px]:border-r-0">
+    <section aria-labelledby="roster-title" className="min-w-0 pb-5">
       <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
         <h2 id="roster-title" tabIndex={-1} className="text-[17px] font-semibold outline-none">
           {t("roster.title")}
