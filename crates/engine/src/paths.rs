@@ -52,12 +52,22 @@ fn local_dir() -> Result<PathBuf> {
 }
 
 pub fn data_dirs_to_migrate() -> Result<Option<(DataDirs, DataDirs)>> {
-    if isolated_dir().is_some() {
-        return Ok(None);
+    Ok(migration_plan(
+        isolated_dir().as_deref(),
+        &known_folder(&FOLDERID_RoamingAppData)?,
+        &known_folder(&FOLDERID_LocalAppData)?,
+    ))
+}
+
+fn migration_plan(
+    isolated: Option<&Path>,
+    roaming: &Path,
+    local: &Path,
+) -> Option<(DataDirs, DataDirs)> {
+    if isolated.is_some() {
+        return None;
     }
-    let roaming = known_folder(&FOLDERID_RoamingAppData)?;
-    let local = known_folder(&FOLDERID_LocalAppData)?;
-    Ok(Some((
+    Some((
         DataDirs {
             roaming: roaming.join(APP_DIR),
             local: local.join(APP_DIR),
@@ -66,7 +76,7 @@ pub fn data_dirs_to_migrate() -> Result<Option<(DataDirs, DataDirs)>> {
             roaming: roaming.join(APP_ID),
             local: local.join(APP_ID),
         },
-    )))
+    ))
 }
 
 pub fn library_db() -> Result<PathBuf> {
@@ -233,6 +243,23 @@ mod tests {
             Some("cs2_2026-10-16_15-30-00_replay_2.mp4")
         );
         std::fs::remove_dir_all(root).ok();
+    }
+
+    #[test]
+    fn an_isolated_app_never_migrates_the_real_data_folders() {
+        let roaming = Path::new("C:/Users/x/AppData/Roaming");
+        let local = Path::new("C:/Users/x/AppData/Local");
+        assert_eq!(
+            migration_plan(
+                Some(Path::new("C:/repo/target/test-config")),
+                roaming,
+                local
+            ),
+            None
+        );
+        let (old, new) = migration_plan(None, roaming, local).expect("plan");
+        assert_eq!(old.roaming, roaming.join("PalaClips"));
+        assert_eq!(new.local, local.join("com.palawi.palaclips"));
     }
 
     #[test]
