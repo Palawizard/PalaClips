@@ -180,7 +180,8 @@ Critères :
       encodeur, images répétées (10 s) et en retard (total, dernière minute), décalage max.
 - [ ] Mesures PERF sur build release installée. Fait le 2026-10-19 (`docs/reports/phase-7.md`) :
       PERF-01 4,9 Mo, PERF-02 67,3 Mo hors tampon, PERF-03 CPU 0,39 %, PERF-04 538 ms à chaud.
-      Reste : perte de fps en jeu GPU-bound (PERF-03) avec Palawi.
+      Reste : perte de fps GPU-bound (PERF-03), à remesurer après le correctif de la capture
+      bloquée sous GPU saturé (rapport, défaut 1).
 
 Critères :
 - 👤 Chaque scénario de `docs/TESTING.md` § T7 passé, consigné dans le rapport.

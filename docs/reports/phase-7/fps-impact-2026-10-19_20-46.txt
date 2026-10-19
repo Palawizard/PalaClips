@@ -1,0 +1,8 @@
+2026-10-19T20:46:11 fps-impact : superposition.exe, 20 s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger
+mise en route (non comptée)      45,0 i/s, 1 % bas   16,2 i/s, GPU 91 %, 895 présentations, mode « Composed: Copy with GPU GDI » 
+sans capture 1                   46,9 i/s, 1 % bas   42,5 i/s, GPU 100 %, 933 présentations, mode « Composed: Copy with GPU GDI » 
+fenêtre 60 i/s                   49,1 i/s, 1 % bas   42,7 i/s, GPU 100 %, 976 présentations, mode « Composed: Copy with GPU GDI » 
+sans capture 2                   44,8 i/s, 1 % bas   38,2 i/s, GPU 100 %, 892 présentations, mode « Composed: Copy with GPU GDI » 
+écran principal 60 i/s           46,8 i/s, 1 % bas   41,8 i/s, GPU 100 %, 931 présentations, mode « Composed: Copy with GPU GDI » frames=1132 captured=229 duplicated=1125 max_lateness_ms=14357.7105
+ÉCHEC : Could not find file 'C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\fps-impact\sans_capture_3.csv'.
+2026-10-19T20:49:32 fin : captures arrêtées et supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\fps-impact-2026-10-19_20-46.txt

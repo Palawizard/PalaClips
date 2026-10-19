@@ -189,10 +189,14 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 7 (PLAN) : scénarios de robustesse de `docs/TESTING.md` § T7 (résolution, alt-tab,
-   plein écran exclusif, casque débranché, appli qui crashe, disque plein, TDR, veille),
-   alerte `capture_source_rate_limited` (CAP-11, ADR-018), panneau de performances (APP-12,
-   écran : `/design`), mesures PERF-01 à 04 sur build release installée.
+1. Phase 7 : séance T7 faite le 2026-10-19 (`docs/reports/phase-7.md`). Corriger dans
+   l'ordre les trois défauts trouvés : (1) capture bloquée sous GPU saturé (priorité GPU,
+   sous-commande CLI d'abord) puis remesurer PERF-03 GPU-bound avec Kombustor fenêtré et
+   `fps-impact.ps1` (essais intercalés) ; (2) alerte en plein écran exclusif ; (3) alerte
+   CAP-11 effacée au redémarrage de la capture. Puis les scénarios T7 restants (changement de
+   résolution, appli capturée qui crashe) et `/valider-phase`. PERF-01, 02, 04 et la part CPU
+   de PERF-03 sont validés sur la build installée ; installation et désinstallation (les deux
+   cas) vérifiées ; micro calibré (−485 ms).
 2. Bancs : `pwsh scripts/gallery-bench.ps1` (~12 min, 12 Go libres) et
    `pwsh scripts/recording-crash.ps1` (~2 min) ; journaux `target/journals/`.
 3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
