@@ -412,6 +412,7 @@
     "calibration_running": "Calibrating: nothing is saved.",
     "clip_save_failed": "Clip not saved: {reason}.",
     "capture_fallback_monitor": "The “{title}” window can't be captured: PalaClips captures its screen instead.",
+    "capture_source_rate_limited": "Windows only composes your screen at {rate} Hz while you record at {fps} fps: the video will repeat frames. Turn off G-Sync for this screen, or set your other screens to at least {fps} Hz.",
     "audio_device_changed": "“{track}” track: capture now follows “{device}”.",
     "app_track_silent": "“{track}” track: {app} plays sound but the track stays silent. Check that the app doesn't use an output in exclusive mode, then restart it.",
     "audio_device_unavailable": "“{track}” track: {reason}",

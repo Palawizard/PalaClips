@@ -859,7 +859,9 @@ impl Pipeline {
         Ok(Self {
             time_bases: specs.iter().map(|spec| spec.time_base).collect(),
             rings: specs.iter().map(|_| PacketRing::new(window)).collect(),
-            alerts: tracks.iter().map(|track| track.alerts().clone()).collect(),
+            alerts: std::iter::once(capture.alerts().clone())
+                .chain(tracks.iter().map(|track| track.alerts().clone()))
+                .collect(),
             meters: tracks.iter().map(|track| track.meter().clone()).collect(),
             level_interval: None,
             next_levels: Hns::ZERO,

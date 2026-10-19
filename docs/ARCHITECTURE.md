@@ -350,7 +350,9 @@ sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_un
 `settings_newer` (version plus récente, fichier laissé intact), `settings_dir_missing`,
 `quota_deleted { count, size_mb }` (clips supprimés définitivement par le quota).
 Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }` ;
-`clip_too_short { seconds }` ; `capture_fallback_monitor { title }` ; `audio_device_changed
+`clip_too_short { seconds }` ; `capture_fallback_monitor { title }` ;
+`capture_source_rate_limited { rate, fps }` (cadence de composition DWM sous le fps demandé
+pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo, ADR-018) ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
 reason }` ; `hotkey_unavailable { keys }`.
 
