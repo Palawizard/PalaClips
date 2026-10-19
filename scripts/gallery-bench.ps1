@@ -14,7 +14,7 @@ function Write-Journal([string]$Line) { $Line | Tee-Object -FilePath $journal -A
 $sources = Join-Path $root "target\bench-sources"
 $fixtures = Join-Path $root "target\gallery-fixture-sources"
 $long = Join-Path $sources "Fortnite_2026-01-01_00-00-00.mp4"
-$localCache = Join-Path $env:LOCALAPPDATA "PalaClips\cache"
+$localCache = Join-Path $env:LOCALAPPDATA "com.palawi.palaclips\cache"
 $localBefore = @(Get-ChildItem $localCache -Recurse -File -ErrorAction SilentlyContinue).Count
 $app = $null
 

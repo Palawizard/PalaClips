@@ -16,8 +16,10 @@ use windows::core::GUID;
 
 use crate::error::{EngineError, Result};
 use crate::games::{DESKTOP_GAME, exe_stem, sanitize};
+use crate::migrate::DataDirs;
 
 const APP_DIR: &str = "PalaClips";
+pub const APP_ID: &str = "com.palawi.palaclips";
 
 pub fn default_clips_dir() -> Result<PathBuf> {
     Ok(known_folder(&FOLDERID_Videos)?.join(APP_DIR))
@@ -31,19 +33,40 @@ pub fn isolated_dir() -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
+fn roaming_dir() -> Result<PathBuf> {
+    match isolated_dir() {
+        Some(dir) => Ok(dir),
+        None => Ok(known_folder(&FOLDERID_RoamingAppData)?.join(APP_ID)),
+    }
+}
+
 pub fn settings_path() -> Result<PathBuf> {
-    let dir = match isolated_dir() {
-        Some(dir) => dir,
-        None => known_folder(&FOLDERID_RoamingAppData)?.join(APP_DIR),
-    };
-    Ok(dir.join("settings.json"))
+    Ok(roaming_dir()?.join("settings.json"))
 }
 
 fn local_dir() -> Result<PathBuf> {
     match isolated_dir() {
         Some(dir) => Ok(dir.join("local")),
-        None => Ok(known_folder(&FOLDERID_LocalAppData)?.join(APP_DIR)),
+        None => Ok(known_folder(&FOLDERID_LocalAppData)?.join(APP_ID)),
     }
+}
+
+pub fn data_dirs_to_migrate() -> Result<Option<(DataDirs, DataDirs)>> {
+    if isolated_dir().is_some() {
+        return Ok(None);
+    }
+    let roaming = known_folder(&FOLDERID_RoamingAppData)?;
+    let local = known_folder(&FOLDERID_LocalAppData)?;
+    Ok(Some((
+        DataDirs {
+            roaming: roaming.join(APP_DIR),
+            local: local.join(APP_DIR),
+        },
+        DataDirs {
+            roaming: roaming.join(APP_ID),
+            local: local.join(APP_ID),
+        },
+    )))
 }
 
 pub fn library_db() -> Result<PathBuf> {
