@@ -1,0 +1,22 @@
+2026-10-19T14:41:10 enregistrement factice : 1 h, 6 pistes, 4.26 Go, généré en 137 s
+5000 clips factices + l'enregistrement d'1 h dans C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-config ; app isolée sur l'écran principal (PID 26640)
+index : 5001 clips avec miniature en 31.8 s
+list_clips (5001 clips) : 31.2 ms (médiane de 5)
+ouverture de la galerie : première 101.9 ms, médiane 73.5 ms, max 101.9 ms
+cadence de l'écran (rAF au repos) : 238.1 Hz
+défilement 24 px/image (5.7 k px/s, hauteur 312026 px) : 226 i/s, p95 8.3 ms, max 12.5 ms, 0/1355 images > 16,7 ms, 0 > 33 ms
+défilement 120 px/image (28.6 k px/s, hauteur 312026 px) : 116.6 i/s, p95 16.6 ms, max 29.1 ms, 30/700 images > 16,7 ms, 0 > 33 ms
+RAM galerie : 728.7 Mo privés (app 317.6 + WebView2 411.1), tas JS 12.1 Mo
+lecteur (60 min, 6 pistes) : image en 301.9 ms, pistes extraites en 5.2 s, cache des pistes 498.2 Mo
+RAM lecteur ouvert (1 h) : 822.3 Mo privés (app 388.5 + WebView2 433.8), tas JS 13.2 Mo
+déplacements à l'arrêt (12) : image p50 192.1 ms / max 288 ms ; 6 pistes p50 122.6 ms / max 141.2 ms
+déplacements en lecture (12) : image p50 157 ms / max 219.5 ms ; 6 pistes p50 127.8 ms / max 165.9 ms
+RAM lecture de 20 s à 0 min : 857.2 Mo privés (app 394.5 + WebView2 462.7), tas JS 8.9 Mo
+RAM lecture de 20 s à 15 min : 801.6 Mo privés (app 408.3 + WebView2 393.3), tas JS 8.8 Mo
+RAM lecture de 20 s à 30 min : 804.9 Mo privés (app 410.1 + WebView2 394.8), tas JS 8.8 Mo
+RAM lecture de 20 s à 45 min : 809.8 Mo privés (app 411.7 + WebView2 398.1), tas JS 9.1 Mo
+RAM lecture de 20 s à 59 min : 812.3 Mo privés (app 409.5 + WebView2 402.8), tas JS 8.9 Mo
+RAM retour à la galerie : 794.7 Mo privés (app 408.3 + WebView2 386.4), tas JS 16.5 Mo
+RAM en lecture : de 801.6 à 857.2 Mo ; écart entre 15 et 59 min : 10.7 Mo
+OK
+fichiers de test supprimés ; cache de %LOCALAPPDATA% : 1 fichiers avant, 1 après

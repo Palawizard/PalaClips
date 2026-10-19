@@ -128,6 +128,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   défaut : écrans, alertes, erreurs, menu de la zone de notification et notifications. Les
   pistes non renommées (Mix, Micro, Jeu) prennent le nom de la langue choisie, à l'écran
   comme dans les clips ; renommer une piste ne redémarre plus le replay.
+- Galerie : grille de clips fluide même avec 5 000 clips, filtres (jeu, type, favoris,
+  période), tri, recherche, menu d'actions au clic droit et au clavier. Lecteur intégré avec
+  pistes audio séparées (muet, solo, volume), déplacements rapides même sur un clip de 4 Go,
+  mémoire stable sur un enregistrement d'une heure ; découpe rapide ou précise et export des
+  pistes choisies ou mixées.
 
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.

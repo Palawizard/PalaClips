@@ -674,6 +674,10 @@ pub fn run() {
             }
             let language = slot.language();
             app.manage(slot);
+            if let Ok(thumbnails) = palaclips_engine::paths::thumbnail_dir() {
+                app.asset_protocol_scope()
+                    .allow_directory(thumbnails, true)?;
+            }
             clips::start_library(app.handle());
             build_tray(app.handle(), language)?;
             if !std::env::args().any(|arg| arg == AUTOSTART_ARG) {
