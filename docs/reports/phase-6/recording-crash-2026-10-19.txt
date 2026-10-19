@@ -1,0 +1,7 @@
+2026-10-19T14:44:52 app isolée (PID 26872), capture de la fenêtre ffplay, découpage 1 min
+découpage : ffplay_2026-10-19_14-44-52.mp4 60.01 s, 19.6 Mo
+découpage : ffplay_2026-10-19_14-45-52.mp4 15.54 s, 5.1 Mo
+arrêt brutal après 12 s : 1 fichier(s), journal des enregistrements : 26872	C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-config\clips\ffplay\ffplay_2026-10-19_14-46-13.mp4
+avant redémarrage : ffplay_2026-10-19_14-46-13.mp4 lisible sur 13.01 s
+après redémarrage : lisible sur 13.01 s ; galerie : {"name":"ffplay_2026-10-19_14-46-13","kind":"recording","duration":13.013333}
+OK

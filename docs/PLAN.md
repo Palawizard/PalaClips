@@ -126,7 +126,8 @@ Critères :
 - [ ] Enregistrement manuel partageant l'encodeur, MP4 hybride, découpage, récupération.
       Fait : enregistrement (bouton, raccourci, zone de notification), MP4 hybride relisible
       après un arrêt brutal (test unitaire), replay au début, découpage, récupération au
-      démarrage (REC-06, journal `recordings.txt`). Reste : essai réel avec Palawi
+      démarrage (REC-06, journal `recordings.txt`) ; découpage et arrêt brutal vérifiés sur la
+      build (`scripts/recording-crash.ps1`, 2026-10-19). Reste : essai réel en jeu avec Palawi
       (TESTING § T6).
 - [ ] Disque plein pendant un enregistrement : arrêt propre, fichier lisible jusqu'au dernier
       fragment, alerte ; jamais un fichier cassé (STO-05, consigne de Palawi). Tests unitaires
@@ -140,23 +141,24 @@ Critères :
 - [ ] Bibliothèque : index SQLite, miniatures, surveillance du dossier, quota. Fait : index,
       synchro au démarrage, surveillance (`notify`), quota, favori / renommer / Corbeille /
       Explorateur, miniature des clips ajoutés hors de l'app.
-- [ ] Protocole `palaclips://` avec `Range`. Fait (plages de 4 Mo, chemins limités à la
-      bibliothèque et au cache des pistes) ; reste la mesure sur un clip de 4 Go avec le
-      lecteur.
-- [ ] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
+- [x] Protocole `palaclips://` avec `Range` (plages de 4 Mo, chemins limités à la
+      bibliothèque et au cache des pistes) ; clip de 4,26 Go : déplacement max 288 ms.
+- [x] Lecteur : vidéo + pistes via Web Audio (mute/solo/volume), proxy H.264 si besoin.
       ADR-008 précisé : pistes extraites en `.m4a` par copie de flux dans un cache disque
       limité, lues en continu par des `<audio>` branchés sur Web Audio, recalées au-delà de
-      ~40 ms ; jamais de piste entière en `AudioBuffer`.
+      ~40 ms ; jamais de piste entière en `AudioBuffer`. RAM stable sur 1 h à 6 pistes.
 - [ ] Découpe rapide / précise, export pistes choisies ou mixées, copier dans le presse-papiers.
       Fait côté moteur et commandes (tests : coupe rapide sur image clé, pistes choisies, mix,
-      annulation ; coupe précise à l'image près sur NVENC, test `--ignored`). Reste : l'UI.
-- [ ] Galerie fluide (virtualisation) avec 5 000 clips.
-- [ ] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
+      annulation ; coupe précise à l'image près sur NVENC, test `--ignored`) et UI (#45).
+      Reste : collage dans Discord avec Palawi.
+- [x] Galerie fluide (virtualisation) avec 5 000 clips (`scripts/gallery-bench.ps1`).
+- [x] Galerie : liste des pistes de chaque clip, noms lus dans le fichier (Resolve ne les
       montre pas, ADR-021).
-- [ ] Tout texte visible en clé i18n, français et anglais (ADR-028).
+- [x] Tout texte visible en clé i18n, français et anglais (ADR-028).
 
 Critères :
-- 👤 Tuer le processus pendant un enregistrement : fichier lisible, finalisé au redémarrage.
+- 🤖 Tuer le processus pendant un enregistrement : fichier lisible, finalisé au redémarrage
+  (automatisé : `scripts/recording-crash.ps1`).
 - 🤖 Clip de 4 Go : déplacement dans le lecteur < 300 ms.
 - 🤖 5 000 clips factices (uniquement dans le dossier isolé : `PALACLIPS_CONFIG_DIR` + dossier
   de clips de test, supprimés à la fin) : défilement à 60 fps, ouverture de la galerie

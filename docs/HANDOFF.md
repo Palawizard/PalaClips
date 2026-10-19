@@ -12,7 +12,7 @@
   `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
   refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
-- **Dernière mise à jour :** 2026-10-17
+- **Dernière mise à jour :** 2026-10-19
 
 ## Ce qui existe
 
@@ -186,14 +186,14 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 6 (PLAN), une branche par tâche depuis `dev` : enregistrement manuel (encodeur
-   partagé, MP4 hybride, récupération), disque plein propre (STO-05), quota (STO-04),
-   bibliothèque SQLite, protocole `palaclips://` avec `Range`, lecteur multi-pistes, découpe et
-   export, galerie virtualisée. Tout texte visible directement en clé (ADR-028) ; la galerie
-   affiche la liste des pistes de chaque clip, noms lus dans le fichier (ADR-021) ; le dossier
-   « Bureau » s'affiche par sa clé. Écrans : `/design` (impeccable shape avant chaque écran).
-2. Essai visuel : `pwsh scripts/app-isolated.ps1 -Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`
-   (langue et replay au choix).
+1. Phase 6 : critères 🤖 mesurés le 2026-10-19 (`docs/reports/phase-6.md` : 5 000 clips,
+   clip de 4 Go, RAM du lecteur sur 1 h, arrêt brutal). Reste la séance 👤 avec Palawi
+   (`docs/TESTING.md` § T6) : enregistrement réel en jeu, collage Discord, disque plein
+   (`scripts/disk-full.ps1` en administrateur). Puis `/valider-phase`.
+2. Bancs : `pwsh scripts/gallery-bench.ps1` (~12 min, 12 Go libres) et
+   `pwsh scripts/recording-crash.ps1` (~2 min) ; journaux `target/journals/`.
+3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
+   joue) `-Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`.
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
   Palawi).
