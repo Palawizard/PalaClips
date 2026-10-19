@@ -261,6 +261,12 @@ Build installée (accord de Palawi avant d'installer ; PalaClips de dev fermé, 
    fenêtre fermée, working set privé − tampon × 1,07. PERF-03 (part CPU) : CPU replay armé.
    Journal `target\journals\perf-installed-*.txt`. `-Exe` pour viser une autre build (répétition
    sur `target\release`).
+Avant l'étape 1 et après l'étape 3 : `pwsh scripts\real-data-fingerprint.ps1 -Out <fichier>`
+   (puis `-Compare <fichier d'avant>`) relève en SHA-256 les vraies données de Palawi
+   (`%APPDATA%\PalaClips`, `cache` et `replay` de `%LOCALAPPDATA%\PalaClips`, dossiers
+   `com.palawi.palaclips`) : ni l'installation, ni la mesure isolée, ni la désinstallation ne
+   doivent y toucher.
+
 3. Désinstallation sans la case : `%LOCALAPPDATA%\PalaClips\uninstall.exe /S` ; attendu :
    programme et raccourcis retirés, `%APPDATA%\com.palawi.palaclips`,
    `%LOCALAPPDATA%\com.palawi.palaclips` et le dossier des clips inchangés.
