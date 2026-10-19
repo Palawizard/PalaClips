@@ -15,6 +15,7 @@ pub mod events;
 pub mod games;
 #[cfg(windows)]
 pub mod library;
+pub mod migrate;
 #[cfg(windows)]
 pub mod mux;
 #[cfg(windows)]
