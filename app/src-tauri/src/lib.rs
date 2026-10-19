@@ -450,6 +450,9 @@ impl EngineSlot {
         self.apply(app, defaults.engine.clone())?;
         self.update(|settings| *settings = defaults)?;
         refresh_tray(app, self.language(), self.state() == EngineState::Recording);
+        if palaclips_engine::paths::isolated_dir().is_some() {
+            return Ok(());
+        }
         tauri_plugin_autostart::ManagerExt::autolaunch(app)
             .disable()
             .map_err(|error| {
