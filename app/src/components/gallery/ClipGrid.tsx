@@ -10,6 +10,7 @@ const MIN_CARD = 232;
 const CARD_BODY = 84;
 const DAY_ROW = 46;
 const OVERSCAN = 600;
+const SCROLL_STEP = 200;
 
 interface Layout {
   columns: number;
@@ -73,13 +74,18 @@ export function ClipGrid({
     const element = root.current?.parentElement;
     if (!element) return;
     let frame = 0;
+    const follow = () => {
+      const top = Math.floor(element.scrollTop / SCROLL_STEP) * SCROLL_STEP;
+      const height = element.clientHeight;
+      setViewport((current) => (current.top === top && current.height === height ? current : { top, height }));
+    };
     const measure = () => {
       setWidth(element.clientWidth);
-      setViewport({ top: element.scrollTop, height: element.clientHeight });
+      follow();
     };
     const onScroll = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setViewport({ top: element.scrollTop, height: element.clientHeight }));
+      frame = requestAnimationFrame(follow);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -154,7 +160,7 @@ export function ClipGrid({
   };
 
   const top = viewport.top - OVERSCAN;
-  const bottom = viewport.top + viewport.height + OVERSCAN;
+  const bottom = viewport.top + SCROLL_STEP + viewport.height + OVERSCAN;
   const visible: { row: GridRow; at: number; index: number }[] = [];
   rows.forEach((row, index) => {
     const at = offsets[index] ?? 0;
