@@ -62,21 +62,26 @@ $video = @("--bitrate-mbps", "$BitrateMbps", "--seconds", "$($Seconds + 6)", "--
 try {
     Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger"
     $null = Measure-Fps "mise en route (non comptée)" @()
-    $results = @(
-        Measure-Fps "sans capture" @()
-        Measure-Fps "fenêtre 60 i/s" (@("capture-video", "--target", $target, "--fps", "60") + $video)
-        Measure-Fps "écran principal 60 i/s" (@("capture-video", "--target", "primary", "--fps", "60") + $video)
-        Measure-Fps "écran 1440p60 + 4 pistes" (@("capture-apps", "--target", "primary", "--fps", "60", "--mic", "--game", "--app", $App) + $video)
-        Measure-Fps "fenêtre 30 i/s" (@("capture-video", "--target", $target, "--fps", "30") + $video)
-        Measure-Fps "WGC seul (sans encodage)" @("probe-wgc", "--target", $target, "--seconds", "$($Seconds + 6)", "--min-interval-ms", "8")
-        Measure-Fps "sans capture (fin)" @()
+    $runs = @(
+        @{ Label = "fenêtre 60 i/s"; Arguments = (@("capture-video", "--target", $target, "--fps", "60") + $video) }
+        @{ Label = "écran principal 60 i/s"; Arguments = (@("capture-video", "--target", "primary", "--fps", "60") + $video) }
+        @{ Label = "écran 1440p60 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--fps", "60", "--mic", "--game", "--app", $App) + $video) }
+        @{ Label = "fenêtre 30 i/s"; Arguments = (@("capture-video", "--target", $target, "--fps", "30") + $video) }
+        @{ Label = "WGC seul (sans encodage)"; Arguments = @("probe-wgc", "--target", $target, "--seconds", "$($Seconds + 6)", "--min-interval-ms", "8") }
     )
-    $baselines = @($results | Where-Object { $_.Label -like "sans capture*" })
-    $captures = @($results | Where-Object { $_.Label -notlike "sans capture*" })
-    $reference = ($baselines | Measure-Object -Property Fps -Average).Average
-    Write-Journal ("RÉFÉRENCE : moyenne des {0} essais sans capture (mise en route exclue) = {1:N1} i/s" -f $baselines.Count, $reference)
-    foreach ($result in $captures) {
-        Write-Journal ("PERTE {0,-28} {1,6:N1} % ({2:+0.0;-0.0} i/s)" -f $result.Label, (100 * ($reference - $result.Fps) / $reference), ($result.Fps - $reference))
+    $before = Measure-Fps "sans capture 1" @()
+    $losses = @()
+    $index = 1
+    foreach ($run in $runs) {
+        $index += 1
+        $capture = Measure-Fps $run.Label $run.Arguments
+        $after = Measure-Fps "sans capture $index" @()
+        $reference = ($before.Fps + $after.Fps) / 2
+        $losses += [pscustomobject]@{ Label = $run.Label; Fps = $capture.Fps; Reference = $reference; Drift = 100 * ($before.Fps - $after.Fps) / $reference }
+        $before = $after
+    }
+    foreach ($loss in $losses) {
+        Write-Journal ("PERTE {0,-28} {1,6:N1} % ({2:+0.0;-0.0} i/s) face à la moyenne des essais sans capture voisins ({3:N1} i/s, dérive entre eux {4:N1} %)" -f $loss.Label, (100 * ($loss.Reference - $loss.Fps) / $loss.Reference), ($loss.Fps - $loss.Reference), $loss.Reference, $loss.Drift)
     }
 } catch {
     Write-Journal "ÉCHEC : $_"
