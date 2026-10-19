@@ -1,7 +1,9 @@
 param(
     [Parameter(Mandatory)][string]$Root,
     [int]$Count = 60,
-    [int]$Seconds = 12
+    [int]$Seconds = 12,
+    [string]$Size = "1280x720",
+    [string]$VideoBitrate = "6M"
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,9 +18,9 @@ $sources = Join-Path $repo "target\gallery-fixture-sources"
 New-Item -ItemType Directory -Force $sources, $Root | Out-Null
 
 $variants = @(
-    @{ Name = "a"; Video = "testsrc2=size=1280x720:rate=60"; Tones = @(220, 330, 495) },
-    @{ Name = "b"; Video = "testsrc=size=1280x720:rate=60"; Tones = @(262, 392, 523) },
-    @{ Name = "c"; Video = "smptehdbars=size=1280x720:rate=60"; Tones = @(196, 294, 440) }
+    @{ Name = "a-$Seconds-$Size"; Video = "testsrc2=size=$($Size):rate=60"; Tones = @(220, 330, 495) },
+    @{ Name = "b-$Seconds-$Size"; Video = "testsrc=size=$($Size):rate=60"; Tones = @(262, 392, 523) },
+    @{ Name = "c-$Seconds-$Size"; Video = "smptehdbars=size=$($Size):rate=60"; Tones = @(196, 294, 440) }
 )
 foreach ($variant in $variants) {
     $file = Join-Path $sources "$($variant.Name).mp4"
@@ -30,7 +32,7 @@ foreach ($variant in $variants) {
     $maps = @("-map", "0:v")
     for ($index = 1; $index -le $variant.Tones.Count; $index++) { $maps += @("-map", "$($index):a") }
     & $ffmpeg -hide_banner -loglevel error -y @inputs @maps `
-        -c:v h264_nvenc -b:v 6M -g 60 -bf 0 -c:a aac -b:a 192k -ac 2 `
+        -c:v h264_nvenc -b:v $VideoBitrate -g 60 -bf 0 -c:a aac -b:a 192k -ac 2 `
         -metadata:s:a:0 title="Mix complet" -metadata:s:a:0 handler_name="Mix complet" `
         -metadata:s:a:1 title="Micro" -metadata:s:a:1 handler_name="Micro" `
         -metadata:s:a:2 title="Discord" -metadata:s:a:2 handler_name="Discord" `

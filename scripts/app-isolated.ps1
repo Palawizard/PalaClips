@@ -1,4 +1,4 @@
-param([string]$Settings = '{}', [int]$Clips = 0, [switch]$LeftScreen)
+param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [switch]$LeftScreen, [switch]$MainScreen)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 if (Get-Process palaclips-app -ErrorAction SilentlyContinue) {
@@ -12,13 +12,19 @@ if (-not $json.engine) { $json.engine = @{} }
 if (-not $json.engine.storage) { $json.engine.storage = @{} }
 $json.engine.storage.clips_dir = Join-Path $dir 'clips'
 $json | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $dir 'settings.json') -Encoding utf8
-if ($Clips -gt 0) { & (Join-Path $PSScriptRoot 'gallery-fixtures.ps1') -Root (Join-Path $dir 'clips') -Count $Clips }
-if ($LeftScreen) {
+if ($Clips -gt 0) { & (Join-Path $PSScriptRoot 'gallery-fixtures.ps1') -Root (Join-Path $dir 'clips') -Count $Clips @Fixture }
+foreach ($file in $Link) {
+    $name = Split-Path $file -Leaf
+    $game = Join-Path $dir "clips\$($name.Split('_')[0])"
+    New-Item -ItemType Directory -Force $game | Out-Null
+    New-Item -ItemType HardLink -Path (Join-Path $game $name) -Target $file | Out-Null
+}
+if ($LeftScreen -or $MainScreen) {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -Namespace Isolated -Name Dpi -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetProcessDPIAware();'
     [Isolated.Dpi]::SetProcessDPIAware() | Out-Null
-    $left = [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.X } | Select-Object -First 1
-    $env:PALACLIPS_TEST_WINDOW = "$($left.WorkingArea.X + 40),$($left.WorkingArea.Y + 40)"
+    $screen = if ($MainScreen) { [System.Windows.Forms.Screen]::PrimaryScreen } else { [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.X } | Select-Object -First 1 }
+    $env:PALACLIPS_TEST_WINDOW = "$($screen.WorkingArea.X + 40),$($screen.WorkingArea.Y + 40)"
 }
 $env:PALACLIPS_CONFIG_DIR = $dir
 $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
