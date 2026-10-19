@@ -572,7 +572,13 @@ mod file_tests {
         context.set_gop_size(FPS);
         context.set_max_b_frames(0);
         context.set_flags(context.flags | ffi::AV_CODEC_FLAG_GLOBAL_HEADER as i32);
-        context.open(None).expect("open");
+        context
+            .open(Some(rsmpeg::avutil::AVDictionary::new_int(
+                c"sc_threshold",
+                1_000_000_000,
+                0,
+            )))
+            .expect("open");
         let mut packets = Vec::new();
         for index in 0..seconds * FPS {
             let mut frame = AVFrame::new();
