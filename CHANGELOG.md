@@ -142,6 +142,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Écran État : section « Performances » repliable, CPU de PalaClips en % de la machine, RAM
   hors tampon, tampon, encodeur, images répétées et en retard ; rien n'est mesuré quand elle
   est fermée.
+- Installateur Windows par utilisateur : FFmpeg et ses licences (LGPL v3, GPL v3) inclus, page
+  de licence ; à la désinstallation, une case dit ce qui part (réglages, historique et favoris
+  de la galerie), jamais les clips.
 
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
