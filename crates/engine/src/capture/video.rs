@@ -20,6 +20,7 @@ use windows_capture::settings::{
 
 use super::display::display_color;
 use super::pacer::CfrClock;
+use super::rate::{RateWatch, composition_rate};
 use super::targets::{ResolvedTarget, resolve_target};
 use crate::clock::Hns;
 use crate::config::{CaptureTarget, VideoSettings};
@@ -32,6 +33,8 @@ use crate::events::{EngineEvent, Localized, Severity};
 
 const FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(3);
 const SEND_RETRY: Duration = Duration::from_millis(100);
+const RATE_CHECK: Hns = Hns::from_millis(1_000);
+const ALERT_QUEUE: usize = 8;
 
 #[derive(Debug, Clone)]
 pub struct VideoStream {
@@ -55,6 +58,7 @@ pub struct VideoCapture {
     stream: VideoStream,
     packets: Receiver<AVPacket>,
     alert: Option<EngineEvent>,
+    alerts: Receiver<EngineEvent>,
     shared: Arc<Shared>,
     encoder_thread: Option<JoinHandle<Result<VideoCaptureStats>>>,
     session: Option<CaptureControl<FrameSink, EngineError>>,
@@ -122,6 +126,7 @@ impl VideoCapture {
         };
         let (packet_tx, packets) = bounded(settings.fps as usize * 2);
         let (origin_tx, origin_rx) = bounded(1);
+        let (alert_tx, alerts) = bounded(ALERT_QUEUE);
         let encoder_thread = std::thread::Builder::new()
             .name("palaclips-video".into())
             .spawn({
@@ -132,13 +137,19 @@ impl VideoCapture {
                     let hdr = hdr_white
                         .map(|white| HdrToSdr::new(&device.0, white))
                         .transpose()?;
-                    run_encoder(shared, device, hdr, encoder, fps, origin_tx, packet_tx)
+                    let outputs = EncoderOutputs {
+                        origin: origin_tx,
+                        packets: packet_tx,
+                        alerts: alert_tx,
+                    };
+                    run_encoder(shared, device, hdr, encoder, fps, outputs)
                 }
             })?;
         let mut capture = Self {
             stream,
             packets,
             alert,
+            alerts,
             shared,
             encoder_thread: Some(encoder_thread),
             session: Some(session),
@@ -164,6 +175,10 @@ impl VideoCapture {
 
     pub fn alert(&self) -> Option<&EngineEvent> {
         self.alert.as_ref()
+    }
+
+    pub fn alerts(&self) -> &Receiver<EngineEvent> {
+        &self.alerts
     }
 
     pub fn stop(mut self) -> Result<VideoCaptureStats> {
@@ -359,15 +374,25 @@ fn session_settings<T: TryInto<GraphicsCaptureItemType>>(
     )
 }
 
+struct EncoderOutputs {
+    origin: Sender<Hns>,
+    packets: Sender<AVPacket>,
+    alerts: Sender<EngineEvent>,
+}
+
 fn run_encoder(
     shared: Arc<Shared>,
     device: SendCom<ID3D11Device>,
     mut hdr: Option<HdrToSdr>,
     mut encoder: VideoEncoder,
     fps: u32,
-    origin: Sender<Hns>,
-    packets: Sender<AVPacket>,
+    outputs: EncoderOutputs,
 ) -> Result<VideoCaptureStats> {
+    let EncoderOutputs {
+        origin,
+        packets,
+        alerts,
+    } = outputs;
     let device = device.0;
     let output = encoder.size();
     let mut converter: Option<GpuConverter> = None;
@@ -390,6 +415,8 @@ fn run_encoder(
 
     let mut clock = CfrClock::new(Hns::now(), fps);
     let mut origin = Some(origin);
+    let mut rate_watch = RateWatch::new(fps);
+    let mut next_rate_check = Hns::now() + RATE_CHECK;
     while !shared.stop.load(Ordering::Relaxed) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
@@ -403,6 +430,12 @@ fn run_encoder(
             }
         }
         let now = Hns::now();
+        if now >= next_rate_check {
+            next_rate_check = now + RATE_CHECK;
+            if let Some(alert) = composition_rate().and_then(|rate| rate_watch.observe(now, rate)) {
+                alerts.try_send(alert).ok();
+            }
+        }
         let due = clock.take_due(now);
         if due.is_empty() {
             continue;
