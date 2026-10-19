@@ -173,7 +173,7 @@ Tout est arrêté et les clips supprimés à la fin.
 - Fenêtre fermée : Gestionnaire des tâches → un seul `palaclips.exe`, aucun `msedgewebview2.exe`
   rattaché.
 
-- Calibrage (AUD-11) : `palaclips-cli calibrate --settings %APPDATA%\PalaClips\settings.json`
+- Calibrage (AUD-11) : `palaclips-cli calibrate --settings %APPDATA%\com.palawi.palaclips\settings.json`
   (lecture seule) ou Réglages > Audio > Calibrer… ; écran principal libre, pas de jeu lancé ;
   attendu : Mix et Jeu mesurés (≥ 5 paires, dispersion ≤ 20 ms), Jeu = référence → 0 ms,
   Mix proposé = −(mesure Mix − mesure Jeu) (ADR-027), micro mesuré si un écouteur est collé
@@ -181,6 +181,10 @@ Tout est arrêté et les clips supprimés à la fin.
   l'était.
 
 ## T6 — Enregistrement et galerie (phase 6)
+
+Migration des données (ADR-032) : `pwsh scripts/migration-check.ps1` copie les dossiers
+`%APPDATA%\PalaClips` et `%LOCALAPPDATA%\PalaClips` réels dans `target\`, migre la copie et
+vérifie chaque fichier en SHA-256 au nouvel emplacement ; les dossiers réels ne bougent pas.
 
 Isolation : `pwsh scripts/webview-isolation.ps1` (~20 s) écrit dans le localStorage d'une app
 isolée et vérifie que le stockage WebView2 réel (`%LOCALAPPDATA%\com.palawi.palaclips\EBWebView`)
@@ -204,7 +208,7 @@ fenêtre sur l'écran principal sans prise de focus (`app-isolated.ps1 -MainScre
   l'écran), ouverture du lecteur, 12 déplacements à l'arrêt et 12 en lecture (image affichée
   et 6 pistes recalées, < 300 ms), RAM privée (app + WebView2) après 20 s de lecture à 0, 15,
   30, 45 et 59 min (croissance ≤ 50 Mo). Pistes lues en sourdine. Tout est supprimé à la fin,
-  et le script vérifie que `%LOCALAPPDATA%\PalaClips\cache` n'a pas bougé. Journal :
+  et le script vérifie que `%LOCALAPPDATA%\com.palawi.palaclips\cache` n'a pas bougé. Journal :
   `target/journals/gallery-bench-*.txt`.
 
 Séance avec Palawi (👤, ~10 min, une seule fois) :
