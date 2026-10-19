@@ -1,0 +1,116 @@
+2026-10-19T15:27:28 disque virtuel 1024 Mo monté en Y: ; enregistrement à 80 Mb/s d'une fenêtre de bruit jusqu'au disque plein
+2026-10-19T13:27:29.902050Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=1282 height=752 fps=60 tracks=0 duration_s=10 storage=Ram
+replay de 10 s (RAM) : Entrée = sauvegarder, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+2026-10-19T13:27:33.972311Z  INFO palaclips_engine::engine: nom de jeu choisi exe=ffplay.exe name=ffplay
+nom de jeu : ffplay.exe → ffplay
+2026-10-19T13:27:33.974323Z  INFO palaclips_engine::record: enregistrement : nouveau fichier path=Y:\clips\ffplay\ffplay_2026-10-19_15-27-33.mp4
+état : Recording
+alerte Warning disk_almost_full : Disque presque plein : 1041 Mo libres.
+[     5 s] tampon 5.0 s, 50 Mo ; mémoire privée du processus 185 Mo
+enregistrement : 1 s, 10.0 Mo
+enregistrement : 2 s, 19.9 Mo
+enregistrement : 3 s, 29.9 Mo
+enregistrement : 4 s, 40.3 Mo
+enregistrement : 5 s, 50.5 Mo
+[    10 s] tampon 10.0 s, 100 Mo ; mémoire privée du processus 245 Mo
+enregistrement : 6 s, 60.0 Mo
+enregistrement : 7 s, 70.0 Mo
+enregistrement : 8 s, 80.0 Mo
+enregistrement : 9 s, 90.1 Mo
+enregistrement : 10 s, 100.2 Mo
+[    15 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 285 Mo
+enregistrement : 11 s, 110.2 Mo
+enregistrement : 12 s, 120.2 Mo
+enregistrement : 13 s, 130.2 Mo
+enregistrement : 14 s, 140.2 Mo
+enregistrement : 15 s, 150.2 Mo
+[    20 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 285 Mo
+enregistrement : 16 s, 160.2 Mo
+enregistrement : 17 s, 170.2 Mo
+enregistrement : 18 s, 180.2 Mo
+enregistrement : 19 s, 190.1 Mo
+enregistrement : 20 s, 200.2 Mo
+[    25 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 277 Mo
+enregistrement : 21 s, 210.1 Mo
+enregistrement : 22 s, 220.2 Mo
+enregistrement : 23 s, 230.2 Mo
+enregistrement : 24 s, 240.2 Mo
+enregistrement : 25 s, 250.2 Mo
+[    30 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 278 Mo
+enregistrement : 26 s, 260.2 Mo
+enregistrement : 27 s, 270.3 Mo
+enregistrement : 28 s, 280.2 Mo
+enregistrement : 29 s, 290.2 Mo
+enregistrement : 30 s, 300.2 Mo
+[    35 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 277 Mo
+enregistrement : 31 s, 310.2 Mo
+enregistrement : 32 s, 320.3 Mo
+enregistrement : 33 s, 330.1 Mo
+enregistrement : 34 s, 340.4 Mo
+enregistrement : 35 s, 350.3 Mo
+[    40 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 283 Mo
+enregistrement : 36 s, 360.4 Mo
+enregistrement : 37 s, 370.4 Mo
+enregistrement : 38 s, 380.3 Mo
+enregistrement : 39 s, 390.4 Mo
+enregistrement : 40 s, 400.4 Mo
+[    45 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 284 Mo
+enregistrement : 41 s, 410.4 Mo
+enregistrement : 42 s, 420.3 Mo
+enregistrement : 43 s, 430.3 Mo
+enregistrement : 44 s, 440.4 Mo
+enregistrement : 45 s, 450.4 Mo
+[    50 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 278 Mo
+enregistrement : 46 s, 460.6 Mo
+enregistrement : 47 s, 470.4 Mo
+enregistrement : 48 s, 480.4 Mo
+enregistrement : 49 s, 490.3 Mo
+enregistrement : 50 s, 500.4 Mo
+[    55 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 278 Mo
+enregistrement : 51 s, 510.4 Mo
+enregistrement : 52 s, 520.4 Mo
+enregistrement : 53 s, 530.5 Mo
+enregistrement : 54 s, 540.5 Mo
+enregistrement : 55 s, 550.3 Mo
+[    60 s] tampon 13.0 s, 130 Mo ; mémoire privée du processus 278 Mo
+enregistrement : 56 s, 560.4 Mo
+enregistrement : 57 s, 570.4 Mo
+enregistrement : 58 s, 580.4 Mo
+enregistrement : 59 s, 590.4 Mo
+enregistrement : 60 s, 600.4 Mo
+[    65 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 279 Mo
+enregistrement : 61 s, 610.4 Mo
+enregistrement : 62 s, 620.4 Mo
+enregistrement : 63 s, 630.5 Mo
+enregistrement : 64 s, 640.7 Mo
+enregistrement : 65 s, 650.6 Mo
+[    70 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 279 Mo
+enregistrement : 66 s, 660.6 Mo
+enregistrement : 67 s, 670.6 Mo
+enregistrement : 68 s, 680.5 Mo
+enregistrement : 69 s, 690.6 Mo
+enregistrement : 70 s, 700.6 Mo
+[    75 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 279 Mo
+enregistrement : 71 s, 710.6 Mo
+enregistrement : 72 s, 720.4 Mo
+enregistrement : 73 s, 730.6 Mo
+enregistrement : 74 s, 740.6 Mo
+enregistrement : 75 s, 750.5 Mo
+2026-10-19T13:28:49.923974Z  WARN ffmpeg: [swscaler @ 0000021605cae640] deprecated pixel format used, make sure you did set range correctly
+2026-10-19T13:28:49.927809Z  INFO palaclips_engine::record: enregistrement terminé path=Y:\clips\ffplay\ffplay_2026-10-19_15-27-33.mp4 duration_s=75.9999999
+[    80 s] clip 1 : 76.000 s, prêt en 0 ms ; mémoire privée 259.2 Mo → Y:\clips\ffplay\ffplay_2026-10-19_15-27-33.mp4
+2026-10-19T13:28:49.927931Z ERROR palaclips_engine::record: enregistrement interrompu error=le disque des clips est plein
+alerte Error recording_failed : Enregistrement arrêté : le disque des clips est plein.
+état : ReplayArmed
+[    80 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 259 Mo
+[    85 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 255 Mo
+2026-10-19T13:28:57.121431Z  WARN palaclips_engine::engine: sauvegarde du replay impossible error=le disque des clips est plein
+alerte Warning clip_save_failed : Clip non sauvegardé : le disque des clips est plein.
+[    90 s] tampon 13.0 s, 131 Mo ; mémoire privée du processus 255 Mo
+2026-10-19T13:29:00.135670Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=5414 captured=4951 duplicated=1022 max_lateness_ms=1.2998
+2026-10-19T13:29:00.169758Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 0 ms, moy 0 ms, max 0 ms
+
+fichier ffplay_2026-10-19_15-27-33.mp4 : 725 Mo, 76.000000 s
+espace libre restant sur Y: : 269 Mo
+OK
