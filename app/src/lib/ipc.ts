@@ -431,6 +431,7 @@ export interface EngineConfig {
     full_mix_label: string | null;
     output_device_id: string | null;
     full_mix_sync_offset_ms: number;
+    desktop_in_full_mix: boolean;
     record_microphone: boolean;
     microphone_label: string | null;
     microphone_device_id: string | null;

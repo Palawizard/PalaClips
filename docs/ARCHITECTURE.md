@@ -223,17 +223,24 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
 
 | Ordre | Piste | Titre écrit |
 |---|---|---|
-| 1 | Mix complet (+ micro, réglage `microphone_in_full_mix`, activé par défaut) | `Mix complet` |
+| 1 | Mix complet : somme des pistes choisies, ou sortie audio entière + micro | `Mix complet` |
 | 2 | Micro | `Micro` |
 | 3… | Appli (choisie ou « Jeu » automatique) | libellé choisi par l'utilisateur |
 
-Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout, micro
-compris (ADR-029, comme la piste 1 d'OBS envoyée au stream). Mixage : la piste Micro publie ses
-échantillons déjà recalés (même origine QPC, même index d'échantillon) sur un `MixBus` ; la
-piste Mix complet les additionne avant l'encodage AAC (somme bornée à ±1). Elle attend le micro
-au plus 200 ms, puis continue sans lui (un micro bloqué ne retient jamais la piste 1) ; à
-l'arrêt, elle attend sa fin au plus 2 s. Le calibrage coupe ce mixage pour mesurer chaque
-source seule.
+Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout ce qui
+est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyée au stream).
+
+- Par défaut (`desktop_in_full_mix: false`), la piste 1 ne capture rien elle-même
+  (`AudioSource::TracksMix`) : elle additionne le micro (si `microphone_in_full_mix`), la piste
+  Jeu et les pistes d'applis.
+- Avec « Audio du bureau » (`desktop_in_full_mix: true`), elle capture toute la sortie
+  (`SystemMix`) et n'ajoute que le micro : la sortie contient déjà le jeu et les applis.
+- Mixage (`engine::mixdowns`) : chaque piste ajoutée publie ses échantillons déjà recalés
+  (même origine QPC, même index d'échantillon) sur son `MixBus` ; la piste 1 les additionne
+  avant l'encodage AAC (somme bornée à ±1, vumètre sur le résultat). Elle attend la piste la
+  plus lente au plus 200 ms, puis continue sans elle ; à l'arrêt, elle attend leur fin au plus
+  2 s. Le calibrage force « Audio du bureau » et coupe le micro de la piste 1 pour mesurer
+  chaque source seule.
 
 ## 5. UI et lecture des clips
 
