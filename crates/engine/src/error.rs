@@ -133,6 +133,17 @@ fn min_clip_secs() -> i64 {
 }
 
 impl EngineError {
+    pub fn is_transient(&self) -> bool {
+        matches!(
+            self,
+            Self::Capture(_)
+                | Self::Encoder(_)
+                | Self::Audio(_)
+                | Self::TrackStopped(_)
+                | Self::VideoCaptureStopped
+        )
+    }
+
     pub fn localized(&self) -> Localized {
         match self {
             Self::InvalidConfig(detail) => Localized::new("invalid_config").with("detail", detail),
@@ -215,6 +226,17 @@ pub type Result<T> = std::result::Result<T, EngineError>;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_capture_and_encoding_failures_trigger_an_automatic_restart() {
+        assert!(EngineError::Encoder("device removed".into()).is_transient());
+        assert!(EngineError::Capture("lost".into()).is_transient());
+        assert!(EngineError::VideoCaptureStopped.is_transient());
+        assert!(EngineError::TrackStopped("Micro".into()).is_transient());
+        assert!(!EngineError::CapturedWindowClosed.is_transient());
+        assert!(!EngineError::DiskFull.is_transient());
+        assert!(!EngineError::NoHardwareEncoder.is_transient());
+    }
 
     #[test]
     fn a_refused_output_keeps_its_numbers_as_parameters() {

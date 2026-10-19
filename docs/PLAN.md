@@ -170,6 +170,9 @@ Critères :
 
 - [ ] Changement de résolution, alt-tab, plein écran exclusif, casque débranché, appli qui
       crashe, disque plein, redémarrage du pilote GPU (TDR) : jamais de crash, alerte claire.
+      Fait : reprise automatique après une panne passagère (`encoder_reset`, ADR-031), disque
+      plein (phase 6), changement de résolution de la source (convertisseur recréé). Reste :
+      scénarios T7 sur la machine de Palawi.
 - [x] Alerte `capture_source_rate_limited` sur la cadence de composition DWM (CAP-11, ADR-018) :
       lue chaque seconde par le fil d'encodage, testée unitairement ; essai G-Sync réel dans T7.
 - [ ] Panneau de performances.

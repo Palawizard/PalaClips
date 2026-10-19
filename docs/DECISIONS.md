@@ -471,3 +471,20 @@ phase 8).
   par la piste Jeu est aussi une piste d'appli ajoutée à la somme, la piste Jeu envoie du
   silence au mixage tant que dure ce doublon (la piste Jeu elle-même reste enregistrée). Le
   test se fait à chaque bloc, car la piste Jeu change de jeu en cours de route ; casse ignorée.
+
+## ADR-031 — Reprise automatique après une panne du pipeline (phase 7)
+**Statut :** acceptée (2026-10-19, décision de Palawi pour l'enregistrement en cours).
+- Contexte : toute erreur du pipeline (redémarrage du pilote graphique, capture perdue après
+  une veille, piste arrêtée) désarmait le replay avec `replay_stopped` ; il fallait le réarmer
+  à la main, et un enregistrement en cours s'arrêtait.
+- Décision : pour les erreurs passagères (`EngineError::is_transient` : capture, encodage,
+  audio, piste ou capture vidéo arrêtée), alerte `encoder_reset { reason }`, désarmement (le
+  fichier en cours est finalisé, lisible jusqu'à la panne), puis réarmement après 1 s, 2 s et
+  5 s. Le tampon de replay repart vide : les paquets d'avant viennent d'un autre encodeur. Un
+  enregistrement en cours reprend tout seul dans un nouveau fichier, comme un découpage (choix
+  de Palawi), en gardant l'état « replay armé ou non » d'avant la panne. Après trois échecs :
+  `replay_stopped`, comme avant.
+- Non passagères, donc pas de relance : fenêtre capturée fermée (choix de l'utilisateur),
+  disque plein (STO-05), absence d'encodeur, réglages invalides.
+- Le fil du moteur attend au plus 8 s pendant la relance ; les commandes reçues entre-temps
+  sont traitées après.
