@@ -58,7 +58,9 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
    essai de l'app passe par `pwsh scripts/app-isolated.ps1 [-Settings '<json partiel>']` :
    build release lancée avec `PALACLIPS_CONFIG_DIR=target/test-config` (settings.json et
    clips du test dans ce dossier, recréé à chaque lancement). Le `settings.json` de Palawi
-   (`%APPDATA%\PalaClips\`) n'est jamais modifié, même temporairement.
+   (`%APPDATA%\com.palawi.palaclips\`, avant la migration d'ADR-032 `%APPDATA%\PalaClips\`) et
+   ses autres données (`%LOCALAPPDATA%\com.palawi.palaclips\`, dont le stockage WebView2) ne
+   sont jamais modifiés, même temporairement.
 
 ## 2. Front : skills de design obligatoires
 

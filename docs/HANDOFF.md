@@ -127,14 +127,14 @@
   - Moteur : `audio::PeakMeter` (crête sans verrou), `AudioTrack::meter()`,
     `engine::LevelRate` + `EngineHandle::set_level_rate`, échéances stats/niveaux vérifiées en
     tête de boucle ; `encode::write_thumbnail` (dernière image clé → JPEG 480 px dans
-    `%LOCALAPPDATA%\PalaClips\cache\thumbnails\<clip>.jpg`, après fermeture du MP4) ;
+    `%LOCALAPPDATA%\com.palawi.palaclips\cache\thumbnails\<clip>.jpg`, après fermeture du MP4) ;
     `clip_saved.thumbnail` ; `library` : `probe_clip` (durée, titres des pistes audio lus dans le
     fichier), `recent_clips(root, limit)`, `disk_space` ; `paths::thumbnail_path` ;
     `EngineState: Default`.
   - CLI : `recent-clips [--clips-dir] [--limit]` (JSON), `replay --levels`.
   - `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés.
 - **Réglages, noms de jeux, confirmation, clips sans doublon (2026-10-17)** :
-  - `app/src-tauri/src/settings.rs` : `settings.json` (`%APPDATA%\PalaClips\`) =
+  - `app/src-tauri/src/settings.rs` : `settings.json` (`%APPDATA%\com.palawi.palaclips\`) =
     `{ schema_version, engine, feedback }`, écriture atomique, illisible → `.bak` + défauts +
     alerte `settings_reset`, format plus récent → défauts sans écraser ; `EngineSlot` garde
     `Settings` entier (`update` = enregistrer puis garder) ; commandes `set_config`,
