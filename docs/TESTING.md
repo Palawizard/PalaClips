@@ -182,6 +182,10 @@ Tout est arrêté et les clips supprimés à la fin.
 
 ## T6 — Enregistrement et galerie (phase 6)
 
+Isolation : `pwsh scripts/webview-isolation.ps1` (~20 s) écrit dans le localStorage d'une app
+isolée et vérifie que le stockage WebView2 réel (`%LOCALAPPDATA%\com.palawi.palaclips\EBWebView`)
+reste identique, octet pour octet et date pour date.
+
 Automatisés (🤖, après `npx tauri build --no-bundle` dans `app`) : l'app isolée est pilotée par
 le protocole de débogage de WebView2 (`scripts/cdp.mjs`, port local, aucune touche simulée),
 fenêtre sur l'écran principal sans prise de focus (`app-isolated.ps1 -MainScreen`, ou
