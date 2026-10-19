@@ -107,7 +107,7 @@ impl AudioTrack {
             mixing: match mixdown {
                 Mixdown::None => Mixing::None,
                 Mixdown::Feed(bus) => Mixing::Feed(bus),
-                Mixdown::Mix(bus) => Mixing::Mix(MixIn::new(bus), Vec::new()),
+                Mixdown::Mix(buses) => Mixing::Mix(MixIn::new(buses), Vec::new()),
             },
             encoder,
             packets: packet_tx,
@@ -313,7 +313,12 @@ impl Worker {
             waits_for_device.push(foreground.changed.handle());
         }
 
-        loop {
+        if self.source == AudioSource::TracksMix {
+            self.report(TrackState::Capturing, None);
+            while !self.idle(&[self.stop.handle()], None)? {}
+        }
+
+        while self.source != AudioSource::TracksMix {
             let opened = if self.source.is_application() {
                 match self.attach() {
                     Some(app) => open_app_stream(&app),
@@ -639,6 +644,12 @@ impl Worker {
                 }
                 std::mem::swap(&mut self.filled, ready);
                 ready.clear();
+                let peak = self
+                    .filled
+                    .iter()
+                    .fold(0.0f32, |peak, sample| peak.max(sample.abs()));
+                self.meter.record(peak);
+                self.stats.peak = self.stats.peak.max(peak);
             }
         }
         let packets = &self.packets;
@@ -765,7 +776,9 @@ fn open_stream(
     let (direction, device_id) = match source {
         AudioSource::Microphone { device_id, .. } => (Direction::Capture, device_id),
         AudioSource::SystemMix { device_id } => (Direction::Render, device_id),
-        AudioSource::Application { .. } | AudioSource::Game(_) => (Direction::Render, &None),
+        AudioSource::Application { .. } | AudioSource::Game(_) | AudioSource::TracksMix => {
+            (Direction::Render, &None)
+        }
     };
     let device = match device_id {
         Some(id) => enumerator.get_device(id)?,

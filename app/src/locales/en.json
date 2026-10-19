@@ -305,6 +305,8 @@
       "gain": "Gain",
       "gainLabel": "Microphone gain in decibels",
       "inFullMix": "Also in {name}",
+      "desktop": "Desktop audio",
+      "desktopLabel": "Put all desktop audio in {name} instead of the sum of the tracks",
       "inFullMixLabel": "Also put the microphone in the {name} track",
       "follows": "Follows: {name}",
       "followsWindow": "Follows the app of the captured window",

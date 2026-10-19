@@ -305,6 +305,8 @@
       "gain": "Gain",
       "gainLabel": "Gain du micro en décibels",
       "inFullMix": "Aussi dans {name}",
+      "desktop": "Audio du bureau",
+      "desktopLabel": "Mettre tout l'audio du bureau dans {name} au lieu de la somme des pistes",
       "inFullMixLabel": "Mettre aussi le micro dans la piste {name}",
       "follows": "Suit : {name}",
       "followsWindow": "Suit l'appli de la fenêtre capturée",
