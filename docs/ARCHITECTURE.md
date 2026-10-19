@@ -237,10 +237,13 @@ est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyé
   (`SystemMix`) et n'ajoute que le micro : la sortie contient déjà le jeu et les applis.
 - Mixage (`engine::mixdowns`) : chaque piste ajoutée publie ses échantillons déjà recalés
   (même origine QPC, même index d'échantillon) sur son `MixBus` ; la piste 1 les additionne
-  avant l'encodage AAC (somme bornée à ±1, vumètre sur le résultat). Elle attend la piste la
-  plus lente au plus 200 ms, puis continue sans elle ; à l'arrêt, elle attend leur fin au plus
-  2 s. Le calibrage force « Audio du bureau » et coupe le micro de la piste 1 pour mesurer
-  chaque source seule.
+  avant l'encodage AAC, puis par un limiteur doux (anticipation 3 ms, plafond −1 dBFS, retour
+  80 ms ; vumètre sur le résultat). Elle attend la piste la plus lente au plus
+  `max(200 ms, plus grand décalage négatif des pistes ajoutées + 150 ms)`, borné à 1 s, puis
+  continue sans elle ; à l'arrêt, elle attend leur fin au plus 2 s. Une piste Jeu qui suit le
+  même exe qu'une piste d'appli ajoutée envoie du silence au mixage (pas de doublon). Le
+  calibrage force « Audio du bureau » et coupe le micro de la piste 1 pour mesurer chaque
+  source seule.
 
 ## 5. UI et lecture des clips
 
