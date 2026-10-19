@@ -1,0 +1,20 @@
+PalaClips — composants tiers / third-party components
+
+FFmpeg 8.1 (n8.1)
+  Bibliothèques / libraries : avcodec-62.dll, avdevice-62.dll, avfilter-11.dll,
+  avformat-62.dll, avutil-60.dll, swresample-6.dll, swscale-9.dll
+  Licence / license : GNU Lesser General Public License, version 3
+  (FFmpeg-LGPL-3.0.txt), qui renvoie à la GNU General Public License,
+  version 3 (GPL-3.0.txt) / which refers to the GNU GPL version 3.
+  Compilation / build : BtbN FFmpeg-Builds, variante « lgpl-shared »
+  https://github.com/BtbN/FFmpeg-Builds
+  Code source / source code : https://ffmpeg.org/download.html
+  et / and https://github.com/FFmpeg/FFmpeg/tree/n8.1
+
+  PalaClips charge ces bibliothèques dynamiquement depuis son dossier
+  d'installation : tu peux les remplacer par ta propre compilation
+  compatible de FFmpeg.
+  PalaClips loads these libraries dynamically from its installation folder:
+  you may replace them with your own compatible FFmpeg build.
+
+FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.

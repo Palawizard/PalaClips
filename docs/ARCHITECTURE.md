@@ -385,7 +385,7 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 | Données du WebView2 (localStorage : état du panneau de performances) | `%LOCALAPPDATA%\com.palawi.palaclips\EBWebView\` ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\webview\` (`data_directory` de la fenêtre) : une app de test ne lit ni n'écrit jamais le stockage réel (`scripts/webview-isolation.ps1` le vérifie par empreinte) |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | Enregistrements en cours (`recordings.txt` : `PID<tab>chemin`, une ligne par fichier ouvert ; au démarrage, ceux d'un processus mort sont remuxés en MP4 classique) | à côté de `settings.json` |
-| DLL FFmpeg (LGPL) | à côté de `palaclips.exe` (ressources du bundle) |
+| Programme (installateur NSIS par utilisateur) | `%LOCALAPPDATA%\PalaClips\` : `palaclips-app.exe` (même nom que la build de dev : même instance unique, même entrée « Démarrer avec Windows »), les 7 DLL FFmpeg (LGPL) à côté, `licenses\` (MIT de PalaClips, LGPL v3 et GPL v3 de FFmpeg, `THIRD-PARTY.txt` : version, compilation BtbN, liens vers le code source, DLL remplaçables). Page de licence = MIT + notice tiers. Désinstallation : retire le programme et l'entrée `Run` ; la case « Supprimer aussi les réglages, l'historique et les favoris de la galerie (jamais les clips) » efface `%APPDATA%\com.palawi.palaclips` et `%LOCALAPPDATA%\com.palawi.palaclips` (textes dans `app/src-tauri/nsis/*.nsh`, sans BOM : Tauri en ajoute un) ; le dossier des clips n'est jamais touché |
 
 ## 8. Légèreté
 

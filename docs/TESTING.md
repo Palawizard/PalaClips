@@ -182,6 +182,12 @@ Tout est arrêté et les clips supprimés à la fin.
 
 ## T6 — Enregistrement et galerie (phase 6)
 
+Installateur sans l'installer : `npx tauri build` (dans `app`), puis extraire
+`target\release\bundle\nsis\PalaClips_*-setup.exe` avec 7-Zip dans `target\`, lancer
+`palaclips-app.exe` extrait avec `PALACLIPS_CONFIG_DIR` et un PATH sans FFmpeg : l'app arme le
+replay et charge `avcodec`, `avformat`, `avutil` depuis son dossier. Toujours depuis une branche à
+jour de `dev` (isolation du WebView, #56).
+
 Isolation : `pwsh scripts/webview-isolation.ps1` (~20 s) écrit dans le localStorage d'une app
 isolée et vérifie que le stockage WebView2 réel (`%LOCALAPPDATA%\com.palawi.palaclips\EBWebView`)
 reste identique, octet pour octet et date pour date.
