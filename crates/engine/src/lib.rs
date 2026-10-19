@@ -20,6 +20,8 @@ pub mod mux;
 #[cfg(windows)]
 pub mod paths;
 #[cfg(windows)]
+pub mod perf;
+#[cfg(windows)]
 pub mod record;
 pub mod replay;
 #[cfg(windows)]

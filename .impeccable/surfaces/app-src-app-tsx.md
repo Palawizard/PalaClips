@@ -87,3 +87,17 @@ FINISH : unreviewed and undocumented is unfinished; this build ends with the fin
 - Moteur/IPC à ajouter : `get_state`, `replay_arm`/`replay_disarm`/`replay_save`,
   `record_start`/`record_stop`, `audio_levels`, liste des clips récents, miniature à la
   sauvegarde, raccourci global ; `ipc.ts` et `ARCHITECTURE.md` § IPC synchronisés.
+
+## Panneau de performances (shape validé par Palawi, 2026-10-19)
+
+- Section « Performances » repliable sous le roster, fermée par défaut, état mémorisé
+  (localStorage) ; mesures demandées au moteur seulement panneau ouvert et fenêtre visible.
+- Quatre cellules entières séparées par des filets : Moteur (CPU en % de la machine, max depuis
+  l'armement, Mo hors tampon = working set privé − tampon × 1,07), Tampon (Mo, secondes),
+  Capture (titre = encodeur, ou état du replay, ou « Aucun encodeur matériel » en ambre ;
+  résolution et i/s ; décalage max), Images (% répétées sur 10 s, en retard depuis l'armement
+  et sur la dernière minute). Pas de graphique.
+- Replay désarmé : Moteur seul, les autres cellules montrent un tiret.
+- Mouvement : contenu en opacité + translateY(−4 px) 200 ms à l'ouverture (@starting-style),
+  fermeture instantanée, chevron 160 ms ; chiffres sans animation ; tout à 0 ms en
+  mouvement réduit.

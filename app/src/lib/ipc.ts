@@ -404,6 +404,10 @@ export function stopPreviews(): Promise<void> {
   return invoke("stop_previews");
 }
 
+export function setPerformancePanel(open: boolean): Promise<void> {
+  return invoke("set_performance_panel", { open });
+}
+
 export type OutputResolution = { kind: "native" } | { kind: "height"; height: number };
 
 export interface AppTrack {
@@ -519,6 +523,26 @@ export interface AppStatus {
   alerts: ActiveAlert[];
 }
 
+export interface CapturePerformance {
+  encoder: string;
+  width: number;
+  height: number;
+  fps: number;
+  repeated_percent: number;
+  late_total: number;
+  late_last_minute: number;
+  lag_max_ms: number;
+}
+
+export interface PerformanceStats {
+  cpu_percent: number | null;
+  cpu_max_percent: number | null;
+  engine_bytes: number | null;
+  buffer_bytes: number;
+  buffered_secs: number;
+  capture: CapturePerformance | null;
+}
+
 export type EngineEvent =
   | { type: "state_changed"; state: EngineState }
   | {
@@ -541,5 +565,6 @@ export type EngineEvent =
     }
   | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
+  | ({ type: "performance_stats" } & PerformanceStats)
   | { type: "recording_stats"; elapsed_secs: number; bytes: number }
   | ({ type: "alert"; severity: Severity; message: string } & Localized);

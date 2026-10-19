@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use crossbeam_channel::{Receiver, Select, Sender, bounded};
+use crossbeam_channel::{Receiver, RecvTimeoutError, Select, Sender, bounded};
 use parking_lot::Mutex;
 use rsmpeg::avcodec::AVPacket;
 use rsmpeg::avutil::AVRational;
@@ -22,15 +22,18 @@ use crate::encode::{
     write_thumbnail,
 };
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind};
+use crate::events::{
+    CapturePerformance, EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind,
+};
 use crate::library::ensure_free_space;
 use crate::mux::{Mp4Writer, MuxStream};
+use crate::perf::{FrameHistory, ProcessUsage};
 use crate::record::{
     Journal, LivePacket, RecordLayout, RecordTarget, Recorder, recover_interrupted,
 };
 use crate::replay::{
-    ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_window,
-    estimate_buffer_bytes, forget_saved, plan_clip, share_packet,
+    ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_memory_bytes,
+    buffer_window, estimate_buffer_bytes, forget_saved, plan_clip, share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -77,6 +80,7 @@ enum Command {
     RecordingEnded,
     Configure(Box<EngineConfig>),
     SetLevelRate(LevelRate),
+    SetPerformance(bool),
     Calibrate(Sender<Result<Calibration>>),
     FinishCalibration(Result<()>),
     Shutdown,
@@ -133,6 +137,7 @@ impl Engine {
                     events: event_tx,
                     pipeline: None,
                     level_rate: LevelRate::Off,
+                    performance: None,
                     commands: own_commands,
                     calibration: None,
                     recording: None,
@@ -190,6 +195,10 @@ impl EngineHandle {
 
     pub fn set_level_rate(&self, rate: LevelRate) -> Result<()> {
         self.send(Command::SetLevelRate(rate))
+    }
+
+    pub fn set_performance(&self, enabled: bool) -> Result<()> {
+        self.send(Command::SetPerformance(enabled))
     }
 
     pub fn configure(&self, config: EngineConfig) -> Result<()> {
@@ -396,6 +405,7 @@ struct Core {
     events: Sender<EngineEvent>,
     pipeline: Option<Pipeline>,
     level_rate: LevelRate,
+    performance: Option<ProcessUsage>,
     commands: Sender<Command>,
     calibration: Option<PendingCalibration>,
     recording: Option<Recording>,
@@ -410,6 +420,16 @@ impl Core {
     fn run(mut self, commands: &Receiver<Command>) {
         loop {
             let command = match self.pipeline.as_mut() {
+                None if self.performance.is_some() => {
+                    match commands.recv_timeout(Duration::from_millis(1_000)) {
+                        Ok(command) => command,
+                        Err(RecvTimeoutError::Timeout) => {
+                            self.emit_idle_performance();
+                            continue;
+                        }
+                        Err(RecvTimeoutError::Disconnected) => Command::Shutdown,
+                    }
+                }
                 None => commands.recv().unwrap_or(Command::Shutdown),
                 Some(pipeline) => match pipeline.pump(commands, &self.events) {
                     Ok(command) => command.unwrap_or(Command::Shutdown),
@@ -445,6 +465,7 @@ impl Core {
                     ),
                     Command::StopRecording | Command::RecordingEnded => {}
                     Command::SetLevelRate(rate) => self.level_rate = rate,
+                    Command::SetPerformance(enabled) => self.set_performance(enabled),
                     Command::Shutdown => {
                         self.disarm();
                         break;
@@ -468,6 +489,7 @@ impl Core {
                         pipeline.set_level_interval(rate.interval());
                     }
                 }
+                Command::SetPerformance(enabled) => self.set_performance(enabled),
                 Command::Shutdown => {
                     self.disarm();
                     break;
@@ -493,11 +515,40 @@ impl Core {
         }
         let mut pipeline = Pipeline::start(&self.config, &self.events)?;
         pipeline.set_level_interval(self.level_rate.interval());
+        pipeline.set_performance(self.performance.is_some());
         self.pipeline = Some(pipeline);
         self.emit(EngineEvent::StateChanged {
             state: EngineState::ReplayArmed,
         });
         Ok(())
+    }
+
+    fn set_performance(&mut self, enabled: bool) {
+        if enabled == self.performance.is_some() {
+            return;
+        }
+        self.performance = enabled.then(ProcessUsage::default);
+        if let Some(pipeline) = self.pipeline.as_mut() {
+            pipeline.set_performance(enabled);
+        }
+        if enabled && self.pipeline.is_none() {
+            self.emit_idle_performance();
+        }
+    }
+
+    fn emit_idle_performance(&mut self) {
+        let Some(usage) = self.performance.as_mut() else {
+            return;
+        };
+        let event = EngineEvent::PerformanceStats {
+            cpu_percent: usage.cpu_percent(),
+            cpu_max_percent: None,
+            engine_bytes: paths::private_working_set(),
+            buffer_bytes: 0,
+            buffered_secs: 0.0,
+            capture: None,
+        };
+        self.emit(event);
     }
 
     fn recover(&mut self, error: &EngineError) -> bool {
@@ -809,6 +860,8 @@ struct Pipeline {
     next_stats: Hns,
     recorder: Option<Recorder>,
     pending_record: Option<PendingRecord>,
+    encoder: String,
+    performance: Option<(ProcessUsage, FrameHistory)>,
 }
 
 struct PendingRecord {
@@ -915,6 +968,8 @@ impl Pipeline {
             next_stats: Hns::now() + STATS_INTERVAL,
             recorder: None,
             pending_record: None,
+            encoder: encoder.name.clone(),
+            performance: None,
         })
     }
 
@@ -1094,6 +1149,9 @@ impl Pipeline {
             if let Some(recorder) = &self.recorder {
                 events.try_send(recorder.stats()).ok();
             }
+            if let Some(event) = self.performance() {
+                events.try_send(event).ok();
+            }
         }
         if let Some(interval) = self.level_interval
             && now >= self.next_levels
@@ -1108,6 +1166,46 @@ impl Pipeline {
             Some(_) => self.next_stats.min(self.next_levels),
             None => self.next_stats,
         }
+    }
+
+    fn set_performance(&mut self, enabled: bool) {
+        if enabled == self.performance.is_some() {
+            return;
+        }
+        self.performance = enabled.then(|| {
+            let mut history = FrameHistory::default();
+            history.push(self.capture.counters(), None);
+            (ProcessUsage::default(), history)
+        });
+        if enabled {
+            self.performance();
+        }
+    }
+
+    fn performance(&mut self) -> Option<EngineEvent> {
+        let counters = self.capture.counters();
+        let (usage, history) = self.performance.as_mut()?;
+        let cpu_percent = usage.cpu_percent();
+        history.push(counters, cpu_percent);
+        let buffer_bytes: u64 = self.rings.iter().map(|ring| ring.bytes() as u64).sum();
+        Some(EngineEvent::PerformanceStats {
+            cpu_percent,
+            cpu_max_percent: Some(history.cpu_max()),
+            engine_bytes: paths::private_working_set()
+                .map(|private| private.saturating_sub(buffer_memory_bytes(buffer_bytes))),
+            buffer_bytes,
+            buffered_secs: self.rings[0].buffered().as_secs_f64(),
+            capture: Some(CapturePerformance {
+                encoder: self.encoder.clone(),
+                width: self.video.size.width,
+                height: self.video.size.height,
+                fps: self.video.fps,
+                repeated_percent: history.repeated_percent(),
+                late_total: history.late_total(),
+                late_last_minute: history.late_last_minute(),
+                lag_max_ms: history.lag_max_ms(),
+            }),
+        })
     }
 
     fn set_level_interval(&mut self, interval: Option<Hns>) {

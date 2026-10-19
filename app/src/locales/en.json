@@ -135,6 +135,23 @@
     "recordingRunning": "Recording",
     "stop": "Stop"
   },
+  "performance": {
+    "title": "Performance",
+    "engine": "Engine",
+    "cpu": "% CPU",
+    "max": "max {value}",
+    "ramOutsideBuffer": "MB outside buffer",
+    "buffer": "Buffer",
+    "frames": "Frames",
+    "repeated": "repeated (10 s)",
+    "late": "late",
+    "lastMinute": {
+      "one": "{count} in the last minute",
+      "other": "{count} in the last minute"
+    },
+    "lag": "max lag {value}",
+    "noEncoder": "No hardware encoder"
+  },
   "roster": {
     "title": "Audio tracks",
     "table": "Captured audio tracks",

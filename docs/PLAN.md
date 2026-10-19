@@ -175,7 +175,9 @@ Critères :
       scénarios T7 sur la machine de Palawi.
 - [x] Alerte `capture_source_rate_limited` sur la cadence de composition DWM (CAP-11, ADR-018) :
       lue chaque seconde par le fil d'encodage, testée unitairement ; essai G-Sync réel dans T7.
-- [ ] Panneau de performances.
+- [x] Panneau de performances (APP-12) : section repliable sous le roster de l'écran État,
+      mesures seulement panneau ouvert ; CPU machine, RAM hors tampon (calcul PERF-02), tampon,
+      encodeur, images répétées (10 s) et en retard (total, dernière minute), décalage max.
 - [ ] Mesures PERF sur build release installée.
 
 Critères :

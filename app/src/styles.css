@@ -283,6 +283,17 @@ body {
   opacity: 0.3;
 }
 
+.performance-cells {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 .export-chevron {
   transition: transform 160ms var(--ease-out);
 }
@@ -341,6 +352,7 @@ body {
   .clip-menu,
   .export-fill,
   .export-chevron,
+  .performance-cells,
   .waveform {
     transition-duration: 0ms !important;
   }
