@@ -48,6 +48,11 @@ pub struct ReplayArgs {
     pub no_arm: bool,
     #[arg(
         long,
+        help = "Affiche chaque seconde les mesures du panneau de performances"
+    )]
+    pub performance: bool,
+    #[arg(
+        long,
         help = "Demande les niveaux audio (20 i/s) et affiche leur cadence"
     )]
     pub levels: bool,
@@ -131,6 +136,9 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
         args.duration,
         if args.disk { "disque" } else { "RAM" }
     );
+    if args.performance {
+        handle.set_performance(true)?;
+    }
     let lines = spawn_stdin_reader();
     let mut requested = 0u32;
     let mut finished = 0u32;
@@ -235,6 +243,23 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     EngineEvent::AudioLevels { levels } => {
                         level_events += 1;
                         last_levels = levels;
+                    }
+                    EngineEvent::PerformanceStats { cpu_percent, cpu_max_percent, engine_bytes, buffer_bytes, buffered_secs, capture } => {
+                        let capture = capture.map_or_else(
+                            || "capture arrêtée".to_owned(),
+                            |capture| format!(
+                                "{} {}x{} à {} i/s, répétées {:.1} % (10 s), en retard {} (1 min {}), décalage max {:.1} ms",
+                                capture.encoder, capture.width, capture.height, capture.fps,
+                                capture.repeated_percent, capture.late_total, capture.late_last_minute, capture.lag_max_ms
+                            ),
+                        );
+                        println!(
+                            "performances : CPU {} (max {}) ; moteur hors tampon {} ; tampon {:.0} Mo, {buffered_secs:.1} s ; {capture}",
+                            cpu_percent.map_or("—".into(), |cpu| format!("{cpu:.2} %")),
+                            cpu_max_percent.map_or("—".into(), |cpu| format!("{cpu:.2} %")),
+                            engine_bytes.map_or("—".into(), |bytes| format!("{:.1} Mo", bytes as f64 / 1e6)),
+                            buffer_bytes as f64 / 1e6
+                        );
                     }
                 }
             },

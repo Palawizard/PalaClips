@@ -135,6 +135,23 @@
     "recordingRunning": "Enregistrement en cours",
     "stop": "Arrêter"
   },
+  "performance": {
+    "title": "Performances",
+    "engine": "Moteur",
+    "cpu": "% CPU",
+    "max": "max {value}",
+    "ramOutsideBuffer": "Mo hors tampon",
+    "buffer": "Tampon",
+    "frames": "Images",
+    "repeated": "répétées (10 s)",
+    "late": "en retard",
+    "lastMinute": {
+      "one": "{count} sur la dernière minute",
+      "other": "{count} sur la dernière minute"
+    },
+    "lag": "décalage max {value}",
+    "noEncoder": "Aucun encodeur matériel"
+  },
   "roster": {
     "title": "Pistes audio",
     "table": "Pistes audio capturées",

@@ -139,6 +139,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   voix, sans les notifications ni la musique du bureau. Les autres pistes restent séparées pour
   le montage. Réglages > Audio : « Aussi dans Mix complet » (micro) et « Audio du bureau »
   (toute la sortie à la place des pistes Jeu et applis).
+- Écran État : section « Performances » repliable, CPU de PalaClips en % de la machine, RAM
+  hors tampon, tampon, encodeur, images répétées et en retard ; rien n'est mesuré quand elle
+  est fermée.
 
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.

@@ -20,10 +20,14 @@ pub fn buffer_window(duration_secs: u32, keyframe_interval_secs: f32) -> Hns {
         + AUDIO_LAG_MARGIN
 }
 
+pub fn buffer_memory_bytes(payload_bytes: u64) -> u64 {
+    payload_bytes * (100 + BUFFER_OVERHEAD_PERCENT) / 100
+}
+
 pub fn estimate_buffer_bytes(video_kbps: u32, audio_tracks: usize, window: Hns) -> u64 {
     let total_kbps = video_kbps as u64 + AUDIO_KBPS_PER_TRACK * audio_tracks as u64;
     let bytes = total_kbps * 1_000 / 8 * window.0.max(0) as u64 / HNS_PER_SECOND as u64;
-    bytes * (100 + BUFFER_OVERHEAD_PERCENT) / 100
+    buffer_memory_bytes(bytes)
 }
 
 pub const MIN_CLIP: Hns = Hns::from_millis(3_000);

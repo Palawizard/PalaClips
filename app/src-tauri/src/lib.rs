@@ -6,7 +6,7 @@ mod i18n;
 mod settings;
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use palaclips_engine::EngineConfig;
@@ -175,6 +175,7 @@ pub struct EngineSlot {
     encoders: Mutex<Option<Vec<palaclips_engine::encode::HardwareEncoder>>>,
     previews: Mutex<HashMap<u32, palaclips_engine::capture::PreviewCapture>>,
     next_preview: AtomicU32,
+    performance_panel: AtomicBool,
     unavailable: Mutex<Vec<HotkeyAction>>,
     engine: Mutex<Option<Engine>>,
     handle: EngineHandle,
@@ -233,6 +234,7 @@ impl EngineSlot {
             encoders: Mutex::new(None),
             previews: Mutex::new(HashMap::new()),
             next_preview: AtomicU32::new(1),
+            performance_panel: AtomicBool::new(false),
             unavailable: Mutex::new(Vec::new()),
             engine: Mutex::new(Some(engine)),
             handle,
@@ -643,6 +645,7 @@ pub fn run() {
             commands::start_preview,
             commands::stop_preview,
             commands::stop_previews,
+            commands::set_performance_panel,
         ])
         .setup(|app| {
             let settings_path = palaclips_engine::paths::settings_path().ok();
@@ -879,6 +882,7 @@ pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
             && let Some(slot) = watched.app_handle().try_state::<EngineSlot>()
         {
             slot.stop_previews();
+            slot.performance_panel.store(false, Ordering::Relaxed);
         }
         let rate = match event {
             WindowEvent::Focused(true) => LevelRate::Focused,
@@ -888,8 +892,25 @@ pub fn open_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
             _ => return,
         };
         set_level_rate(watched.app_handle(), rate);
+        if let Some(slot) = watched.app_handle().try_state::<EngineSlot>() {
+            slot.apply_performance(rate != LevelRate::Off);
+        }
     });
     Ok(())
+}
+
+impl EngineSlot {
+    pub(crate) fn set_performance_panel(&self, open: bool) {
+        self.performance_panel.store(open, Ordering::Relaxed);
+        self.apply_performance(true);
+    }
+
+    fn apply_performance(&self, visible: bool) {
+        let enabled = visible && self.performance_panel.load(Ordering::Relaxed);
+        if let Err(error) = self.handle.set_performance(enabled) {
+            tracing::warn!(%error, "mesures de performances non transmises");
+        }
+    }
 }
 
 fn set_level_rate(app: &tauri::AppHandle, rate: LevelRate) {
