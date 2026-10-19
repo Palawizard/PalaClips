@@ -1,0 +1,43 @@
+MIT License
+
+Copyright (c) 2026 Palawi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+PalaClips — composants tiers / third-party components
+
+FFmpeg 8.1 (n8.1)
+  Bibliothèques / libraries : avcodec-62.dll, avdevice-62.dll, avfilter-11.dll,
+  avformat-62.dll, avutil-60.dll, swresample-6.dll, swscale-9.dll
+  Licence / license : GNU Lesser General Public License, version 3
+  (FFmpeg-LGPL-3.0.txt), qui renvoie à la GNU General Public License,
+  version 3 (GPL-3.0.txt) / which refers to the GNU GPL version 3.
+  Compilation / build : BtbN FFmpeg-Builds, variante « lgpl-shared »
+  https://github.com/BtbN/FFmpeg-Builds
+  Code source / source code : https://ffmpeg.org/download.html
+  et / and https://github.com/FFmpeg/FFmpeg/tree/n8.1
+
+  PalaClips charge ces bibliothèques dynamiquement depuis son dossier
+  d'installation : tu peux les remplacer par ta propre compilation
+  compatible de FFmpeg.
+  PalaClips loads these libraries dynamically from its installation folder:
+  you may replace them with your own compatible FFmpeg build.
+
+FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.

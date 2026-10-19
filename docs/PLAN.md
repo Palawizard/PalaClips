@@ -196,7 +196,9 @@ Critères :
       chaînes en dur.
 - [ ] i18n FR/EN complète (aucune chaîne en dur) : relecture de l'anglais de toute l'app.
 - [ ] Journaux + export de diagnostic.
-- [ ] Bundle NSIS avec DLL FFmpeg + licences (LGPL), installation par utilisateur.
+- [x] Bundle NSIS avec DLL FFmpeg + licences (LGPL), installation par utilisateur (avancé en
+      phase 7 pour les mesures PERF : 7 DLL à côté de l'exe, LGPL v3 + GPL v3 + notice tiers dans
+      `licenses\`, page de licence, case de désinstallation qui dit ce qui part).
 - [ ] Updater (clé de signature Tauri générée par Palawi, jamais commitée), workflow de release
       GitHub Actions (`tauri-action`) qui publie l'installeur et `latest.json`.
 - [ ] README utilisateur (installation, SmartScreen, FAQ), CHANGELOG, captures d'écran.
