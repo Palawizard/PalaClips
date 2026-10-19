@@ -34,7 +34,7 @@ pub enum Mixdown {
     #[default]
     None,
     Feed(MixBus),
-    Mix(MixBus),
+    Mix(Vec<MixBus>),
 }
 
 impl MixBus {
@@ -96,7 +96,7 @@ impl MixBus {
             .iter_mut()
             .zip(state.samples.drain(..mixed * CHANNELS))
         {
-            *sample = (*sample + mic).clamp(-1.0, 1.0);
+            *sample += mic;
         }
         let ready = (silent_before + mixed).max(force.min(frames));
         state.start = state.start.max(start + ready as i64);
@@ -106,15 +106,15 @@ impl MixBus {
 
 #[derive(Debug, Default)]
 pub struct MixIn {
-    bus: MixBus,
+    buses: Vec<MixBus>,
     pending: Vec<f32>,
     start: i64,
 }
 
 impl MixIn {
-    pub fn new(bus: MixBus) -> Self {
+    pub fn new(buses: Vec<MixBus>) -> Self {
         Self {
-            bus,
+            buses,
             pending: Vec::new(),
             start: 0,
         }
@@ -123,20 +123,28 @@ impl MixIn {
     pub fn take_ready(&mut self, filled: &[f32], written: i64, out: &mut Vec<f32>) {
         self.append(filled, written);
         let frames = self.pending.len() / CHANNELS;
-        let ready = self.bus.mix_into(
-            self.start,
-            &mut self.pending,
-            frames.saturating_sub(MAX_LAG_FRAMES),
-        );
+        let ready = self.mix(frames.saturating_sub(MAX_LAG_FRAMES));
         self.release(ready, out);
     }
 
     pub fn take_all(&mut self, filled: &[f32], written: i64, out: &mut Vec<f32>, wait: Duration) {
         self.append(filled, written);
-        self.bus.wait_until(written, wait);
+        let deadline = Instant::now() + wait;
+        for bus in &self.buses {
+            bus.wait_until(written, deadline.saturating_duration_since(Instant::now()));
+        }
         let frames = self.pending.len() / CHANNELS;
-        let ready = self.bus.mix_into(self.start, &mut self.pending, frames);
+        let ready = self.mix(frames);
         self.release(ready, out);
+    }
+
+    fn mix(&mut self, force: usize) -> usize {
+        let frames = self.pending.len() / CHANNELS;
+        self.buses
+            .iter()
+            .map(|bus| bus.mix_into(self.start, &mut self.pending, force))
+            .min()
+            .unwrap_or(frames)
     }
 
     fn append(&mut self, filled: &[f32], written: i64) {
@@ -145,7 +153,11 @@ impl MixIn {
     }
 
     fn release(&mut self, frames: usize, out: &mut Vec<f32>) {
-        out.extend(self.pending.drain(..frames * CHANNELS));
+        out.extend(
+            self.pending
+                .drain(..frames * CHANNELS)
+                .map(|sample| sample.clamp(-1.0, 1.0)),
+        );
         self.start += frames as i64;
     }
 }
@@ -161,7 +173,7 @@ mod tests {
     #[test]
     fn microphone_samples_are_added_at_the_same_frames() {
         let bus = MixBus::default();
-        let mut mix = MixIn::new(bus.clone());
+        let mut mix = MixIn::new(vec![bus.clone()]);
         let mut out = Vec::new();
         bus.push(0, &block(0.25, 480));
         mix.take_ready(&block(0.5, 480), 480, &mut out);
@@ -171,7 +183,7 @@ mod tests {
     #[test]
     fn the_mix_waits_for_a_late_microphone() {
         let bus = MixBus::default();
-        let mut mix = MixIn::new(bus.clone());
+        let mut mix = MixIn::new(vec![bus.clone()]);
         let mut out = Vec::new();
         mix.take_ready(&block(0.5, 480), 480, &mut out);
         assert!(out.is_empty());
@@ -183,7 +195,7 @@ mod tests {
     #[test]
     fn a_stalled_microphone_never_holds_the_mix_more_than_the_lag() {
         let bus = MixBus::default();
-        let mut mix = MixIn::new(bus.clone());
+        let mut mix = MixIn::new(vec![bus.clone()]);
         let mut out = Vec::new();
         let frames = SAMPLE_RATE as usize;
         mix.take_ready(&block(0.5, frames), frames as i64, &mut out);
@@ -201,7 +213,7 @@ mod tests {
     #[test]
     fn the_end_flushes_everything_once_the_microphone_closes() {
         let bus = MixBus::default();
-        let mut mix = MixIn::new(bus.clone());
+        let mut mix = MixIn::new(vec![bus.clone()]);
         let mut out = Vec::new();
         bus.push(0, &block(0.25, 100));
         bus.close();
@@ -212,9 +224,24 @@ mod tests {
     }
 
     #[test]
+    fn several_tracks_add_up_and_the_slowest_one_sets_the_pace() {
+        let game = MixBus::default();
+        let microphone = MixBus::default();
+        let mut mix = MixIn::new(vec![game.clone(), microphone.clone()]);
+        let mut out = Vec::new();
+        game.push(0, &block(0.25, 480));
+        microphone.push(0, &block(0.125, 200));
+        mix.take_ready(&block(0.0, 480), 480, &mut out);
+        assert_eq!(out, block(0.375, 200));
+        microphone.push(200, &block(0.125, 280));
+        mix.take_ready(&[], 480, &mut out);
+        assert_eq!(out, block(0.375, 480));
+    }
+
+    #[test]
     fn the_sum_is_clamped() {
         let bus = MixBus::default();
-        let mut mix = MixIn::new(bus.clone());
+        let mut mix = MixIn::new(vec![bus.clone()]);
         let mut out = Vec::new();
         bus.push(0, &block(0.75, 10));
         mix.take_ready(&block(0.75, 10), 10, &mut out);

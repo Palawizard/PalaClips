@@ -27,12 +27,13 @@ pub enum AudioSource {
         exe_name: String,
     },
     Game(CurrentGame),
+    TracksMix,
 }
 
 impl AudioSource {
     pub fn label(&self) -> String {
         match self {
-            Self::SystemMix { .. } => "Mix complet".into(),
+            Self::SystemMix { .. } | Self::TracksMix => "Mix complet".into(),
             Self::Microphone { .. } => "Micro".into(),
             Self::Application { exe_name } => exe_name
                 .strip_suffix(".exe")
@@ -45,7 +46,7 @@ impl AudioSource {
 
     pub fn kind(&self) -> TrackKind {
         match self {
-            Self::SystemMix { .. } => TrackKind::Mix,
+            Self::SystemMix { .. } | Self::TracksMix => TrackKind::Mix,
             Self::Microphone { .. } => TrackKind::Microphone,
             Self::Application { .. } => TrackKind::Application,
             Self::Game(_) => TrackKind::Game,

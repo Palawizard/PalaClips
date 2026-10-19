@@ -436,3 +436,17 @@ phase 8).
 - Écartés : mixer seulement à la copie (le clip lu ailleurs que par Ctrl+C restait sans
   voix) ; une piste 1 « mix + micro » en plus des autres (une piste de plus dans chaque
   fichier, et Resolve affiche déjà des pistes sans nom, ADR-021).
+
+## ADR-030 — Mix complet = somme des pistes choisies (AUD-01)
+**Statut :** acceptée (2026-10-19, demande de Palawi pendant la validation de la phase 6).
+- Contexte : la piste 1 capturait toute la sortie audio (notifications, musique, navigateur…)
+  en plus des pistes choisies. Pour Palawi, « Mix complet » doit être l'ensemble des pistes
+  réellement enregistrées et choisies.
+- Décision : par défaut, la piste 1 est la somme des pistes enregistrées (micro si « Aussi dans
+  Mix complet », Jeu, applis), sans capture propre. Réglage « Audio du bureau »
+  (`desktop_in_full_mix`, désactivé par défaut) : la piste 1 capture toute la sortie et n'ajoute
+  que le micro, sans les pistes Jeu et applis (déjà dans la sortie, elles seraient doublées).
+  Le premier lancement guidé (APP-06) proposera ce choix.
+- Conséquence assumée : sans jeu détecté ni appli choisie, la piste 1 ne contient que le micro.
+- Même mécanisme que ADR-029 (`MixBus`, une file par piste ajoutée), généralisé à plusieurs
+  pistes : la piste la plus lente fixe le rythme, au plus 200 ms de retard.

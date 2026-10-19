@@ -339,13 +339,25 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   const detailOf = (row: Row): ReactNode => {
     if (row.kind === "mix")
       return (
-        <Select
-          label={t("settings.audio.output")}
-          className="w-full max-w-80 min-w-0"
-          value={audio.output_device_id ?? ""}
-          options={deviceOptions(outputs)}
-          onChange={(id) => setAudio({ output_device_id: id || null })}
-        />
+        <>
+          <span className="flex items-center gap-2">
+            {t("settings.audio.desktop")}
+            <Switch
+              checked={audio.desktop_in_full_mix}
+              label={t("settings.audio.desktopLabel", { name: row.label })}
+              onChange={(desktop_in_full_mix) => setAudio({ desktop_in_full_mix })}
+            />
+          </span>
+          {audio.desktop_in_full_mix && (
+            <Select
+              label={t("settings.audio.output")}
+              className="w-full max-w-80 min-w-0"
+              value={audio.output_device_id ?? ""}
+              options={deviceOptions(outputs)}
+              onChange={(id) => setAudio({ output_device_id: id || null })}
+            />
+          )}
+        </>
       );
     if (row.kind === "microphone")
       return (
