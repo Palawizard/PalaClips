@@ -50,9 +50,7 @@ pub fn migrate_data(old: &DataDirs, new: &DataDirs) -> Result<Migration> {
             &new.local.join("cache"),
         )?;
     }
-    for dir in [&old.roaming, &old.local] {
-        std::fs::remove_dir(dir).ok();
-    }
+    std::fs::remove_dir(&old.roaming).ok();
     if !migration.moved.is_empty() {
         tracing::info!(
             moved = migration.moved.len(),
@@ -205,7 +203,9 @@ mod tests {
             std::fs::read(new.local.join("EBWebView/Local State")).expect("webview"),
             b"webview"
         );
-        assert!(!old.roaming.exists() && !old.local.exists());
+        assert!(!old.roaming.exists());
+        assert!(old.local.exists());
+        assert!(!old.local.join("cache").exists() && !old.local.join("replay").exists());
         assert!(migration.kept.is_empty());
         let connection = Connection::open(new.roaming.join("library.db")).expect("db");
         let (rebased, favorite): (String, i64) = connection
@@ -239,6 +239,59 @@ mod tests {
         );
         assert_eq!(migration.kept, [old.roaming.join("settings.json")]);
         assert!(migrate_data(&old, &new).expect("again").moved.is_empty());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn an_installed_app_in_the_old_folder_stays_untouched() {
+        let root = scratch("installed");
+        let old = dirs(&root, "PalaClips");
+        let new = dirs(&root, "com.palawi.palaclips");
+        let installed = [
+            ("palaclips-app.exe", b"MZ fake exe".as_slice()),
+            ("uninstall.exe", b"MZ fake uninstaller".as_slice()),
+            ("avcodec-62.dll", b"MZ fake dll".as_slice()),
+            ("licenses/PalaClips-MIT.txt", b"MIT".as_slice()),
+            ("notes de Palawi.txt", b"inconnu".as_slice()),
+        ];
+        for (name, content) in installed {
+            write(&old.local.join(name), content);
+        }
+        write(&old.local.join("cache/thumbnails/clip.jpg"), b"jpeg");
+        write(&old.local.join("replay/00000001.seg"), b"seg");
+
+        migrate_data(&old, &new).expect("migration");
+
+        for (name, content) in installed {
+            assert_eq!(
+                std::fs::read(old.local.join(name)).expect(name),
+                content,
+                "{name}"
+            );
+        }
+        assert!(old.local.is_dir());
+        assert_eq!(
+            std::fs::read(new.local.join("cache/thumbnails/clip.jpg")).expect("thumb"),
+            b"jpeg"
+        );
+        assert_eq!(
+            std::fs::read(new.local.join("replay/00000001.seg")).expect("seg"),
+            b"seg"
+        );
+        let left: Vec<_> = std::fs::read_dir(&old.local)
+            .expect("old")
+            .map(|entry| {
+                entry
+                    .expect("entry")
+                    .file_name()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
+        assert!(
+            !left.iter().any(|name| name == "cache" || name == "replay"),
+            "{left:?}"
+        );
         std::fs::remove_dir_all(&root).ok();
     }
 
