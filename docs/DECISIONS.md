@@ -198,6 +198,11 @@ ADR-027.
 - Écarté : déclenchement sur le nombre d'images reçues par WGC, qui alerterait à tort pour un
   jeu plafonné, une scène statique ou un menu.
 - Code en phase 7.
+- **Mise en œuvre (2026-10-19).** Le champ lu est `rateRefresh` de
+  `DwmGetCompositionTimingInfo(NULL)`, celui que `probe-wgc` affiche et qui a donné les
+  164,9 Hz de la mesure (le texte ci-dessus disait `rateCompose` par erreur). Le fil
+  d'encodage vidéo le lit une fois par seconde (`capture::RateWatch`) ; « cadence qui change »
+  = valeur arrondie au Hz différente de la dernière alerte.
 
 ## ADR-019 — La piste Jeu suit le jeu, pas le premier plan (AUD-06)
 **Statut :** acceptée (2026-10-16, décision de Palawi) ; remplace la piste Jeu « appli au
