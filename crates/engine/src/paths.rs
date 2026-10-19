@@ -25,7 +25,7 @@ pub fn default_clips_dir() -> Result<PathBuf> {
 
 pub const CONFIG_DIR_ENV: &str = "PALACLIPS_CONFIG_DIR";
 
-fn isolated_dir() -> Option<PathBuf> {
+pub fn isolated_dir() -> Option<PathBuf> {
     std::env::var_os(CONFIG_DIR_ENV)
         .filter(|dir| !dir.is_empty())
         .map(PathBuf::from)
@@ -52,6 +52,10 @@ pub fn library_db() -> Result<PathBuf> {
 
 pub fn recordings_journal() -> Result<PathBuf> {
     Ok(settings_path()?.with_file_name("recordings.txt"))
+}
+
+pub fn isolated_webview_dir() -> Option<PathBuf> {
+    isolated_dir().map(|dir| dir.join("webview"))
 }
 
 pub fn replay_spool_dir() -> Result<PathBuf> {
