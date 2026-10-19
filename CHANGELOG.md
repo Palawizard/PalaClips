@@ -132,7 +132,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   période), tri, recherche, menu d'actions au clic droit et au clavier. Lecteur intégré avec
   pistes audio séparées (muet, solo, volume), déplacements rapides même sur un clip de 4 Go,
   mémoire stable sur un enregistrement d'une heure ; découpe rapide ou précise et export des
-  pistes choisies ou mixées.
+  pistes choisies ou mixées. Un clic sélectionne un clip (les raccourcis agissent dessus), un
+  double-clic ou Entrée l'ouvre.
+- Le micro est aussi dans la piste 1, comme la piste du stream sur OBS : un clip collé dans
+  Discord contient ta voix. Les autres pistes restent séparées pour le montage ; réglable dans
+  Réglages > Audio (« Aussi dans Mix complet »).
 
 ### Corrigé
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
