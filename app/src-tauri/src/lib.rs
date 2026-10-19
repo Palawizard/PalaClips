@@ -648,6 +648,15 @@ pub fn run() {
             commands::set_performance_panel,
         ])
         .setup(|app| {
+            match palaclips_engine::paths::data_dirs_to_migrate() {
+                Ok(Some((old, new))) => {
+                    if let Err(error) = palaclips_engine::migrate::migrate_data(&old, &new) {
+                        tracing::warn!(%error, "déplacement des données impossible");
+                    }
+                }
+                Ok(None) => {}
+                Err(error) => tracing::warn!(%error, "dossiers de données introuvables"),
+            }
             let settings_path = palaclips_engine::paths::settings_path().ok();
             let loaded = settings_path
                 .as_deref()

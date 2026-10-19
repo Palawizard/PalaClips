@@ -494,3 +494,19 @@ phase 8).
   disque plein (STO-05), absence d'encodeur, réglages invalides.
 - Le fil du moteur attend au plus 8 s pendant la relance ; les commandes reçues entre-temps
   sont traitées après.
+
+## ADR-032 — Données sous l'identifiant de l'app (phase 7, avant l'installateur)
+**Statut :** acceptée (2026-10-19, décision de Palawi).
+- Contexte : l'installateur NSIS par utilisateur de Tauri installe dans
+  `%LOCALAPPDATA%\<productName>` = `%LOCALAPPDATA%\PalaClips`, le dossier de nos caches et du
+  buffer de replay. Et la case « supprimer les données » du désinstalleur efface
+  `%APPDATA%\<identifiant>` et `%LOCALAPPDATA%\<identifiant>`, pas nos dossiers `PalaClips` :
+  cochée, elle ne remettait pas l'app à zéro.
+- Décision : réglages, bibliothèque et journal des enregistrements sous
+  `%APPDATA%\com.palawi.palaclips\` ; caches et buffer de replay sous
+  `%LOCALAPPDATA%\com.palawi.palaclips\` (à côté des données de WebView2). Les clips restent dans
+  le dossier choisi (`Vidéos\PalaClips` par défaut), que le désinstalleur ne touche jamais.
+- Migration automatique au premier lancement (`migrate::migrate_data`) : déplacement sans
+  écraser, chemins des miniatures réécrits dans la base, anciens dossiers supprimés seulement
+  vides. Vérifiée par tests et sur une copie des données réelles de Palawi
+  (`scripts/migration-check.ps1` : chaque fichier retrouvé identique en SHA-256).

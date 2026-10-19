@@ -255,6 +255,19 @@ enum Command {
         #[arg(long, help = "Sortie JSON")]
         json: bool,
     },
+    #[command(
+        about = "Déplace les données d'anciens dossiers vers les nouveaux (migration du premier lancement)"
+    )]
+    MigrateData {
+        #[arg(long)]
+        old_roaming: std::path::PathBuf,
+        #[arg(long)]
+        old_local: std::path::PathBuf,
+        #[arg(long)]
+        new_roaming: std::path::PathBuf,
+        #[arg(long)]
+        new_local: std::path::PathBuf,
+    },
     #[cfg(windows)]
     #[command(about = "Joue une sinusoïde sur une sortie (source de test), avec ou sans fenêtre")]
     PlayTone {
@@ -470,6 +483,28 @@ fn main() -> Result<()> {
         Command::ResolveTarget { target } => resolve_target(&target)?,
         #[cfg(windows)]
         Command::ListAudioSessions { json } => list_audio_sessions(json)?,
+        Command::MigrateData {
+            old_roaming,
+            old_local,
+            new_roaming,
+            new_local,
+        } => {
+            let migration = palaclips_engine::migrate::migrate_data(
+                &palaclips_engine::migrate::DataDirs {
+                    roaming: old_roaming,
+                    local: old_local,
+                },
+                &palaclips_engine::migrate::DataDirs {
+                    roaming: new_roaming,
+                    local: new_local,
+                },
+            )?;
+            println!(
+                "{} élément(s) déplacé(s), {} gardé(s) à l'ancien emplacement",
+                migration.moved.len(),
+                migration.kept.len()
+            );
+        }
         #[cfg(windows)]
         Command::PlayTone {
             hz,

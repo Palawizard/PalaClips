@@ -209,7 +209,7 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
   `start_time = 0`), puis MP4 écrit par `palaclips-replay-save`, qui émet `clip_saved`
   (chemin, durée, latence depuis la commande).
 - Stockage disque (`Spool`) : données des paquets dans des segments de 4 s
-  (`%LOCALAPPDATA%\PalaClips\replay\NNNNNNNN.seg`), le ring ne garde que les positions ;
+  (`%LOCALAPPDATA%\com.palawi.palaclips\replay\NNNNNNNN.seg`), le ring ne garde que les positions ;
   un segment se supprime dès que plus aucun paquet ne le référence ; les restes d'une session
   précédente sont effacés au démarrage.
 - Nom (STO-03) : `<dossier>/<Jeu>/<Jeu>_<AAAA-MM-JJ_HH-MM-SS>_replay.mp4`, `<Jeu>` = exe du
@@ -304,7 +304,7 @@ d'une erreur système.
 | `clip_games` | 6 ✅ | jeux (sous-dossiers) présents dans la bibliothèque |
 | `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 ✅ | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
 | `quota_preview { quotaGb }` | 6 ✅ | STO-04 : taille totale et clips qui seraient supprimés (plus anciens, jamais un favori ni un enregistrement en cours) |
-| `prepare_player { path }` | 6 ✅ | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\PalaClips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
+| `prepare_player { path }` | 6 ✅ | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\com.palawi.palaclips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
 | `track_peaks { path }` | 6 ✅ | forme d'onde d'une piste du cache : 1 600 pics (0–255, octets bruts), calculés en décodant le `.m4a` une fois puis gardés à côté (`.peaks`) ; chemin hors du cache refusé |
 | `copy_clip { path }` | 6 ✅ | GAL-05 : copie le fichier dans le presse-papiers (`CF_HDROP`) pour le coller dans Discord ou l'Explorateur |
 | `start_export { export }` / `cancel_export { id }` | 6 ✅ | GAL-06/07 : `{ path, name, start_secs, end_secs, precise, tracks, gains, mix, mix_title }` → id. `gains` : un volume (0–1) par piste choisie, appliqué au mixage (le lecteur envoie ses volumes ; absent = 1). Rapide : copie depuis l'image clé au début ou juste avant ; précis : décodage puis réencodage matériel (même codec, débit de la source) à partir de l'image exacte. Pistes audio choisies (positions parmi les pistes audio), copiées, ou mixées en une piste AAC titrée `mix_title`. Fichier `<name>.mp4` dans le dossier du clip (suffixe `_2`… si pris), écrit en `.part.mp4` puis renommé (la bibliothèque ignore les `.part`). Événements Tauri `export-progress { id, progress }` (pas de 1 %) et `export-finished { id, path, error }` |
@@ -377,11 +377,12 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 
 | Quoi | Où |
 |---|---|
-| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\PalaClips\` |
-| Journaux (rotation) | `%APPDATA%\PalaClips\logs\` |
-| Index de la bibliothèque (SQLite, table `clips` : chemin, nom, jeu, type, date, taille, durée, pistes, miniature, favori ; WAL) | `library.db` à côté de `settings.json` (`%APPDATA%\PalaClips\`, ou `PALACLIPS_CONFIG_DIR`) ; le dossier des clips reste la source de vérité |
-| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\PalaClips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\local\cache\`, pour qu'aucun fichier de test ne sorte du dossier isolé ; le dossier des miniatures est autorisé au protocole `asset` au démarrage |
-| Buffer de replay sur disque | `%LOCALAPPDATA%\PalaClips\replay\` (ou `<dossier>\local\replay\`) |
+| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\com.palawi.palaclips\` (ADR-032) |
+| Journaux (rotation) | `%APPDATA%\com.palawi.palaclips\logs\` |
+| Index de la bibliothèque (SQLite, table `clips` : chemin, nom, jeu, type, date, taille, durée, pistes, miniature, favori ; WAL) | `library.db` à côté de `settings.json` (`%APPDATA%\com.palawi.palaclips\`, ou `PALACLIPS_CONFIG_DIR`) ; le dossier des clips reste la source de vérité |
+| Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\com.palawi.palaclips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\local\cache\`, pour qu'aucun fichier de test ne sorte du dossier isolé ; le dossier des miniatures est autorisé au protocole `asset` au démarrage |
+| Buffer de replay sur disque | `%LOCALAPPDATA%\com.palawi.palaclips\replay\` (ou `<dossier>\local\replay\`) |
+| Migration (premier lancement après ADR-032, à chaque démarrage tant qu'il reste quelque chose à déplacer) | `settings.json`, `.bak`, `library.db` (+ `-wal`, `-shm`), `recordings.txt` de `%APPDATA%\PalaClips\`, puis `cache\` et `replay\` de `%LOCALAPPDATA%\PalaClips\`, déplacés vers les dossiers ci-dessus (`migrate::migrate_data`) ; un fichier déjà présent à l'arrivée n'est jamais écrasé ; chemins des miniatures réécrits dans `library.db` ; anciens dossiers supprimés s'ils sont vides. Jamais en mode isolé |
 | Données du WebView2 (localStorage : état du panneau de performances) | `%LOCALAPPDATA%\com.palawi.palaclips\EBWebView\` ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\webview\` (`data_directory` de la fenêtre) : une app de test ne lit ni n'écrit jamais le stockage réel (`scripts/webview-isolation.ps1` le vérifie par empreinte) |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | Enregistrements en cours (`recordings.txt` : `PID<tab>chemin`, une ligne par fichier ouvert ; au démarrage, ceux d'un processus mort sont remuxés en MP4 classique) | à côté de `settings.json` |
