@@ -368,6 +368,14 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
               onCommit={(microphone_gain_db) => setAudio({ microphone_gain_db })}
             />
           </span>
+          <span className="flex items-center gap-2">
+            {t("settings.audio.inFullMix", { name: trackTitle(audio, "mix") })}
+            <Switch
+              checked={audio.microphone_in_full_mix}
+              label={t("settings.audio.inFullMixLabel", { name: trackTitle(audio, "mix") })}
+              onChange={(microphone_in_full_mix) => setAudio({ microphone_in_full_mix })}
+            />
+          </span>
         </>
       );
     if (row.kind === "game") {
