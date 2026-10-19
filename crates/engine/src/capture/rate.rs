@@ -22,7 +22,8 @@ pub fn composition_rate() -> Option<f64> {
 #[derive(Debug)]
 pub struct RateWatch {
     fps: u32,
-    below_since: Option<Hns>,
+    last: Option<Hns>,
+    below_for: Hns,
     alerted: Option<u32>,
 }
 
@@ -30,19 +31,25 @@ impl RateWatch {
     pub fn new(fps: u32) -> Self {
         Self {
             fps,
-            below_since: None,
+            last: None,
+            below_for: Hns::ZERO,
             alerted: None,
         }
     }
 
-    pub fn observe(&mut self, now: Hns, rate: f64) -> Option<EngineEvent> {
-        if rate >= f64::from(self.fps) * TOLERANCE {
-            self.below_since = None;
+    pub fn observe(&mut self, now: Hns, rate: f64, new_frames: u64) -> Option<EngineEvent> {
+        let elapsed = self.last.map_or(Hns::ZERO, |last| now - last);
+        self.last = Some(now);
+        if new_frames == 0 {
             return None;
         }
-        let since = *self.below_since.get_or_insert(now);
+        if rate >= f64::from(self.fps) * TOLERANCE {
+            self.below_for = Hns::ZERO;
+            return None;
+        }
+        self.below_for = self.below_for + elapsed;
         let hz = rate.round() as u32;
-        if now - since < SUSTAINED || self.alerted == Some(hz) {
+        if self.below_for < SUSTAINED || self.alerted == Some(hz) {
             return None;
         }
         self.alerted = Some(hz);
@@ -75,7 +82,7 @@ mod tests {
     fn alerts(watch: &mut RateWatch, samples: &[(i64, f64)]) -> usize {
         samples
             .iter()
-            .filter(|(at, rate)| watch.observe(seconds(*at), *rate).is_some())
+            .filter(|(at, rate)| watch.observe(seconds(*at), *rate, 165).is_some())
             .count()
     }
 
@@ -85,6 +92,27 @@ mod tests {
         let samples: Vec<(i64, f64)> = (0..=20).map(|at| (at, 164.9)).collect();
         assert_eq!(alerts(&mut watch, &samples[..5]), 0);
         assert_eq!(alerts(&mut watch, &samples[5..]), 1);
+    }
+
+    #[test]
+    fn a_still_screen_never_alerts_even_when_windows_slows_its_refresh() {
+        let mut watch = RateWatch::new(240);
+        let still = (0..60).filter(|at| watch.observe(seconds(*at), 60.0, 0).is_some());
+        assert_eq!(still.count(), 0);
+    }
+
+    #[test]
+    fn only_seconds_with_new_frames_count_toward_the_alert() {
+        let mut watch = RateWatch::new(240);
+        let mut alerted = 0;
+        for at in 0..40 {
+            let new_frames = if at % 2 == 0 { 60 } else { 0 };
+            alerted += usize::from(watch.observe(seconds(at), 60.0, new_frames).is_some());
+            if at < 10 {
+                assert_eq!(alerted, 0, "{at} s");
+            }
+        }
+        assert_eq!(alerted, 1);
     }
 
     #[test]
@@ -110,7 +138,7 @@ mod tests {
     fn the_alert_gives_the_real_rate_and_the_requested_fps() {
         let mut watch = RateWatch::new(240);
         let alert = (0..=5)
-            .filter_map(|at| watch.observe(seconds(at), 164.9))
+            .filter_map(|at| watch.observe(seconds(at), 164.9, 165))
             .next();
         let Some(EngineEvent::Alert { text, .. }) = alert else {
             panic!("alerte attendue");

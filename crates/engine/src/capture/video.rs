@@ -417,6 +417,7 @@ fn run_encoder(
     let mut origin = Some(origin);
     let mut rate_watch = RateWatch::new(fps);
     let mut next_rate_check = Hns::now() + RATE_CHECK;
+    let mut frames_at_check = 0;
     while !shared.stop.load(Ordering::Relaxed) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
@@ -432,7 +433,14 @@ fn run_encoder(
         let now = Hns::now();
         if now >= next_rate_check {
             next_rate_check = now + RATE_CHECK;
-            if let Some(alert) = composition_rate().and_then(|rate| rate_watch.observe(now, rate)) {
+            let delivered = shared
+                .latest()
+                .map_or(frames_at_check, |latest| latest.count);
+            let new_frames = delivered.saturating_sub(frames_at_check);
+            frames_at_check = delivered;
+            if let Some(alert) =
+                composition_rate().and_then(|rate| rate_watch.observe(now, rate, new_frames))
+            {
                 alerts.try_send(alert).ok();
             }
         }
