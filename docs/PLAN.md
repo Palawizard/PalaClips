@@ -178,7 +178,9 @@ Critères :
 - [x] Panneau de performances (APP-12) : section repliable sous le roster de l'écran État,
       mesures seulement panneau ouvert ; CPU machine, RAM hors tampon (calcul PERF-02), tampon,
       encodeur, images répétées (10 s) et en retard (total, dernière minute), décalage max.
-- [ ] Mesures PERF sur build release installée.
+- [ ] Mesures PERF sur build release installée. Fait le 2026-10-19 (`docs/reports/phase-7.md`) :
+      PERF-01 4,9 Mo, PERF-02 67,3 Mo hors tampon, PERF-03 CPU 0,39 %, PERF-04 538 ms à chaud.
+      Reste : perte de fps en jeu GPU-bound (PERF-03) avec Palawi.
 
 Critères :
 - 👤 Chaque scénario de `docs/TESTING.md` § T7 passé, consigné dans le rapport.
