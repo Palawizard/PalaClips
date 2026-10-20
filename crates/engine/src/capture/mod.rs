@@ -15,7 +15,7 @@ pub use gpu_priority::raise_gpu_priority;
 pub use icon::{ICON_SIZE, app_icon_png};
 pub use pacer::{CfrClock, emit_due};
 pub use preview::{PREVIEW_BOX, PreviewCapture, PreviewSink, preview_size};
-pub use rate::{RateWatch, composition_rate};
+pub use rate::{RateWatch, composition_rate, exclusive_fullscreen};
 pub use targets::{
     ResolvedTarget, TargetInfo, app_icon, list_targets, resolve_target, target_size,
 };
