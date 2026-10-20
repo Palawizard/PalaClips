@@ -5,9 +5,9 @@
 
 ## État actuel
 
-- **Phase en cours :** 7 — Robustesse et performances. Phase 6 **validée** le 2026-10-19
-  (`docs/reports/phase-6.md` : 5 000 clips, clip de 4 Go, RAM du lecteur stable sur 1 h,
-  arrêt brutal, disque plein sur VHDX, collage Discord avec la voix).
+- **Phase en cours :** 8 — Release V1. Phase 7 **validée** le 2026-10-20
+  (`docs/reports/phase-7.md` : PERF-01 à 04 tenus, PERF-03 GPU-bound 0,7 % en priorité « jeu »,
+  tous les scénarios T7, défauts de la séance T7 corrigés, HDR basculé). Branche : `dev`.
 - **Piste 1 (ADR-029, ADR-030)** : Mix complet = somme des pistes choisies (micro si « Aussi
   dans Mix complet », Jeu, applis) ; « Audio du bureau » (désactivé par défaut) = toute la
   sortie + micro. La CLI garde la sortie entière (`--tracks-mix` pour le nouveau mode).
@@ -15,7 +15,7 @@
   `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
   refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
-- **Dernière mise à jour :** 2026-10-19
+- **Dernière mise à jour :** 2026-10-20
 
 ## Ce qui existe
 
@@ -186,20 +186,35 @@
   pipeline. PERF-01/02 en working set privé (ADR-023) ; qualité d'ADR-022 vérifiée sur
   Fortnite (`scripts/nvenc-quality.ps1`) ; estimation RAM (RPL-03) = fenêtre du tampon + 7 %
   (`replay::buffer_window`, `estimate_buffer_bytes`).
+- **Robustesse de la capture (phase 7, 2026-10-20, #64–#67)** : `capture::pacer::emit_due`
+  (seule l'échéance la plus récente reçoit une image convertie, les autres répètent la dernière
+  `AVFrame` encodée) ; `capture::set_gpu_priority(GpuPriority)` (`D3DKMTSetProcessScheduling
+  PriorityClass` NORMAL ou REALTIME, appliquée à chaque démarrage de capture) et
+  `VideoSettings::gpu_priority` (`game` par défaut | `capture`), ligne dans Réglages > Replay &
+  qualité ; `capture/rate.rs` : hystérésis `Sustained` (5 s pour lever, 5 s pour retirer),
+  `RateWatch` (G-Sync, retirée désormais), `SaturationWatch` (`capture_gpu_saturated`),
+  `FreezeWatch` + `exclusive_fullscreen()` (`capture_exclusive_fullscreen`) ;
+  `EngineEvent::AlertCleared { code }`, `events::CAPTURE_ALERTS` (retirées par le shell au
+  démarrage et à l'arrêt de la capture) ; HDR de l'écran comparé chaque seconde, capture
+  relancée s'il change ; `encode::compile_shader` / `blob_bytes` partagés. CLI :
+  `probe-gpu-priority [--window]`, `gpu-load` (caché), `probe-fullscreen`, `--capture-priority`.
+  Scripts : `app-crash.ps1`, `fps-impact.ps1 -CapturePriority`.
 
 ## Prochaines actions (dans l'ordre)
 
-1. Phase 7 : séance T7 faite le 2026-10-19 (`docs/reports/phase-7.md`). Corriger dans
-   l'ordre les trois défauts trouvés : (1) capture bloquée sous GPU saturé (priorité GPU,
-   sous-commande CLI d'abord) puis remesurer PERF-03 GPU-bound avec Kombustor fenêtré et
-   `fps-impact.ps1` (essais intercalés) ; (2) alerte en plein écran exclusif ; (3) alerte
-   CAP-11 effacée au redémarrage de la capture. Puis les scénarios T7 restants (changement de
-   résolution, appli capturée qui crashe) et `/valider-phase`. PERF-01, 02, 04 et la part CPU
-   de PERF-03 sont validés sur la build installée ; installation et désinstallation (les deux
-   cas) vérifiées ; micro calibré (−485 ms).
-2. Bancs : `pwsh scripts/gallery-bench.ps1` (~12 min, 12 Go libres) et
-   `pwsh scripts/recording-crash.ps1` (~2 min) ; journaux `target/journals/`.
-3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
+1. Test Minecraft Java **seulement quand Palawi le dit** (demande du 2026-10-20) : Minecraft en
+   plein écran F11, `capture-video --target window:javaw.exe --seconds 30` → l'image bouge-t-elle
+   (`probe-fullscreen` en parallèle) ? Si figée : refaire avec le réglage NVIDIA « Méthode de
+   présentation Vulkan/OpenGL = Préférer la superposition sur la chaîne d'échange DXGI », puis
+   avec le mod Fullscreen+ en sans bordure. Résultats dans RESEARCH ; si une solution marche,
+   texte propre à `javaw.exe` dans l'alerte `capture_exclusive_fullscreen` (paramètre `exe` +
+   clé i18n dédiée).
+2. Phase 8 (`docs/PLAN.md`) : premier lancement guidé (APP-06, `/impeccable shape` puis
+   `onboard`), relecture de l'anglais, journaux + export de diagnostic, updater (clé de
+   signature générée par Palawi), workflow de release, README utilisateur, revue finale.
+3. Essai visuel de la ligne « Quand le GPU est à fond » (Réglages > Replay & qualité) dans l'app
+   isolée, à montrer à Palawi.
+4. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
    joue) `-Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`.
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
@@ -211,7 +226,7 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 
 ## Décisions en attente de Palawi
 
-- Alerte G-Sync validée le 2026-10-16 : CAP-11, ADR-018, code en phase 7.
+Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défaut, ADR-033 révisé.)
 
 ## Points d'attention
 
@@ -219,9 +234,8 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
   `docs/reports/phase-7/`) : aucune perte mesurable dans Fortnite plafonné à ~225 i/s, avec et
   sans G-Sync ; le jeu reste en Independent Flip (WGC ne force pas la composition). Rien à
   corriger côté capture. La perte de 50–100 i/s du 2026-10-16 venait **probablement** des
-  réencodages et du VMAF lancés en parallèle (hypothèse, non vérifiée). PERF-03 reste à
-  valider GPU-bound en phase 7 (script : mise en route non comptée, GPU relevé par
-  `nvidia-smi`).
+  réencodages et du VMAF lancés en parallèle (hypothèse, non vérifiée). PERF-03 GPU-bound
+  validé le 2026-10-20 (Kombustor fenêtré, 0,7 % en priorité « jeu »).
 
 - Horloge audio : `pu64QPCPosition` suit QPC à 0,00 ms/h (Apogee) et +0,32 ms/h
   (Voicemeeter) sur 20 min (`clock-drift.ps1`). Les pentes d'`av-drift.ps1` (−19,4 / −2,3 /
@@ -257,8 +271,18 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
   des parenthèses.
 - Tests 👤 : Claude lance lui-même les commandes et ne demande à Palawi que les actions
   physiques et son avis visuel, via le widget de questions.
-- HDR basculé pendant une capture : pris en compte seulement au démarrage suivant (à traiter
-  en phase 7, robustesse).
+- HDR basculé pendant une capture : détecté chaque seconde, capture relancée au bon format
+  (#67) ; le tampon de replay repart de zéro à chaque bascule (ADR-031).
+- Sous GPU saturé en priorité « jeu », le rappel WGC attend le contexte D3D11 tenu par
+  l'encodeur : ~15 images source/s (RESEARCH). Si un jour il faut mieux sans temps réel :
+  piste = copier l'image WGC sans le verrou partagé (second contexte différé).
+- Changement de résolution : mémoire privée +30 Mo gardée après le retour (2026-10-20) ; à
+  surveiller.
+- Tests 👤 synchronisés : attendre le « prêt » de Palawi, puis lui dire quand la mesure
+  commence et finit (il fait autre chose en parallèle).
+- `gpu-load --window` (CLI cachée) : charge GPU au premier plan (fenêtre 640×360) pour
+  reproduire un jeu GPU-bound ; une charge sans fenêtre ne reproduit pas la famine (Windows
+  favorise le processus au premier plan).
 - Replay : mémoire privée +~1 Mo par sauvegarde pendant 20 sauvegardes (612 → 633 Mo) ; à
   surveiller (test de 2 h, ou une boucle de sauvegardes) avant de conclure à une fuite.
 - Plusieurs sessions WGC dans un processus : `keep_mta_alive` (`CoIncrementMTAUsage`) est
@@ -304,3 +328,4 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 | 2026-10-17 | 5 | PR #21 réglages persistants ; PR #22 noms de jeux (Fortnite sans métadonnées → nom d'exe nettoyé, décision de Palawi, ADR-024) ; PR #23 carillon + toast, test Fortnite ✅ (carillon en jeu, toast bloqué en jeu puis dans le centre de notifications, toast + carillon au bureau, dossier « Fortnite ») ; PR #24 clips sans doublon (RPL-09, ADR-025, 20,2 s puis 10,2 s) | Raccourcis, démarrage avec Windows, écrans Réglages |
 | 2026-10-17 | 5 | PR #25 clip < 3 s ignoré ; PR #26 démarrage avec Windows (0 WebView2) ; raccourcis personnalisables (conflit réel détecté : Alt+Shift+F10 pris par NVIDIA → défaut Ctrl+Alt+F10) ; écran Réglages (Raccourcis, Général, thème) testé par Palawi au clavier ; revue impeccable 2 tours | Sections Réglages restantes |
 | 2026-10-17 | 5 | Socle i18n avant la phase 6 (ADR-028) : fr/en complets, langue de Windows par défaut, codes + paramètres côté Rust, menu de la zone de notification et toasts traduits, test anti-chaînes en dur | Revue de Palawi (anglais + sélecteurs), phase 6 |
+| 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
