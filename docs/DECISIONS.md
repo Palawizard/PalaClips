@@ -529,3 +529,11 @@ phase 8).
   5 s, retirée après 5 s à l'heure.
 - Conséquence : notre travail GPU (conversion d'image, ~1 ms par image) passe avant celui du
   jeu ; coût sur les fps du jeu mesuré par PERF-03 GPU-bound.
+- **Révision du 2026-10-20 (décision de Palawi après PERF-03)** : Kombustor fenêtré, GPU à
+  100 %, « écran 1440p60 + 4 pistes » : perte de fps **7,5 %** avec la priorité temps réel
+  (2 046 images source en 26 s, 0 en retard) contre **0,7 %** en priorité normale (393 images
+  source, 852 images en retard sur 1 559, alerte `capture_gpu_saturated`). La priorité devient
+  un réglage : `video.gpu_priority` = `game` (défaut, priorité normale, PERF-03 tenu) ou
+  `capture` (temps réel), Réglages > Replay & qualité « Quand le GPU est à fond ». Appliqué à
+  chaque démarrage de capture. L'alerte de saturation renvoie à ce réglage. File bornée et
+  alerte inchangées.
