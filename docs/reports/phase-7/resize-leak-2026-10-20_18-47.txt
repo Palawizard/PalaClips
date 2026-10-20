@@ -1,0 +1,26 @@
+2026-10-20T18:47:33 resize-leak : replay sur une fenêtre ffplay animée (mire testsrc2), 10 redimensionnements (1280×720 ↔ 800×450), mémoire relevée 4 s après chacun
+départ : 36,4 Mo
+redimensionnement  1 → 1280×720 (fenêtre 1280×720) : 37,2 Mo
+redimensionnement  2 → 800×450 (fenêtre 800×450) : 37,9 Mo
+redimensionnement  3 → 1280×720 (fenêtre 1280×720) : 38,8 Mo
+redimensionnement  4 → 800×450 (fenêtre 800×450) : 39,5 Mo
+redimensionnement  5 → 1280×720 (fenêtre 1280×720) : 40,3 Mo
+redimensionnement  6 → 800×450 (fenêtre 800×450) : 40,7 Mo
+redimensionnement  7 → 1280×720 (fenêtre 1280×720) : 40,9 Mo
+redimensionnement  8 → 800×450 (fenêtre 800×450) : 41 Mo
+redimensionnement  9 → 1280×720 (fenêtre 1280×720) : 41 Mo
+redimensionnement 10 → 800×450 (fenêtre 800×450) : 41,3 Mo
+2026-10-20T16:47:35.116148Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=1266 height=713
+2026-10-20T16:47:39.515978Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=786 height=443
+2026-10-20T16:47:43.882468Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=1266 height=713
+2026-10-20T16:47:48.315933Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=786 height=443
+2026-10-20T16:47:52.715925Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=1266 height=713
+2026-10-20T16:47:57.115816Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=786 height=443
+2026-10-20T16:48:01.549205Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=1266 height=713
+2026-10-20T16:48:05.982426Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=786 height=443
+2026-10-20T16:48:10.416211Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=1266 height=713
+2026-10-20T16:48:14.849407Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=786 height=443
+2026-10-20T16:48:19.215815Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1590 captured=1587 duplicated=139 late=4 max_lateness_ms=47.7527
+changements de résolution vus par le moteur : 10
+RÉSULTAT : pente 0.33 Mo par redimensionnement (après les 2 premiers) → stable
+2026-10-20T18:48:19 fin : fenêtre de test et replay arrêtés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\resize-leak-2026-10-20_18-47.txt

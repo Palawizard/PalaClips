@@ -1,8 +1,11 @@
+use std::collections::VecDeque;
+
+use windows::Wdk::Graphics::Direct3D::D3DKMTCheckExclusiveOwnership;
 use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Dwm::{DWM_TIMING_INFO, DwmGetCompositionTimingInfo};
+use windows::Win32::UI::Shell::{QUNS_RUNNING_D3D_FULL_SCREEN, SHQueryUserNotificationState};
 
 use crate::clock::Hns;
-use windows::Wdk::Graphics::Direct3D::D3DKMTCheckExclusiveOwnership;
 
 use crate::events::{
     ALERT_EXCLUSIVE_FULLSCREEN as EXCLUSIVE_FULLSCREEN, ALERT_GPU_SATURATED as GPU_SATURATED,
@@ -12,6 +15,7 @@ use crate::events::{
 const TOLERANCE: f64 = 0.98;
 const SUSTAINED: Hns = Hns::from_millis(5_000);
 const LATE_SHARE: f64 = 0.1;
+const FREEZE_WINDOW: usize = 5;
 
 pub fn composition_rate() -> Option<f64> {
     let mut timing = DWM_TIMING_INFO {
@@ -25,12 +29,25 @@ pub fn composition_rate() -> Option<f64> {
         .then(|| f64::from(rate.uiNumerator) / f64::from(rate.uiDenominator))
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Sustained {
+    raise_after: Hns,
     last: Option<Hns>,
     bad_for: Hns,
     good_for: Hns,
     active: bool,
+}
+
+impl Default for Sustained {
+    fn default() -> Self {
+        Self {
+            raise_after: SUSTAINED,
+            last: None,
+            bad_for: Hns::ZERO,
+            good_for: Hns::ZERO,
+            active: false,
+        }
+    }
 }
 
 impl Sustained {
@@ -41,7 +58,7 @@ impl Sustained {
             true => {
                 self.good_for = Hns::ZERO;
                 self.bad_for = self.bad_for + elapsed;
-                (!self.active && self.bad_for >= SUSTAINED).then(|| {
+                (!self.active && self.bad_for >= self.raise_after).then(|| {
                     self.active = true;
                     true
                 })
@@ -138,12 +155,29 @@ impl SaturationWatch {
 
 pub fn exclusive_fullscreen() -> bool {
     // SAFETY: D3DKMTCheckExclusiveOwnership takes no arguments and only reads kernel state.
-    unsafe { D3DKMTCheckExclusiveOwnership() }
+    let owned = unsafe { D3DKMTCheckExclusiveOwnership() };
+    // SAFETY: SHQueryUserNotificationState has no preconditions.
+    owned
+        || unsafe { SHQueryUserNotificationState() }
+            .is_ok_and(|state| state == QUNS_RUNNING_D3D_FULL_SCREEN)
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct FreezeWatch {
+    recent: VecDeque<u64>,
     sustained: Sustained,
+}
+
+impl Default for FreezeWatch {
+    fn default() -> Self {
+        Self {
+            recent: VecDeque::with_capacity(FREEZE_WINDOW),
+            sustained: Sustained {
+                raise_after: Hns::ZERO,
+                ..Sustained::default()
+            },
+        }
+    }
 }
 
 impl FreezeWatch {
@@ -153,10 +187,16 @@ impl FreezeWatch {
         new_frames: u64,
         exclusive: impl FnOnce() -> bool,
     ) -> Option<EngineEvent> {
-        let frozen = if new_frames > 0 {
-            Some(false)
-        } else {
+        if self.recent.len() == FREEZE_WINDOW {
+            self.recent.pop_front();
+        }
+        self.recent.push_back(new_frames);
+        let starved = self.recent.len() == FREEZE_WINDOW
+            && self.recent.iter().sum::<u64>() < FREEZE_WINDOW as u64;
+        let frozen = if starved {
             exclusive().then_some(true)
+        } else {
+            Some(false)
         };
         match self.sustained.observe(now, frozen)? {
             true => {
@@ -345,6 +385,28 @@ mod tests {
                 }
             )
         ));
+    }
+
+    #[test]
+    fn a_nearly_frozen_capture_under_exclusive_fullscreen_alerts() {
+        let mut watch = FreezeWatch::default();
+        let raised: Vec<i64> = (0..30)
+            .filter(|at| {
+                let new_frames = if at % 3 == 0 { 1 } else { 0 };
+                matches!(
+                    watch.observe(seconds(*at), new_frames, || true),
+                    Some(EngineEvent::Alert { .. })
+                )
+            })
+            .collect();
+        assert_eq!(raised, vec![4]);
+    }
+
+    #[test]
+    fn one_frame_per_second_or_more_is_not_frozen() {
+        let mut watch = FreezeWatch::default();
+        let raised = (0..30).filter(|at| watch.observe(seconds(*at), 1, || true).is_some());
+        assert_eq!(raised.count(), 0);
     }
 
     #[test]

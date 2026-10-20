@@ -38,6 +38,10 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
+   Quand Palawi doit agir pendant une mesure (basculer le HDR, lancer un jeu, changer la
+   résolution…) : attends d'abord son « prêt », puis lance la mesure et dis-lui qu'elle a
+   commencé et quoi faire, et dis-lui quand elle est finie. Jamais de mesure lancée avant sa
+   réponse : il fait souvent autre chose en même temps.
 6. **Tests longs sans surveillance.** Aucun test de plus de 5 min sans l'accord de Palawi. Un
    test en arrière-plan ne bloque jamais le travail : tu le lances et tu avances pendant ce
    temps sur la tâche suivante indépendante, sans attendre. Tout test de plus de 10 min
