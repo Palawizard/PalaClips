@@ -45,7 +45,7 @@ const updatesRow = `(() => {
 await waitFor("document.querySelector('main') !== null", "interface");
 await click("Réglages");
 await click("Général");
-const before = await waitFor(updatesRow, "ligne Mises à jour");
+const before = await waitFor(`${updatesRow}.includes("Version") && ${updatesRow}`, "ligne Mises à jour");
 console.log(`avant : ${before}`);
 
 if (step === "installed") {
@@ -53,7 +53,7 @@ if (step === "installed") {
   process.exit(before.includes("1.0.1") ? 0 : 1);
 }
 
-await click("Rechercher");
+if (!before.includes("disponible")) await click("Rechercher");
 const wanted = step === "bad" ? "1.0.2" : "1.0.1";
 const found = await waitFor(`${updatesRow}.includes("${wanted} disponible") && ${updatesRow}`, `version ${wanted} proposée`);
 console.log(`proposé : ${found}`);
