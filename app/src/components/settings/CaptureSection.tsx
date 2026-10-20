@@ -242,7 +242,7 @@ function CaptureCard({
   );
 }
 
-export function CaptureSection() {
+export function CaptureSection({ screensOnly = false }: { screensOnly?: boolean }) {
   const t = useT();
   const { config, loadError } = useConfigDraft();
   const [targets, setTargets] = useState<TargetInfo[] | null>(null);
@@ -360,7 +360,7 @@ export function CaptureSection() {
     selected ??
     cards[0]?.key;
 
-  const choose = (card: Card) => config.change({ ...draft, capture: card.target });
+  const choose = (card: Card) => (screensOnly ? config.commit : config.change)({ ...draft, capture: card.target });
   const preview = (key: string) =>
     setLive((current) => {
       const windowKeys = current.filter((entry) => entry.startsWith("window:"));
@@ -397,6 +397,14 @@ export function CaptureSection() {
       )}
     </section>
   );
+
+  if (screensOnly)
+    return (
+      <div ref={gridRef} tabIndex={-1} onKeyDown={moveFocus} className="@container pb-5 outline-none">
+        {listError && <LoadError message={listError} />}
+        {targets !== null && grid(t("settings.capture.screens"), monitors, t("settings.capture.noScreens"))}
+      </div>
+    );
 
   return (
     <>

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alerts } from "./components/Alerts.tsx";
 import { Gallery } from "./components/gallery/Gallery.tsx";
+import { Onboarding } from "./components/onboarding/Onboarding.tsx";
 import { PerformancePanel } from "./components/PerformancePanel.tsx";
 import { Rail, type View } from "./components/Rail.tsx";
 import { RecentClips } from "./components/RecentClips.tsx";
@@ -8,16 +9,34 @@ import { Roster } from "./components/Roster.tsx";
 import { Settings } from "./components/settings/Settings.tsx";
 import { StatusBanner } from "./components/StatusBanner.tsx";
 import { useT } from "./lib/i18n.ts";
+import { onboardingNeeded } from "./lib/ipc.ts";
 import { useEngine } from "./lib/useEngine.ts";
 
 export default function App() {
   const t = useT();
   const [view, setView] = useState<View>("status");
   const engine = useEngine();
+  const [onboarding, setOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    onboardingNeeded().then(setOnboarding, () => setOnboarding(false));
+  }, []);
   const appOrder = useMemo(
     () => engine.config?.audio.app_tracks.filter((track) => track.enabled).map((track) => track.label) ?? [],
     [engine.config],
   );
+
+  if (onboarding === null) return null;
+  if (onboarding)
+    return (
+      <Onboarding
+        engine={engine}
+        onDone={(next) => {
+          setOnboarding(false);
+          setView(next);
+        }}
+      />
+    );
 
   return (
     <div className="grid h-full grid-cols-[auto_minmax(0,1fr)]">

@@ -561,5 +561,63 @@
     "cutPoints": "Début ou fin de la découpe à la position actuelle",
     "jumpCut": "Aller au début ou à la fin de la découpe",
     "back": "Retour à la galerie"
+  },
+  "onboarding": {
+    "title": "Premier lancement",
+    "stepsLabel": "Étapes du premier lancement",
+    "done": "terminée",
+    "skip": "Passer la configuration",
+    "back": "Retour",
+    "next": "Continuer",
+    "finish": "Terminer",
+    "steps": {
+      "checks": "Vérifications",
+      "capture": "Zone de capture",
+      "audio": "Audio",
+      "folder": "Dossier des clips",
+      "replay": "Replay et raccourcis",
+      "test": "Clip de test"
+    },
+    "checks": {
+      "pending": "Vérification…",
+      "windows": "Windows",
+      "windowsOk": "Build {build}",
+      "windowsOld": "Build {build} : la capture du son par appli demande le build 20348 ou plus récent. Mets Windows à jour.",
+      "windowsUnknown": "Version de Windows introuvable.",
+      "encoder": "Encodeur vidéo",
+      "encoderOk": "{codecs} sur la carte graphique",
+      "encoderMissing": "Aucun encodeur matériel n'a fonctionné. Mets à jour le pilote graphique, puis relance PalaClips.",
+      "webview": "WebView2",
+      "webviewVersion": "Version {version}",
+      "folder": "Dossier des clips",
+      "folderOk": "{path}",
+      "folderReadOnly": "PalaClips ne peut pas écrire dans {path}. Choisis un autre dossier à l'étape Dossier des clips."
+    },
+    "capture": {
+      "help": "Une fenêtre précise se choisit dans Réglages > Capture."
+    },
+    "audio": {
+      "microphone": "Enregistrer le micro",
+      "mixTitle": "Contenu de la piste 1 ({name})",
+      "chosen": "Les pistes enregistrées",
+      "chosenHelp": "Jeu et applis que tu ajoutes, rien d'autre.",
+      "desktop": "Tout le son du PC",
+      "desktopHelp": "Tout ce que tu entends, notifications et musique comprises.",
+      "apps": "Une piste par appli (Discord, musique…) s'ajoute dans Réglages > Audio.",
+      "device": "Périphérique du micro"
+    },
+    "test": {
+      "arming": "Le replay démarre…",
+      "failed": "Le replay n'a pas démarré.",
+      "retry": "Réessayer",
+      "filling": "Encore quelques secondes en mémoire…",
+      "pressKeys": "Appuie sur {keys} pour sauvegarder les dernières secondes.",
+      "noKeys": "Aucun raccourci de sauvegarde : utilise le bouton.",
+      "saveNow": "Sauvegarder maintenant",
+      "saving": "Enregistrement du clip…",
+      "saved": "Clip enregistré",
+      "gallery": "Voir dans la galerie",
+      "buffered": "{value} / {total} s"
+    }
   }
 }
