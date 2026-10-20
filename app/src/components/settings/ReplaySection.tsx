@@ -20,7 +20,7 @@ import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
 const RAM_SHARE_LIMIT = 0.4;
 
-const DURATIONS = [5, 10, 15, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600];
+export const DURATIONS = [5, 10, 15, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600];
 const FPS = [30, 60, 120, 144, 165, 240];
 const HEIGHTS = [720, 1080, 1440, 2160];
 const KEYFRAMES = [0.5, 1, 2, 4];
@@ -28,7 +28,7 @@ const KEYFRAMES = [0.5, 1, 2, 4];
 const CODECS: VideoCodec[] = ["h264", "hevc", "av1"];
 const QUALITIES: VideoQuality[] = ["quality", "balanced", "light", "custom"];
 
-function durationLabel(seconds: number): string {
+export function durationLabel(seconds: number): string {
   if (seconds < 60) return t("units.seconds", { value: seconds });
   const minutes = seconds / 60;
   return Number.isInteger(minutes)
@@ -36,7 +36,7 @@ function durationLabel(seconds: number): string {
     : t("units.minutesSeconds", { minutes: Math.floor(minutes), seconds: seconds % 60 });
 }
 
-function withCurrent(presets: number[], current: number): number[] {
+export function withCurrent(presets: number[], current: number): number[] {
   return presets.includes(current) ? presets : [...presets, current].sort((a, b) => a - b);
 }
 

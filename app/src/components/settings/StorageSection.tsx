@@ -138,7 +138,7 @@ function QuotaRow({ quota, onApply }: { quota: number | null; onApply: (quota: n
   );
 }
 
-export function StorageSection() {
+export function StorageSection({ folderOnly = false }: { folderOnly?: boolean }) {
   const t = useT();
   const [config, setConfigState] = useState<EngineConfig | null>(null);
   const [status, setStatus] = useState<StorageStatus | null>(null);
@@ -213,42 +213,46 @@ export function StorageSection() {
         </span>
       </SettingRow>
 
-      <QuotaRow
-        quota={config.storage.quota_gb}
-        onApply={(quota_gb) => save({ ...config, storage: { ...config.storage, quota_gb } }).then(refreshStatus)}
-      />
+      {!folderOnly && (
+        <>
+          <QuotaRow
+            quota={config.storage.quota_gb}
+            onApply={(quota_gb) => save({ ...config, storage: { ...config.storage, quota_gb } }).then(refreshStatus)}
+          />
 
-      <section aria-labelledby="game-names-title">
-        <div className="border-b border-line px-5 pt-5 pb-3">
-          <h3 id="game-names-title" className="text-[15px] font-semibold">
-            {t("settings.storage.gameNames")}
-          </h3>
-          <p className="mt-0.5 text-[13px] text-ink-2">{t("settings.storage.gameNamesHelp")}</p>
-        </div>
-        {games.length === 0 ? (
-          <p className="border-b border-line px-5 py-3 text-[13px] text-ink-2">{t("settings.storage.noGames")}</p>
-        ) : (
-          <ul>
-            <li
-              aria-hidden="true"
-              className="grid grid-cols-[minmax(0,16rem)_minmax(0,1fr)] gap-x-6 border-b border-line px-5 py-2"
-            >
-              <span className="label">{t("settings.storage.folderColumn")}</span>
-              <span className="label">{t("settings.storage.exeColumn")}</span>
-            </li>
-            {games.map(([exe, name]) => (
-              <GameNameRow
-                key={exe}
-                exe={exe}
-                name={name}
-                error={nameError?.exe === exe ? nameError.message : null}
-                onCommit={(next) => rename(exe, next)}
-                onCancel={() => setNameError(null)}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+          <section aria-labelledby="game-names-title">
+            <div className="border-b border-line px-5 pt-5 pb-3">
+              <h3 id="game-names-title" className="text-[15px] font-semibold">
+                {t("settings.storage.gameNames")}
+              </h3>
+              <p className="mt-0.5 text-[13px] text-ink-2">{t("settings.storage.gameNamesHelp")}</p>
+            </div>
+            {games.length === 0 ? (
+              <p className="border-b border-line px-5 py-3 text-[13px] text-ink-2">{t("settings.storage.noGames")}</p>
+            ) : (
+              <ul>
+                <li
+                  aria-hidden="true"
+                  className="grid grid-cols-[minmax(0,16rem)_minmax(0,1fr)] gap-x-6 border-b border-line px-5 py-2"
+                >
+                  <span className="label">{t("settings.storage.folderColumn")}</span>
+                  <span className="label">{t("settings.storage.exeColumn")}</span>
+                </li>
+                {games.map(([exe, name]) => (
+                  <GameNameRow
+                    key={exe}
+                    exe={exe}
+                    name={name}
+                    error={nameError?.exe === exe ? nameError.message : null}
+                    onCommit={(next) => rename(exe, next)}
+                    onCancel={() => setNameError(null)}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
     </>
   );
 }

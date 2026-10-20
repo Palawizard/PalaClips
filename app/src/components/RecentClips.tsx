@@ -5,7 +5,7 @@ import { clock, relativeTime } from "../lib/format.ts";
 import { useT } from "../lib/i18n.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../lib/tracks.ts";
 
-function ClipCard({
+export function ClipCard({
   clip,
   appOrder,
   labels,

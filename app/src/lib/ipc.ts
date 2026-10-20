@@ -167,6 +167,25 @@ export function pickClipsDir(): Promise<string | null> {
   return invoke<string | null>("pick_clips_dir");
 }
 
+export interface OnboardingChecks {
+  windows_build: number | null;
+  windows_supported: boolean;
+  webview: string | null;
+  clips_dir_writable: boolean;
+}
+
+export function onboardingNeeded(): Promise<boolean> {
+  return invoke("onboarding_needed");
+}
+
+export function onboardingChecks(): Promise<OnboardingChecks> {
+  return invoke("onboarding_checks");
+}
+
+export function finishOnboarding(): Promise<void> {
+  return invoke("finish_onboarding");
+}
+
 export function exportDiagnostic(): Promise<string | null> {
   return invoke("export_diagnostic");
 }

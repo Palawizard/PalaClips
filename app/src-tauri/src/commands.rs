@@ -338,6 +338,45 @@ pub async fn pick_clips_dir(
         .transpose()
 }
 
+#[tauri::command]
+pub fn onboarding_needed(slot: State<'_, EngineSlot>) -> bool {
+    slot.settings
+        .lock()
+        .map(|settings| !settings.onboarded)
+        .unwrap_or(false)
+}
+
+#[derive(Debug, Serialize)]
+pub struct OnboardingChecks {
+    windows_build: Option<u32>,
+    windows_supported: bool,
+    webview: Option<String>,
+    clips_dir_writable: bool,
+}
+
+#[tauri::command]
+pub async fn onboarding_checks(slot: State<'_, EngineSlot>) -> Result<OnboardingChecks, Localized> {
+    let root = slot.clips_root()?;
+    let probe = root.join(".palaclips-write-test");
+    let clips_dir_writable = std::fs::create_dir_all(&root)
+        .and_then(|()| std::fs::write(&probe, b""))
+        .and_then(|()| std::fs::remove_file(&probe))
+        .is_ok();
+    let windows_build = palaclips_engine::diagnostic::windows_build();
+    Ok(OnboardingChecks {
+        windows_build,
+        windows_supported: windows_build
+            .is_some_and(|build| build >= palaclips_engine::diagnostic::MIN_WINDOWS_BUILD),
+        webview: tauri::webview_version().ok(),
+        clips_dir_writable,
+    })
+}
+
+#[tauri::command]
+pub fn finish_onboarding(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
+    slot.update(|settings| settings.onboarded = true)
+}
+
 #[derive(Debug, Default)]
 pub struct LastDiagnostic(std::sync::Mutex<Option<std::path::PathBuf>>);
 

@@ -156,6 +156,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   périphériques audio, fuseau horaire), sans le chemin du profil, le nom du PC, le nom du
   compte ni le titre de la fenêtre capturée ; « Ouvrir le zip » pour voir ce qui part. CLI
   `diagnostic --out`.
+- Premier lancement guidé (seulement à la toute première ouverture) : vérifications (Windows,
+  encodeur, WebView2, dossier des clips), écran à capturer en miniatures vivantes, micro et
+  contenu de la piste 1, dossier des clips, durée et emplacement du replay (mémoire ou disque),
+  raccourci de sauvegarde, puis un vrai clip de test ; « Passer la configuration » garde les
+  réglages par défaut.
 
 ### Corrigé
 - Jeu qui prend tout le GPU : la capture ne prend plus des secondes de retard ; les images
