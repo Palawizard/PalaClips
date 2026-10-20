@@ -582,7 +582,7 @@
       "pending": "Checking…",
       "windows": "Windows",
       "windowsOk": "Build {build}",
-      "windowsOld": "Build {build}: per-app audio capture needs build 20348 or later. Update Windows.",
+      "windowsOld": "Build {build}: per-app audio capture needs Windows 11 (build 20348 or later).",
       "windowsUnknown": "Couldn't detect the Windows version.",
       "encoder": "Video encoder",
       "encoderOk": "{codecs} on the graphics card",
