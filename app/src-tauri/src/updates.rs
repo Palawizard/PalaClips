@@ -38,14 +38,24 @@ fn update_failed(error: impl std::fmt::Display) -> Localized {
     Localized::new("update_failed").with("detail", error.to_string())
 }
 
+fn local_endpoint(raw: &str) -> Option<tauri::Url> {
+    let url = tauri::Url::parse(raw).ok()?;
+    let loopback = matches!(url.host_str(), Some("127.0.0.1" | "localhost"));
+    (url.scheme() == "http" && loopback).then_some(url)
+}
+
 async fn find(app: &tauri::AppHandle) -> Result<Option<Update>, Localized> {
     let mut builder = app.updater_builder();
-    if let Some(url) = std::env::var(ENDPOINT_ENV)
+    if let Some(raw) = std::env::var(ENDPOINT_ENV)
         .ok()
-        .filter(|url| !url.is_empty())
+        .filter(|raw| !raw.is_empty())
     {
-        let url = url.parse().map_err(update_failed)?;
-        builder = builder.endpoints(vec![url]).map_err(update_failed)?;
+        match local_endpoint(&raw) {
+            Some(url) => builder = builder.endpoints(vec![url]).map_err(update_failed)?,
+            None => {
+                tracing::warn!(url = %raw, "adresse de mise à jour ignorée : seul 127.0.0.1 est accepté")
+            }
+        }
     }
     builder
         .build()
@@ -139,5 +149,20 @@ pub fn start_checks(app: &tauri::AppHandle) {
         });
     if let Err(error) = spawned {
         tracing::warn!(%error, "recherche de mise à jour non démarrée");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_a_loopback_http_feed_can_replace_github() {
+        assert!(local_endpoint("http://127.0.0.1:8765/latest.json").is_some());
+        assert!(local_endpoint("http://localhost:8765/latest.json").is_some());
+        assert!(local_endpoint("https://example.com/latest.json").is_none());
+        assert!(local_endpoint("http://192.168.1.10/latest.json").is_none());
+        assert!(local_endpoint("http://127.0.0.1.example.com/latest.json").is_none());
+        assert!(local_endpoint("file:///C:/latest.json").is_none());
     }
 }
