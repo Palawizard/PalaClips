@@ -298,52 +298,23 @@ Avant l'étape 1 et après l'étape 3 : `pwsh scripts\real-data-fingerprint.ps1 
 
 ## T8 — Mise à jour 1.0.0 → 1.0.1 (phase 8)
 
-Jamais de release publique : deux releases **brouillon** créées par les tags de test, puis
-supprimées avec leurs tags.
+Automatisé, sans Palawi : `pwsh scripts/update-test.ps1` (environ 5 min ; il faut le brouillon
+`test-v1.0.1`, créé en poussant ce tag sur le commit à tester). Jamais de release publique.
 
-Fait dans la session propre de T9 par `scripts/clean-session.ps1` ; étapes manuelles équivalentes :
-
-1. Sur le commit à tester : `git tag test-v1.0.0 && git tag test-v1.0.1 && git push origin
-   test-v1.0.0 test-v1.0.1`. Le workflow `Release` crée deux brouillons « TEST ».
-2. Télécharger les installeurs et la signature :
-   `gh release download test-v1.0.0 -p "*setup.exe" -D target/update-test/1.0.0` et
-   `gh release download test-v1.0.1 -p "*setup.exe*" -D target/update-test/1.0.1`.
-3. Écrire `target/update-test/latest.json` (version `1.0.1`, `platforms.windows-x86_64` :
-   `signature` = contenu du `.sig`, `url` = `http://127.0.0.1:8765/1.0.1/<installeur>`), puis
-   servir le dossier : `python -m http.server 8765 --bind 127.0.0.1 -d target/update-test`.
-4. Dans la session de test (compte local temporaire) : installer 1.0.0, lancer PalaClips avec
-   `PALACLIPS_UPDATE_URL=http://127.0.0.1:8765/latest.json`. Réglages → Général →
-   Mises à jour : « Version 1.0.1 disponible », notes affichées ; « Installer et redémarrer »
-   → l'installeur passe, l'app revient en 1.0.1 (Réglages → Général).
-5. Essai négatif : `.sig` d'une autre version dans `latest.json` → l'installation est refusée
-   (`update_failed`).
-6. Ménage : `gh release delete test-v1.0.0 --cleanup-tag -y`, idem `test-v1.0.1`, serveur
-   arrêté, `target/update-test` supprimé.
-
-## T9 — Session Windows propre (phase 8)
-
-Compte local temporaire, créé puis supprimé ; la session de Palawi n'est jamais touchée.
-`scripts/clean-session.ps1` fait chaque étape. Il couvre aussi T8 (mise à jour) dans la même
-session.
-
-1. 🤖 `pwsh scripts/clean-session.ps1 -Step Stage` : télécharge les brouillons `test-v1.0.0` et
-   `test-v1.0.1`, écrit `latest.json` (bonne signature) et `latest-bad.json` (signature d'une
-   autre version), copie l'installeur 1.0.0 et trois `.cmd` dans `C:\Users\Public\PalaClips-test`,
-   lance le serveur local `127.0.0.1:8765` (joignable depuis toutes les sessions de la machine).
-2. 👤 PowerShell **administrateur** : `pwsh scripts/clean-session.ps1 -Step Create` (mot de
-   passe demandé) crée `PalaClipsTest`, utilisateur standard.
-3. 👤 Win+L → autre utilisateur → `PalaClipsTest`, écrans de premier démarrage de Windows.
-4. 👤 Lancer `C:\Users\Public\PalaClips-test\PalaClips_1.0.0_x64-setup.exe` ; installation sans
-   droits admin ; WebView2 déjà présent sur Windows 11 (sinon l'installeur le télécharge). À la
-   fin, lancer PalaClips : premier lancement guidé jusqu'au clip de test (critère : moins de
-   2 min entre le démarrage et « clip sauvegardé » dans le journal).
-5. 👤 Quitter PalaClips (zone de notification), lancer `1-lancer-avec-maj-locale.cmd` →
-   Réglages → Général → Mises à jour : « Version 1.0.1 disponible », notes visibles →
-   « Installer et redémarrer » → l'app revient, Réglages → Général affiche 1.0.1.
-6. 👤 Quitter, lancer `2-lancer-avec-signature-fausse.cmd` → « Version 1.0.2 disponible » →
-   « Installer et redémarrer » refusé (`update_failed`, signature invalide), l'app reste en 1.0.1.
-7. 👤 `3-copier-journaux.cmd`, puis se déconnecter de `PalaClipsTest`. 🤖 lit les journaux
-   copiés (temps démarrage → clip, versions, refus de signature).
-8. 👤 PowerShell administrateur : `pwsh scripts/clean-session.ps1 -Step Remove` supprime le
-   compte, son profil, le dossier public, arrête le serveur et vide `target/update-test`. 🤖
-   supprime les brouillons : `gh release delete test-v1.0.0 --cleanup-tag -y` (idem 1.0.1).
+1. Garde-fous : PalaClips fermé, aucune installation dans `%LOCALAPPDATA%\PalaClips` ;
+   empreinte (taille et date) de chaque fichier de données de Palawi, en lecture seule.
+2. Télécharge l'installeur 1.0.1 signé et sa signature depuis le brouillon, écrit
+   `latest.json` (bonne signature) et `latest-bad.json` (version 1.0.2, signature altérée), sert le
+   dossier sur `127.0.0.1:8765`.
+3. Compile l'app en version 1.0.0 (`--config '{"version":"1.0.0"}'`), la lance isolée avec
+   `PALACLIPS_UPDATE_URL` et le port CDP.
+4. Fausse signature : Réglages → Général → Rechercher → « 1.0.2 disponible » → Installer →
+   erreur `update_failed`, l'app reste en 1.0.0.
+5. Bonne signature : Rechercher → « 1.0.1 disponible », notes → Installer → l'installeur NSIS
+   (passif) installe dans `%LOCALAPPDATA%\PalaClips` ; en mode isolé, l'updater ne demande pas
+   de relance (`restart_after_install(false)` : la relance de l'installeur passe par
+   l'Explorateur et perdrait l'environnement isolé). Le script lance l'exe installé en mode
+   isolé : CDP lit « Version 1.0.1 », le journal du dossier de test montre `version="1.0.1"`.
+6. Ménage : app arrêtée, désinstallation silencieuse (`uninstall.exe /S`, données gardées),
+   dossier, raccourci et clé de désinstallation vérifiés absents, serveur arrêté, brouillon et
+   tag supprimés, empreintes des données de Palawi comparées (aucune différence attendue).
