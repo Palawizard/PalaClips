@@ -44,7 +44,7 @@ switch ($Step) {
         Assert-Admin
         $password = Read-Host -AsSecureString "Mot de passe du compte $Account"
         New-LocalUser -Name $Account -Password $password -FullName "PalaClips Test" `
-            -Description "Compte temporaire pour tester PalaClips, à supprimer" -AccountNeverExpires | Out-Null
+            -Description "Test PalaClips temporaire, à supprimer" -AccountNeverExpires | Out-Null
         Add-LocalGroupMember -SID $usersGroup -Member $Account
         Write-Host "Compte $Account créé (utilisateur standard)."
     }
