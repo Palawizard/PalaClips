@@ -150,6 +150,20 @@
   **et** propriété exclusive). Fermeture de Kombustor pendant une capture : 457 images répétées
   (≈ 15 s) sans alerte, quelques images arrivant encore pendant la sortie du mode exclusif ;
   retrait de l'alerte vérifié par les tests unitaires seulement.
+  Explication (2026-10-20) : la cible était l'écran principal, pas la fenêtre de Kombustor ;
+  aucun repli ni fermeture de fenêtre ne pouvait jouer. La règle exigeait 5 s consécutives
+  sans image, et l'image du démarrage puis quelques images éparses pendant la sortie du mode
+  exclusif remettaient le compteur à zéro. Règle révisée : moins de 5 images en 5 s **et**
+  exclusif (`D3DKMTCheckExclusiveOwnership` ou `QUNS_RUNNING_D3D_FULL_SCREEN`). Nouvel essai
+  Kombustor : alerte levée pendant le gel ; les deux signaux vrais les 49 s de Kombustor au
+  premier plan ; Kombustor exclusif repasse l'écran HDR en SDR, et sa fermeture rend le HDR,
+  ce qui relance la capture (#67) et retire l'alerte (`phase-7/exclusive-v2-2026-10-20_18-51.txt`).
+- **Redimensionnement d'une fenêtre capturée** (2026-10-20, `scripts/resize-leak.ps1`, mire
+  ffplay animée, 10 fois 1280×720 ↔ 800×450) : 10 changements de taille vus par le moteur,
+  working set privé 36,4 → 41,3 Mo avec un plateau dès le 6e (40,7 / 40,9 / 41,0 / 41,0 /
+  41,3) : pas de fuite par changement. Une fenêtre **immobile** ne renvoie plus d'image après
+  un redimensionnement : `windows-capture` recrée son frame pool à l'image suivante seulement,
+  la nouvelle taille arrive donc avec le premier changement de contenu.
 
 ## Audio (`wasapi` 0.26)
 
