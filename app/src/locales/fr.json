@@ -355,7 +355,8 @@
       "browse": "Parcourir un .exe…",
       "full": "{max}/{max} : retire une piste ou augmente le maximum pour en ajouter.",
       "noMatch": "Aucune appli ne correspond.",
-      "noOther": "Aucune autre appli ouverte."
+      "noOther": "Aucune autre appli ouverte.",
+      "pendingApply": "Ajoutée : enregistrée après « Appliquer »"
     },
     "calibration": {
       "title": "Calibrage de la synchro",

@@ -117,17 +117,23 @@ fn drop_reused_parents(processes: &mut [Process]) {
     }
 }
 
-pub fn root_pid(processes: &[Process], exe_name: &str) -> Option<u32> {
+pub fn root_pids(processes: &[Process], exe_name: &str) -> Vec<u32> {
     let same_exe: HashSet<u32> = processes
         .iter()
         .filter(|p| p.exe_name.eq_ignore_ascii_case(exe_name))
         .map(|p| p.pid)
         .collect();
-    processes
+    let mut roots: Vec<u32> = processes
         .iter()
         .filter(|p| same_exe.contains(&p.pid) && !same_exe.contains(&p.parent_pid))
         .map(|p| p.pid)
-        .min()
+        .collect();
+    roots.sort_unstable();
+    roots
+}
+
+pub fn root_pid(processes: &[Process], exe_name: &str) -> Option<u32> {
+    root_pids(processes, exe_name).first().copied()
 }
 
 pub fn process_tree(processes: &[Process], root: u32) -> HashSet<u32> {
@@ -521,7 +527,7 @@ pub fn app_sessions() -> Result<Vec<AppSession>> {
     Ok(sessions)
 }
 
-pub fn session_peak(root: u32) -> Result<f32> {
+pub fn session_peak(roots: &[u32]) -> Result<f32> {
     let loud: Vec<AudioSession> = audio_sessions(&[])?
         .into_iter()
         .filter(|session| session.peak > 0.0 && session.pid != std::process::id())
@@ -529,7 +535,11 @@ pub fn session_peak(root: u32) -> Result<f32> {
     if loud.is_empty() {
         return Ok(0.0);
     }
-    let tree = process_tree(&processes()?, root);
+    let processes = processes()?;
+    let tree: HashSet<u32> = roots
+        .iter()
+        .flat_map(|root| process_tree(&processes, *root))
+        .collect();
     Ok(loud
         .iter()
         .filter(|session| tree.contains(&session.pid))
@@ -575,6 +585,19 @@ mod tests {
         assert_eq!(root_pid(&list, "CHROME.EXE"), Some(1200));
         assert_eq!(root_pid(&list, "discord.exe"), Some(2100));
         assert_eq!(root_pid(&list, "vlc.exe"), None);
+    }
+
+    #[test]
+    fn every_independent_instance_of_an_exe_is_a_root() {
+        let list = vec![
+            process(900, 4, "explorer.exe"),
+            process(12900, 16772, "Vesktop.exe"),
+            process(12424, 16772, "Vesktop.exe"),
+            process(27692, 12424, "Vesktop.exe"),
+            process(32216, 12900, "Vesktop.exe"),
+        ];
+        assert_eq!(root_pids(&list, "vesktop.exe"), vec![12424, 12900]);
+        assert_eq!(root_pids(&list, "vlc.exe"), Vec::<u32>::new());
     }
 
     #[test]

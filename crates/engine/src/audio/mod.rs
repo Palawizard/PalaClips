@@ -1,6 +1,7 @@
 mod filler;
 mod meter;
 mod mixdown;
+mod sum;
 mod track;
 
 pub use filler::{FillStats, GapFiller};

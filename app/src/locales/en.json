@@ -355,7 +355,8 @@
       "browse": "Browse for an .exe…",
       "full": "{max}/{max}: remove a track or raise the maximum to add another.",
       "noMatch": "No app matches.",
-      "noOther": "No other open app."
+      "noOther": "No other open app.",
+      "pendingApply": "Added: recorded after “Apply”"
     },
     "calibration": {
       "title": "Sync calibration",

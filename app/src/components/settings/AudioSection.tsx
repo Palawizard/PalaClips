@@ -147,6 +147,7 @@ function TrackRow({
   row,
   index,
   meterIndex,
+  pending,
   color,
   processId,
   detail,
@@ -158,6 +159,7 @@ function TrackRow({
   row: Row;
   index: number | null;
   meterIndex: number | null;
+  pending: boolean;
   color: string;
   processId: number | null;
   detail: ReactNode;
@@ -191,10 +193,16 @@ function TrackRow({
         />
       </div>
       <div className="flex min-w-0 items-center gap-2">
-        <MeterBar color={color} fill={fill} hold={hold} className="h-2 flex-1" />
-        <span ref={peak} aria-hidden className="score w-14 shrink-0 text-right text-[14px] whitespace-nowrap text-ink-2">
-          −∞
-        </span>
+        {pending ? (
+          <span className="min-w-0 flex-1 truncate text-[12px] text-ink-2">{t("settings.audio.pendingApply")}</span>
+        ) : (
+          <>
+            <MeterBar color={color} fill={fill} hold={hold} className="h-2 flex-1" />
+            <span ref={peak} aria-hidden className="score w-14 shrink-0 text-right text-[14px] whitespace-nowrap text-ink-2">
+              −∞
+            </span>
+          </>
+        )}
       </div>
       <div className="row-span-2 flex items-center justify-end gap-3">
         <NumberField
@@ -561,6 +569,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
               row={row}
               index={indexes[position] ?? null}
               meterIndex={meterIndexOf(row.key)}
+              pending={config.armed && !calibrating && row.enabled && !running.includes(row.key)}
               isTaken={isTakenBy(row)}
               color={trackColor(row.kind, row.label, appOrder)}
               processId={row.exe ? (runningPid.get(row.exe.toLowerCase()) ?? null) : null}
