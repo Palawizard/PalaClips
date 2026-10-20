@@ -167,6 +167,14 @@ export function pickClipsDir(): Promise<string | null> {
   return invoke<string | null>("pick_clips_dir");
 }
 
+export function exportDiagnostic(): Promise<string | null> {
+  return invoke("export_diagnostic");
+}
+
+export function openDiagnostic(): Promise<void> {
+  return invoke("open_diagnostic");
+}
+
 export function openClipsDir(): Promise<void> {
   return invoke("open_clips_dir");
 }
