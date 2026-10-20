@@ -210,11 +210,14 @@
    texte propre à `javaw.exe` dans l'alerte `capture_exclusive_fullscreen` (paramètre `exe` +
    clé i18n dédiée).
 2. Phase 8 (`docs/PLAN.md`) : premier lancement guidé (APP-06, `/impeccable shape` puis
-   `onboard`), relecture de l'anglais, journaux + export de diagnostic, updater (clé de
-   signature générée par Palawi), workflow de release, README utilisateur, revue finale.
-3. Essai visuel de la ligne « Quand le GPU est à fond » (Réglages > Replay & qualité) dans l'app
-   isolée, à montrer à Palawi.
-4. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
+   `onboard`), relecture de l'anglais, journaux + export de diagnostic, updater, workflow de
+   release, README utilisateur, revue finale.
+   Clé de l'updater : Palawi la génère lui-même (`npx tauri signer generate -w
+   "$env:USERPROFILE\.tauri\palaclips.key"` dans `app/`) et pose les secrets GitHub
+   `TAURI_SIGNING_PRIVATE_KEY` (contenu du fichier, par `Get-Content -Raw … | gh secret set`) et
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Claude ne lit que `palaclips.key.pub` (clé publique,
+   dans `tauri.conf.json` `plugins.updater.pubkey`) ; jamais le fichier privé ni le mot de passe.
+3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
    joue) `-Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`.
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
@@ -276,10 +279,13 @@ Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défa
 - Sous GPU saturé en priorité « jeu », le rappel WGC attend le contexte D3D11 tenu par
   l'encodeur : ~15 images source/s (RESEARCH). Si un jour il faut mieux sans temps réel :
   piste = copier l'image WGC sans le verrou partagé (second contexte différé).
-- Changement de résolution : mémoire privée +30 Mo gardée après le retour (2026-10-20) ; à
-  surveiller.
-- Tests 👤 synchronisés : attendre le « prêt » de Palawi, puis lui dire quand la mesure
-  commence et finit (il fait autre chose en parallèle).
+- Redimensionnements d'une fenêtre capturée : pas de fuite (`scripts/resize-leak.ps1`,
+  plateau à ~41 Mo après 6 changements, #69). Une fenêtre immobile ne renvoie la nouvelle
+  taille qu'au prochain changement de contenu. La CLI écrit ses journaux `tracing` sur la
+  sortie **standard**.
+- Plein écran exclusif : « presque figé » (< 5 images en 5 s) + `D3DKMTCheckExclusiveOwnership`
+  ou `QUNS_RUNNING_D3D_FULL_SCREEN` (#69). Kombustor exclusif coupe le HDR de l'écran : la
+  capture redémarre à sa fermeture (#67).
 - `gpu-load --window` (CLI cachée) : charge GPU au premier plan (fenêtre 640×360) pour
   reproduire un jeu GPU-bound ; une charge sans fenêtre ne reproduit pas la famine (Windows
   favorise le processus au premier plan).
