@@ -28,6 +28,8 @@ pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
 const MAX_PREVIEWS: usize = 12;
 pub const AUTOSTART_ARG: &str = "--autostart";
+const LOG_FILES: usize = 7;
+const LOG_FILTER: &str = "warn,palaclips_engine=info,palaclips_app_lib=info";
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ActiveAlert {
@@ -576,7 +578,39 @@ impl EngineSlot {
     }
 }
 
+fn init_logging() {
+    let Ok(dir) = palaclips_engine::paths::log_dir() else {
+        return;
+    };
+    let Ok(appender) = tracing_appender::rolling::Builder::new()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("palaclips")
+        .filename_suffix("log")
+        .max_log_files(LOG_FILES)
+        .build(dir)
+    else {
+        return;
+    };
+    let filter =
+        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| LOG_FILTER.into());
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_ansi(false)
+        .with_writer(appender)
+        .try_init();
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        tracing::error!(%info, "panique");
+        default_hook(info);
+    }));
+}
+
 pub fn run() {
+    init_logging();
+    tracing::info!(
+        version = palaclips_engine::VERSION,
+        "démarrage de PalaClips"
+    );
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
@@ -660,6 +694,8 @@ pub fn run() {
             commands::stop_preview,
             commands::stop_previews,
             commands::set_performance_panel,
+            commands::export_diagnostic,
+            commands::open_diagnostic,
         ])
         .setup(|app| {
             match palaclips_engine::paths::data_dirs_to_migrate() {
@@ -700,6 +736,7 @@ pub fn run() {
             }
             let language = slot.language();
             app.manage(slot);
+            app.manage(commands::LastDiagnostic::default());
             if let Ok(thumbnails) = palaclips_engine::paths::thumbnail_dir() {
                 app.asset_protocol_scope()
                     .allow_directory(thumbnails, true)?;

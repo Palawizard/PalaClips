@@ -150,6 +150,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Alertes « GPU à fond » (limite les fps du jeu ou choisis la priorité à la capture) et « plein
   écran exclusif » (passe le jeu en plein écran fenêtré ou sans bordure).
 - CLI : `probe-gpu-priority`, `probe-fullscreen` ; scénario `scripts/app-crash.ps1`.
+- Journaux de l'app : un fichier par jour, 7 jours gardés, paniques comprises.
+- Réglages > Général : « Exporter un diagnostic », un zip avec les journaux, les réglages et
+  les infos système (Windows, processeur, carte graphique et pilote, écrans, encodeurs,
+  périphériques audio, fuseau horaire), sans le chemin du profil, le nom du PC, le nom du
+  compte ni le titre de la fenêtre capturée ; « Ouvrir le zip » pour voir ce qui part. CLI
+  `diagnostic --out`.
 
 ### Corrigé
 - Jeu qui prend tout le GPU : la capture ne prend plus des secondes de retard ; les images
