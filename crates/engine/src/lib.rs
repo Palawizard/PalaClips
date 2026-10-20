@@ -6,6 +6,8 @@ pub mod capture;
 pub mod clock;
 pub mod config;
 #[cfg(windows)]
+pub mod diagnostic;
+#[cfg(windows)]
 pub mod encode;
 #[cfg(windows)]
 pub mod engine;
