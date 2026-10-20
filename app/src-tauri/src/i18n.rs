@@ -102,11 +102,11 @@ mod tests {
         );
         assert_eq!(
             render(Language::Fr, &message),
-            "Clip non sauvegardé : aucun replay à sauvegarder : le replay n'est pas armé."
+            "Clip non sauvegardé : le replay n'est pas armé."
         );
         assert_eq!(
             render(Language::En, &message),
-            "Clip not saved: no replay to save: the replay isn't armed."
+            "Clip not saved: the replay isn't armed."
         );
     }
 
