@@ -1,0 +1,45 @@
+code 0
+2026-10-20T16:16:54.227901Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU appliquée priority=Game
+2026-10-20T16:16:54.228489Z  INFO palaclips_engine::capture::video: format de capture choisi hdr=true
+2026-10-20T16:16:54.569482Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=640 height=360 fps=30 tracks=0 duration_s=60 storage=Ram
+replay de 60 s (RAM) : Entrée = sauvegarder, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+2026-10-20T16:16:57.602483Z  INFO palaclips_engine::capture::video: mode HDR de l'écran changé screen="\\\\.\\DISPLAY2" hdr=false
+2026-10-20T16:16:57.602601Z ERROR palaclips_engine::engine: replay interrompu error=la source de capture n'est plus disponible : la capture vidéo s'est arrêtée
+alerte Warning encoder_reset : La capture s'est interrompue (la source de capture n'est plus disponible : la capture vidéo s'est arrêtée) : PalaClips la relance. Un enregistrement en cours continue dans un nouveau fichier.
+2026-10-20T16:16:57.673670Z  WARN palaclips_engine::engine: arrêt de la capture vidéo error=la capture a échoué : le mode HDR de l'écran a changé
+2026-10-20T16:16:57.673696Z  INFO palaclips_engine::engine: replay désarmé
+état : Idle
+2026-10-20T16:16:59.324631Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU appliquée priority=Game
+2026-10-20T16:16:59.324680Z  INFO palaclips_engine::capture::video: format de capture choisi hdr=false
+capture : source_primary_screen, 640x360 à 30 i/s, pistes 
+2026-10-20T16:16:59.746735Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=640 height=360 fps=30 tracks=0 duration_s=60 storage=Ram
+2026-10-20T16:16:59.746783Z  INFO palaclips_engine::engine: capture relancée après une interruption delay=1s
+état : ReplayArmed
+[     7 s] tampon 2.0 s, 0 Mo ; mémoire privée du processus 184 Mo
+[    12 s] tampon 7.0 s, 1 Mo ; mémoire privée du processus 116 Mo
+[    17 s] tampon 12.0 s, 2 Mo ; mémoire privée du processus 117 Mo
+2026-10-20T16:17:11.902088Z  INFO palaclips_engine::capture::video: mode HDR de l'écran changé screen="\\\\.\\DISPLAY2" hdr=true
+2026-10-20T16:17:11.902162Z ERROR palaclips_engine::engine: replay interrompu error=la source de capture n'est plus disponible : la capture vidéo s'est arrêtée
+alerte Warning encoder_reset : La capture s'est interrompue (la source de capture n'est plus disponible : la capture vidéo s'est arrêtée) : PalaClips la relance. Un enregistrement en cours continue dans un nouveau fichier.
+2026-10-20T16:17:11.996346Z  WARN palaclips_engine::engine: arrêt de la capture vidéo error=la capture a échoué : le mode HDR de l'écran a changé
+2026-10-20T16:17:11.996369Z  INFO palaclips_engine::engine: replay désarmé
+état : Idle
+2026-10-20T16:17:13.678041Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU appliquée priority=Game
+2026-10-20T16:17:13.678091Z  INFO palaclips_engine::capture::video: format de capture choisi hdr=true
+capture : source_primary_screen, 640x360 à 30 i/s, pistes 
+2026-10-20T16:17:14.051957Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=640 height=360 fps=30 tracks=0 duration_s=60 storage=Ram
+état : ReplayArmed
+2026-10-20T16:17:14.051999Z  INFO palaclips_engine::engine: capture relancée après une interruption delay=1s
+[    24 s] tampon 5.0 s, 1 Mo ; mémoire privée du processus 150 Mo
+[    29 s] tampon 10.0 s, 1 Mo ; mémoire privée du processus 151 Mo
+2026-10-20T16:17:24.333651Z  WARN ffmpeg: [swscaler @ 0000019ec9509f80] deprecated pixel format used, make sure you did set range correctly
+2026-10-20T16:17:24.335216Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\hdr\Bureau\Bureau_2026-10-20_18-17-24_replay.mp4 duration_s=10.2999999 latency_ms=4
+[    29 s] clip 1 : 10.300 s, prêt en 4 ms ; mémoire privée 149.8 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\hdr\Bureau\Bureau_2026-10-20_18-17-24_replay.mp4
+2026-10-20T16:17:27.344299Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=399 captured=736 duplicated=0 late=0 max_lateness_ms=2.7486
+2026-10-20T16:17:27.375355Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 4 ms, moy 4 ms, max 4 ms
+
+Bureau_2026-10-20_18-17-24_replay.mp4
+video,640,360,10.300000
+images figées >= 2 s :
+erreurs de décodage : 0
