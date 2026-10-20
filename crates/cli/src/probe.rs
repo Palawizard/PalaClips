@@ -122,6 +122,33 @@ pub fn probe_wgc(target: &CaptureTarget, seconds: u64, min_interval_ms: u64) -> 
     Ok(())
 }
 
+pub fn probe_fullscreen(seconds: u64) -> Result<()> {
+    use windows::Win32::UI::Shell::SHQueryUserNotificationState;
+    let states = [
+        "?",
+        "NOT_PRESENT",
+        "BUSY",
+        "RUNNING_D3D_FULL_SCREEN",
+        "PRESENTATION_MODE",
+        "ACCEPTS_NOTIFICATIONS",
+        "QUIET_TIME",
+        "APP",
+    ];
+    for second in 1..=seconds {
+        // SAFETY: SHQueryUserNotificationState has no preconditions.
+        let state = unsafe { SHQueryUserNotificationState() }.map_or(0, |state| state.0);
+        let foreground = palaclips_engine::sources::foreground_window()
+            .map_or_else(|| "?".to_owned(), |window| window.exe_name);
+        println!(
+            "{second:>4} s  exclusif (D3DKMT) {:<5}  notifications {}  premier plan {foreground}",
+            palaclips_engine::capture::exclusive_fullscreen(),
+            states.get(state as usize).unwrap_or(&"?")
+        );
+        std::thread::sleep(Duration::from_secs(1));
+    }
+    Ok(())
+}
+
 fn dwm_timing() -> Result<windows::Win32::Graphics::Dwm::DWM_TIMING_INFO> {
     let mut timing = windows::Win32::Graphics::Dwm::DWM_TIMING_INFO {
         cbSize: size_of::<windows::Win32::Graphics::Dwm::DWM_TIMING_INFO>() as u32,
