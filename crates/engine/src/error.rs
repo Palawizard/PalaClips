@@ -42,7 +42,7 @@ pub enum EngineError {
     #[error("ta carte graphique ne sait pas encoder en {} : choisis un autre codec", .0.label())]
     CodecUnavailable(VideoCodec),
 
-    #[error("la capture audio par application nécessite Windows 10 build 20348 ou plus récent")]
+    #[error("la capture audio par application nécessite Windows 11 (build 20348 ou plus récent)")]
     UnsupportedWindowsBuild,
 
     #[error("cible de capture introuvable : {0}")]
