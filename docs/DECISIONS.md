@@ -23,7 +23,8 @@
 **Statut :** acceptée
 - Décision : `AudioClient::new_application_loopback_client(pid, include_tree = true)` sur le
   PID **parent** ; loopback classique pour le mix complet ; capture standard pour le micro.
-- Conséquences : Windows 10 build 20348 minimum. Le mode exclusion ne retire qu'un arbre de
+- Conséquences : build 20348 minimum, soit Windows 11 ou Windows Server 2022 (Windows 10
+  grand public s'arrête au build 19045). Le mode exclusion ne retire qu'un arbre de
   processus → pas de piste « tout le reste » propre, d'où la piste 1 = mix complet.
 
 ## ADR-004 — Encodage et mux via FFmpeg (`rsmpeg` 0.18) + build BtbN LGPL partagée

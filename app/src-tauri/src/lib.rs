@@ -738,6 +738,14 @@ pub fn run() {
             if let Some(problem) = loaded.problem {
                 slot.publish(app.handle(), shell_alert(problem));
             }
+            if palaclips_engine::diagnostic::windows_too_old(
+                palaclips_engine::diagnostic::windows_build(),
+            ) {
+                slot.publish(
+                    app.handle(),
+                    shell_alert(palaclips_engine::EngineError::UnsupportedWindowsBuild.localized()),
+                );
+            }
             let bindings = hotkeys::validate(&slot.hotkeys())
                 .or_else(|_| hotkeys::validate(&Hotkeys::default()))
                 .unwrap_or_default();

@@ -318,3 +318,25 @@ Automatisé, sans Palawi : `pwsh scripts/update-test.ps1` (environ 5 min ; il fa
 6. Ménage : app arrêtée, désinstallation silencieuse (`uninstall.exe /S`, données gardées),
    dossier, raccourci et clé de désinstallation vérifiés absents, serveur arrêté, brouillon et
    tag supprimés, empreintes des données de Palawi comparées (aucune différence attendue).
+
+## T10 — Installateur dans une VM Windows 11 sans GPU (phase 8)
+
+Ce qu'un PC neuf révèle et que la machine de dev cache : DLL manquantes, WebView2, droits,
+SmartScreen, désinstallation. La VM n'a pas d'encodeur matériel : PalaClips doit le dire
+clairement, sans planter. Installeur : celui du brouillon de release (`PalaClips_x.y.z_x64-setup.exe`),
+téléchargé **dans la VM** par le navigateur, pour avoir la vraie marque « venu d'Internet ».
+
+| # | À faire dans la VM | Attendu |
+|---|---|---|
+| 1 | Lancer l'installeur téléchargé | SmartScreen « Windows a protégé votre ordinateur » → *Informations complémentaires* → *Exécuter quand même* ; aucune demande de droits admin ; page de licence ; installation dans `%LOCALAPPDATA%\PalaClips` |
+| 2 | Cocher « Lancer PalaClips » à la fin | La fenêtre s'ouvre (pas d'erreur de DLL manquante, pas de fenêtre blanche) sur le premier lancement |
+| 3 | Lire l'étape Vérifications | Windows : build affiché, OK ; Encodeur vidéo : avertissement « Aucun encodeur matériel n'a fonctionné… » et « Exporter un diagnostic » ; WebView2 : version ; Dossier des clips : OK ; « Continuer » grisé |
+| 4 | Exporter un diagnostic, puis « Ouvrir le zip » | Zip créé et ouvert ; `system.txt` liste l'adaptateur de la VM et les encodeurs refusés |
+| 5 | « Passer la configuration » | Accueil : alerte « aucun encodeur matériel… » lisible, pas de plantage ; icône dans la zone de notification ; Réglages → Général → Mises à jour affiche la version |
+| 6 | Fermer la fenêtre puis zone de notification → Quitter | Plus aucun processus `palaclips-app` dans le Gestionnaire des tâches |
+| 7 | Paramètres → Applications → PalaClips → Désinstaller, case « supprimer aussi les réglages » **décochée** | `%LOCALAPPDATA%\PalaClips` et le raccourci du menu Démarrer disparaissent ; `%APPDATA%\com.palawi.palaclips` reste ; `Vidéos\PalaClips` reste |
+| 8 | Réinstaller, puis désinstaller avec la case **cochée** | `%APPDATA%\com.palawi.palaclips` et `%LOCALAPPDATA%\com.palawi.palaclips` supprimés ; `Vidéos\PalaClips` reste |
+
+À me rapporter : pour chaque ligne, OK ou ce qui diffère (texte exact des messages) ; une
+capture de l'étape Vérifications et de l'accueil avec l'alerte ; le zip de diagnostic de
+l'étape 4 ; la version de Windows de la VM (`winver`).

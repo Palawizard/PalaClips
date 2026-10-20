@@ -323,6 +323,10 @@ fn gigabytes(bytes: u64) -> f64 {
 
 const WINDOWS_VERSION_KEY: PCWSTR = w!(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
 
+pub fn windows_too_old(build: Option<u32>) -> bool {
+    build.is_some_and(|build| build < MIN_WINDOWS_BUILD)
+}
+
 pub fn windows_build() -> Option<u32> {
     registry_string(WINDOWS_VERSION_KEY, w!("CurrentBuild"))?
         .parse()
@@ -458,6 +462,14 @@ mod tests {
             ),
             r"%USERPROFILE%\Videos et %USERPROFILE%/x, RTX 4070 SUPER sur [pc]."
         );
+    }
+
+    #[test]
+    fn only_a_known_build_below_20348_is_too_old() {
+        assert!(windows_too_old(Some(19045)));
+        assert!(!windows_too_old(Some(20348)));
+        assert!(!windows_too_old(Some(26200)));
+        assert!(!windows_too_old(None));
     }
 
     #[test]
