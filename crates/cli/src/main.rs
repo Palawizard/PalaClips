@@ -243,6 +243,14 @@ enum Command {
     },
     #[cfg(windows)]
     #[command(
+        about = "Écrit le zip de diagnostic (journaux, réglages anonymisés, infos système) et liste son contenu"
+    )]
+    Diagnostic {
+        #[arg(long)]
+        out: std::path::PathBuf,
+    },
+    #[cfg(windows)]
+    #[command(
         about = "Chaque seconde : plein écran exclusif (D3DKMTCheckExclusiveOwnership), état des notifications et appli au premier plan"
     )]
     ProbeFullscreen {
@@ -526,6 +534,14 @@ fn main() -> Result<()> {
         Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
         #[cfg(windows)]
         Command::ProbeFullscreen { seconds } => probe::probe_fullscreen(seconds)?,
+        #[cfg(windows)]
+        Command::Diagnostic { out } => {
+            let entries = palaclips_engine::diagnostic::entries(&[])?;
+            palaclips_engine::diagnostic::write_archive(&out, &entries)?;
+            for entry in &entries {
+                println!("{} ({} octets)", entry.name, entry.contents.len());
+            }
+        }
         #[cfg(windows)]
         Command::ProbeAudio {
             mic,
