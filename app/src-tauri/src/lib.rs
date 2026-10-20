@@ -12,7 +12,8 @@ use std::sync::{Arc, Mutex};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, track_descriptors};
 use palaclips_engine::events::{
-    EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind, TrackState,
+    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind,
+    TrackState,
 };
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
@@ -91,6 +92,7 @@ impl AppStatus {
                     });
                 }
                 if *state == EngineState::Idle {
+                    self.clear_capture_alerts();
                     self.buffered_secs = 0.0;
                     self.buffer_bytes = 0;
                     self.capture = None;
@@ -107,6 +109,7 @@ impl AppStatus {
                 fps,
                 tracks,
             } => {
+                self.clear_capture_alerts();
                 self.capture = Some(CaptureInfo {
                     source: source.clone(),
                     width: *width,
@@ -161,8 +164,16 @@ impl AppStatus {
                     message: message.clone(),
                 });
             }
+            EngineEvent::AlertCleared { code } => {
+                self.alerts.retain(|alert| alert.text.code != *code);
+            }
             _ => {}
         }
+    }
+
+    fn clear_capture_alerts(&mut self) {
+        self.alerts
+            .retain(|alert| !CAPTURE_ALERTS.contains(&alert.text.code));
     }
 }
 
@@ -1032,6 +1043,42 @@ mod tests {
         });
         assert_eq!(status.alerts.len(), 1);
         assert_eq!(status.alerts[0].text.code, "hotkey_unavailable");
+    }
+
+    fn rate_limited_alert() -> EngineEvent {
+        EngineEvent::Alert {
+            severity: Severity::Warning,
+            text: Localized::new("capture_source_rate_limited")
+                .with("rate", 165)
+                .with("fps", 240),
+            message: "Windows ne compose ton écran qu'à 165 Hz.".into(),
+        }
+    }
+
+    #[test]
+    fn a_restarted_capture_withdraws_the_rate_alert_of_the_previous_one() {
+        let mut status = AppStatus::default();
+        status.apply(&rate_limited_alert());
+        status.apply(&hotkey_unavailable_alert("Alt+F10"));
+        status.apply(&EngineEvent::CaptureStarted {
+            source: Localized::new("source_primary_screen"),
+            width: 2560,
+            height: 1440,
+            fps: 240,
+            tracks: Vec::new(),
+        });
+        assert_eq!(status.alerts.len(), 1);
+        assert_eq!(status.alerts[0].text.code, "hotkey_unavailable");
+    }
+
+    #[test]
+    fn a_cleared_alert_leaves_the_list() {
+        let mut status = AppStatus::default();
+        status.apply(&rate_limited_alert());
+        status.apply(&EngineEvent::AlertCleared {
+            code: "capture_source_rate_limited",
+        });
+        assert!(status.alerts.is_empty());
     }
 
     #[test]

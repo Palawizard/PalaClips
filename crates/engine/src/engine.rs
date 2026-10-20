@@ -118,6 +118,7 @@ impl std::fmt::Debug for EngineHandle {
 impl Engine {
     pub fn start(config: EngineConfig) -> Result<Self> {
         config.validate()?;
+        crate::capture::raise_gpu_priority();
         let (commands, command_rx) = bounded(COMMAND_QUEUE);
         let (event_tx, events) = bounded(EVENT_QUEUE);
         let own_commands = commands.clone();

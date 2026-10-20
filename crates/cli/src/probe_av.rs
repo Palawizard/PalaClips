@@ -109,7 +109,7 @@ pub fn play_tone(
     Ok(())
 }
 
-fn create_window(
+pub(crate) fn create_window(
     ex_style: WINDOW_EX_STYLE,
     style: WINDOW_STYLE,
     rect: Option<(i32, i32, i32, i32)>,
@@ -150,7 +150,7 @@ fn create_window(
     }
 }
 
-fn pump_messages() {
+pub(crate) fn pump_messages() {
     let mut message = MSG::default();
     // SAFETY: standard message pump on the thread that owns the window.
     unsafe {

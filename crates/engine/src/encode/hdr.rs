@@ -55,8 +55,8 @@ pub struct HdrToSdr {
 impl HdrToSdr {
     pub fn new(device: &ID3D11Device, sdr_white_scrgb: f32) -> Result<Self> {
         let source = shader_source(sdr_white_scrgb);
-        let vertex = compile(&source, s!("fullscreen"), s!("vs_5_0"))?;
-        let pixel = compile(&source, s!("scrgb_to_sdr"), s!("ps_5_0"))?;
+        let vertex = compile_shader(&source, s!("fullscreen"), s!("vs_5_0"))?;
+        let pixel = compile_shader(&source, s!("scrgb_to_sdr"), s!("ps_5_0"))?;
         let mut vertex_shader = None;
         let mut pixel_shader = None;
         // SAFETY: the bytecode slices come from successful D3DCompile blobs alive for the calls.
@@ -125,7 +125,7 @@ fn shader_source(sdr_white_scrgb: f32) -> String {
         .replace("ROLL_OFF_START", &format!("{ROLL_OFF_START:.4}"))
 }
 
-fn compile(source: &str, entry: PCSTR, target: PCSTR) -> Result<ID3DBlob> {
+pub fn compile_shader(source: &str, entry: PCSTR, target: PCSTR) -> Result<ID3DBlob> {
     let mut code = None;
     let mut errors = None;
     // SAFETY: `source` outlives the call and its exact length is passed; out-pointers are valid.
@@ -133,7 +133,7 @@ fn compile(source: &str, entry: PCSTR, target: PCSTR) -> Result<ID3DBlob> {
         D3DCompile(
             source.as_ptr().cast(),
             source.len(),
-            s!("scrgb_to_sdr.hlsl"),
+            s!("palaclips.hlsl"),
             None,
             None,
             entry,
@@ -149,12 +149,12 @@ fn compile(source: &str, entry: PCSTR, target: PCSTR) -> Result<ID3DBlob> {
             .as_ref()
             .map(|blob| String::from_utf8_lossy(blob_bytes(blob)).into_owned())
             .unwrap_or_else(|| error.message());
-        return Err(EngineError::Encoder(format!("shader HDR → SDR : {detail}")));
+        return Err(EngineError::Encoder(format!("shader : {detail}")));
     }
     code.ok_or_else(missing_shader)
 }
 
-fn blob_bytes(blob: &ID3DBlob) -> &[u8] {
+pub fn blob_bytes(blob: &ID3DBlob) -> &[u8] {
     // SAFETY: a D3D blob owns GetBufferSize() bytes at GetBufferPointer() for its whole lifetime.
     unsafe { std::slice::from_raw_parts(blob.GetBufferPointer().cast(), blob.GetBufferSize()) }
 }
@@ -170,8 +170,8 @@ mod tests {
     #[test]
     fn hdr_to_sdr_shaders_compile() -> Result<()> {
         let source = shader_source(3.5);
-        compile(&source, s!("fullscreen"), s!("vs_5_0"))?;
-        compile(&source, s!("scrgb_to_sdr"), s!("ps_5_0"))?;
+        compile_shader(&source, s!("fullscreen"), s!("vs_5_0"))?;
+        compile_shader(&source, s!("scrgb_to_sdr"), s!("ps_5_0"))?;
         Ok(())
     }
 }

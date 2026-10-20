@@ -344,9 +344,13 @@ des tâches), maximum depuis l'armement ; `engine_bytes` = working set privé �
 l'armement et sur la dernière minute ; replay désarmé : CPU et RAM seulement, `capture: null`.
 `replay_stats`, `recording_stats { elapsed_secs, bytes }` (chaque seconde pendant un
 enregistrement ; chaque fichier terminé arrive en `clip_saved`), `alert { severity, code, params, message }` (`code` + `params` pour le texte
-affiché, `message` en français pour les journaux et la CLI).
+affiché, `message` en français pour les journaux et la CLI), `alert_cleared { code }` (la
+condition d'une alerte a disparu : l'app la retire de `AppStatus.alerts`). Alertes de capture
+(`events::CAPTURE_ALERTS` : `capture_source_rate_limited`, `capture_gpu_saturated`,
+`capture_exclusive_fullscreen`) : retirées par `alert_cleared` après 5 s de retour à la normale,
+et à chaque démarrage ou arrêt de capture.
 
-Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `app_track_silent`,
+Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `capture_gpu_saturated`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
 `hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `recording_failed { reason }`
 (écriture impossible ou disque plein : l'enregistrement s'arrête, les fichiers déjà écrits
@@ -366,7 +370,9 @@ après un redémarrage du pilote graphique ; le moteur désarme puis réarme seu
 trois échecs, `replay_stopped`, ADR-031) ;
 `capture_source_rate_limited { rate, fps }` (cadence de composition DWM sous le fps demandé
 pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo ; seules comptent les secondes
-où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l'alerte, ADR-018) ; `audio_device_changed
+où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l'alerte, ADR-018) ;
+`capture_gpu_saturated` (au moins 10 % des images de chaque seconde encodées plus d'une période
+en retard pendant 5 s : le jeu prend tout le GPU ; conseille de limiter ses fps) ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
 reason }` ; `hotkey_unavailable { keys }`.
 

@@ -6,7 +6,7 @@ use std::time::Duration;
 use crossbeam_channel::{Receiver, SendTimeoutError, Sender, bounded};
 use parking_lot::Mutex;
 use rsmpeg::avcodec::{AVCodecParameters, AVPacket};
-use rsmpeg::avutil::AVRational;
+use rsmpeg::avutil::{AVFrame, AVRational};
 use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11Multithread, ID3D11Texture2D};
 use windows::Win32::System::Com::CoIncrementMTAUsage;
 use windows::core::Interface;
@@ -19,8 +19,8 @@ use windows_capture::settings::{
 };
 
 use super::display::display_color;
-use super::pacer::CfrClock;
-use super::rate::{RateWatch, composition_rate};
+use super::pacer::{CfrClock, emit_due};
+use super::rate::{RateWatch, SaturationWatch, composition_rate};
 use super::targets::{ResolvedTarget, resolve_target};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, VideoSettings};
@@ -51,6 +51,7 @@ pub struct VideoCaptureStats {
     pub frames: u64,
     pub captured: u64,
     pub duplicated: u64,
+    pub late: u64,
     pub resolution_changes: u64,
     pub max_lateness: Hns,
 }
@@ -402,6 +403,7 @@ fn run_encoder(
     let device = device.0;
     let output = encoder.size();
     let mut converter: Option<GpuConverter> = None;
+    let mut previous: Option<AVFrame> = None;
     let mut stats = VideoCaptureStats::default();
     let mut last_count = 0;
     let mut send = |mut packet: AVPacket| loop {
@@ -422,8 +424,10 @@ fn run_encoder(
     let mut clock = CfrClock::new(Hns::now(), fps);
     let mut origin = Some(origin);
     let mut rate_watch = RateWatch::new(fps);
+    let mut saturation_watch = SaturationWatch::default();
     let mut next_rate_check = Hns::now() + RATE_CHECK;
     let mut frames_at_check = 0;
+    let mut emitted_at_check = (0, 0);
     while !shared.stop.load(Ordering::Relaxed) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
@@ -449,6 +453,13 @@ fn run_encoder(
             {
                 alerts.try_send(alert).ok();
             }
+            let (emitted, late) = emitted_at_check;
+            if let Some(alert) =
+                saturation_watch.observe(now, stats.frames - emitted, stats.late - late)
+            {
+                alerts.try_send(alert).ok();
+            }
+            emitted_at_check = (stats.frames, stats.late);
         }
         let due = clock.take_due(now);
         if due.is_empty() {
@@ -480,33 +491,42 @@ fn run_encoder(
         let Some(converter) = converter.as_ref() else {
             continue;
         };
-        let source = match hdr.as_mut() {
-            Some(hdr) => hdr.convert(&latest.texture.0)?,
-            None => latest.texture.0.clone(),
-        };
         let frame_period = Hns(HNS_PER_SECOND / i64::from(clock.fps()));
-        let mut late = 0;
-        for index in due {
+        let has_new_image = latest.count != last_count;
+        emit_due(due, |index, newest| {
             if now - clock.tick_time(index) > frame_period {
-                late += 1;
+                stats.late += 1;
             }
-            let frame = encoder.acquire_frame()?;
-            let (texture, slice) = frame_texture(&frame)
-                .ok_or_else(|| EngineError::Encoder("image matérielle sans texture".into()))?;
-            converter.convert(&source, texture, slice)?;
+            let frame = match previous.as_ref() {
+                Some(previous) if !(newest && has_new_image) => {
+                    stats.duplicated += 1;
+                    previous.clone()
+                }
+                _ => {
+                    let source = match hdr.as_mut() {
+                        Some(hdr) => hdr.convert(&latest.texture.0)?,
+                        None => latest.texture.0.clone(),
+                    };
+                    let frame = encoder.acquire_frame()?;
+                    let (texture, slice) = frame_texture(&frame).ok_or_else(|| {
+                        EngineError::Encoder("image matérielle sans texture".into())
+                    })?;
+                    converter.convert(&source, texture, slice)?;
+                    previous = Some(frame.clone());
+                    frame
+                }
+            };
             encoder.encode(frame, index, &mut send)?;
             stats.frames += 1;
-            if latest.count == last_count {
-                stats.duplicated += 1;
-            }
-            last_count = latest.count;
-        }
+            Ok::<_, EngineError>(())
+        })?;
+        last_count = latest.count;
         stats.captured = latest.count;
         {
             let mut counters = shared.counters.lock();
             counters.frames = stats.frames;
             counters.repeated = stats.duplicated;
-            counters.late += late;
+            counters.late = stats.late;
             counters.max_lateness = stats.max_lateness;
         }
         if let Some(origin) = origin.take() {
@@ -520,6 +540,7 @@ fn run_encoder(
         frames = stats.frames,
         captured = stats.captured,
         duplicated = stats.duplicated,
+        late = stats.late,
         max_lateness_ms = stats.max_lateness.0 as f64 / 10_000.0,
         "capture vidéo arrêtée"
     );
