@@ -10,10 +10,10 @@ const ITEMS: { view: View; icon: LucideIcon }[] = [
   { view: "settings", icon: SlidersHorizontal },
 ];
 
-function Mark() {
+export function Mark({ className = "mb-5 size-8" }: { className?: string }) {
   const t = useT();
   return (
-    <svg viewBox="200 200 624 624" className="mb-5 size-8 text-ink" role="img" aria-label={t("app.name")}>
+    <svg viewBox="200 200 624 624" className={`${className} text-ink`} role="img" aria-label={t("app.name")}>
       <circle cx="512" cy="512" r="276" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="56" />
       <path d="M512 236 A276 276 0 1 1 268 386" fill="none" stroke="currentColor" strokeWidth="56" strokeLinecap="round" />
       <path

@@ -32,7 +32,7 @@ function combination(event: KeyboardEvent): string {
   return parts.join("+");
 }
 
-function Keys({ keys }: { keys: string }) {
+export function Keys({ keys }: { keys: string }) {
   return (
     <span className="flex items-center gap-1">
       {keys.split("+").map((part) => (
@@ -109,7 +109,7 @@ function HotkeyField({
   );
 }
 
-export function HotkeysSection() {
+export function HotkeysSection({ only }: { only?: HotkeyAction }) {
   const t = useT();
   const [view, setView] = useState<HotkeysView | null>(null);
   const [listening, setListening] = useState<HotkeyAction | null>(null);
@@ -150,7 +150,7 @@ export function HotkeysSection() {
 
   return (
     <>
-      {ACTIONS.map((action) => {
+      {(only ? [only] : ACTIONS).map((action) => {
         const unavailable = view.unavailable.includes(action);
         const label = t(`messages.action_${action}`);
         return (
@@ -181,7 +181,7 @@ export function HotkeysSection() {
         <p className={`font-semibold ${conflicts ? "text-warn" : "text-ink"}`}>
           {conflicts ? t("settings.hotkeys.conflict") : t("settings.hotkeys.noConflict")}
         </p>
-        <p className="mt-1">{t("settings.hotkeys.readers")}</p>
+        {!only && <p className="mt-1">{t("settings.hotkeys.readers")}</p>}
       </div>
     </>
   );
