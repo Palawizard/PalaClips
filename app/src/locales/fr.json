@@ -363,7 +363,8 @@
       "browse": "Parcourir un .exe…",
       "full": "{max}/{max} : retire une piste ou augmente le maximum pour en ajouter.",
       "noMatch": "Aucune appli ne correspond.",
-      "noOther": "Aucune autre appli ouverte."
+      "noOther": "Aucune autre appli ouverte.",
+      "pendingApply": "Ajoutée : enregistrée après « Appliquer »"
     },
     "calibration": {
       "title": "Calibrage de la synchro",
@@ -594,7 +595,7 @@
       "pending": "Vérification…",
       "windows": "Windows",
       "windowsOk": "Build {build}",
-      "windowsOld": "Build {build} : la capture du son par appli demande le build 20348 ou plus récent. Mets Windows à jour.",
+      "windowsOld": "Build {build} : la capture du son par appli demande Windows 11 (build 20348 ou plus récent).",
       "windowsUnknown": "Version de Windows introuvable.",
       "encoder": "Encodeur vidéo",
       "encoderOk": "{codecs} sur la carte graphique",

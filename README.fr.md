@@ -31,8 +31,9 @@ montage dans DaVinci Resolve.
 
 ## Installation
 
-1. Il faut Windows 11 (build 20348 ou plus récent) et une carte graphique avec un encodeur
-   vidéo matériel (NVIDIA, AMD ou Intel).
+1. Il faut Windows 11 (Windows 10 n'est pas pris en charge : la capture du son par appli
+   demande le build 20348) et une carte graphique avec un encodeur vidéo matériel (NVIDIA,
+   AMD ou Intel).
 2. Télécharge `PalaClips_x.y.z_x64-setup.exe` dans les
    [Releases](https://github.com/Palawizard/PalaClips/releases) et lance-le. L'installation se
    fait pour ton compte, sans droits administrateur. Si WebView2 manque (rare sur Windows 11),

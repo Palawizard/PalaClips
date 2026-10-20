@@ -31,8 +31,8 @@ DaVinci Resolve.
 
 ## Installation
 
-1. You need Windows 11 (build 20348 or later) and a graphics card with a hardware video
-   encoder (NVIDIA, AMD or Intel).
+1. You need Windows 11 (Windows 10 isn't supported: per-app audio capture needs build 20348)
+   and a graphics card with a hardware video encoder (NVIDIA, AMD or Intel).
 2. Download `PalaClips_x.y.z_x64-setup.exe` from the
    [Releases](https://github.com/Palawizard/PalaClips/releases) and run it. It installs for
    your account, without administrator rights. If WebView2 is missing (rare on Windows 11), the
