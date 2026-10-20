@@ -513,3 +513,19 @@ phase 8).
   renommé (révision du 2026-10-19 : test avec un faux programme installé, puis vérification sur
   une copie de la vraie installation, exe et entrée de désinstallation intacts). Vérifiée par tests et sur une copie des données réelles de Palawi
   (`scripts/migration-check.ps1` : chaque fichier retrouvé identique en SHA-256).
+
+## ADR-033 — Capture sous GPU saturé : priorité temps réel et file bornée (phase 7)
+**Statut :** acceptée (2026-10-20, défaut 1 de la séance T7).
+- Contexte : un jeu au premier plan qui prend tout le GPU passe avant PalaClips ; la
+  conversion d'image attendait 30–45 ms par image et l'encodeur accumulait jusqu'à 14 s de
+  retard (vidéo qui saute, A/V décalé). Mesures dans `RESEARCH.md` § Capture vidéo.
+- Décision : (1) le processus demande la classe d'ordonnancement GPU `REALTIME`
+  (`D3DKMTSetProcessSchedulingPriorityClass`) au démarrage du moteur ; refusée, elle est
+  seulement journalisée. Seul réglage efficace mesuré ; accordé sans admin avec HAGS.
+  (2) File vidéo bornée : à chaque réveil, seule l'échéance la plus récente reçoit une image
+  convertie, les échéances manquées répètent la dernière image encodée. Le retard ne dépasse
+  plus la durée d'une conversion et l'image encodée a moins d'une période d'écart avec son
+  instant. (3) Alerte `capture_gpu_saturated` quand 10 % des images restent en retard pendant
+  5 s, retirée après 5 s à l'heure.
+- Conséquence : notre travail GPU (conversion d'image, ~1 ms par image) passe avant celui du
+  jeu ; coût sur les fps du jeu mesuré par PERF-03 GPU-bound.
