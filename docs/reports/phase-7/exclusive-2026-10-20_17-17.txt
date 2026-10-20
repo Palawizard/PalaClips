@@ -1,0 +1,5 @@
+
+2026-10-20T15:18:04.129692Z  WARN palaclips_engine::capture::rate: capture figée : plein écran exclusif
+2026-10-20T15:18:58.029849Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=2 duplicated=1799 late=0 max_lateness_ms=1.0571
+
+60 s : exclusif (D3DKMT) true   notifications RUNNING_D3D_FULL_SCREEN  premier plan MSI-Kombustor-x64.exe

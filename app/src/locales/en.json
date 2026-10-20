@@ -291,7 +291,13 @@
       "native": "Native",
       "heightFree": "Output height, custom value",
       "keyframes": "Keyframe interval",
-      "keyframesHelp": "Shorter: the clip starts closer to the moment you want."
+      "keyframesHelp": "Shorter: the clip starts closer to the moment you want.",
+      "gpuPriority": "When the GPU is maxed out",
+      "gpuPriorityHelp": "Capture: smooth video, but the game loses about 7% fps.",
+      "gpuPriorities": {
+        "game": "Game first",
+        "capture": "Capture first"
+      }
     },
     "capture": {
       "primary": "primary",
@@ -432,7 +438,7 @@
     "capture_fallback_monitor": "The “{title}” window can't be captured: PalaClips captures its screen instead.",
     "capture_source_rate_limited": "Windows only composes your screen at {rate} Hz while you record at {fps} fps: the video will repeat frames. Turn off G-Sync for this screen, or set your other screens to at least {fps} Hz.",
     "capture_exclusive_fullscreen": "The game runs in exclusive fullscreen: Windows no longer passes its picture on and the video stays frozen. Switch the game to windowed fullscreen (or borderless) in its display settings.",
-    "capture_gpu_saturated":"Your GPU is maxed out: PalaClips can't get its turn and the video stutters. Cap the game's fps (or lower its graphics settings) to leave some headroom.",
+    "capture_gpu_saturated": "Your GPU is maxed out: PalaClips can't get its turn and the video stutters. Cap the game's fps to leave some headroom, or pick “Capture first” in Settings > Replay & quality.",
     "audio_device_changed": "“{track}” track: capture now follows “{device}”.",
     "app_track_silent": "“{track}” track: {app} plays sound but the track stays silent. Check that the app doesn't use an output in exclusive mode, then restart it.",
     "audio_device_unavailable": "“{track}” track: {reason}",

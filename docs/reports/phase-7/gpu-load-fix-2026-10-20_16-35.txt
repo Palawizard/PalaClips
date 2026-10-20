@@ -1,0 +1,13 @@
+--- capture-video --no-gpu-priority
+
+2026-10-20T14:36:21.472098Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1200 captured=530 duplicated=671 max_lateness_ms=57.4035
+
+60/1,20.000000,1200
+decode errors: 0
+--- capture-video 
+
+2026-10-20T14:36:28.267451Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU temps réel
+2026-10-20T14:36:55.474802Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1200 captured=1333 duplicated=91 max_lateness_ms=62.7706
+
+60/1,20.000000,1200
+decode errors: 0

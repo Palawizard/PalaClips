@@ -1,0 +1,26 @@
+code 0
+2026-10-20T15:59:44.326619Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU temps réel
+2026-10-20T15:59:45.119446Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=640 height=360 fps=30 tracks=0 duration_s=60 storage=Ram
+replay de 60 s (RAM) : Entrée = sauvegarder, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+[     5 s] tampon 5.0 s, 1 Mo ; mémoire privée du processus 149 Mo
+[    10 s] tampon 10.0 s, 1 Mo ; mémoire privée du processus 147 Mo
+[    15 s] tampon 15.0 s, 2 Mo ; mémoire privée du processus 148 Mo
+2026-10-20T16:00:03.912656Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=1920 height=1080
+[    20 s] tampon 20.0 s, 3 Mo ; mémoire privée du processus 177 Mo
+[    25 s] tampon 25.0 s, 3 Mo ; mémoire privée du processus 178 Mo
+[    30 s] tampon 30.0 s, 4 Mo ; mémoire privée du processus 179 Mo
+2026-10-20T16:00:19.445953Z  INFO palaclips_engine::capture::video: changement de résolution de la source width=2560 height=1440
+[    35 s] tampon 35.0 s, 4 Mo ; mémoire privée du processus 180 Mo
+[    40 s] tampon 40.0 s, 5 Mo ; mémoire privée du processus 181 Mo
+2026-10-20T16:00:29.727038Z  WARN ffmpeg: [swscaler @ 0000021298dfa7c0] deprecated pixel format used, make sure you did set range correctly
+2026-10-20T16:00:29.728964Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\resolution\Bureau\Bureau_2026-10-20_18-00-29_replay.mp4 duration_s=44.6333333 latency_ms=6
+[    44 s] clip 1 : 44.633 s, prêt en 6 ms ; mémoire privée 176.2 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\resolution\Bureau\Bureau_2026-10-20_18-00-29_replay.mp4
+[    45 s] tampon 1.0 s, 0 Mo ; mémoire privée du processus 176 Mo
+2026-10-20T16:00:32.745816Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1429 captured=2723 duplicated=10 late=3 max_lateness_ms=67.6101
+2026-10-20T16:00:32.800172Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 6 ms, moy 6 ms, max 6 ms
+
+Bureau_2026-10-20_18-00-29_replay.mp4
+video,640,360,44.633333
+images figées >= 2 s :
+erreurs de décodage : 0
