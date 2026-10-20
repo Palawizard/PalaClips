@@ -2,9 +2,11 @@ use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Dwm::{DWM_TIMING_INFO, DwmGetCompositionTimingInfo};
 
 use crate::clock::Hns;
+use windows::Wdk::Graphics::Direct3D::D3DKMTCheckExclusiveOwnership;
+
 use crate::events::{
-    ALERT_GPU_SATURATED as GPU_SATURATED, ALERT_RATE_LIMITED as RATE_LIMITED, EngineEvent,
-    Localized, Severity,
+    ALERT_EXCLUSIVE_FULLSCREEN as EXCLUSIVE_FULLSCREEN, ALERT_GPU_SATURATED as GPU_SATURATED,
+    ALERT_RATE_LIMITED as RATE_LIMITED, EngineEvent, Localized, Severity,
 };
 
 const TOLERANCE: f64 = 0.98;
@@ -128,6 +130,47 @@ impl SaturationWatch {
                 tracing::info!("capture de nouveau à l'heure");
                 Some(EngineEvent::AlertCleared {
                     code: GPU_SATURATED,
+                })
+            }
+        }
+    }
+}
+
+pub fn exclusive_fullscreen() -> bool {
+    // SAFETY: D3DKMTCheckExclusiveOwnership takes no arguments and only reads kernel state.
+    unsafe { D3DKMTCheckExclusiveOwnership() }
+}
+
+#[derive(Debug, Default)]
+pub struct FreezeWatch {
+    sustained: Sustained,
+}
+
+impl FreezeWatch {
+    pub fn observe(
+        &mut self,
+        now: Hns,
+        new_frames: u64,
+        exclusive: impl FnOnce() -> bool,
+    ) -> Option<EngineEvent> {
+        let frozen = if new_frames > 0 {
+            Some(false)
+        } else {
+            exclusive().then_some(true)
+        };
+        match self.sustained.observe(now, frozen)? {
+            true => {
+                tracing::warn!("capture figée : plein écran exclusif");
+                Some(EngineEvent::Alert {
+                    severity: Severity::Warning,
+                    text: Localized::new(EXCLUSIVE_FULLSCREEN),
+                    message: "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.".into(),
+                })
+            }
+            false => {
+                tracing::info!("capture de nouveau alimentée");
+                Some(EngineEvent::AlertCleared {
+                    code: EXCLUSIVE_FULLSCREEN,
                 })
             }
         }
@@ -270,6 +313,48 @@ mod tests {
             watch.observe(seconds(*at), 60, late).is_some()
         });
         assert_eq!(raised.count(), 0);
+    }
+
+    #[test]
+    fn a_still_screen_without_exclusive_fullscreen_never_alerts() {
+        let mut watch = FreezeWatch::default();
+        let raised = (0..60).filter(|at| watch.observe(seconds(*at), 0, || false).is_some());
+        assert_eq!(raised.count(), 0);
+    }
+
+    #[test]
+    fn a_frozen_capture_under_exclusive_fullscreen_alerts_then_clears_when_frames_return() {
+        let mut watch = FreezeWatch::default();
+        let mut events = Vec::new();
+        for at in 0..40 {
+            let new_frames = if (10..25).contains(&at) { 0 } else { 60 };
+            if let Some(event) = watch.observe(seconds(at), new_frames, || true) {
+                events.push((at, event));
+            }
+        }
+        assert_eq!(events.len(), 2);
+        assert!(
+            matches!(events[0], (14, EngineEvent::Alert { ref text, .. }) if text.code == EXCLUSIVE_FULLSCREEN)
+        );
+        assert!(matches!(
+            events[1],
+            (
+                29,
+                EngineEvent::AlertCleared {
+                    code: EXCLUSIVE_FULLSCREEN
+                }
+            )
+        ));
+    }
+
+    #[test]
+    fn exclusive_ownership_is_not_checked_while_frames_arrive() {
+        let mut watch = FreezeWatch::default();
+        for at in 0..10 {
+            watch.observe(seconds(at), 60, || {
+                panic!("vérifié alors que des images arrivent")
+            });
+        }
     }
 
     #[test]

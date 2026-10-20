@@ -239,9 +239,10 @@ Séance avec Palawi (👤, ~10 min, une seule fois) :
 | Scénario | Comment le provoquer | Attendu |
 |---|---|---|
 | Changement de résolution | Paramètres d'affichage pendant la capture | capture continue, alerte si redémarrage du buffer |
-| Plein écran exclusif | jeu ancien en plein écran exclusif | repli écran + alerte `capture_fallback_monitor` |
+| Plein écran exclusif | jeu ancien (ou MSI Kombustor) en plein écran exclusif, « Hardware: Legacy Flip » ; `palaclips-cli probe-fullscreen` pendant la capture | `capture_exclusive_fullscreen` après 5 s de vidéo figée |
 | Casque débranché | débrancher le périphérique par défaut | `audio_device_changed`, piste continue |
-| Appli capturée qui crashe | tuer Discord | silence puis rattachement |
+| Appli capturée qui crashe | `pwsh scripts/app-crash.ps1` (~45 s, sans fenêtre : processus de test tué puis relancé pendant un replay) | silence puis rattachement, replay jamais arrêté |
+| GPU saturé | `palaclips-cli probe-gpu-priority --window` puis `capture-video` sous `gpu-load --window` (fenêtre 640×360 au premier plan) | retard borné, `capture_gpu_saturated` seulement sans la priorité temps réel |
 | Disque plein | dossier de clips sur une petite clé USB / VHD de 1 Go | `disk_full`, arrêt propre, aucun fichier corrompu |
 | Redémarrage du pilote GPU | **D'abord fermer le navigateur, Discord et tout jeu** (un TDR fait planter tout ce qui utilise le GPU), puis `dxcap -forcetdr` dans un terminal administrateur (Outils graphiques Windows) | `encoder_reset`, reprise automatique (ADR-031), enregistrement repris dans un nouveau fichier |
 | Veille / sortie de veille | mettre le PC en veille avec replay armé | reprise propre au réveil |

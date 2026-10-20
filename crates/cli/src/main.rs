@@ -241,6 +241,14 @@ enum Command {
     },
     #[cfg(windows)]
     #[command(
+        about = "Chaque seconde : plein écran exclusif (D3DKMTCheckExclusiveOwnership), état des notifications et appli au premier plan"
+    )]
+    ProbeFullscreen {
+        #[arg(long, default_value_t = 30)]
+        seconds: u64,
+    },
+    #[cfg(windows)]
+    #[command(
         about = "Test HDR : état HDR et blanc SDR des écrans, valeurs d'une image BGRA8 et FP16"
     )]
     ProbeHdr {
@@ -514,6 +522,8 @@ fn main() -> Result<()> {
         } => probe::probe_wgc(&target, seconds, min_interval_ms)?,
         #[cfg(windows)]
         Command::ProbeHdr { target } => probe::probe_hdr(&target)?,
+        #[cfg(windows)]
+        Command::ProbeFullscreen { seconds } => probe::probe_fullscreen(seconds)?,
         #[cfg(windows)]
         Command::ProbeAudio {
             mic,

@@ -132,6 +132,17 @@
     premier plan : retard max 57 ms sans la priorité (`--no-gpu-priority`, 530 images
     source) et 63 ms avec (1 333 images source), 1 200 images CFR sur 20 s, 0 erreur de
     décodage.
+  - Alerte `capture_gpu_saturated` sous la même charge, 30 s : sans la priorité, levée au bout
+    de 5 s (1 097 images en retard sur 1 800) ; avec, jamais (3 images en retard).
+- **Plein écran exclusif** (2026-10-20, MSI Kombustor Vulkan en plein écran exclusif sur l'écran
+  principal, `palaclips-cli probe-fullscreen` pendant `capture-video --target primary`) : la
+  capture ne reçoit que **2 images en 60 s** ; `D3DKMTCheckExclusiveOwnership()` = vrai et
+  `SHQueryUserNotificationState` = `QUNS_RUNNING_D3D_FULL_SCREEN` les 60 secondes, faux et
+  `QUNS_ACCEPTS_NOTIFICATIONS` sur le bureau, avec un navigateur ou un terminal au premier
+  plan. Alerte `capture_exclusive_fullscreen` levée 5 s après le gel (aucune image nouvelle
+  **et** propriété exclusive). Fermeture de Kombustor pendant une capture : 457 images répétées
+  (≈ 15 s) sans alerte, quelques images arrivant encore pendant la sortie du mode exclusif ;
+  retrait de l'alerte vérifié par les tests unitaires seulement.
 
 ## Audio (`wasapi` 0.26)
 
