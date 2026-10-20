@@ -13,6 +13,14 @@ pub struct FillStats {
     pub drift_corrections: u64,
 }
 
+impl std::ops::AddAssign for FillStats {
+    fn add_assign(&mut self, other: Self) {
+        self.silence_frames += other.silence_frames;
+        self.dropped_frames += other.dropped_frames;
+        self.drift_corrections += other.drift_corrections;
+    }
+}
+
 #[derive(Debug)]
 pub struct GapFiller {
     origin: Hns,
@@ -30,6 +38,13 @@ impl GapFiller {
             end: None,
             smoothed_error: 0.0,
             stats: FillStats::default(),
+        }
+    }
+
+    pub fn starting_at(origin: Hns, written: i64) -> Self {
+        Self {
+            written,
+            ..Self::new(origin)
         }
     }
 

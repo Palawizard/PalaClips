@@ -167,6 +167,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   `scripts/readme-screenshots.ps1`.
 
 ### Corrigé
+- Une appli lancée en plusieurs instances indépendantes (ex. deux Vesktop) : sa piste était
+  muette quand le son passait par l'autre instance. Toutes les instances sont maintenant
+  capturées et additionnées sur la piste, y compris celles lancées après le démarrage.
 - Jeu qui prend tout le GPU : la capture ne prend plus des secondes de retard ; les images
   manquées répètent la dernière, le son reste aligné.
 - Une alerte de capture (G-Sync, GPU, plein écran exclusif) disparaît quand sa cause disparaît

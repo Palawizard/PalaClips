@@ -17,6 +17,7 @@ use windows::Win32::System::Threading::{
 
 use super::filler::{FillStats, GapFiller};
 use super::mixdown::{MixBus, MixIn, Mixdown};
+use super::sum::StreamSum;
 use super::{AudioSource, CHANNELS, PeakMeter, SAMPLE_RATE};
 use crate::clock::Hns;
 use crate::encode::AacEncoder;
@@ -101,6 +102,9 @@ impl AudioTrack {
             source,
             title,
             filler: GapFiller::new(origin),
+            sum: StreamSum::new(origin),
+            summed: Vec::new(),
+            next_root_scan: Hns::ZERO,
             sync_offset,
             stats: AudioTrackStats::default(),
             filled: Vec::new(),
@@ -189,6 +193,9 @@ struct Worker {
     source: AudioSource,
     title: String,
     filler: GapFiller,
+    sum: StreamSum,
+    summed: Vec<f32>,
+    next_root_scan: Hns,
     sync_offset: Hns,
     stats: AudioTrackStats,
     filled: Vec<f32>,
@@ -213,7 +220,14 @@ enum Mixing {
 #[derive(Clone)]
 struct AttachedApp {
     exe_name: String,
-    pid: u32,
+    pids: Vec<u32>,
+}
+
+impl AttachedApp {
+    fn label(&self) -> String {
+        let pids: Vec<String> = self.pids.iter().map(u32::to_string).collect();
+        format!("{} (PID {})", self.exe_name, pids.join(", "))
+    }
 }
 
 struct ForegroundSignal {
@@ -323,7 +337,7 @@ impl Worker {
         while self.source != AudioSource::TracksMix {
             let opened = if self.source.is_application() {
                 match self.attach() {
-                    Some(app) => open_app_stream(&app),
+                    Some(app) => open_app_streams(&app),
                     None => {
                         self.report(TrackState::Waiting, None);
                         if self.idle(&waits_for_device, Some(APP_RETRY_MS))? {
@@ -333,10 +347,10 @@ impl Worker {
                     }
                 }
             } else {
-                open_stream(&enumerator, &self.source)
+                open_stream(&enumerator, &self.source).map(|stream| vec![stream])
             };
-            let stream = match opened {
-                Ok(stream) => stream,
+            let streams = match opened {
+                Ok(streams) => streams,
                 Err(error) => {
                     let in_use = is_device_in_use(&error);
                     if !unavailable_reported {
@@ -351,38 +365,49 @@ impl Worker {
                 }
             };
             unavailable_reported = false;
-            self.report(TrackState::Capturing, Some(stream.name.clone()));
+            let name = match (&self.app, self.source.is_application()) {
+                (Some(app), true) => app.label(),
+                _ => streams[0].name.clone(),
+            };
+            self.sum.reset(streams.len(), self.filler.written_frames());
+            self.report(TrackState::Capturing, Some(name.clone()));
             if self.source.is_application() {
-                tracing::info!(track = %self.title, app = %stream.name, "application rattachée");
+                tracing::info!(track = %self.title, app = %name, instances = streams.len(), "application rattachée");
                 if current_device.is_some() {
                     self.stats.device_switches += 1;
                 }
-                current_device = Some(stream.name.clone());
+                current_device = Some(name.clone());
                 self.silence = SilenceWatch::new(Hns::now());
-            } else if current_device.as_ref() != Some(&stream.name) {
-                tracing::info!(track = %self.title, device = %stream.name, "périphérique audio ouvert");
+                self.next_root_scan = Hns::now() + Hns::from_millis(APP_RETRY_MS.into());
+            } else if current_device.as_ref() != Some(&name) {
+                tracing::info!(track = %self.title, device = %name, "périphérique audio ouvert");
                 if current_device.is_some() {
                     self.stats.device_switches += 1;
                     self.alert(
                         Severity::Info,
                         Localized::new("audio_device_changed")
                             .with("track", &self.title)
-                            .with("device", &stream.name),
+                            .with("device", &name),
                         format!(
                             "Piste « {} » : la capture suit maintenant « {} ».",
-                            self.title, stream.name
+                            self.title, name
                         ),
                     );
                 }
-                current_device = Some(stream.name.clone());
+                current_device = Some(name);
             }
 
-            let mut handles = vec![self.stop.handle(), stream.event.as_handle()];
-            if let Some(process) = &stream.process {
-                handles.push(process.handle());
-            } else if follows_default {
+            let mut handles = vec![self.stop.handle()];
+            handles.extend(streams.iter().map(|stream| stream.event.as_handle()));
+            let processes: Vec<HANDLE> = streams
+                .iter()
+                .filter_map(|stream| stream.process.as_ref().map(Waitable::handle))
+                .collect();
+            if processes.is_empty() && follows_default {
                 handles.push(default_changed.handle());
             }
+            handles.extend(processes);
+            let stream_count = streams.len();
             let foreground_index = self.foreground.as_ref().map(|foreground| {
                 handles.push(foreground.changed.handle());
                 handles.len() - 1
@@ -390,10 +415,8 @@ impl Worker {
             let outcome = loop {
                 match wait(&handles, SILENCE_WAKE_MS) {
                     Waited::Handle(0) => break Ok(Wake::Stop),
-                    Waited::Handle(1) => {
-                        if let Err(error) = stream.drain(&mut buffer, &mut samples, |qpc, data| {
-                            self.on_packet(qpc, data)
-                        }) {
+                    Waited::Handle(index) if index <= stream_count => {
+                        if let Err(error) = self.drain_all(&streams, &mut buffer, &mut samples) {
                             break Err(error);
                         }
                     }
@@ -414,16 +437,19 @@ impl Worker {
                 }
                 if self.source.is_application() {
                     self.check_app_silence();
+                    if self.roots_changed() {
+                        break Ok(Wake::Reopen);
+                    }
                 }
             };
             match outcome {
                 Ok(Wake::Stop) => {
-                    self.read_until_end(&stream, &mut buffer, &mut samples)?;
+                    self.read_until_end(&streams, &mut buffer, &mut samples)?;
                     break;
                 }
                 Ok(Wake::Reopen) => {}
                 Err(error) => {
-                    drop(stream);
+                    drop(streams);
                     tracing::warn!(track = %self.title, %error, "flux audio interrompu");
                     if self.idle(&waits_for_device, Some(EXCLUSIVE_RETRY_MS))? {
                         break;
@@ -434,6 +460,10 @@ impl Worker {
 
         let end = Hns(self.end.load(Ordering::Relaxed));
         self.filler.set_end(end);
+        if !self.sum.is_empty() {
+            self.sum.fill_until(end);
+            self.drain_sum();
+        }
         self.filler.fill_until(end, &mut self.filled);
         self.encode_filled(true)?;
         if let Mixing::Feed(bus, _) = &self.mixing {
@@ -443,6 +473,7 @@ impl Worker {
         self.encoder.finish(&mut |packet| send(packets, packet))?;
         let mut stats = self.stats;
         stats.fill = self.filler.stats();
+        stats.fill += self.sum.stats();
         tracing::info!(
             track = %self.title,
             packets = stats.packets,
@@ -456,9 +487,43 @@ impl Worker {
         Ok(stats)
     }
 
+    fn drain_all(
+        &mut self,
+        streams: &[CaptureStream],
+        buffer: &mut Vec<u8>,
+        samples: &mut Vec<f32>,
+    ) -> Result<()> {
+        for (input, stream) in streams.iter().enumerate() {
+            stream.drain(buffer, samples, |qpc, data| {
+                self.on_packet(input, qpc, data)
+            })?;
+        }
+        Ok(())
+    }
+
+    fn drain_sum(&mut self) {
+        while let Some(start) = self.sum.take(&mut self.summed) {
+            self.filler.push(start, &self.summed, &mut self.filled);
+            self.summed.clear();
+        }
+    }
+
+    fn roots_changed(&mut self) -> bool {
+        let now = Hns::now();
+        if now < self.next_root_scan {
+            return false;
+        }
+        self.next_root_scan = now + Hns::from_millis(APP_RETRY_MS.into());
+        let Some(app) = &self.app else {
+            return false;
+        };
+        sources::processes()
+            .is_ok_and(|processes| sources::root_pids(&processes, &app.exe_name) != app.pids)
+    }
+
     fn read_until_end(
         &mut self,
-        stream: &CaptureStream,
+        streams: &[CaptureStream],
         buffer: &mut Vec<u8>,
         samples: &mut Vec<f32>,
     ) -> Result<()> {
@@ -467,16 +532,17 @@ impl Worker {
         let deadline = end.max(Hns::now())
             + Hns::from_millis(END_GRACE_MS)
             + Hns((-self.sync_offset.0).max(0));
-        let handles = [stream.event.as_handle()];
+        let handles: Vec<HANDLE> = streams
+            .iter()
+            .map(|stream| stream.event.as_handle())
+            .collect();
         while !self.filler.reached_end() {
             let remaining_ms = (deadline - Hns::now()).0 / 10_000;
             if remaining_ms <= 0 {
                 break;
             }
             match wait(&handles, (remaining_ms as u32).min(SILENCE_WAKE_MS)) {
-                Waited::Handle(_) => {
-                    stream.drain(buffer, samples, |qpc, data| self.on_packet(qpc, data))?
-                }
+                Waited::Handle(_) => self.drain_all(streams, buffer, samples)?,
                 Waited::Timeout => self.fill_silence()?,
                 Waited::Failed => break,
             }
@@ -502,10 +568,13 @@ impl Worker {
     }
 
     fn fill_silence(&mut self) -> Result<()> {
-        self.filler.fill_until(
-            silence_horizon(Hns::now(), self.sync_offset),
-            &mut self.filled,
-        );
+        let horizon = silence_horizon(Hns::now(), self.sync_offset);
+        if self.sum.is_empty() {
+            self.filler.fill_until(horizon, &mut self.filled);
+        } else {
+            self.sum.fill_until(horizon);
+            self.drain_sum();
+        }
         self.flush()
     }
 
@@ -516,8 +585,11 @@ impl Worker {
             AudioSource::Game(game) => game.exe_name()?.to_owned(),
             _ => return None,
         };
-        let pid = sources::root_pid(&sources::processes().ok()?, &exe_name)?;
-        self.app = Some(AttachedApp { exe_name, pid });
+        let pids = sources::root_pids(&sources::processes().ok()?, &exe_name);
+        if pids.is_empty() {
+            return None;
+        }
+        self.app = Some(AttachedApp { exe_name, pids });
         self.app.clone()
     }
 
@@ -568,12 +640,12 @@ impl Worker {
 
     fn check_silent_track(&mut self) {
         let Some(app) = &self.app else { return };
-        let session_peak = sources::session_peak(app.pid).unwrap_or(0.0);
+        let session_peak = sources::session_peak(&app.pids).unwrap_or(0.0);
         if !self.silence.should_alert(session_peak) {
             return;
         }
         self.stats.silent_alerts += 1;
-        tracing::warn!(track = %self.title, app = %app.exe_name, pid = app.pid, session_peak, "piste d'application muette alors que l'appli émet du son");
+        tracing::warn!(track = %self.title, app = %app.label(), session_peak, "piste d'application muette alors que l'appli émet du son");
         let message = format!(
             "Piste « {} » : {} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
             self.title, app.exe_name
@@ -605,7 +677,7 @@ impl Worker {
             .ok();
     }
 
-    fn on_packet(&mut self, qpc: Hns, data: &mut [f32]) -> Result<()> {
+    fn on_packet(&mut self, input: usize, qpc: Hns, data: &mut [f32]) -> Result<()> {
         self.stats.packets += 1;
         if data.iter().any(|sample| *sample != 0.0) {
             self.silence.on_signal(Hns::now());
@@ -621,8 +693,8 @@ impl Worker {
         }
         self.stats.peak = self.stats.peak.max(peak);
         self.meter.record(peak);
-        self.filler
-            .push(qpc + self.sync_offset, data, &mut self.filled);
+        self.sum.push(input, qpc + self.sync_offset, data);
+        self.drain_sum();
         self.flush()
     }
 
@@ -794,14 +866,28 @@ fn open_stream(
     start_capture(device.get_iaudioclient()?, name, None)
 }
 
-fn open_app_stream(app: &AttachedApp) -> std::result::Result<CaptureStream, WasapiError> {
-    let process = Waitable::process(app.pid);
-    let client = AudioClient::new_application_loopback_client(app.pid, true)?;
-    start_capture(
-        client,
-        format!("{} (PID {})", app.exe_name, app.pid),
-        process,
-    )
+fn open_app_streams(app: &AttachedApp) -> std::result::Result<Vec<CaptureStream>, WasapiError> {
+    let mut streams = Vec::new();
+    let mut failure = None;
+    for &pid in &app.pids {
+        match open_app_stream(&app.exe_name, pid) {
+            Ok(stream) => streams.push(stream),
+            Err(error) => {
+                tracing::warn!(app = %app.exe_name, pid, %error, "instance de l'appli non capturée");
+                failure = Some(error);
+            }
+        }
+    }
+    match failure {
+        Some(error) if streams.is_empty() => Err(error),
+        _ => Ok(streams),
+    }
+}
+
+fn open_app_stream(exe_name: &str, pid: u32) -> std::result::Result<CaptureStream, WasapiError> {
+    let process = Waitable::process(pid);
+    let client = AudioClient::new_application_loopback_client(pid, true)?;
+    start_capture(client, format!("{exe_name} (PID {pid})"), process)
 }
 
 fn start_capture(
