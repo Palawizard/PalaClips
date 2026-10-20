@@ -45,7 +45,9 @@ fn local_endpoint(raw: &str) -> Option<tauri::Url> {
 }
 
 async fn find(app: &tauri::AppHandle) -> Result<Option<Update>, Localized> {
-    let mut builder = app.updater_builder();
+    let mut builder = app
+        .updater_builder()
+        .restart_after_install(palaclips_engine::paths::isolated_dir().is_none());
     if let Some(raw) = std::env::var(ENDPOINT_ENV)
         .ok()
         .filter(|raw| !raw.is_empty())
