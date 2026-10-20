@@ -416,7 +416,7 @@
     "invalid_config": "réglage invalide : {detail}",
     "no_hardware_encoder": "aucun encodeur vidéo matériel n'a fonctionné : PalaClips encode uniquement avec la carte graphique (NVIDIA NVENC, AMD AMF ou Intel Quick Sync). Mets à jour le pilote de ta carte graphique puis relance PalaClips",
     "codec_unavailable": "ta carte graphique ne sait pas encoder en {codec} : choisis un autre codec",
-    "unsupported_windows_build": "la capture audio par application nécessite Windows 10 build 20348 ou plus récent",
+    "unsupported_windows_build": "la capture audio par application nécessite Windows 11 (build 20348 ou plus récent) : mets Windows à jour",
     "primary_monitor_missing": "cible de capture introuvable : aucun écran principal",
     "monitor_missing": "cible de capture introuvable : l'écran {name} n'est pas branché",
     "window_missing": "cible de capture introuvable : aucune fenêtre de {exe} n'est ouverte",
@@ -433,7 +433,7 @@
     "calibration_busy": "un calibrage est déjà en cours",
     "calibration_stopped": "le calibrage s'est arrêté",
     "engine_stopped": "le moteur PalaClips est arrêté",
-    "replay_not_armed": "aucun replay à sauvegarder : le replay n'est pas armé",
+    "replay_not_armed": "le replay n'est pas armé",
     "no_stream": "aucun replay à sauvegarder : aucun flux",
     "clip_too_short": "Rien de nouveau à sauvegarder : moins de {seconds} s depuis le dernier clip.",
     "not_implemented": "fonctionnalité pas encore implémentée : {detail}",
@@ -445,7 +445,7 @@
     "capture_fallback_monitor": "La fenêtre « {title} » ne peut pas être capturée : PalaClips capture son écran à la place.",
     "capture_source_rate_limited": "Windows ne compose ton écran qu'à {rate} Hz alors que tu enregistres à {fps} i/s : la vidéo répétera des images. Désactive G-Sync pour cet écran, ou passe tes autres écrans à au moins {fps} Hz.",
     "capture_exclusive_fullscreen": "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
-    "capture_gpu_saturated": "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu pour laisser un peu de marge, ou choisis « Priorité à la capture » dans Réglages > Replay & qualité.",
+    "capture_gpu_saturated": "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu pour laisser un peu de marge, ou choisis « Priorité à la capture » dans Réglages → Replay & qualité.",
     "audio_device_changed": "Piste « {track} » : la capture suit maintenant « {device} ».",
     "app_track_silent": "Piste « {track} » : {app} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
     "audio_device_unavailable": "Piste « {track} » : {reason}",
@@ -594,7 +594,7 @@
       "folderReadOnly": "PalaClips ne peut pas écrire dans {path}. Choisis un autre dossier à l'étape Dossier des clips."
     },
     "capture": {
-      "help": "Une fenêtre précise se choisit dans Réglages > Capture."
+      "help": "Une fenêtre précise se choisit dans Réglages → Capture."
     },
     "audio": {
       "microphone": "Enregistrer le micro",
@@ -603,7 +603,7 @@
       "chosenHelp": "Jeu et applis que tu ajoutes, rien d'autre.",
       "desktop": "Tout le son du PC",
       "desktopHelp": "Tout ce que tu entends, notifications et musique comprises.",
-      "apps": "Une piste par appli (Discord, musique…) s'ajoute dans Réglages > Audio.",
+      "apps": "Une piste par appli (Discord, musique…) s'ajoute dans Réglages → Audio.",
       "device": "Périphérique du micro",
       "voiceInMix": "Mettre aussi ta voix dans la piste 1",
       "voiceInMixHelp": "Ta voix a toujours sa propre piste. Activé, elle est aussi mélangée dans la piste 1 ({name}) : le clip est prêt à partager tel quel. Coupé, la piste 1 contient seulement le son choisi en dessous."
