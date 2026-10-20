@@ -19,6 +19,7 @@ pub struct Settings {
     pub hotkeys: crate::hotkeys::Hotkeys,
     pub theme: Theme,
     pub language: LanguageSetting,
+    pub onboarded: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,6 +40,7 @@ impl Default for Settings {
             hotkeys: crate::hotkeys::Hotkeys::default(),
             theme: Theme::default(),
             language: LanguageSetting::default(),
+            onboarded: false,
         }
     }
 }
@@ -111,11 +113,15 @@ pub fn load(path: &Path) -> Loaded {
         .unwrap_or(1);
     if version > u64::from(SETTINGS_VERSION) {
         return Loaded {
-            settings: Settings::default(),
+            settings: Settings {
+                onboarded: true,
+                ..Settings::default()
+            },
             writable: false,
             problem: Some(Localized::new("settings_newer").with("version", version)),
         };
     }
+    let onboarded = value.get("onboarded").is_none_or(|flag| flag != false);
     let mut settings = match serde_json::from_value::<Settings>(value) {
         Ok(settings) => settings,
         Err(error) => return unreadable(path, &error.to_string()),
@@ -129,6 +135,7 @@ pub fn load(path: &Path) -> Loaded {
     Loaded {
         settings: Settings {
             schema_version: SETTINGS_VERSION,
+            onboarded,
             ..settings
         },
         writable: true,
@@ -141,7 +148,10 @@ fn unreadable(path: &Path, reason: &str) -> Loaded {
     let kept = std::fs::rename(path, &backup).is_ok();
     tracing::warn!(reason, path = %path.display(), "réglages illisibles, réinitialisés");
     Loaded {
-        settings: Settings::default(),
+        settings: Settings {
+            onboarded: true,
+            ..Settings::default()
+        },
         writable: true,
         problem: Some(if kept {
             Localized::new("settings_unreadable_kept")
@@ -200,7 +210,8 @@ mod tests {
         let path = scratch("corrupt");
         std::fs::write(&path, "{ pas du json").expect("write");
         let loaded = load(&path);
-        assert_eq!(loaded.settings, Settings::default());
+        assert_eq!(loaded.settings.engine, EngineConfig::default());
+        assert!(loaded.settings.onboarded);
         assert!(loaded.writable);
         assert!(loaded.problem.is_some());
         assert!(path.with_extension("json.bak").exists());
@@ -214,8 +225,18 @@ mod tests {
         settings.engine.replay.duration_secs = 1;
         std::fs::write(&path, serde_json::to_string(&settings).expect("json")).expect("write");
         let loaded = load(&path);
-        assert_eq!(loaded.settings, Settings::default());
+        assert_eq!(loaded.settings.engine, EngineConfig::default());
         assert!(loaded.problem.is_some());
+    }
+
+    #[test]
+    fn only_a_first_launch_needs_onboarding() {
+        assert!(!load(&scratch("first-launch")).settings.onboarded);
+        let path = scratch("before-onboarding");
+        std::fs::write(&path, r#"{ "schema_version": 2, "engine": {} }"#).expect("write");
+        assert!(load(&path).settings.onboarded);
+        std::fs::write(&path, r#"{ "schema_version": 2, "onboarded": false }"#).expect("write");
+        assert!(!load(&path).settings.onboarded);
     }
 
     #[test]
