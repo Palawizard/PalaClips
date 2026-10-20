@@ -123,9 +123,6 @@ pub enum EngineError {
 
     #[error("moins de {} s en mémoire depuis le dernier clip", min_clip_secs())]
     ClipTooShort,
-
-    #[error("fonctionnalité pas encore implémentée : {0}")]
-    NotImplemented(&'static str),
 }
 
 fn min_clip_secs() -> i64 {
@@ -208,9 +205,6 @@ impl EngineError {
             Self::ReplayNotArmed => Localized::new("replay_not_armed"),
             Self::NoStream => Localized::new("no_stream"),
             Self::ClipTooShort => Localized::new("clip_too_short").with("seconds", min_clip_secs()),
-            Self::NotImplemented(detail) => {
-                Localized::new("not_implemented").with("detail", detail)
-            }
         }
     }
 }

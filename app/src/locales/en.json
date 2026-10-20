@@ -437,7 +437,6 @@
     "replay_not_armed": "the replay isn't armed",
     "no_stream": "no replay to save: no stream",
     "clip_too_short": "Nothing new to save: less than {seconds} s since the last clip.",
-    "not_implemented": "feature not implemented yet: {detail}",
     "replay_stopped": "The replay stopped: {reason}. Arm it again once the source is back.",
     "replay_arm_failed": "Can't arm the replay: {reason}.",
     "encoder_reset": "Capture was interrupted ({reason}): PalaClips is restarting it. A recording in progress continues in a new file.",
