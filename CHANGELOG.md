@@ -161,6 +161,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   contenu de la piste 1, dossier des clips, durée et emplacement du replay (mémoire ou disque),
   raccourci de sauvegarde, puis un vrai clip de test ; « Passer la configuration » garde les
   réglages par défaut.
+- README utilisateur en anglais (`README.md`) et en français (`README.fr.md`) : installation,
+  SmartScreen, raccourcis, FAQ (plein écran exclusif, Minecraft Java, anti-triches, GPU à fond,
+  pistes dans Resolve, diagnostic), captures faites dans l'app isolée par
+  `scripts/readme-screenshots.ps1`.
 
 ### Corrigé
 - Jeu qui prend tout le GPU : la capture ne prend plus des secondes de retard ; les images
