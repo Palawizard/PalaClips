@@ -583,7 +583,7 @@
       "pending": "Vérification…",
       "windows": "Windows",
       "windowsOk": "Build {build}",
-      "windowsOld": "Build {build} : la capture du son par appli demande le build 20348 ou plus récent. Mets Windows à jour.",
+      "windowsOld": "Build {build} : la capture du son par appli demande Windows 11 (build 20348 ou plus récent).",
       "windowsUnknown": "Version de Windows introuvable.",
       "encoder": "Encodeur vidéo",
       "encoderOk": "{codecs} sur la carte graphique",

@@ -210,9 +210,17 @@ Critères :
       avec la preuve (rapport de phase, test, capture).
 
 Critères :
-- 👤 Installation sur une session Windows propre : premier lancement guidé → clip sauvegardé
-  en moins de 2 minutes.
-- 🤖 Mise à jour 1.0.0 → 1.0.1 de test via l'updater.
+- 👤 Premier lancement guidé → clip sauvegardé en moins de 2 minutes, dans la session de
+  Palawi avec l'app isolée et un profil vierge (`onboarded: false`, WebView isolée), temps lu
+  dans le journal. Décision de Palawi (2026-10-20) : la session Windows propre (compte local
+  temporaire) est abandonnée, elle partage WebView2, pilotes et bibliothèques avec sa session
+  et ne prouve donc pas plus.
+- 🤖 Mise à jour 1.0.0 → 1.0.1 et refus d'une fausse signature, automatisés par CDP dans l'app
+  isolée (installeurs signés par le workflow en release brouillon, supprimée ensuite).
+- 🤖 Dépendances de l'exe et des DLL (`dumpbin /dependents`) : rien qui manque sur un Windows
+  sans Visual C++ redistribuable.
+- 👤 Installeur dans une VM Windows 11 sans GPU (protocole T10) : installation, démarrage,
+  message « aucun encodeur », premier écran, désinstallation.
 - 🤖 La variante `EngineError::NotImplemented` est supprimée, et
   `grep -rn "todo!\|NotImplemented\|TODO\|FIXME" crates app/src app/src-tauri/src` ne renvoie rien.
 - Tag `v1.0.0`.

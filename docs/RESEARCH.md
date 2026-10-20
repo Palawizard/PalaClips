@@ -173,8 +173,9 @@
 - Énumération des sessions + crête : `get_iaudiosessionmanager()` →
   `get_audiosessionenumerator()` → `get_process_id()`, `get_audiometerinformation().get_peak_value()`.
   — [processes.rs](https://github.com/HEnquist/wasapi-rs/blob/master/examples/processes.rs)
-- `PROCESS_LOOPBACK_MODE` : inclure **ou** exclure **un** arbre de processus ; Windows 10
-  build 20348 minimum. — [Microsoft](https://learn.microsoft.com/windows/win32/api/audioclientactivationparams/ne-audioclientactivationparams-process_loopback_mode)
+- `PROCESS_LOOPBACK_MODE` : inclure **ou** exclure **un** arbre de processus ; build 20348
+  minimum, celui de Windows Server 2022 : côté grand public, seul Windows 11 (22000+) l'a,
+  Windows 10 s'arrête au build 19045. — [Microsoft](https://learn.microsoft.com/windows/win32/api/audioclientactivationparams/ne-audioclientactivationparams-process_loopback_mode)
 - Loopback système : aucune donnée quand rien ne joue (comportement normal de WASAPI) → combler
   par du silence. — [forum Audacity](https://forum.audacityteam.org/t/audacity-stops-recording-during-silence-solved/53092)
 - Navigateurs multi-processus : cibler le bon arbre. — [LiveTranscriber #2](https://github.com/avysotsky/LiveTranscriber/issues/2)

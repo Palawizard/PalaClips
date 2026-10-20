@@ -167,6 +167,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   `scripts/readme-screenshots.ps1`.
 
 ### Corrigé
+- Windows requis : Windows 11 (le build 20348 de la capture audio par appli n'existe pas en
+  Windows 10 grand public) ; sur un Windows trop ancien, une alerte le dit dès le démarrage.
 - Une appli lancée en plusieurs instances indépendantes (ex. deux Vesktop) : sa piste était
   muette quand le son passait par l'autre instance. Toutes les instances sont maintenant
   capturées et additionnées sur la piste, y compris celles lancées après le démarrage.
