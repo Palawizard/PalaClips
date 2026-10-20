@@ -4,7 +4,8 @@ param(
     [int]$Seconds = 20,
     [int]$BitrateMbps = 40,
     [string]$PresentMon = "C:\Program Files (x86)\CapFrameX\PresentMon\PresentMon-2.4.1-x64.exe",
-    [string]$Name = "fps-impact"
+    [string]$Name = "fps-impact",
+    [switch]$CapturePriority
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,8 +60,9 @@ $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
 $target = "window:$Game"
 $out = Join-Path $work "capture.mp4"
 $video = @("--bitrate-mbps", "$BitrateMbps", "--seconds", "$($Seconds + 6)", "--out", $out)
+if ($CapturePriority) { $video += "--capture-priority" }
 try {
-    Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger"
+    Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents), priorité GPU $(if ($CapturePriority) { 'capture (temps réel)' } else { 'jeu (normale)' }) ; ne pas bouger"
     $null = Measure-Fps "mise en route (non comptée)" @()
     $runs = @(
         @{ Label = "fenêtre 60 i/s"; Arguments = (@("capture-video", "--target", $target, "--fps", "60") + $video) }

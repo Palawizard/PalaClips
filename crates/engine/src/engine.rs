@@ -118,7 +118,6 @@ impl std::fmt::Debug for EngineHandle {
 impl Engine {
     pub fn start(config: EngineConfig) -> Result<Self> {
         config.validate()?;
-        crate::capture::raise_gpu_priority();
         let (commands, command_rx) = bounded(COMMAND_QUEUE);
         let (event_tx, events) = bounded(EVENT_QUEUE);
         let own_commands = commands.clone();
@@ -875,6 +874,7 @@ impl Pipeline {
     fn start(config: &EngineConfig, events: &Sender<EngineEvent>) -> Result<Self> {
         let encoders = hardware_video_encoders()?;
         let encoder = pick_encoder(&encoders, config.video.codec)?;
+        crate::capture::set_gpu_priority(config.video.gpu_priority);
         let capture = VideoCapture::start(&config.capture, &config.video, &encoder.name)?;
         if let Some(alert) = capture.alert() {
             events.try_send(alert.clone()).ok();

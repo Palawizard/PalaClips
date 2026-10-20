@@ -15,7 +15,9 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use palaclips_engine::{
     EngineConfig, VERSION,
-    config::{CaptureTarget, OutputResolution, VideoCodec, VideoQuality, VideoSettings},
+    config::{
+        CaptureTarget, GpuPriority, OutputResolution, VideoCodec, VideoQuality, VideoSettings,
+    },
     replay::{buffer_window, estimate_buffer_bytes},
 };
 
@@ -787,11 +789,6 @@ struct CaptureArgs {
     seconds: u64,
     #[arg(long)]
     out: std::path::PathBuf,
-    #[arg(
-        long,
-        help = "Garde la priorité GPU normale (sans la classe temps réel)"
-    )]
-    no_gpu_priority: bool,
 }
 
 #[cfg(windows)]
@@ -816,6 +813,11 @@ struct VideoArgs {
     no_cursor: bool,
     #[arg(long)]
     border: bool,
+    #[arg(
+        long,
+        help = "Priorité GPU temps réel : capture fluide même GPU à 100 %, au prix de fps du jeu"
+    )]
+    capture_priority: bool,
 }
 
 #[cfg(windows)]
@@ -837,6 +839,11 @@ impl VideoArgs {
                 .map_or(VideoSettings::default().bitrate_kbps, |mbps| mbps * 1_000),
             capture_cursor: !self.no_cursor,
             draw_border: self.border,
+            gpu_priority: if self.capture_priority {
+                GpuPriority::Capture
+            } else {
+                GpuPriority::Game
+            },
             ..VideoSettings::default()
         }
     }
@@ -855,9 +862,7 @@ fn run_capture(
     use palaclips_engine::mux::{Mp4Writer, MuxStream};
 
     let video = args.video.video_settings();
-    if !args.no_gpu_priority {
-        palaclips_engine::capture::raise_gpu_priority();
-    }
+    palaclips_engine::capture::set_gpu_priority(video.gpu_priority);
     let encoders = hardware_video_encoders()?;
     let encoder = pick_encoder(&encoders, video.codec)?;
     let capture = VideoCapture::start(&args.video.target, &video, &encoder.name)?;

@@ -123,7 +123,7 @@ impl SaturationWatch {
                 Some(EngineEvent::Alert {
                     severity: Severity::Warning,
                     text: Localized::new(GPU_SATURATED),
-                    message: "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu (ou baisse ses réglages graphiques) pour laisser un peu de marge.".into(),
+                    message: "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu pour laisser un peu de marge, ou choisis « Priorité à la capture » dans Réglages > Replay & qualité.".into(),
                 })
             }
             false => {

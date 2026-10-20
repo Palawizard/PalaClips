@@ -3,6 +3,7 @@ import { bytes } from "../../lib/format.ts";
 import { number, t, useT } from "../../lib/i18n.ts";
 import {
   type EngineConfig,
+  type GpuPriority,
   type HardwareEncoder,
   type MemoryStatus,
   type OutputResolution,
@@ -249,6 +250,17 @@ export function ReplaySection() {
             label: t("units.seconds", { value: number(seconds, 1) }),
           }))}
           onChange={(keyframe_interval_secs) => video({ keyframe_interval_secs })}
+        />
+      </SettingRow>
+      <SettingRow label={t("settings.replay.gpuPriority")} help={t("settings.replay.gpuPriorityHelp")}>
+        <Segmented<GpuPriority>
+          label={t("settings.replay.gpuPriority")}
+          value={draft.video.gpu_priority}
+          options={[
+            { value: "game", label: t("settings.replay.gpuPriorities.game") },
+            { value: "capture", label: t("settings.replay.gpuPriorities.capture") },
+          ]}
+          onChange={(gpu_priority) => video({ gpu_priority })}
         />
       </SettingRow>
       <ConfigFooter config={config} focusAfter={estimateRef} />

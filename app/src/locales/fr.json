@@ -291,7 +291,13 @@
       "native": "Native",
       "heightFree": "Hauteur de sortie, valeur libre",
       "keyframes": "Intervalle d'images clés",
-      "keyframesHelp": "Plus court : le clip commence au plus près de l'instant voulu."
+      "keyframesHelp": "Plus court : le clip commence au plus près de l'instant voulu.",
+      "gpuPriority": "Quand le GPU est à fond",
+      "gpuPriorityHelp": "Capture : vidéo fluide, mais le jeu perd environ 7 % de fps.",
+      "gpuPriorities": {
+        "game": "Priorité au jeu",
+        "capture": "Priorité à la capture"
+      }
     },
     "capture": {
       "primary": "principal",
@@ -432,7 +438,7 @@
     "capture_fallback_monitor": "La fenêtre « {title} » ne peut pas être capturée : PalaClips capture son écran à la place.",
     "capture_source_rate_limited": "Windows ne compose ton écran qu'à {rate} Hz alors que tu enregistres à {fps} i/s : la vidéo répétera des images. Désactive G-Sync pour cet écran, ou passe tes autres écrans à au moins {fps} Hz.",
     "capture_exclusive_fullscreen": "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
-    "capture_gpu_saturated":"Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu (ou baisse ses réglages graphiques) pour laisser un peu de marge.",
+    "capture_gpu_saturated": "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu pour laisser un peu de marge, ou choisis « Priorité à la capture » dans Réglages > Replay & qualité.",
     "audio_device_changed": "Piste « {track} » : la capture suit maintenant « {device} ».",
     "app_track_silent": "Piste « {track} » : {app} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
     "audio_device_unavailable": "Piste « {track} » : {reason}",
