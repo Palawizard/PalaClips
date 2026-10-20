@@ -73,17 +73,21 @@ impl VideoCapture {
         settings.validate()?;
         keep_mta_alive();
         let resolved = resolve_target(target)?;
-        let hdr_white = resolved
+        let display = resolved
             .monitor()
-            .and_then(|monitor| monitor.device_name().ok())
-            .and_then(|name| display_color(&name))
+            .and_then(|monitor| monitor.device_name().ok());
+        let hdr_white = display
+            .as_deref()
+            .and_then(display_color)
             .filter(|color| color.hdr)
             .map(|color| color.sdr_white_scrgb());
+        let hdr_watch = display.map(|name| (name, hdr_white.is_some()));
         let color_format = if hdr_white.is_some() {
             ColorFormat::Rgba16F
         } else {
             ColorFormat::Bgra8
         };
+        tracing::info!(hdr = hdr_white.is_some(), "format de capture choisi");
         let ((shared, session), alert) = match start_session(resolved, settings, color_format) {
             Ok(session) => (session, None),
             Err(error) => {
@@ -145,6 +149,7 @@ impl VideoCapture {
                         origin: origin_tx,
                         packets: packet_tx,
                         alerts: alert_tx,
+                        hdr_watch,
                     };
                     run_encoder(shared, device, hdr, encoder, fps, outputs)
                 }
@@ -387,6 +392,7 @@ struct EncoderOutputs {
     origin: Sender<Hns>,
     packets: Sender<AVPacket>,
     alerts: Sender<EngineEvent>,
+    hdr_watch: Option<(String, bool)>,
 }
 
 fn run_encoder(
@@ -401,6 +407,7 @@ fn run_encoder(
         origin,
         packets,
         alerts,
+        hdr_watch,
     } = outputs;
     let device = device.0;
     let output = encoder.size();
@@ -446,6 +453,19 @@ fn run_encoder(
         let now = Hns::now();
         if now >= next_rate_check {
             next_rate_check = now + RATE_CHECK;
+            if let Some((screen, hdr)) = &hdr_watch
+                && display_color(screen).is_some_and(|color| color.hdr != *hdr)
+            {
+                tracing::info!(
+                    screen = screen.as_str(),
+                    hdr = !hdr,
+                    "mode HDR de l'écran changé"
+                );
+                encoder.finish(&mut send)?;
+                return Err(EngineError::Capture(
+                    "le mode HDR de l'écran a changé".into(),
+                ));
+            }
             let delivered = shared
                 .latest()
                 .map_or(frames_at_check, |latest| latest.count);
