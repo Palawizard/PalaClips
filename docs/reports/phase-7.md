@@ -4,10 +4,11 @@
 - Machine : Windows 11 build 26200, NVIDIA GeForce RTX 4070 SUPER, Intel Core i5-13600KF
   (20 cœurs logiques), écran principal 2560×1440 240 Hz
 
-**Statut : en cours.** PERF-01 à 04 mesurés et tenus (PERF-03 GPU-bound en priorité « jeu »,
-défaut) ; séance T7 du 2026-10-19 et ses trois défauts corrigés le 2026-10-20 (#64, #65).
-Changement de résolution fait le même jour. Essai de la priorité « capture » sans HAGS jugé
-inutile par Palawi (accordée sans admin avec HAGS ; sans HAGS, un refus est seulement journalisé).
+**Statut : validée le 2026-10-20.** PERF-01 à 04 mesurés et tenus (PERF-03 GPU-bound en
+priorité « jeu », défaut, ADR-033) ; tous les scénarios T7 passés ; les trois défauts de la
+séance du 2026-10-19 corrigés (#64, #65), priorité GPU au choix (#66), HDR basculé pendant une
+capture (#67). Essai de la priorité « capture » sans HAGS jugé inutile par Palawi (accordée
+sans admin avec HAGS ; sans HAGS, un refus est seulement journalisé).
 
 ## Critères
 
@@ -16,7 +17,7 @@ inutile par Palawi (accordée sans admin avec HAGS ; sans HAGS, un refus est seu
 | PERF-01 : zone de notification, replay désarmé, < 30 Mo, 0 % CPU | 🤖 | ✅ | Build installée (`setup.exe /S`), réglages isolés, `--autostart` : 4,9 Mo (working set privé, médiane sur 60 s), CPU 0,00 % de la machine, 1 seul processus (aucun WebView). `phase-7/perf-installed-2026-10-19.txt` |
 | PERF-02 : replay armé, moteur hors tampon < 150 Mo | 🤖 | ✅ | Écran principal 2560×1440 à 60 i/s, 3 pistes, tampon 30 s : 243,4 Mo privés − tampon 164,7 Mo × 1,07 = **67,3 Mo** (même calcul que le panneau de performances) |
 | PERF-03 : < 2 % CPU (1440p60 NVENC) | 🤖 | ✅ (CPU) | Replay armé, fenêtre fermée : 0,39 % de la machine |
-| PERF-03 : perte de fps ≤ 2 %, GPU-bound, 1440p60 + 4 pistes | 👤 | ✅ (priorité « jeu », défaut) | 2026-10-20, après le correctif du défaut 1, Kombustor fenêtré (GPU 100 %, ~84 i/s), essais sans capture intercalés : **0,7 %** en priorité « jeu » (défaut, ADR-033 révisé) ; 7,5 % en priorité « capture » (temps réel, réglage au choix). `phase-7/fps-impact-2026-10-20_17-35.txt` (capture) et `_17-43.txt` (jeu). Historique du 2026-10-19 : | Fortnite reste limité par le CPU de Palawi (GPU sous 99 %) → banc GPU. MSI Kombustor (Vulkan) plein écran exclusif : perte 0,6 % mais capture sans images (`captured=2`, mesure invalide). Kombustor fenêtré (« Composed: Copy with GPU GDI ») : 3,7 % (1440p60 + 4 pistes), 3,0–3,5 % (60 i/s), 1,5 % (WGC seul), mais dérive thermique de 1,8 % entre le début et la fin. Unigine Superposition DX11 : mode de présentation ancien lui aussi, bruit ±5 % à 46 i/s, et **capture bloquée sous GPU à 100 %** (`max_lateness_ms=14357`, 1 132 images sur 1 560) : défaut 1. Journaux `phase-7/fps-impact-2026-10-19_20-*.txt`. `fps-impact.ps1` intercale désormais un essai sans capture entre chaque essai avec capture (référence = moyenne des deux voisins) |
+| PERF-03 : perte de fps ≤ 2 %, GPU-bound, 1440p60 + 4 pistes | 👤 | ✅ (priorité « jeu », défaut) | 2026-10-20, après le correctif du défaut 1, Kombustor fenêtré (GPU 100 %, ~84 i/s), essais sans capture intercalés : **0,7 %** en priorité « jeu » (défaut, ADR-033 révisé) ; 7,5 % en priorité « capture » (temps réel, réglage au choix). `phase-7/fps-impact-2026-10-20_17-35.txt` (capture) et `_17-43.txt` (jeu). Historique du 2026-10-19 : Fortnite reste limité par le CPU de Palawi (GPU sous 99 %) → banc GPU. MSI Kombustor (Vulkan) plein écran exclusif : perte 0,6 % mais capture sans images (`captured=2`, mesure invalide). Kombustor fenêtré (« Composed: Copy with GPU GDI ») : 3,7 % (1440p60 + 4 pistes), 3,0–3,5 % (60 i/s), 1,5 % (WGC seul), mais dérive thermique de 1,8 % entre le début et la fin. Unigine Superposition DX11 : mode de présentation ancien lui aussi, bruit ±5 % à 46 i/s, et **capture bloquée sous GPU à 100 %** (`max_lateness_ms=14357`, 1 132 images sur 1 560) : défaut 1. Journaux `phase-7/fps-impact-2026-10-19_20-*.txt`. `fps-impact.ps1` intercale désormais un essai sans capture entre chaque essai avec capture (référence = moyenne des deux voisins) |
 | PERF-04 : démarrage de l'UI < 1 s à chaud | 🤖 | ✅ | Relance (instance unique) → premier rendu avec l'état : première 652 ms, puis 534, 538, 563 ms à chaud |
 | Alerte G-Sync (CAP-11) | 👤 | ✅ | App isolée sur l'écran de gauche, capture de la fenêtre Fortnite à 240 i/s. G-Sync actif, autre écran à 165 Hz : `capture_source_rate_limited { rate: 165, fps: 240 }`. G-Sync coupé, jeu plafonné à 120 i/s, app relancée : aucune alerte en 30 s |
 | T7 casque débranché / périphérique par défaut changé (AUD-10) | 👤 | ✅ | Sortie et entrée par défaut (Voicemeeter, VB-Cable) changées puis remises, casque débranché : `audio_device_changed` (Micro revenu sur CABLE Output) ; replay de 60 s couvrant les changements : vidéo et 3 pistes à 60,9 s, aucune coupure |
@@ -28,6 +29,9 @@ inutile par Palawi (accordée sans admin avec HAGS ; sans HAGS, un refus est seu
 | T7 GPU saturé (défaut 1) | 🤖 | ✅ | #64 : charge GPU au premier plan, retard max 11 213 ms → 57 ms (priorité « jeu ») / 63 ms (« capture »), 1 200 images CFR sur 20 s, 0 erreur de décodage ; `capture_gpu_saturated` levée en priorité « jeu », muette en « capture » (`phase-7/gpu-*.txt`) |
 | T7 alerte G-Sync retirée au redémarrage (défaut 3) | 🤖 | ✅ | #64 : alertes de capture retirées au démarrage et à l'arrêt de la capture, et après 5 s de retour à la normale (`alert_cleared`) ; tests unitaires du moteur et du shell |
 | HDR basculé pendant une capture (CAP-09) | 👤 | ✅ | 2026-10-20 : replay armé sur l'écran principal en HDR, Palawi passe l'écran en SDR puis le remet : changement vu en < 1 s par le fil d'encodage (`mode HDR de l'écran changé`), `encoder_reset`, capture relancée seule 1 s plus tard en BGRA8 (`hdr=false`), puis de nouveau en FP16 au retour du HDR ; tampon repris de zéro (ADR-031), clip lisible sans image figée (`phase-7/hdr-toggle-2026-10-20_18-16.txt`) |
+| T7 disque plein (STO-05) | 👤 | ✅ | Fait en phase 6 : `docs/reports/phase-6.md` (VHDX de 1 Go, `disk_full`, fichier lisible) |
+| T7 Alt+Tab | 🤖 | ✅ | `scripts/game-track.ps1` (phase 3, `docs/reports/phase-3/game-track-alt-tab.txt`) ; `Alt+F10` dans Fortnite sans perte de focus (phase 5) |
+| Panneau de performances (APP-12) | 👤 | ✅ | Livré et coché au PLAN (section repliable de l'écran État, mesures seulement panneau ouvert) |
 | T7 changement de résolution | 👤 | ✅ | 2026-10-20 : replay armé sur l'écran principal, Palawi passe l'écran en 1920×1080 puis Windows revient seul en 2560×1440 : deux « changements de résolution de la source », convertisseur recréé, replay jamais arrêté, aucune alerte ; clip de 44,6 s en 640×360 constant, aucune image figée ≥ 2 s (`freezedetect`), 0 erreur de décodage (`phase-7/resolution-2026-10-20_17-59.txt`). Mémoire privée +30 Mo après le changement, gardée au retour (à surveiller) |
 
 ## Défauts trouvés en séance T7 (corrigés le 2026-10-20 : #64 pour 1 et 3, #65 pour 2 ; ADR-033)

@@ -166,22 +166,22 @@ Critères :
   durée (ADR-008).
 - 👤 Glisser un clip copié dans Discord : envoi OK, son = mix complet avec le micro (ADR-029).
 
-## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04)
+## Phase 7 — Robustesse et performances (CAP-08, 09, 11 ; AUD-10 ; STO-05 ; APP-12 ; PERF-01–04) ✅ ([rapport](reports/phase-7.md))
 
-- [ ] Changement de résolution, alt-tab, plein écran exclusif, casque débranché, appli qui
+- [x] Changement de résolution, alt-tab, plein écran exclusif, casque débranché, appli qui
       crashe, disque plein, redémarrage du pilote GPU (TDR) : jamais de crash, alerte claire.
-      Fait : reprise automatique après une panne passagère (`encoder_reset`, ADR-031), disque
-      plein (phase 6), changement de résolution de la source (convertisseur recréé). Reste :
-      scénarios T7 sur la machine de Palawi.
+      Faits sur la machine de Palawi les 2026-10-19 et 20 ; ajouts : capture sous GPU saturé
+      (file bornée, priorité GPU au choix, `capture_gpu_saturated`, ADR-033), plein écran
+      exclusif (`capture_exclusive_fullscreen`), HDR basculé (capture relancée), alertes de
+      capture retirées (`alert_cleared`).
 - [x] Alerte `capture_source_rate_limited` sur la cadence de composition DWM (CAP-11, ADR-018) :
       lue chaque seconde par le fil d'encodage, testée unitairement ; essai G-Sync réel dans T7.
 - [x] Panneau de performances (APP-12) : section repliable sous le roster de l'écran État,
       mesures seulement panneau ouvert ; CPU machine, RAM hors tampon (calcul PERF-02), tampon,
       encodeur, images répétées (10 s) et en retard (total, dernière minute), décalage max.
-- [ ] Mesures PERF sur build release installée. Fait le 2026-10-19 (`docs/reports/phase-7.md`) :
-      PERF-01 4,9 Mo, PERF-02 67,3 Mo hors tampon, PERF-03 CPU 0,39 %, PERF-04 538 ms à chaud.
-      Reste : perte de fps GPU-bound (PERF-03), à remesurer après le correctif de la capture
-      bloquée sous GPU saturé (rapport, défaut 1).
+- [x] Mesures PERF sur build release installée (`docs/reports/phase-7.md`) : PERF-01 4,9 Mo,
+      PERF-02 67,3 Mo hors tampon, PERF-03 CPU 0,39 % et perte de fps GPU-bound 0,7 % (priorité
+      « jeu », défaut), PERF-04 538 ms à chaud.
 
 Critères :
 - 👤 Chaque scénario de `docs/TESTING.md` § T7 passé, consigné dans le rapport.
