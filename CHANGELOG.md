@@ -145,8 +145,19 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Installateur Windows par utilisateur : FFmpeg et ses licences (LGPL v3, GPL v3) inclus, page
   de licence ; à la désinstallation, une case dit ce qui part (réglages, historique et favoris
   de la galerie), jamais les clips.
+- Réglages > Replay & qualité : « Quand le GPU est à fond » — Priorité au jeu (défaut, le jeu
+  garde ses fps) ou Priorité à la capture (vidéo fluide, environ 7 % de fps en moins).
+- Alertes « GPU à fond » (limite les fps du jeu ou choisis la priorité à la capture) et « plein
+  écran exclusif » (passe le jeu en plein écran fenêtré ou sans bordure).
+- CLI : `probe-gpu-priority`, `probe-fullscreen` ; scénario `scripts/app-crash.ps1`.
 
 ### Corrigé
+- Jeu qui prend tout le GPU : la capture ne prend plus des secondes de retard ; les images
+  manquées répètent la dernière, le son reste aligné.
+- Une alerte de capture (G-Sync, GPU, plein écran exclusif) disparaît quand sa cause disparaît
+  ou que la capture redémarre.
+- Activer ou couper le HDR de l'écran pendant une capture : elle repart d'elle-même au bon
+  format au lieu de garder des couleurs fausses jusqu'au prochain armement.
 - Arrêter puis relancer la capture dans la même session ne fait plus planter PalaClips.
 - Replay : ~110 Mo de mémoire en moins (encodeur NVIDIA réglé plus sobrement, qualité
   identique sur une partie de Fortnite).
