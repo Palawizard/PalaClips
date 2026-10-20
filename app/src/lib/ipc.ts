@@ -567,4 +567,5 @@ export type EngineEvent =
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
   | ({ type: "performance_stats" } & PerformanceStats)
   | { type: "recording_stats"; elapsed_secs: number; bytes: number }
-  | ({ type: "alert"; severity: Severity; message: string } & Localized);
+  | ({ type: "alert"; severity: Severity; message: string } & Localized)
+  | { type: "alert_cleared"; code: string };

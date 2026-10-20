@@ -2,10 +2,14 @@ use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Dwm::{DWM_TIMING_INFO, DwmGetCompositionTimingInfo};
 
 use crate::clock::Hns;
-use crate::events::{EngineEvent, Localized, Severity};
+use crate::events::{
+    ALERT_GPU_SATURATED as GPU_SATURATED, ALERT_RATE_LIMITED as RATE_LIMITED, EngineEvent,
+    Localized, Severity,
+};
 
 const TOLERANCE: f64 = 0.98;
 const SUSTAINED: Hns = Hns::from_millis(5_000);
+const LATE_SHARE: f64 = 0.1;
 
 pub fn composition_rate() -> Option<f64> {
     let mut timing = DWM_TIMING_INFO {
@@ -19,11 +23,43 @@ pub fn composition_rate() -> Option<f64> {
         .then(|| f64::from(rate.uiNumerator) / f64::from(rate.uiDenominator))
 }
 
+#[derive(Debug, Default)]
+struct Sustained {
+    last: Option<Hns>,
+    bad_for: Hns,
+    good_for: Hns,
+    active: bool,
+}
+
+impl Sustained {
+    fn observe(&mut self, now: Hns, bad: Option<bool>) -> Option<bool> {
+        let elapsed = self.last.map_or(Hns::ZERO, |last| now - last);
+        self.last = Some(now);
+        match bad? {
+            true => {
+                self.good_for = Hns::ZERO;
+                self.bad_for = self.bad_for + elapsed;
+                (!self.active && self.bad_for >= SUSTAINED).then(|| {
+                    self.active = true;
+                    true
+                })
+            }
+            false => {
+                self.bad_for = Hns::ZERO;
+                self.good_for = self.good_for + elapsed;
+                (self.active && self.good_for >= SUSTAINED).then(|| {
+                    self.active = false;
+                    false
+                })
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct RateWatch {
     fps: u32,
-    last: Option<Hns>,
-    below_for: Hns,
+    sustained: Sustained,
     alerted: Option<u32>,
 }
 
@@ -31,26 +67,26 @@ impl RateWatch {
     pub fn new(fps: u32) -> Self {
         Self {
             fps,
-            last: None,
-            below_for: Hns::ZERO,
+            sustained: Sustained::default(),
             alerted: None,
         }
     }
 
     pub fn observe(&mut self, now: Hns, rate: f64, new_frames: u64) -> Option<EngineEvent> {
-        let elapsed = self.last.map_or(Hns::ZERO, |last| now - last);
-        self.last = Some(now);
-        if new_frames == 0 {
-            return None;
-        }
-        if rate >= f64::from(self.fps) * TOLERANCE {
-            self.below_for = Hns::ZERO;
-            return None;
-        }
-        self.below_for = self.below_for + elapsed;
+        let below = rate < f64::from(self.fps) * TOLERANCE;
         let hz = rate.round() as u32;
-        if self.below_for < SUSTAINED || self.alerted == Some(hz) {
-            return None;
+        match self
+            .sustained
+            .observe(now, (new_frames > 0).then_some(below))
+        {
+            Some(false) => {
+                self.alerted = None;
+                tracing::info!(composition_hz = rate, "cadence de composition revenue");
+                return Some(EngineEvent::AlertCleared { code: RATE_LIMITED });
+            }
+            Some(true) => {}
+            None if self.sustained.active && below && self.alerted != Some(hz) => {}
+            None => return None,
         }
         self.alerted = Some(hz);
         let fps = self.fps;
@@ -61,13 +97,40 @@ impl RateWatch {
         );
         Some(EngineEvent::Alert {
             severity: Severity::Warning,
-            text: Localized::new("capture_source_rate_limited")
+            text: Localized::new(RATE_LIMITED)
                 .with("rate", hz)
                 .with("fps", fps),
             message: format!(
                 "Windows ne compose ton écran qu'à {hz} Hz alors que tu enregistres à {fps} i/s : la vidéo répétera des images. Désactive G-Sync pour cet écran, ou passe tes autres écrans à au moins {fps} Hz."
             ),
         })
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct SaturationWatch {
+    sustained: Sustained,
+}
+
+impl SaturationWatch {
+    pub fn observe(&mut self, now: Hns, frames: u64, late: u64) -> Option<EngineEvent> {
+        let starved = (frames > 0).then_some(late as f64 >= frames as f64 * LATE_SHARE);
+        match self.sustained.observe(now, starved)? {
+            true => {
+                tracing::warn!(frames, late, "capture en retard : GPU saturé");
+                Some(EngineEvent::Alert {
+                    severity: Severity::Warning,
+                    text: Localized::new(GPU_SATURATED),
+                    message: "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu (ou baisse ses réglages graphiques) pour laisser un peu de marge.".into(),
+                })
+            }
+            false => {
+                tracing::info!("capture de nouveau à l'heure");
+                Some(EngineEvent::AlertCleared {
+                    code: GPU_SATURATED,
+                })
+            }
+        }
     }
 }
 
@@ -82,7 +145,12 @@ mod tests {
     fn alerts(watch: &mut RateWatch, samples: &[(i64, f64)]) -> usize {
         samples
             .iter()
-            .filter(|(at, rate)| watch.observe(seconds(*at), *rate, 165).is_some())
+            .filter(|(at, rate)| {
+                matches!(
+                    watch.observe(seconds(*at), *rate, 165),
+                    Some(EngineEvent::Alert { .. })
+                )
+            })
             .count()
     }
 
@@ -135,6 +203,23 @@ mod tests {
     }
 
     #[test]
+    fn the_alert_is_withdrawn_once_the_rate_is_back_for_five_seconds() {
+        let mut watch = RateWatch::new(240);
+        let events: Vec<EngineEvent> = (0..30)
+            .filter_map(|at| {
+                let rate = if at < 10 { 165.0 } else { 240.0 };
+                watch.observe(seconds(at), rate, 165)
+            })
+            .collect();
+        assert!(matches!(events[0], EngineEvent::Alert { .. }));
+        assert!(matches!(
+            events[1],
+            EngineEvent::AlertCleared { code: RATE_LIMITED }
+        ));
+        assert_eq!(events.len(), 2);
+    }
+
+    #[test]
     fn the_alert_gives_the_real_rate_and_the_requested_fps() {
         let mut watch = RateWatch::new(240);
         let alert = (0..=5)
@@ -143,11 +228,48 @@ mod tests {
         let Some(EngineEvent::Alert { text, .. }) = alert else {
             panic!("alerte attendue");
         };
-        assert_eq!(text.code, "capture_source_rate_limited");
+        assert_eq!(text.code, RATE_LIMITED);
         assert_eq!(
             text.params.get("rate").map(ToString::to_string).as_deref(),
             Some("165")
         );
+    }
+
+    #[test]
+    fn late_frames_for_five_seconds_raise_the_saturation_alert_then_withdraw_it() {
+        let mut watch = SaturationWatch::default();
+        let mut events = Vec::new();
+        for at in 0..40 {
+            let late = match at {
+                0..10 => 0,
+                10..25 => 30,
+                _ => 1,
+            };
+            if let Some(event) = watch.observe(seconds(at), 60, late) {
+                events.push((at, event));
+            }
+        }
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], (14, EngineEvent::Alert { .. })));
+        assert!(matches!(
+            events[1],
+            (
+                29,
+                EngineEvent::AlertCleared {
+                    code: GPU_SATURATED
+                }
+            )
+        ));
+    }
+
+    #[test]
+    fn a_few_late_frames_or_a_short_stall_never_raise_the_saturation_alert() {
+        let mut watch = SaturationWatch::default();
+        let raised = (0..60).filter(|at| {
+            let late = if (20..23).contains(at) { 60 } else { 3 };
+            watch.observe(seconds(*at), 60, late).is_some()
+        });
+        assert_eq!(raised.count(), 0);
     }
 
     #[test]

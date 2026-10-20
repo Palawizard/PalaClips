@@ -20,7 +20,7 @@ use windows_capture::settings::{
 
 use super::display::display_color;
 use super::pacer::{CfrClock, emit_due};
-use super::rate::{RateWatch, composition_rate};
+use super::rate::{RateWatch, SaturationWatch, composition_rate};
 use super::targets::{ResolvedTarget, resolve_target};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, VideoSettings};
@@ -424,8 +424,10 @@ fn run_encoder(
     let mut clock = CfrClock::new(Hns::now(), fps);
     let mut origin = Some(origin);
     let mut rate_watch = RateWatch::new(fps);
+    let mut saturation_watch = SaturationWatch::default();
     let mut next_rate_check = Hns::now() + RATE_CHECK;
     let mut frames_at_check = 0;
+    let mut emitted_at_check = (0, 0);
     while !shared.stop.load(Ordering::Relaxed) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
@@ -451,6 +453,13 @@ fn run_encoder(
             {
                 alerts.try_send(alert).ok();
             }
+            let (emitted, late) = emitted_at_check;
+            if let Some(alert) =
+                saturation_watch.observe(now, stats.frames - emitted, stats.late - late)
+            {
+                alerts.try_send(alert).ok();
+            }
+            emitted_at_check = (stats.frames, stats.late);
         }
         let due = clock.take_due(now);
         if due.is_empty() {
