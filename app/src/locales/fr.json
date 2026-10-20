@@ -431,6 +431,7 @@
     "clip_save_failed": "Clip non sauvegardé : {reason}.",
     "capture_fallback_monitor": "La fenêtre « {title} » ne peut pas être capturée : PalaClips capture son écran à la place.",
     "capture_source_rate_limited": "Windows ne compose ton écran qu'à {rate} Hz alors que tu enregistres à {fps} i/s : la vidéo répétera des images. Désactive G-Sync pour cet écran, ou passe tes autres écrans à au moins {fps} Hz.",
+    "capture_gpu_saturated": "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu (ou baisse ses réglages graphiques) pour laisser un peu de marge.",
     "audio_device_changed": "Piste « {track} » : la capture suit maintenant « {device} ».",
     "app_track_silent": "Piste « {track} » : {app} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
     "audio_device_unavailable": "Piste « {track} » : {reason}",
