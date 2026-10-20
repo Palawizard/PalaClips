@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*", "test-v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Installeur Windows signé
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain Rust
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: FFmpeg LGPL (DLL + en-têtes)
+        shell: pwsh
+        run: ./scripts/fetch-ffmpeg.ps1
+
+      - name: Dépendances front
+        working-directory: app
+        run: npm ci
+
+      - name: Version de test
+        if: startsWith(github.ref_name, 'test-v')
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:TAG.Substring(6)
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "tag de test invalide : $env:TAG" }
+          $path = "app/src-tauri/tauri.conf.json"
+          $config = Get-Content $path -Raw | ConvertFrom-Json
+          $config.version = $version
+          $config | ConvertTo-Json -Depth 20 | Set-Content $path -Encoding utf8
+
+      - name: Version et notes
+        id: notes
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = (Get-Content app/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($env:TAG -ne "v$version" -and $env:TAG -ne "test-v$version") { throw "le tag $env:TAG ne correspond pas à la version $version de tauri.conf.json" }
+          $changelog = Get-Content CHANGELOG.md -Raw
+          $section = [regex]::Match($changelog, "(?ms)^## \[$([regex]::Escape($version))\][^\n]*\n(.*?)(?=^## \[|\z)")
+          $notes = if ($section.Success) { $section.Groups[1].Value.Trim() } else { "Voir CHANGELOG.md" }
+          "body<<NOTES_END" >> $env:GITHUB_OUTPUT
+          $notes >> $env:GITHUB_OUTPUT
+          "NOTES_END" >> $env:GITHUB_OUTPUT
+
+      - name: Build, signature et release brouillon
+        uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: app
+          tagName: ${{ github.ref_name }}
+          releaseName: ${{ startsWith(github.ref_name, 'test-v') && 'TEST — PalaClips v__VERSION__ (à supprimer)' || 'PalaClips v__VERSION__' }}
+          releaseBody: ${{ steps.notes.outputs.body }}
+          releaseDraft: true
+          prerelease: false
+          uploadUpdaterJson: true
+          updaterJsonPreferNsis: true

@@ -295,3 +295,25 @@ Avant l'étape 1 et après l'étape 3 : `pwsh scripts\real-data-fingerprint.ps1 
   Jeu, `-App`, Discord par défaut : le critère PERF-03 de la SPEC) / fenêtre 30 / WGC seul / sans
   capture, 20 s chacun ; référence = moyenne des essais sans capture ; perte par essai, 1 %
   bas, GPU (`nvidia-smi`) et mode de présentation dans `target\journals\fps-impact-*.txt`.
+
+## T8 — Mise à jour 1.0.0 → 1.0.1 (phase 8)
+
+Jamais de release publique : deux releases **brouillon** créées par les tags de test, puis
+supprimées avec leurs tags.
+
+1. Sur le commit à tester : `git tag test-v1.0.0 && git tag test-v1.0.1 && git push origin
+   test-v1.0.0 test-v1.0.1`. Le workflow `Release` crée deux brouillons « TEST ».
+2. Télécharger les installeurs et la signature :
+   `gh release download test-v1.0.0 -p "*setup.exe" -D target/update-test/1.0.0` et
+   `gh release download test-v1.0.1 -p "*setup.exe*" -D target/update-test/1.0.1`.
+3. Écrire `target/update-test/latest.json` (version `1.0.1`, `platforms.windows-x86_64` :
+   `signature` = contenu du `.sig`, `url` = `http://127.0.0.1:8765/1.0.1/<installeur>`), puis
+   servir le dossier : `python -m http.server 8765 --bind 127.0.0.1 -d target/update-test`.
+4. Dans la session de test (compte local temporaire) : installer 1.0.0, lancer PalaClips avec
+   `PALACLIPS_UPDATE_URL=http://127.0.0.1:8765/latest.json`. Réglages → Général →
+   Mises à jour : « Version 1.0.1 disponible », notes affichées ; « Installer et redémarrer »
+   → l'installeur passe, l'app revient en 1.0.1 (Réglages → Général).
+5. Essai négatif : `.sig` d'une autre version dans `latest.json` → l'installation est refusée
+   (`update_failed`).
+6. Ménage : `gh release delete test-v1.0.0 --cleanup-tag -y`, idem `test-v1.0.1`, serveur
+   arrêté, `target/update-test` supprimé.
