@@ -306,7 +306,8 @@ Automatisé, sans Palawi : `pwsh scripts/update-test.ps1` (environ 5 min ; il fa
 2. Télécharge l'installeur 1.0.1 signé et sa signature depuis le brouillon, écrit
    `latest.json` (bonne signature) et `latest-bad.json` (version 1.0.2, signature altérée), sert le
    dossier sur `127.0.0.1:8765`.
-3. Compile l'app en version 1.0.0 (`--config '{"version":"1.0.0"}'`), la lance isolée avec
+3. Compile l'app en version 1.0.0 avec `dangerousInsecureTransportProtocol` (fichier passé à
+   `--config`, seulement pour cette build : la build publiée refuse le `http`), la lance isolée avec
    `PALACLIPS_UPDATE_URL` et le port CDP.
 4. Fausse signature : Réglages → Général → Rechercher → « 1.0.2 disponible » → Installer →
    erreur `update_failed`, l'app reste en 1.0.0.

@@ -564,7 +564,10 @@ phase 8).
     (les fichiers d'une release brouillon ne sont pas téléchargeables sans authentification).
     Seule une adresse `http://127.0.0.1` ou `http://localhost` est acceptée, toute autre est
     ignorée (test `only_a_loopback_http_feed_can_replace_github`) ; même redirigé, l'updater
-    n'installe qu'un paquet signé par la clé de Palawi.
+    n'installe qu'un paquet signé par la clé de Palawi. De plus, le plugin refuse toute adresse
+    `http` en build release tant que `dangerousInsecureTransportProtocol` est faux, ce qui est le
+    cas de `tauri.conf.json` : dans la build publiée, la redirection locale ne marche donc pas.
+    Seule la build 1.0.0 de l'essai active cette option, par le fichier passé à `--config`.
 - Conséquence : un build local avec installeur (`tauri build` sans `--no-bundle`) exige
   désormais la clé ; pour les mesures locales, ajouter
   `--config '{"bundle":{"createUpdaterArtifacts":false}}'`.

@@ -59,14 +59,16 @@ function Get-UninstallEntry {
 
 $server = $null
 $before = $null
+$emptyInstallDir = $false
 $passed = $false
 try {
     if (Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @("palaclips-app", "PalaClips") }) {
         throw "PalaClips tourne : quitte-le avant l'essai"
     }
-    if ((Test-Path $installDir) -or (Get-UninstallEntry)) {
+    if ((Test-Path $installDir) -and @(Get-ChildItem $installDir -Force).Count -gt 0 -or (Get-UninstallEntry)) {
         throw "une installation de PalaClips existe déjà ($installDir) : l'essai ne l'écrase pas"
     }
+    $emptyInstallDir = Test-Path $installDir
     $before = Get-DataFingerprint
     Write-Journal "données de Palawi avant : $($before.Count) entrées (taille et date de chaque fichier)"
 
@@ -87,7 +89,7 @@ try {
 
     Push-Location (Join-Path $root "app")
     $versionConfig = Join-Path $work "version-1.0.0.json"
-    '{"version":"1.0.0"}' | Set-Content $versionConfig -Encoding ascii
+    '{"version":"1.0.0","plugins":{"updater":{"dangerousInsecureTransportProtocol":true}}}' | Set-Content $versionConfig -Encoding ascii
     npx tauri build --no-bundle --config $versionConfig 2>&1 | Select-Object -Last 1 | ForEach-Object { Write-Journal "build 1.0.0 : $_" }
     Pop-Location
     if ($LASTEXITCODE -ne 0) { throw "build 1.0.0 impossible" }
@@ -127,8 +129,10 @@ finally {
         $deadline = (Get-Date).AddSeconds(60)
         while ((Test-Path $installedExe) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 1 }
     }
+    if ($emptyInstallDir -and -not (Test-Path $installDir)) { New-Item -ItemType Directory $installDir | Out-Null }
     $shortcut = Get-ChildItem ([Environment]::GetFolderPath("Programs")) -Recurse -Filter "PalaClips*.lnk" -ErrorAction SilentlyContinue
-    Write-Journal "désinstallation : dossier $(if (Test-Path $installDir) { 'ENCORE PRÉSENT' } else { 'supprimé' }), clé $(if (Get-UninstallEntry) { 'ENCORE PRÉSENTE' } else { 'supprimée' }), raccourci $(if ($shortcut) { 'ENCORE PRÉSENT' } else { 'supprimé' })"
+    $leftover = (Test-Path $installDir) -and @(Get-ChildItem $installDir -Force).Count -gt 0
+    Write-Journal "désinstallation : dossier $(if ($leftover) { 'ENCORE PRÉSENT' } elseif ($emptyInstallDir) { 'vidé (il existait vide avant l''essai)' } else { 'supprimé' }), clé $(if (Get-UninstallEntry) { 'ENCORE PRÉSENTE' } else { 'supprimée' }), raccourci $(if ($shortcut) { 'ENCORE PRÉSENT' } else { 'supprimé' })"
     if ($server -and -not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
     Remove-Item Env:PALACLIPS_UPDATE_URL, Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS, Env:PALACLIPS_CONFIG_DIR, Env:PALACLIPS_TEST_WINDOW -ErrorAction SilentlyContinue
     Remove-Item $work, (Join-Path $root "target\test-config") -Recurse -Force -ErrorAction SilentlyContinue
