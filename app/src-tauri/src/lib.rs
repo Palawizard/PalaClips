@@ -461,7 +461,12 @@ impl EngineSlot {
         let defaults = settings::Settings::default();
         self.set_hotkeys(app, defaults.hotkeys.clone())?;
         self.apply(app, defaults.engine.clone())?;
-        self.update(|settings| *settings = defaults)?;
+        self.update(|settings| {
+            *settings = settings::Settings {
+                onboarded: settings.onboarded,
+                ..defaults
+            }
+        })?;
         refresh_tray(app, self.language(), self.state() == EngineState::Recording);
         if palaclips_engine::paths::isolated_dir().is_some() {
             return Ok(());
@@ -696,6 +701,9 @@ pub fn run() {
             commands::set_performance_panel,
             commands::export_diagnostic,
             commands::open_diagnostic,
+            commands::onboarding_needed,
+            commands::onboarding_checks,
+            commands::finish_onboarding,
         ])
         .setup(|app| {
             match palaclips_engine::paths::data_dirs_to_migrate() {

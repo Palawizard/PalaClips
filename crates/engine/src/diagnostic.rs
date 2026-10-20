@@ -23,6 +23,7 @@ pub const SYSTEM_ENTRY: &str = "system.txt";
 pub const SETTINGS_ENTRY: &str = "settings.json";
 const MASKED_TITLE: &str = "[titre masqué]";
 const TIME_ZONE_ID_DAYLIGHT: u32 = 2;
+pub const MIN_WINDOWS_BUILD: u32 = 20_348;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry {
@@ -320,8 +321,16 @@ fn gigabytes(bytes: u64) -> f64 {
     bytes as f64 / (1u64 << 30) as f64
 }
 
+const WINDOWS_VERSION_KEY: PCWSTR = w!(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+
+pub fn windows_build() -> Option<u32> {
+    registry_string(WINDOWS_VERSION_KEY, w!("CurrentBuild"))?
+        .parse()
+        .ok()
+}
+
 fn windows_version() -> String {
-    let key = w!(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+    let key = WINDOWS_VERSION_KEY;
     let build = registry_string(key, w!("CurrentBuild")).unwrap_or_default();
     let major = if build.parse::<u32>().is_ok_and(|build| build >= 22_000) {
         11
