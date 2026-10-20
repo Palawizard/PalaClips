@@ -167,6 +167,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   `scripts/readme-screenshots.ps1`.
 
 ### Corrigé
+- Windows requis : Windows 11 (le build 20348 de la capture audio par appli n'existe pas en
+  Windows 10 grand public) ; sur un Windows trop ancien, une alerte le dit dès le démarrage.
 - Jeu qui prend tout le GPU : la capture ne prend plus des secondes de retard ; les images
   manquées répètent la dernière, le son reste aligné.
 - Une alerte de capture (G-Sync, GPU, plein écran exclusif) disparaît quand sa cause disparaît

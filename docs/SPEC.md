@@ -13,7 +13,9 @@ Un joueur / créateur de contenu sur Windows qui veut :
   micro) pour le montage dans DaVinci Resolve ;
 - le tout avec un outil **léger**, gratuit, open source, sans compte ni télémétrie.
 
-Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur matériel
+Plateforme : **Windows 11** (et Windows Server 2022, build 20348 ou plus récent), x64 : la
+capture audio par processus exige le build 20348, que Windows 10 grand public (19045 au plus)
+n'atteint pas. GPU avec encodeur matériel
 (NVIDIA NVENC, AMD AMF ou Intel QSV).
 
 ## 2. Exigences

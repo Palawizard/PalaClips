@@ -380,7 +380,8 @@ en retard pendant 5 s : le jeu prend tout le GPU ; conseille de limiter ses fps)
 a la propriété exclusive de l'écran, `D3DKMTCheckExclusiveOwnership` ; conseille le plein écran
 fenêtré ou sans bordure) ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
-reason }` ; `hotkey_unavailable { keys }`.
+reason }` ; `hotkey_unavailable { keys }` ; `unsupported_windows_build` (au démarrage, si le build
+de Windows est connu et inférieur à 20348).
 
 Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `Alt+F10` →
 `save_replay` (personnalisable avec la persistance des réglages).

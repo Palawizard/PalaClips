@@ -18,7 +18,7 @@ $root = Split-Path -Parent $PSScriptRoot
 Check "Windows build >= 20348 (capture audio par appli)" {
     $b = [int](Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion").CurrentBuildNumber
     if ($b -ge 20348) { "build $b" }
-} "Mettre Windows à jour (Windows 11 recommandé)"
+} "Windows 11 requis (build 20348 ou plus récent)"
 
 Check "Rust (rustc)" { (rustc --version) } "Installer rustup : https://rustup.rs"
 Check "Cible MSVC" { if ((rustup show active-toolchain) -match "msvc") { "msvc" } } "rustup default stable-x86_64-pc-windows-msvc"

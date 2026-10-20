@@ -7,7 +7,7 @@
 web
 
 L'interface est une app web (React 19 + TypeScript + Tailwind 4) affichée dans le WebView2
-d'une application de bureau Tauri 2, Windows 10 build 20348+ et Windows 11 uniquement.
+d'une application de bureau Tauri 2, Windows 11 uniquement (et Windows Server 2022).
 
 ## Users
 
