@@ -5,6 +5,8 @@ mod probe_audio;
 #[cfg(windows)]
 mod probe_av;
 #[cfg(windows)]
+mod probe_gpu;
+#[cfg(windows)]
 mod probe_memory;
 #[cfg(windows)]
 mod replay;
@@ -118,6 +120,37 @@ enum Command {
     ProbeMemory {
         #[command(flatten)]
         probe: probe_memory::ProbeMemoryArgs,
+    },
+    #[cfg(windows)]
+    #[command(
+        about = "Latence de la conversion d'image sous GPU saturé (processus de charge lancé puis arrêté), selon la priorité GPU demandée"
+    )]
+    ProbeGpuPriority {
+        #[arg(long, default_value_t = 5, help = "Durée de chaque essai")]
+        seconds: u64,
+        #[arg(long, default_value_t = 2)]
+        rounds: u32,
+        #[arg(
+            long,
+            default_value_t = 20.0,
+            help = "Durée d'un appel de dessin de la charge, en ms (comme une image de jeu)"
+        )]
+        load_ms: f64,
+        #[arg(
+            long,
+            help = "La charge ouvre une fenêtre 640×360 au premier plan, comme un jeu"
+        )]
+        window: bool,
+    },
+    #[cfg(windows)]
+    #[command(hide = true)]
+    GpuLoad {
+        #[arg(long)]
+        seconds: u64,
+        #[arg(long)]
+        draw_ms: f64,
+        #[arg(long)]
+        window: bool,
     },
     #[cfg(windows)]
     #[command(about = "Capture la vidéo d'une cible et l'encode sur le GPU dans un MP4")]
@@ -384,6 +417,19 @@ fn main() -> Result<()> {
         Command::Replay { replay } => replay::run_replay(&replay)?,
         #[cfg(windows)]
         Command::ProbeMemory { probe } => probe_memory::probe_memory(&probe)?,
+        #[cfg(windows)]
+        Command::ProbeGpuPriority {
+            seconds,
+            rounds,
+            load_ms,
+            window,
+        } => probe_gpu::probe_gpu_priority(seconds, rounds, load_ms, window)?,
+        #[cfg(windows)]
+        Command::GpuLoad {
+            seconds,
+            draw_ms,
+            window,
+        } => probe_gpu::gpu_load(seconds, draw_ms, window)?,
         #[cfg(windows)]
         Command::CaptureAv {
             capture,
@@ -731,6 +777,11 @@ struct CaptureArgs {
     seconds: u64,
     #[arg(long)]
     out: std::path::PathBuf,
+    #[arg(
+        long,
+        help = "Garde la priorité GPU normale (sans la classe temps réel)"
+    )]
+    no_gpu_priority: bool,
 }
 
 #[cfg(windows)]
@@ -794,6 +845,9 @@ fn run_capture(
     use palaclips_engine::mux::{Mp4Writer, MuxStream};
 
     let video = args.video.video_settings();
+    if !args.no_gpu_priority {
+        palaclips_engine::capture::raise_gpu_priority();
+    }
     let encoders = hardware_video_encoders()?;
     let encoder = pick_encoder(&encoders, video.codec)?;
     let capture = VideoCapture::start(&args.video.target, &video, &encoder.name)?;
