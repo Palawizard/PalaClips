@@ -4,6 +4,10 @@ import {
   type EngineConfig,
   type Feedback,
   type Theme,
+  type UpdateInfo,
+  checkUpdate,
+  getUpdate,
+  installUpdate,
   exportDiagnostic,
   openDiagnostic,
   getAutostart,
@@ -66,6 +70,79 @@ export function DiagnosticRow({ onError }: { onError: (message: string) => void 
         </button>
       </span>
     </SettingRow>
+  );
+}
+
+const BUTTON =
+  "pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover aria-disabled:cursor-progress aria-disabled:opacity-50";
+
+function UpdateRow({ onError }: { onError: (message: string) => void }) {
+  const t = useT();
+  const [info, setInfo] = useState<UpdateInfo | null>(null);
+  const [checked, setChecked] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    getUpdate().then(setInfo, () => setInfo(null));
+  }, []);
+
+  const run = (action: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    action()
+      .catch((failure) => onError(errorText(failure)))
+      .finally(() => setBusy(false));
+  };
+
+  const check = () =>
+    run(() =>
+      checkUpdate().then((next) => {
+        setInfo(next);
+        setChecked(true);
+      }),
+    );
+
+  const available = info?.available ?? null;
+  const help = !info
+    ? undefined
+    : available
+      ? t("settings.general.updateAvailable", { version: available.version, current: info.current })
+      : checked
+        ? t("settings.general.upToDate", { current: info.current })
+        : t("settings.general.version", { current: info.current });
+
+  return (
+    <>
+      <SettingRow label={t("settings.general.updates")} help={help}>
+        {available ? (
+          <button
+            type="button"
+            onClick={() => run(installUpdate)}
+            aria-disabled={busy}
+            aria-busy={busy}
+            className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90 aria-disabled:cursor-progress aria-disabled:opacity-50"
+          >
+            {busy ? t("settings.general.updateInstalling") : t("settings.general.updateInstall")}
+          </button>
+        ) : (
+          <button type="button" onClick={check} aria-disabled={busy} aria-busy={busy} className={BUTTON}>
+            {t("settings.general.updateCheck")}
+          </button>
+        )}
+      </SettingRow>
+      {available?.notes && (
+        <div className="border-b border-line px-5 py-3">
+          <p className="text-[13px] font-semibold">{t("settings.general.updateNotes")}</p>
+          <p
+            tabIndex={0}
+            aria-label={t("settings.general.updateNotes")}
+            className="mt-1 max-h-48 max-w-[78ch] overflow-y-auto text-[13px] whitespace-pre-line text-ink-2"
+          >
+            {available.notes}
+          </p>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -219,6 +296,7 @@ export function GeneralSection() {
           onChange={changeLanguage}
         />
       </SettingRow>
+      <UpdateRow onError={setError} />
       <DiagnosticRow onError={setError} />
       <SettingRow
         label={t("settings.general.reset")}
