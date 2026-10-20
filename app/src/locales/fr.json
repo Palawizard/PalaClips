@@ -228,7 +228,15 @@
       "reset": "Réinitialiser les réglages",
       "resetHelp": "Tous les réglages reviennent aux valeurs par défaut, raccourcis compris.",
       "resetConfirm": "Réinitialiser",
-      "resetOpen": "Réinitialiser…"
+      "resetOpen": "Réinitialiser…",
+      "updates": "Mises à jour",
+      "version": "Version {current}",
+      "upToDate": "Version {current}, à jour.",
+      "updateAvailable": "Version {version} disponible (tu as la {current}).",
+      "updateCheck": "Rechercher",
+      "updateInstall": "Installer et redémarrer",
+      "updateInstalling": "Installation…",
+      "updateNotes": "Nouveautés"
     },
     "hotkeys": {
       "field": "{action} : {keys}. {hint}",
@@ -500,7 +508,11 @@
     "clip_unknown": "Ce clip n'est plus dans la bibliothèque.",
     "quota_deleted": "Quota atteint : clips les plus anciens supprimés définitivement : {count} ({size_mb} Mo libérés).",
     "export_too_short": "la découpe doit durer au moins une demi-seconde",
-    "export_cancelled": "export annulé"
+    "export_cancelled": "export annulé",
+    "update_available": "PalaClips {version} est disponible : installe-la dans Réglages → Général → Mises à jour.",
+    "update_failed": "mise à jour impossible : {detail}",
+    "update_while_recording": "un enregistrement est en cours : arrête-le avant d'installer la mise à jour",
+    "update_none": "aucune mise à jour à installer : relance la recherche"
   },
   "player": {
     "back": "Retour à la galerie",

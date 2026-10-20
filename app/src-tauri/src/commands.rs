@@ -339,6 +339,21 @@ pub async fn pick_clips_dir(
 }
 
 #[tauri::command]
+pub fn get_update(app: tauri::AppHandle) -> Result<crate::updates::UpdateInfo, Localized> {
+    crate::updates::cached(&app)
+}
+
+#[tauri::command]
+pub async fn check_update(app: tauri::AppHandle) -> Result<crate::updates::UpdateInfo, Localized> {
+    crate::updates::check(&app).await
+}
+
+#[tauri::command]
+pub async fn install_update(app: tauri::AppHandle) -> Result<(), Localized> {
+    crate::updates::install(&app).await
+}
+
+#[tauri::command]
 pub fn onboarding_needed(slot: State<'_, EngineSlot>) -> bool {
     slot.settings
         .lock()

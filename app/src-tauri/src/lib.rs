@@ -4,6 +4,7 @@ mod feedback;
 mod hotkeys;
 mod i18n;
 mod settings;
+mod updates;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -619,6 +620,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .register_asynchronous_uri_scheme_protocol(
             clips::MEDIA_SCHEME,
             |context, request, responder| {
@@ -704,6 +706,9 @@ pub fn run() {
             commands::onboarding_needed,
             commands::onboarding_checks,
             commands::finish_onboarding,
+            commands::get_update,
+            commands::check_update,
+            commands::install_update,
         ])
         .setup(|app| {
             match palaclips_engine::paths::data_dirs_to_migrate() {
@@ -745,6 +750,8 @@ pub fn run() {
             let language = slot.language();
             app.manage(slot);
             app.manage(commands::LastDiagnostic::default());
+            app.manage(updates::Updates::default());
+            updates::start_checks(app.handle());
             if let Ok(thumbnails) = palaclips_engine::paths::thumbnail_dir() {
                 app.asset_protocol_scope()
                     .allow_directory(thumbnails, true)?;

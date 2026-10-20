@@ -228,7 +228,15 @@
       "reset": "Reset settings",
       "resetHelp": "Every setting goes back to its default value, hotkeys included.",
       "resetConfirm": "Reset",
-      "resetOpen": "Reset…"
+      "resetOpen": "Reset…",
+      "updates": "Updates",
+      "version": "Version {current}",
+      "upToDate": "Version {current}, up to date.",
+      "updateAvailable": "Version {version} is available (you have {current}).",
+      "updateCheck": "Check",
+      "updateInstall": "Install and restart",
+      "updateInstalling": "Installing…",
+      "updateNotes": "What's new"
     },
     "hotkeys": {
       "field": "{action}: {keys}. {hint}",
@@ -500,7 +508,11 @@
     "clip_unknown": "This clip is no longer in the library.",
     "quota_deleted": "Quota reached: the oldest clips were permanently deleted ({count}, {size_mb} MB freed).",
     "export_too_short": "the trimmed clip must be at least half a second long",
-    "export_cancelled": "export cancelled"
+    "export_cancelled": "export cancelled",
+    "update_available": "PalaClips {version} is available: install it in Settings → General → Updates.",
+    "update_failed": "couldn't update: {detail}",
+    "update_while_recording": "a recording is in progress: stop it before installing the update",
+    "update_none": "no update to install: check again"
   },
   "player": {
     "back": "Back to the gallery",
