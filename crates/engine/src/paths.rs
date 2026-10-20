@@ -91,6 +91,10 @@ pub fn isolated_webview_dir() -> Option<PathBuf> {
     isolated_dir().map(|dir| dir.join("webview"))
 }
 
+pub fn log_dir() -> Result<PathBuf> {
+    Ok(local_dir()?.join("logs"))
+}
+
 pub fn replay_spool_dir() -> Result<PathBuf> {
     Ok(local_dir()?.join("replay"))
 }

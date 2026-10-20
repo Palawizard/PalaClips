@@ -220,6 +220,11 @@
         "fr": "Français",
         "en": "English"
       },
+      "diagnostic": "Diagnostics",
+      "diagnosticHelp": "A zip with the logs, anonymized settings and system info.",
+      "diagnosticExport": "Export…",
+      "diagnosticSaved": "Saved: {name}",
+      "diagnosticOpen": "Open zip",
       "reset": "Reset settings",
       "resetHelp": "Every setting goes back to its default value, hotkeys included.",
       "resetConfirm": "Reset",
@@ -403,9 +408,11 @@
   "dialog": {
     "clipsDir": "Clips folder",
     "pickApp": "App to capture",
-    "applications": "Applications"
+    "applications": "Applications",
+    "diagnostic": "Export diagnostics"
   },
   "messages": {
+    "diagnostic_failed": "couldn't export diagnostics: {detail}",
     "invalid_config": "invalid setting: {detail}",
     "no_hardware_encoder": "no hardware video encoder worked: PalaClips only encodes on the graphics card (NVIDIA NVENC, AMD AMF or Intel Quick Sync). Update your graphics driver, then restart PalaClips",
     "codec_unavailable": "your graphics card can't encode {codec}: pick another codec",

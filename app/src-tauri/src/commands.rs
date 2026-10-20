@@ -338,6 +338,68 @@ pub async fn pick_clips_dir(
         .transpose()
 }
 
+#[derive(Debug, Default)]
+pub struct LastDiagnostic(std::sync::Mutex<Option<std::path::PathBuf>>);
+
+#[tauri::command]
+pub async fn export_diagnostic(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    last: State<'_, LastDiagnostic>,
+) -> Result<Option<String>, Localized> {
+    use tauri::Manager;
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app
+        .dialog()
+        .file()
+        .set_title(i18n::text(slot.language(), "dialog.diagnostic"))
+        .set_file_name(format!(
+            "PalaClips-diagnostic-{}.zip",
+            palaclips_engine::paths::local_timestamp()
+        ))
+        .add_filter("Zip", &["zip"]);
+    if let Some(window) = app.get_webview_window(crate::MAIN_WINDOW) {
+        dialog = dialog.set_parent(&window);
+    }
+    let Some(picked) = dialog.blocking_save_file() else {
+        return Ok(None);
+    };
+    let failed = |detail: String| Localized::new("diagnostic_failed").with("detail", detail);
+    let path = picked
+        .into_path()
+        .map_err(|error| failed(error.to_string()))?;
+    let webview = tauri::webview_version().unwrap_or_else(|error| error.to_string());
+    let archive = path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let entries = palaclips_engine::diagnostic::entries(&[("WebView2", webview)])?;
+        palaclips_engine::diagnostic::write_archive(&archive, &entries)
+    })
+    .await
+    .map_err(|_| internal_error())?
+    .map_err(|error| failed(error.to_string()))?;
+    let name = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned());
+    *last.0.lock().map_err(|_| internal_error())? = Some(path);
+    Ok(name)
+}
+
+#[tauri::command]
+pub fn open_diagnostic(last: State<'_, LastDiagnostic>) -> Result<(), Localized> {
+    let path = last
+        .0
+        .lock()
+        .map_err(|_| internal_error())?
+        .clone()
+        .ok_or_else(internal_error)?;
+    std::process::Command::new("explorer")
+        .arg(path)
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| Localized::new("explorer_failed").with("detail", error.to_string()))
+}
+
 #[tauri::command]
 pub fn open_clips_dir(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
     let root = slot.clips_root()?;

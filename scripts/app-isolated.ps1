@@ -1,4 +1,4 @@
-param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [switch]$LeftScreen, [switch]$MainScreen)
+param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$Tray)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $running = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @('palaclips-app', 'PalaClips') }
@@ -29,4 +29,5 @@ if ($LeftScreen -or $MainScreen) {
 }
 $env:PALACLIPS_CONFIG_DIR = $dir
 $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
-Start-Process (Join-Path $root 'target\release\palaclips-app.exe') -PassThru
+$arguments = if ($Tray) { @{ ArgumentList = '--autostart' } } else { @{} }
+Start-Process (Join-Path $root 'target\release\palaclips-app.exe') -PassThru @arguments
