@@ -190,7 +190,7 @@ fn run_app_stream(exe: &str, start: Hns, deadline: Hns) -> Result<()> {
         start,
         deadline,
         &AtomicBool::new(false),
-        || sources::session_peak(root).ok(),
+        || sources::session_peak(&[root]).ok(),
     );
     client.stop_stream().ok();
     result

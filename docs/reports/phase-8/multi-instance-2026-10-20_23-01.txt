@@ -1,0 +1,9 @@
+2026-10-20T23:02:28 multi-instance : deux instances indépendantes de tone.exe (440 Hz puis 660 Hz, sortie Realtek), piste d'appli tone.exe
+2026-10-20T21:02:28.895533Z  INFO palaclips_engine::audio::track: application rattachée track=tone app=tone.exe (PID 22832) instances=1
+2026-10-20T21:02:32.949293Z  INFO palaclips_engine::audio::track: application rattachée track=tone app=tone.exe (PID 22832, 28668) instances=2
+2026-10-20T21:02:40.207820Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\multi-instance\clips\Bureau\Bureau_2026-10-20_23-02-40_replay.mp4 duration_s=15.2959999 latency_ms=3
+[    15 s] clip 1 : 15.296 s, prêt en 3 ms ; mémoire privée 152.8 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\multi-instance\clips\Bureau\Bureau_2026-10-20_23-02-40_replay.mp4
+2026-10-20T21:02:44.259668Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone packets=2663 silence_ms=4094 dropped_ms=0 drift_corrections=0 device_switches=1 peak=0.05000000074505806
+piste « tone » (dBFS) : 0s 440= 660= | 1s 440= 660= | 2s 440= 660= | 3s 440= 660= | 4s 440=-23.8 660=-88.2 | 5s 440=-23 660= | 6s 440=-23 660= | 7s 440=-23 660= | 8s 440=-25 660=-24.3 | 9s 440=-23 660=-23 | 10s 440=-23 660=-23 | 11s 440=-23 660=-23 | 12s 440=-23 660=-23 | 13s 440=-23 660=-23 | 14s 440=-23 660=-23
+RÉSULTAT : les deux instances sont dans la piste (4 secondes sur 4 à la fin)
+2026-10-20T23:02:45 fin : sons, replay et fichiers de test supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\multi-instance-2026-10-20_23-01.txt
