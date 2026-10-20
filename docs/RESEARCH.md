@@ -483,3 +483,19 @@ privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cl
 | [ClipLite](https://github.com/ConnorSawaya/ClipLite) (MIT, C++) | pistes par processus + éditeur |
 
 ⚠️ Ne pas copier de code GPL-3 (GeniusClip) dans PalaClips (MIT) : s'en inspirer seulement.
+
+## Applis en plusieurs instances (phase 8, 2026-10-20)
+
+- Constat chez Palawi : deux `Vesktop.exe` « principaux » (sans `--type`), lancés à 1 s
+  d'intervalle par un lanceur déjà terminé (PID 16772 disparu), chacun avec son propre
+  `audio.mojom.AudioService`. Pour Windows, ce sont deux arbres sans lien. Le process loopback
+  d'un arbre ne voit pas l'autre : la piste capturait l'arbre au plus petit PID (12424) pendant
+  que l'appel passait par l'autre (12900), d'où 3 435 paquets tous à zéro.
+- L'alerte `app_track_silent` restait muette pour la même raison : elle lisait la crête des
+  sessions de l'arbre capturé, silencieux lui aussi.
+- Correction : un flux par racine, additionnés (`StreamSum`). Banc `scripts/multi-instance.ps1` :
+  deux instances indépendantes de `tone.exe` (copie de la CLI), 440 Hz puis 660 Hz quatre
+  secondes plus tard. La seconde est rattachée par la vérification d'une seconde, et la piste
+  contient les deux à −23 dBFS jusqu'à la fin, aucune image perdue.
+  Journal : `docs/reports/phase-8/multi-instance-2026-10-20_23-01.txt`.
+

@@ -80,10 +80,15 @@ charges :
   silence ; jamais d'arrêt sur timeout.
 - Mode exclusif d'un jeu (`AUDCLNT_E_DEVICE_IN_USE`) : réessayer chaque seconde et le signaler.
 - Rattachement automatique d'une piste à son appli (suivi par nom d'exe) : `AudioSource::
-  Application { exe_name }` cherche le PID racine (chaque seconde tant que l'appli n'est pas
-  lancée, en comblant du silence), ouvre le process loopback sur l'arbre et attend aussi le
-  handle du processus (`SYNCHRONIZE`). À sa fin (le flux, lui, continue d'envoyer des zéros),
-  la piste se referme et attend le retour de l'appli.
+  Application { exe_name }` cherche les PID racines (chaque seconde tant que l'appli n'est pas
+  lancée, en comblant du silence) et ouvre un process loopback par racine : une appli lancée en
+  plusieurs instances indépendantes (deux `Vesktop.exe` sans parent commun vivant) a un arbre
+  par instance. `StreamSum` donne à chaque flux son `GapFiller` (horloge QPC, silences) démarré
+  à la position de la piste et additionne les blocs communs, déjà alignés ; le remplisseur de la
+  piste les reçoit tels quels (un seul flux = résultat identique à avant). La piste attend aussi
+  le handle de chaque processus racine (`SYNCHRONIZE`) et revérifie les racines chaque seconde :
+  une instance qui apparaît ou disparaît rouvre les flux. Sans racine, la piste attend le retour
+  de l'appli.
 - Piste « Jeu » (`AudioSource::Game(CurrentGame)`, ADR-019) : même mécanique, l'exe est le
   « jeu en cours » de `sources::CurrentGame` : processus fixé par l'utilisateur
   (`AudioSettings::game_exe`), sinon l'appli de la fenêtre capturée, sinon la dernière appli
@@ -92,7 +97,7 @@ charges :
   `EVENT_SYSTEM_FOREGROUND` + `EVENT_OBJECT_LOCATIONCHANGE` de la fenêtre au premier plan)
   réveille la piste ; elle ne se rouvre que si le jeu change.
 - Piste à zéro numérique alors que la session de l'appli a du signal → `app_track_silent` :
-  piste sans échantillon non nul depuis 3 s, puis crête de session de l'arbre > 0,001 à deux
+  piste sans échantillon non nul depuis 3 s, puis crête de session des arbres > 0,001 à deux
   vérifications (une par seconde) → une alerte, réarmée dès que la piste reçoit du signal.
   Les sessions de PalaClips sont ignorées : une capture loopback crée une session de rendu
   « active » dont le vumètre reproduit la sortie. Limite connue : une appli suivie qui
@@ -144,8 +149,9 @@ charges :
 - Périphériques audio et changements du périphérique par défaut.
 - Persistance par nom d'exe / identifiant de périphérique, jamais par PID.
 - Processus par `CreateToolhelp32Snapshot` (PID, PID parent, nom d'exe), sans dépendance.
-  PID racine d'une appli = processus de cet exe dont le parent n'est pas le même exe (le plus
-  petit PID s'il y en a plusieurs) ; l'arbre = la racine et tous ses descendants.
+  PID racines d'une appli (`root_pids`) = processus de cet exe dont le parent n'est pas le même
+  exe, triés ; `root_pid` (liste des sessions, jeux) garde le plus petit. L'arbre = la racine et
+  tous ses descendants.
 - Fenêtre au premier plan (`foreground_window`) : `GetForegroundWindow` → PID → nom d'exe,
   rectangle comparé à celui de son écran (thread « per-monitor DPI aware »), style
   `WS_CAPTION`. Jamais un jeu : PalaClips lui-même et le shell (`explorer.exe`, menu
