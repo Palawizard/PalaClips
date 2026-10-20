@@ -4,6 +4,8 @@ import {
   type EngineConfig,
   type Feedback,
   type Theme,
+  exportDiagnostic,
+  openDiagnostic,
   getAutostart,
   getConfig,
   getFeedback,
@@ -31,6 +33,8 @@ export function GeneralSection() {
   const [language, setLanguageState] = useState<LanguageSetting>("system");
   const [error, setError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exported, setExported] = useState<string | null>(null);
   const resetTrigger = useRef<HTMLButtonElement>(null);
   const resetCancel = useRef<HTMLButtonElement>(null);
   const resetOpened = useRef(false);
@@ -108,6 +112,18 @@ export function GeneralSection() {
     });
   };
 
+  const exportReport = () => {
+    if (exporting) return;
+    setError(null);
+    setExporting(true);
+    exportDiagnostic()
+      .then((name) => {
+        if (name) setExported(name);
+      })
+      .catch((failure) => setError(errorText(failure)))
+      .finally(() => setExporting(false));
+  };
+
   const reset = () => {
     setConfirmReset(false);
     setError(null);
@@ -171,6 +187,31 @@ export function GeneralSection() {
           label={t("settings.general.language")}
           onChange={changeLanguage}
         />
+      </SettingRow>
+      <SettingRow
+        label={t("settings.general.diagnostic")}
+        help={exported ? t("settings.general.diagnosticSaved", { name: exported }) : t("settings.general.diagnosticHelp")}
+      >
+        <span className="flex gap-2">
+          {exported && (
+            <button
+              type="button"
+              onClick={() => openDiagnostic().catch((failure) => setError(errorText(failure)))}
+              className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+            >
+              {t("settings.general.diagnosticOpen")}
+            </button>
+          )}
+          <button
+          type="button"
+          onClick={exportReport}
+          aria-disabled={exporting}
+          aria-busy={exporting}
+          className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover aria-disabled:cursor-progress aria-disabled:opacity-50"
+        >
+            {t("settings.general.diagnosticExport")}
+          </button>
+        </span>
       </SettingRow>
       <SettingRow
         label={t("settings.general.reset")}
