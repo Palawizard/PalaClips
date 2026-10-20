@@ -561,5 +561,63 @@
     "cutPoints": "Cut start or end at the current position",
     "jumpCut": "Go to the cut start or end",
     "back": "Back to the gallery"
+  },
+  "onboarding": {
+    "title": "First launch",
+    "stepsLabel": "First launch steps",
+    "done": "done",
+    "skip": "Skip setup",
+    "back": "Back",
+    "next": "Continue",
+    "finish": "Finish",
+    "steps": {
+      "checks": "Checks",
+      "capture": "Capture area",
+      "audio": "Audio",
+      "folder": "Clips folder",
+      "replay": "Replay and shortcuts",
+      "test": "Test clip"
+    },
+    "checks": {
+      "pending": "Checking…",
+      "windows": "Windows",
+      "windowsOk": "Build {build}",
+      "windowsOld": "Build {build}: per-app audio capture needs build 20348 or later. Update Windows.",
+      "windowsUnknown": "Couldn't find the Windows version.",
+      "encoder": "Video encoder",
+      "encoderOk": "{codecs} on the graphics card",
+      "encoderMissing": "No hardware encoder worked. Update your graphics driver, then restart PalaClips.",
+      "webview": "WebView2",
+      "webviewVersion": "Version {version}",
+      "folder": "Clips folder",
+      "folderOk": "{path}",
+      "folderReadOnly": "PalaClips can't write to {path}. Pick another folder in the Clips folder step."
+    },
+    "capture": {
+      "help": "Pick a single window in Settings > Capture."
+    },
+    "audio": {
+      "microphone": "Record the mic",
+      "mixTitle": "Track 1 ({name}) contains",
+      "chosen": "The recorded tracks",
+      "chosenHelp": "Game and the apps you add, nothing else.",
+      "desktop": "All PC sound",
+      "desktopHelp": "Everything you hear, notifications and music included.",
+      "apps": "Add one track per app (Discord, music…) in Settings > Audio.",
+      "device": "Mic device"
+    },
+    "test": {
+      "arming": "Starting the replay…",
+      "failed": "The replay didn't start.",
+      "retry": "Try again",
+      "filling": "A few more seconds in memory…",
+      "pressKeys": "Press {keys} to save the last seconds.",
+      "noKeys": "No save shortcut: use the button.",
+      "saveNow": "Save now",
+      "saving": "Saving the clip…",
+      "saved": "Clip saved",
+      "gallery": "Open in gallery",
+      "buffered": "{value} / {total} s"
+    }
   }
 }

@@ -179,6 +179,27 @@ body {
   }
 }
 
+.onboarding-step {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.check-spin {
+  animation: check-spin 900ms linear infinite;
+}
+
+@keyframes check-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .alert-item {
   transition:
     opacity 200ms var(--ease-out),
@@ -353,8 +374,14 @@ body {
   .export-fill,
   .export-chevron,
   .performance-cells,
-  .waveform {
+  .waveform,
+  .onboarding-step,
+  .mix-choice {
     transition-duration: 0ms !important;
+  }
+
+  .check-spin {
+    animation: none;
   }
 
   .skeleton,
