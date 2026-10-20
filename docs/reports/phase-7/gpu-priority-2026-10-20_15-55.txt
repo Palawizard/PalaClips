@@ -1,0 +1,18 @@
+HAGS (HwSchMode) : activé
+administrateur : false
+conversion 1440p → NV12 à 60 i/s, 5 s par essai
+  sans charge, défaut                p50   0.99 ms  p95   1.50 ms  max   53.35 ms  > 1 image :   0.3 %  (299 conv.)
+charge GPU, tour 1
+  défaut [lu : thread 0, classe NORMAL] p50   2.99 ms  p95   6.04 ms  max    7.00 ms  > 1 image :   0.0 %  (301 conv.)
+  SetGPUThreadPriority(7) [thread 7 OK, relu 7] p50   3.00 ms  p95   6.00 ms  max    7.02 ms  > 1 image :   0.0 %  (301 conv.)
+  classe ABOVE_NORMAL [classe ABOVE_NORMAL OK, relue ABOVE_NORMAL] p50   3.00 ms  p95   6.48 ms  max    6.98 ms  > 1 image :   0.0 %  (301 conv.)
+  classe HIGH [classe HIGH OK, relue HIGH] p50   3.00 ms  p95   6.48 ms  max    7.77 ms  > 1 image :   0.0 %  (301 conv.)
+  classe REALTIME [classe REALTIME OK, relue REALTIME] p50   2.46 ms  p95   5.48 ms  max    6.34 ms  > 1 image :   0.0 %  (301 conv.)
+  thread 7 + classe HIGH [thread 7 OK, relu 7, classe HIGH OK, relue HIGH] p50   5.49 ms  p95  10.98 ms  max   12.38 ms  > 1 image :   0.0 %  (301 conv.)
+charge GPU, tour 2
+  défaut [lu : thread 0, classe NORMAL] p50   5.52 ms  p95  11.00 ms  max   12.00 ms  > 1 image :   0.0 %  (301 conv.)
+  SetGPUThreadPriority(7) [thread 7 OK, relu 7] p50   6.50 ms  p95  10.99 ms  max   12.05 ms  > 1 image :   0.0 %  (301 conv.)
+  classe ABOVE_NORMAL [classe ABOVE_NORMAL OK, relue ABOVE_NORMAL] p50   5.57 ms  p95  10.50 ms  max   12.06 ms  > 1 image :   0.0 %  (301 conv.)
+  classe HIGH [classe HIGH OK, relue HIGH] p50   6.46 ms  p95  10.52 ms  max   11.69 ms  > 1 image :   0.0 %  (301 conv.)
+  classe REALTIME [classe REALTIME OK, relue REALTIME] p50   2.40 ms  p95   5.48 ms  max    5.58 ms  > 1 image :   0.0 %  (301 conv.)
+  thread 7 + classe HIGH [thread 7 OK, relu 7, classe HIGH OK, relue HIGH] p50   5.99 ms  p95  10.64 ms  max   12.01 ms  > 1 image :   0.0 %  (301 conv.)

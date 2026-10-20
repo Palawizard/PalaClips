@@ -1,0 +1,19 @@
+2026-10-20T17:43:56 fps-impact : MSI-Kombustor-x64.exe, 20 s par essai, PresentMon (MsBetweenPresents), priorité GPU normale ; ne pas bouger
+mise en route (non comptée)      82,7 i/s, 1 % bas   70,7 i/s, GPU 100 %, 1650 présentations, mode « Composed: Copy with GPU GDI » 
+sans capture 1                   85,1 i/s, 1 % bas   73,1 i/s, GPU 100 %, 1698 présentations, mode « Composed: Copy with GPU GDI » 
+fenêtre 60 i/s                   84,3 i/s, 1 % bas   76,6 i/s, GPU 100 %, 1682 présentations, mode « Composed: Copy with GPU GDI » frames=1559 captured=399 duplicated=1160 late=982 max_lateness_ms=69.2124
+sans capture 2                   83,7 i/s, 1 % bas   75,2 i/s, GPU 100 %, 1669 présentations, mode « Composed: Copy with GPU GDI » 
+écran principal 60 i/s           80,8 i/s, 1 % bas   72,1 i/s, GPU 100 %, 1611 présentations, mode « Composed: Copy with GPU GDI » frames=1558 captured=390 duplicated=1169 late=908 max_lateness_ms=72.1366
+sans capture 3                   82,4 i/s, 1 % bas   71,6 i/s, GPU 100 %, 1644 présentations, mode « Composed: Copy with GPU GDI » 
+écran 1440p60 + 4 pistes         83,2 i/s, 1 % bas   73,1 i/s, GPU 100 %, 1660 présentations, mode « Composed: Copy with GPU GDI » track=Jeu packets=0 silence_ms=26000 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 track=Micro packets=2598 silence_ms=23 dropped_ms=0 drift_corrections=15 device_switches=0 peak=0.00704193115234375 track=vesktop packets=2599 silence_ms=15 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 track=Mix complet packets=2601 silence_ms=0 dropped_ms=5 drift_corrections=4 device_switches=0 peak=0.0 frames=1559 captured=393 duplicated=1167 late=852 max_lateness_ms=70.1824
+sans capture 4                   85,3 i/s, 1 % bas   74,7 i/s, GPU 100 %, 1702 présentations, mode « Composed: Copy with GPU GDI » 
+fenêtre 30 i/s                   84,0 i/s, 1 % bas   75,6 i/s, GPU 100 %, 1677 présentations, mode « Composed: Copy with GPU GDI » frames=779 captured=397 duplicated=383 late=232 max_lateness_ms=70.1137
+sans capture 5                   82,3 i/s, 1 % bas   72,9 i/s, GPU 100 %, 1642 présentations, mode « Composed: Copy with GPU GDI » 
+WGC seul (sans encodage)         80,8 i/s, 1 % bas   71,1 i/s, GPU 100 %, 1611 présentations, mode « Composed: Copy with GPU GDI » images reçues : 2107 en 26 s
+sans capture 6                   83,7 i/s, 1 % bas   71,9 i/s, GPU 100 %, 1670 présentations, mode « Composed: Copy with GPU GDI » 
+PERTE fenêtre 60 i/s                  0,1 % (-0,1 i/s) face à la moyenne des essais sans capture voisins (84,4 i/s, dérive entre eux 1,7 %)
+PERTE écran principal 60 i/s          2,7 % (-2,3 i/s) face à la moyenne des essais sans capture voisins (83,1 i/s, dérive entre eux 1,6 %)
+PERTE écran 1440p60 + 4 pistes        0,7 % (-0,6 i/s) face à la moyenne des essais sans capture voisins (83,8 i/s, dérive entre eux -3,4 %)
+PERTE fenêtre 30 i/s                 -0,3 % (+0,2 i/s) face à la moyenne des essais sans capture voisins (83,8 i/s, dérive entre eux 3,5 %)
+PERTE WGC seul (sans encodage)        2,7 % (-2,2 i/s) face à la moyenne des essais sans capture voisins (83,0 i/s, dérive entre eux -1,6 %)
+2026-10-20T17:48:34 fin : captures arrêtées et supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\fps-impact-2026-10-20_17-43.txt

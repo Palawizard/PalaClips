@@ -1,0 +1,31 @@
+2026-10-20T16:51:13 app-crash : piste d'appli tone-crash.exe (440 Hz sur « Realtek »), processus tué à 8 s, relancé à 16 s, sauvegarde à 28 s (replay 30 s, écran principal 360p30)
+8.1 s : tone-crash.exe tué (Stop-Process -Force)
+16.1 s : tone-crash.exe relancé (PID 31192)
+replay terminé, code 0
+2026-10-20T14:51:15.599121Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU temps réel
+2026-10-20T14:51:16.472449Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=640 height=360 fps=30 tracks=1 duration_s=30 storage=Ram
+replay de 30 s (RAM) : Entrée = sauvegarder, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+2026-10-20T14:51:16.474555Z  INFO palaclips_engine::audio::track: application rattachée track=tone-crash app=tone-crash.exe (PID 2428)
+piste 1 « tone-crash » : Capturing tone-crash.exe (PID 2428)
+[     5 s] tampon 5.0 s, 1 Mo ; mémoire privée du processus 153 Mo
+[    10 s] tampon 10.0 s, 2 Mo ; mémoire privée du processus 152 Mo
+piste 1 « tone-crash » : Waiting 
+[    15 s] tampon 15.0 s, 2 Mo ; mémoire privée du processus 153 Mo
+[    20 s] tampon 20.0 s, 3 Mo ; mémoire privée du processus 154 Mo
+2026-10-20T14:51:36.763663Z  INFO palaclips_engine::audio::track: application rattachée track=tone-crash app=tone-crash.exe (PID 31192)
+piste 1 « tone-crash » : Capturing tone-crash.exe (PID 31192)
+[    25 s] tampon 25.0 s, 4 Mo ; mémoire privée du processus 156 Mo
+[    30 s] tampon 30.0 s, 4 Mo ; mémoire privée du processus 157 Mo
+2026-10-20T14:51:48.626840Z  WARN ffmpeg: [swscaler @ 000001803a61eb00] deprecated pixel format used, make sure you did set range correctly
+2026-10-20T14:51:48.631832Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\app-crash\Bureau\Bureau_2026-10-20_16-51-48_replay.mp4 duration_s=30.0853333 latency_ms=9
+[    32 s] clip 1 : 30.085 s, prêt en 9 ms ; mémoire privée 152.8 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\app-crash\Bureau\Bureau_2026-10-20_16-51-48_replay.mp4
+[    35 s] tampon 3.0 s, 0 Mo ; mémoire privée du processus 153 Mo
+2026-10-20T14:51:51.624798Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1055 captured=2071 duplicated=0 late=0 max_lateness_ms=1.0332
+2026-10-20T14:51:51.668129Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone-crash packets=2709 silence_ms=8119 dropped_ms=0 drift_corrections=0 device_switches=1 peak=0.25
+2026-10-20T14:51:51.668586Z  INFO ffmpeg: [aac @ 000001803a4d90c0] Qavg: 39411.461
+2026-10-20T14:51:51.669068Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 9 ms, moy 9 ms, max 9 ms
+
+piste « tone-crash » du clip (30 s) : son 11 s → silence 7 s → son 12 s
+RÉSULTAT : OK (attendu : son, silence d'environ 8 s, son ; replay jamais arrêté)
+2026-10-20T16:51:52 fin : sons de test et replay arrêtés, clip supprimé, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\app-crash-2026-10-20_16-51.txt

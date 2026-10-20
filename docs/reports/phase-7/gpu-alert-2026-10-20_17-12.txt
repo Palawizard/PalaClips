@@ -1,0 +1,6 @@
+--- capture-video 30 s --no-gpu-priority
+2026-10-20T15:12:46.678181Z  WARN palaclips_engine::capture::rate: capture en retard : GPU saturé frames=62 late=39
+2026-10-20T15:13:11.492961Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=437 duplicated=1363 late=1097 max_lateness_ms=87.4029
+--- capture-video 30 s 
+2026-10-20T15:13:11.649169Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU temps réel
+2026-10-20T15:13:48.333199Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=1674 duplicated=237 late=3 max_lateness_ms=51.8447
