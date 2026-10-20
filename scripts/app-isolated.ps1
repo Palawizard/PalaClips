@@ -1,4 +1,4 @@
-param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$Tray)
+param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [string[]]$Copy = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$Tray)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $running = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @('palaclips-app', 'PalaClips') }
@@ -19,6 +19,12 @@ foreach ($file in $Link) {
     $game = Join-Path $dir "clips\$($name.Split('_')[0])"
     New-Item -ItemType Directory -Force $game | Out-Null
     New-Item -ItemType HardLink -Path (Join-Path $game $name) -Target $file | Out-Null
+}
+foreach ($file in $Copy) {
+    $item = Get-Item -LiteralPath $file
+    $game = Join-Path $dir "clips\$($item.Directory.Name)"
+    New-Item -ItemType Directory -Force $game | Out-Null
+    Copy-Item -LiteralPath $item.FullName -Destination $game
 }
 if ($LeftScreen -or $MainScreen) {
     Add-Type -AssemblyName System.Windows.Forms

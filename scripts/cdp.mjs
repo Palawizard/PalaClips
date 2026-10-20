@@ -27,18 +27,20 @@ export async function connect(port) {
     pending.get(message.id)?.(message);
     pending.delete(message.id);
   };
-  const evaluate = async (expression) => {
+  const send = (method, params = {}) => {
     const id = ++nextId;
     const reply = new Promise((resolve) => pending.set(id, resolve));
-    socket.send(
-      JSON.stringify({ id, method: "Runtime.evaluate", params: { expression, awaitPromise: true, returnByValue: true } }),
-    );
-    const { result, error } = await reply;
+    socket.send(JSON.stringify({ id, method, params }));
+    return reply;
+  };
+  const evaluate = async (expression) => {
+    const { result, error } = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
     if (error) throw new Error(error.message);
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text);
     return result.result.value;
   };
   return {
+    send,
     evaluate,
     page: (fn, ...args) => evaluate(`(${fn})(...${JSON.stringify(args)})`),
     close: () => socket.close(),
