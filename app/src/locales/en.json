@@ -604,7 +604,9 @@
       "desktop": "All PC sound",
       "desktopHelp": "Everything you hear, notifications and music included.",
       "apps": "Add one track per app (Discord, music…) in Settings > Audio.",
-      "device": "Mic device"
+      "device": "Mic device",
+      "voiceInMix": "Also put your voice in track 1",
+      "voiceInMixHelp": "Your voice always has its own track. On, it's also mixed into track 1 ({name}), so the clip is ready to share as is. Off, track 1 only holds the sound chosen below."
     },
     "test": {
       "arming": "Starting the replay…",
@@ -618,6 +620,13 @@
       "saved": "Clip saved",
       "gallery": "Open in gallery",
       "buffered": "{value} / {total} s"
+    },
+    "replay": {
+      "storage": "Where to keep the replay",
+      "ram": "In memory (RAM)",
+      "disk": "On disk",
+      "ramHelp": "Nothing is written until you save, but the replay takes about {size} of RAM while you play. Best for short durations.",
+      "diskHelp": "RAM stays free: the replay is written continuously to a temporary file of about {size} on the Windows drive. Best for long durations."
     }
   }
 }

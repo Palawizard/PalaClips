@@ -7,6 +7,7 @@ import {
   type HardwareEncoder,
   type OnboardingChecks,
   type ReplayEstimate,
+  type ReplayStorage,
   estimateReplay,
   finishOnboarding,
   listAudioDevices,
@@ -22,7 +23,7 @@ import { CaptureSection } from "../settings/CaptureSection.tsx";
 import { DiagnosticRow } from "../settings/GeneralSection.tsx";
 import { HotkeysSection, Keys } from "../settings/HotkeysSection.tsx";
 import { DURATIONS, durationLabel, withCurrent } from "../settings/ReplaySection.tsx";
-import { Select, SettingRow, Switch } from "../settings/Settings.tsx";
+import { Segmented, Select, SettingRow, Switch } from "../settings/Settings.tsx";
 import { StorageSection } from "../settings/StorageSection.tsx";
 import { LoadError, useConfigDraft } from "../settings/configDraft.tsx";
 
@@ -182,10 +183,13 @@ function AudioStep({ engine }: { engine: Engine }) {
               onChange={(id) => setAudio({ microphone_device_id: id || null })}
             />
           </SettingRow>
-          <SettingRow label={t("settings.audio.inFullMix", { name: mix })}>
+          <SettingRow
+            label={t("onboarding.audio.voiceInMix")}
+            help={t("onboarding.audio.voiceInMixHelp", { name: mix })}
+          >
             <Switch
               checked={audio.microphone_in_full_mix}
-              label={t("settings.audio.inFullMixLabel", { name: mix })}
+              label={t("onboarding.audio.voiceInMix")}
               onChange={(microphone_in_full_mix) => setAudio({ microphone_in_full_mix })}
             />
           </SettingRow>
@@ -252,18 +256,11 @@ function ReplayStep() {
   if (!config || !draft) return <LoadError message={loadError} />;
   const replay = (patch: Partial<typeof draft.replay>) => config.commit({ ...draft, replay: { ...draft.replay, ...patch } });
 
+  const size = estimate ? bytes(estimate.bytes) : "—";
+
   return (
     <>
-      <SettingRow
-        label={t("settings.replay.duration")}
-        help={
-          estimate
-            ? `${t("settings.replay.approx", { size: bytes(estimate.bytes) })} ${
-                draft.replay.storage === "ram" ? t("settings.replay.inRam") : t("settings.replay.onDisk")
-              }`
-            : undefined
-        }
-      >
+      <SettingRow label={t("settings.replay.duration")}>
         <Select
           label={t("settings.replay.duration")}
           value={draft.replay.duration_secs}
@@ -272,6 +269,20 @@ function ReplayStep() {
             label: durationLabel(seconds),
           }))}
           onChange={(duration_secs) => replay({ duration_secs })}
+        />
+      </SettingRow>
+      <SettingRow
+        label={t("onboarding.replay.storage")}
+        help={t(draft.replay.storage === "ram" ? "onboarding.replay.ramHelp" : "onboarding.replay.diskHelp", { size })}
+      >
+        <Segmented<ReplayStorage>
+          value={draft.replay.storage}
+          options={[
+            { value: "ram", label: t("onboarding.replay.ram") },
+            { value: "disk", label: t("onboarding.replay.disk") },
+          ]}
+          label={t("onboarding.replay.storage")}
+          onChange={(storage) => replay({ storage })}
         />
       </SettingRow>
       <SettingRow label={t("settings.general.armOnStartup")}>

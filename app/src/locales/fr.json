@@ -604,7 +604,9 @@
       "desktop": "Tout le son du PC",
       "desktopHelp": "Tout ce que tu entends, notifications et musique comprises.",
       "apps": "Une piste par appli (Discord, musique…) s'ajoute dans Réglages > Audio.",
-      "device": "Périphérique du micro"
+      "device": "Périphérique du micro",
+      "voiceInMix": "Mettre aussi ta voix dans la piste 1",
+      "voiceInMixHelp": "Ta voix a toujours sa propre piste. Activé, elle est aussi mélangée dans la piste 1 ({name}) : le clip est prêt à partager tel quel. Coupé, la piste 1 contient seulement le son choisi en dessous."
     },
     "test": {
       "arming": "Le replay démarre…",
@@ -618,6 +620,13 @@
       "saved": "Clip enregistré",
       "gallery": "Voir dans la galerie",
       "buffered": "{value} / {total} s"
+    },
+    "replay": {
+      "storage": "Où garder le replay",
+      "ram": "En mémoire (RAM)",
+      "disk": "Sur le disque",
+      "ramHelp": "Rien n'est écrit tant que tu ne sauvegardes pas, mais le replay occupe environ {size} de RAM pendant que tu joues. Idéal pour les durées courtes.",
+      "diskHelp": "La RAM reste libre : le replay s'écrit en continu dans un fichier temporaire d'environ {size} sur le disque de Windows. Idéal pour les longues durées."
     }
   }
 }
