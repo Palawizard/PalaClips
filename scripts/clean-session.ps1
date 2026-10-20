@@ -76,15 +76,38 @@ xcopy "%LOCALAPPDATA%\com.palawi.palaclips\logs" "%PUBLIC%\PalaClips-test\logs\"
     }
     "Remove" {
         Assert-Admin
+        $ErrorActionPreference = "Continue"
         $user = Get-LocalUser -Name $Account -ErrorAction SilentlyContinue
         if ($user) {
-            Get-CimInstance Win32_UserProfile | Where-Object { $_.SID -eq $user.SID.Value } | Remove-CimInstance
-            Remove-LocalUser -Name $Account
-            Write-Host "Compte $Account et son profil supprimés."
+            foreach ($line in (quser 2>$null)) {
+                if ($line -match "^\s*>?$([regex]::Escape($Account))\s+(?:\S+\s+)?(\d+)\s") {
+                    logoff $Matches[1]
+                    Write-Host "Session $Account fermée."
+                    Start-Sleep -Seconds 5
+                }
+            }
+            try {
+                Get-CimInstance Win32_UserProfile | Where-Object { $_.SID -eq $user.SID.Value } | Remove-CimInstance -ErrorAction Stop
+                Write-Host "Profil de $Account supprimé."
+            } catch {
+                Write-Warning "Profil de $Account non supprimé ($_). Redémarre puis relance -Step Remove."
+            }
+            try {
+                Remove-LocalUser -Name $Account -ErrorAction Stop
+                Write-Host "Compte $Account supprimé."
+            } catch {
+                Write-Warning "Compte $Account non supprimé : $_"
+            }
+        } else {
+            Write-Host "Aucun compte $Account."
         }
         $pidFile = Join-Path $updates "server.pid"
         if (Test-Path $pidFile) { Stop-Process -Id (Get-Content $pidFile) -Force -ErrorAction SilentlyContinue }
+        Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" |
+            Where-Object { $_.CommandLine -match "http\.server $Port" } |
+            ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
         Remove-Item $public, $updates -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "Serveur local arrêté, $public et $updates supprimés."
+        $left = @($public, $updates) | Where-Object { Test-Path $_ }
+        if ($left) { Write-Warning "Encore présent : $($left -join ', ')" } else { Write-Host "Serveur local arrêté, $public et $updates supprimés." }
     }
 }

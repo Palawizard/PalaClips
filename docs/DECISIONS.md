@@ -561,6 +561,9 @@ phase 8).
     que pour un workflow présent sur `main`.
   - `PALACLIPS_UPDATE_URL` remplace l'adresse de `latest.json` pour l'essai sur serveur local
     (les fichiers d'une release brouillon ne sont pas téléchargeables sans authentification).
+    Seule une adresse `http://127.0.0.1` ou `http://localhost` est acceptée, toute autre est
+    ignorée (test `only_a_loopback_http_feed_can_replace_github`) ; même redirigé, l'updater
+    n'installe qu'un paquet signé par la clé de Palawi.
 - Conséquence : un build local avec installeur (`tauri build` sans `--no-bundle`) exige
   désormais la clé ; pour les mesures locales, ajouter
   `--config '{"bundle":{"createUpdaterArtifacts":false}}'`.
