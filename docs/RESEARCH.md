@@ -107,6 +107,31 @@
 - Hypothèse non vérifiée : la perte de 50–100 i/s vue le 2026-10-16 pendant
   `nvenc-quality.ps1` venait d'autre chose que la capture (réencodages et VMAF lancés en
   parallèle du jeu, CPU et GPU chargés).
+- **Capture sous GPU saturé et priorité GPU** (2026-10-20, `palaclips-cli probe-gpu-priority`,
+  Windows 11 26200, RTX 4070 Super, HAGS activé, **sans droits admin**, journaux
+  `target/journals/gpu-priority-*.txt`). La sonde lance un processus de charge (pixel shader
+  de 20 ms par appel de dessin, 2 appels en vol) et mesure la latence d'une conversion
+  Video Processor 1440p → NV12 toutes les 16,7 ms, sous chaque réglage :
+  - charge **en arrière-plan** (sans fenêtre) : la conversion n'attend jamais plus de 12 ms,
+    quel que soit le réglage, et `capture-video` reste à l'heure (2,8 ms de retard max). Le
+    blocage vu sous Superposition ne se reproduit pas ;
+  - charge **au premier plan** (fenêtre 640×360 qui présente, `--window`) : p50 32–45 ms,
+    100 % des conversions au-delà d'une image, et `capture-video` prend **11,2 s** de retard
+    (308 images source reçues en 20 s). Windows favorise le GPU du processus au premier plan :
+    c'est le cas d'un jeu ;
+  - `IDXGIDevice::SetGPUThreadPriority(7)` : accepté et relu à 7, **aucun effet**.
+    `D3DKMTSetProcessSchedulingPriorityClass` `ABOVE_NORMAL` et `HIGH` : acceptés, aucun
+    effet ; thread 7 + `HIGH` (réglage d'OBS) : aucun effet ;
+  - classe **`REALTIME`** : acceptée **sans admin** (relue `REALTIME`) et seule efficace :
+    p50 5 ms, 0 % au-delà d'une image. OBS ne la demande qu'en administrateur ; avec HAGS
+    activé, Windows 11 l'accorde à un processus normal. Sans HAGS : à mesurer.
+  - Correctif (moteur) : `capture::raise_gpu_priority()` (classe `REALTIME`, appelée au
+    démarrage du moteur ; refus journalisé) **et** file vidéo bornée : à chaque réveil, seule
+    l'échéance la plus récente reçoit une image convertie, les échéances manquées répètent la
+    dernière image encodée (même surface NVENC, aucun travail GPU). Sous la même charge au
+    premier plan : retard max 57 ms sans la priorité (`--no-gpu-priority`, 530 images
+    source) et 63 ms avec (1 333 images source), 1 200 images CFR sur 20 s, 0 erreur de
+    décodage.
 
 ## Audio (`wasapi` 0.26)
 

@@ -226,6 +226,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         }
                         println!("alerte {severity:?} {} : {message}", text.code);
                     }
+                    EngineEvent::AlertCleared { code } => println!("alerte retirée : {code}"),
                     EngineEvent::StateChanged { state } => println!("état : {state:?}"),
                     EngineEvent::GameNamed { exe_name, name } => {
                         println!("nom de jeu : {exe_name} → {name}");

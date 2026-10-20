@@ -50,6 +50,17 @@ impl CfrClock {
     }
 }
 
+pub fn emit_due<E>(
+    due: Range<i64>,
+    mut emit: impl FnMut(i64, bool) -> Result<(), E>,
+) -> Result<(), E> {
+    let newest = due.end - 1;
+    for index in due {
+        emit(index, index == newest)?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,6 +112,56 @@ mod tests {
         );
         let clock = CfrClock::new(ORIGIN, 144);
         assert_eq!(clock.tick_time(144 * 60), ORIGIN + Hns(HNS_PER_SECOND * 60));
+    }
+
+    fn run_encoder(fresh_cost: Hns, repeat_cost: Hns) -> (Vec<i64>, Vec<i64>, Hns) {
+        let period = Hns(HNS_PER_SECOND / 60);
+        let mut clock = CfrClock::new(ORIGIN, 60);
+        let mut now = ORIGIN;
+        let mut emitted = Vec::new();
+        let mut fresh = Vec::new();
+        let mut max_lateness = Hns::ZERO;
+        while now < ORIGIN + Hns(10 * HNS_PER_SECOND) {
+            let due = clock.take_due(now);
+            if due.is_empty() {
+                now = clock.next_deadline();
+                continue;
+            }
+            max_lateness = max_lateness.max(now - clock.tick_time(due.start));
+            let captured_at = now;
+            let result: Result<(), ()> = emit_due(due, |index, newest| {
+                emitted.push(index);
+                if newest {
+                    assert!(captured_at - clock.tick_time(index) < period);
+                    fresh.push(index);
+                    now = now + fresh_cost;
+                } else {
+                    now = now + repeat_cost;
+                }
+                Ok(())
+            });
+            assert!(result.is_ok());
+        }
+        (emitted, fresh, max_lateness)
+    }
+
+    #[test]
+    fn a_slow_encoder_repeats_frames_instead_of_falling_behind() {
+        let period = Hns(HNS_PER_SECOND / 60);
+        let (emitted, fresh, max_lateness) = run_encoder(Hns(period.0 * 3), Hns(period.0 / 20));
+        assert_eq!(emitted, (0..emitted.len() as i64).collect::<Vec<_>>());
+        assert!(emitted.len() >= 599);
+        assert!(max_lateness < Hns(period.0 * 4), "{max_lateness:?}");
+        assert!(fresh.len() < emitted.len() / 2);
+    }
+
+    #[test]
+    fn an_encoder_that_keeps_up_gets_a_fresh_image_on_every_tick() {
+        let period = Hns(HNS_PER_SECOND / 60);
+        let (emitted, fresh, max_lateness) = run_encoder(Hns(period.0 / 4), Hns(period.0 / 20));
+        assert_eq!(emitted.len(), 600);
+        assert_eq!(fresh, emitted);
+        assert_eq!(max_lateness, Hns::ZERO);
     }
 
     #[test]
