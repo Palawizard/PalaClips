@@ -83,6 +83,14 @@ pub enum VideoQuality {
     Custom,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GpuPriority {
+    #[default]
+    Game,
+    Capture,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum OutputResolution {
@@ -101,6 +109,7 @@ pub struct VideoSettings {
     pub keyframe_interval_secs: f32,
     pub capture_cursor: bool,
     pub draw_border: bool,
+    pub gpu_priority: GpuPriority,
 }
 
 impl Default for VideoSettings {
@@ -114,6 +123,7 @@ impl Default for VideoSettings {
             keyframe_interval_secs: 1.0,
             capture_cursor: true,
             draw_border: false,
+            gpu_priority: GpuPriority::Game,
         }
     }
 }

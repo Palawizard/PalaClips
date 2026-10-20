@@ -125,15 +125,22 @@
   - classe **`REALTIME`** : acceptée **sans admin** (relue `REALTIME`) et seule efficace :
     p50 5 ms, 0 % au-delà d'une image. OBS ne la demande qu'en administrateur ; avec HAGS
     activé, Windows 11 l'accorde à un processus normal. Sans HAGS : à mesurer.
-  - Correctif (moteur) : `capture::raise_gpu_priority()` (classe `REALTIME`, appelée au
-    démarrage du moteur ; refus journalisé) **et** file vidéo bornée : à chaque réveil, seule
+  - Correctif (moteur) : `capture::set_gpu_priority()` (classe `REALTIME` si le réglage vaut
+    `capture`, `NORMAL` sinon, ADR-033 révisé ; refus journalisé) **et** file vidéo bornée : à chaque réveil, seule
     l'échéance la plus récente reçoit une image convertie, les échéances manquées répètent la
     dernière image encodée (même surface NVENC, aucun travail GPU). Sous la même charge au
-    premier plan : retard max 57 ms sans la priorité (`--no-gpu-priority`, 530 images
+    premier plan : retard max 57 ms sans la priorité (aujourd'hui le défaut, 530 images
     source) et 63 ms avec (1 333 images source), 1 200 images CFR sur 20 s, 0 erreur de
     décodage.
   - Alerte `capture_gpu_saturated` sous la même charge, 30 s : sans la priorité, levée au bout
     de 5 s (1 097 images en retard sur 1 800) ; avec, jamais (3 images en retard).
+  - Coût sur le jeu (PERF-03, `fps-impact.ps1`, Kombustor fenêtré « Composed: Copy with GPU
+    GDI », GPU 100 %, ~84 i/s, journaux `docs/reports/phase-7/fps-impact-2026-10-20_17-*.txt`) :
+    temps réel → perte 9,1–9,2 % (60 i/s), **7,5 %** (1440p60 + 4 pistes), 5,2 % (30 i/s),
+    0,3 % (WGC seul) ; priorité normale → 0,1 %, 2,7 %, **0,7 %**, −0,3 %, 2,7 % (dérive entre
+    essais sans capture jusqu'à 3,5 %), mais ~15 images source par seconde seulement : le
+    rappel de WGC attend le contexte D3D11 que tient l'encodeur bloqué sur le GPU.
+
 - **Plein écran exclusif** (2026-10-20, MSI Kombustor Vulkan en plein écran exclusif sur l'écran
   principal, `palaclips-cli probe-fullscreen` pendant `capture-video --target primary`) : la
   capture ne reçoit que **2 images en 60 s** ; `D3DKMTCheckExclusiveOwnership()` = vrai et

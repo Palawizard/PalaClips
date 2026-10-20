@@ -408,7 +408,9 @@ export function setPerformancePanel(open: boolean): Promise<void> {
   return invoke("set_performance_panel", { open });
 }
 
-export type OutputResolution = { kind: "native" } | { kind: "height"; height: number };
+export type GpuPriority = "game" | "capture";
+
+export type OutputResolution ={ kind: "native" } | { kind: "height"; height: number };
 
 export interface AppTrack {
   exe_name: string;
@@ -429,6 +431,7 @@ export interface EngineConfig {
     keyframe_interval_secs: number;
     capture_cursor: boolean;
     draw_border: boolean;
+    gpu_priority: GpuPriority;
   };
   audio: {
     record_full_mix: boolean;
