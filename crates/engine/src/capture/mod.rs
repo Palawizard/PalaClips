@@ -1,4 +1,5 @@
 mod display;
+mod gpu_priority;
 mod icon;
 mod pacer;
 mod preview;
@@ -10,8 +11,9 @@ pub use display::{
     ADVANCED_COLOR_MODE_HDR, AdvancedColorInfo2, DisplayColor, DisplayColorInfo, display_color,
     display_color_info,
 };
+pub use gpu_priority::raise_gpu_priority;
 pub use icon::{ICON_SIZE, app_icon_png};
-pub use pacer::CfrClock;
+pub use pacer::{CfrClock, emit_due};
 pub use preview::{PREVIEW_BOX, PreviewCapture, PreviewSink, preview_size};
 pub use rate::{RateWatch, composition_rate};
 pub use targets::{

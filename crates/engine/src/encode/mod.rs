@@ -16,7 +16,7 @@ use windows::Win32::Graphics::Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM;
 pub use audio::AacEncoder;
 pub use convert::{GpuConverter, Size, fit_rect, output_size};
 pub use d3d11::{create_device, frame_texture, render_texture, staging_texture};
-pub use hdr::HdrToSdr;
+pub use hdr::{HdrToSdr, blob_bytes, compile_shader};
 pub use log::route_ffmpeg_logs;
 pub use thumbnail::{THUMBNAIL_WIDTH, encode_jpeg, encode_png_rgba, write_thumbnail};
 pub use video::{SystemFrameEncoder, VideoEncoder, VideoEncoderSettings};
