@@ -170,6 +170,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   (signature vérifiée, refusé pendant un enregistrement).
 - Workflow de release : un tag `vX.Y.Z` construit et signe l'installeur, puis prépare une
   release brouillon avec `latest.json` et les notes du CHANGELOG.
+- Revue finale de la V1 (`docs/reports/release-v1.md`) : chaque exigence de la SPEC avec sa
+  preuve ; bancs `shared-encoder.ps1` (un seul encodeur pour le replay et l'enregistrement).
 
 ### Corrigé
 - Windows requis : Windows 11 (le build 20348 de la capture audio par appli n'existe pas en
