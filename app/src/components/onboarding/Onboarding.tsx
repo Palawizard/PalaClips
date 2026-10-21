@@ -1,47 +1,143 @@
-import { Check, CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react";
+import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { bytes } from "../../lib/format.ts";
 import { errorText, message, useT } from "../../lib/i18n.ts";
 import {
   type AudioDevice,
+  type EngineConfig,
   type HardwareEncoder,
   type OnboardingChecks,
-  type ReplayEstimate,
-  type ReplayStorage,
+  type TargetInfo,
   estimateReplay,
   finishOnboarding,
+  getConfig,
+  getHotkeys,
   listAudioDevices,
+  listCaptureTargets,
   listEncoders,
   onboardingChecks,
+  pickClipsDir,
+  setHotkeys,
 } from "../../lib/ipc.ts";
 import { trackTitle } from "../../lib/tracks.ts";
 import type { Engine } from "../../lib/useEngine.ts";
 import { Mark, type View } from "../Rail.tsx";
 import { ClipCard } from "../RecentClips.tsx";
-import { Roster } from "../Roster.tsx";
 import { CaptureSection } from "../settings/CaptureSection.tsx";
 import { DiagnosticRow } from "../settings/GeneralSection.tsx";
 import { HotkeysSection, Keys } from "../settings/HotkeysSection.tsx";
-import { DURATIONS, durationLabel, withCurrent } from "../settings/ReplaySection.tsx";
-import { Segmented, Select, SettingRow, Switch } from "../settings/Settings.tsx";
-import { StorageSection } from "../settings/StorageSection.tsx";
+import { durationLabel } from "../settings/ReplaySection.tsx";
+import { Select } from "../settings/Settings.tsx";
 import { LoadError, useConfigDraft } from "../settings/configDraft.tsx";
 
-const STEPS = ["checks", "capture", "audio", "folder", "replay", "test"] as const;
-type Step = (typeof STEPS)[number];
+type Question = "screen" | "mic" | "voice" | "mix" | "duration" | "storage" | "folder" | "hotkey";
+type Screen = "loading" | "checks" | Question | "summary" | "test";
 
+const DURATION_CHOICES = [30, 60, 120, 300];
+const DEFAULT_DURATION_SECS = 60;
+const DISK_ADVISED_AFTER_SECS = 120;
+const DEFAULT_SAVE_KEYS = "Alt+F10";
+const PICK_HOLD_MS = 150;
 const MIN_CLIP_SECS = 3;
 const SECONDARY =
-  "pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover";
+  "pressable h-10 rounded-md border border-line-strong px-4 font-medium text-ink hover:bg-surface-hover";
 const PRIMARY =
-  "pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-3";
+  "pressable h-10 rounded-md bg-ink px-4 font-semibold text-ground hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-3";
 
-type CheckState = "pending" | "ok" | "warn";
+function questionsFor(config: EngineConfig): Question[] {
+  return [
+    "screen",
+    "mic",
+    ...(config.audio.record_microphone ? (["voice"] as const) : []),
+    "mix",
+    "duration",
+    "storage",
+    "folder",
+    "hotkey",
+  ];
+}
 
-function CheckRow({ state, label, detail }: { state: CheckState; label: string; detail: string }) {
+function reducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+interface Choice {
+  id: string;
+  label: ReactNode;
+  detail?: ReactNode;
+  recommended?: boolean;
+  open?: boolean;
+}
+
+function ChoiceCards({ label, choices, onPick }: { label: string; choices: Choice[]; onPick: (id: string) => void }) {
+  const t = useT();
+  const [picked, setPicked] = useState<string | null>(null);
+  const cards = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusable = Math.max(
+    0,
+    choices.findIndex((choice) => choice.recommended),
+  );
+
+  useEffect(() => {
+    cards.current[focusable]?.focus();
+  }, []);
+
+  const pick = (id: string) => {
+    if (picked) return;
+    setPicked(id);
+    window.setTimeout(() => {
+      setPicked(null);
+      onPick(id);
+    }, reducedMotion() ? 0 : PICK_HOLD_MS);
+  };
+
+  const move = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    cards.current[(index + step + choices.length) % choices.length]?.focus();
+  };
+
+  return (
+    <div role="group" aria-label={label} className="grid grid-cols-2 gap-3 max-[720px]:grid-cols-1">
+      {choices.map((choice, index) => {
+        const active = picked ? picked === choice.id : Boolean(choice.open);
+        return (
+          <button
+            key={choice.id}
+            ref={(element) => {
+              cards.current[index] = element;
+            }}
+            type="button"
+            aria-expanded={choice.open}
+            tabIndex={index === focusable ? 0 : -1}
+            data-picked={picked === choice.id}
+            onClick={() => pick(choice.id)}
+            onKeyDown={(event) => move(event, index)}
+            className={`choice-card pressable flex min-h-24 flex-col items-start gap-1.5 rounded-md border bg-surface px-5 py-4 text-left ${
+              active ? "border-ink" : "border-line-strong hover:border-ink-3 hover:bg-surface-hover"
+            }`}
+          >
+            <span className="flex w-full items-baseline justify-between gap-3">
+              <span className="text-[17px] font-semibold">{choice.label}</span>
+              {choice.recommended && (
+                <span className="shrink-0 rounded-[3px] border border-line-strong px-1.5 text-[12px] text-ink-2">
+                  {t("onboarding.recommended")}
+                </span>
+              )}
+            </span>
+            {choice.detail && <span className="text-[13px] text-ink-2 [overflow-wrap:anywhere]">{choice.detail}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CheckRow({ state, label, detail }: { state: "pending" | "ok" | "warn"; label: string; detail: string }) {
   const Icon = state === "pending" ? LoaderCircle : state === "ok" ? CircleCheck : TriangleAlert;
   return (
-    <li className="grid grid-cols-[20px_minmax(0,1fr)] items-start gap-x-3 border-b border-line px-5 py-3">
+    <li className="grid grid-cols-[20px_minmax(0,1fr)] items-start gap-x-3 border-b border-line py-3">
       <Icon
         size={20}
         aria-hidden
@@ -49,7 +145,7 @@ function CheckRow({ state, label, detail }: { state: CheckState; label: string; 
       />
       <div className="min-w-0">
         <p className="text-[15px] font-semibold">{label}</p>
-        <p className={`mt-0.5 max-w-[62ch] text-[13px] [overflow-wrap:anywhere] ${state === "warn" ? "text-warn" : "text-ink-2"}`}>
+        <p className={`mt-0.5 text-[13px] [overflow-wrap:anywhere] ${state === "warn" ? "text-warn" : "text-ink-2"}`}>
           {detail}
         </p>
       </div>
@@ -57,7 +153,7 @@ function CheckRow({ state, label, detail }: { state: CheckState; label: string; 
   );
 }
 
-function ChecksStep({
+function Checks({
   checks,
   checksError,
   encoders,
@@ -66,22 +162,19 @@ function ChecksStep({
 }: {
   checks: OnboardingChecks | null;
   checksError: string | null;
-  encoders: HardwareEncoder[] | null;
+  encoders: HardwareEncoder[];
   clipsDir: string;
   onError: (message: string) => void;
 }) {
   const t = useT();
-  const pending = t("onboarding.checks.pending");
-  const working = encoders?.filter((encoder) => !encoder.failure) ?? [];
+  const working = encoders.filter((encoder) => !encoder.failure);
   const codecs = [...new Set(working.map((encoder) => t(`codecs.${encoder.codec}`)))].join(" · ");
-  const unknown = checksError ?? pending;
-  const unknownState: CheckState = checksError ? "warn" : "pending";
-
+  const unknown = checksError ?? t("onboarding.checks.pending");
   return (
     <>
-      <ul aria-live="polite">
+      <ul aria-live="polite" className="border-t border-line">
         <CheckRow
-          state={!checks ? unknownState : checks.windows_supported ? "ok" : "warn"}
+          state={!checks ? "warn" : checks.windows_supported ? "ok" : "warn"}
           label={t("onboarding.checks.windows")}
           detail={
             !checks
@@ -94,23 +187,17 @@ function ChecksStep({
           }
         />
         <CheckRow
-          state={!encoders ? "pending" : working.length > 0 ? "ok" : "warn"}
+          state={working.length > 0 ? "ok" : "warn"}
           label={t("onboarding.checks.encoder")}
-          detail={
-            !encoders
-              ? pending
-              : working.length > 0
-                ? t("onboarding.checks.encoderOk", { codecs })
-                : t("onboarding.checks.encoderMissing")
-          }
+          detail={working.length > 0 ? t("onboarding.checks.encoderOk", { codecs }) : t("onboarding.checks.encoderMissing")}
         />
         <CheckRow
-          state={!checks ? unknownState : "ok"}
+          state={!checks ? "warn" : "ok"}
           label={t("onboarding.checks.webview")}
           detail={!checks ? unknown : t("onboarding.checks.webviewVersion", { version: checks.webview ?? "?" })}
         />
         <CheckRow
-          state={!checks ? unknownState : checks.clips_dir_writable ? "ok" : "warn"}
+          state={!checks ? "warn" : checks.clips_dir_writable ? "ok" : "warn"}
           label={t("onboarding.checks.folder")}
           detail={
             !checks
@@ -121,183 +208,16 @@ function ChecksStep({
           }
         />
       </ul>
-      {encoders && working.length === 0 && <DiagnosticRow onError={onError} />}
-    </>
-  );
-}
-
-function AudioStep({ engine }: { engine: Engine }) {
-  const t = useT();
-  const { config, loadError } = useConfigDraft();
-  const [inputs, setInputs] = useState<AudioDevice[]>([]);
-  const choices = useRef<(HTMLButtonElement | null)[]>([]);
-
-  useEffect(() => {
-    listAudioDevices(true).then(setInputs, () => setInputs([]));
-  }, []);
-
-  if (!config) return <LoadError message={loadError} />;
-  const { draft } = config;
-  const audio = draft.audio;
-  const setAudio = (patch: Partial<typeof audio>) => config.commit({ ...draft, audio: { ...audio, ...patch } });
-  const mix = trackTitle(audio, "mix");
-  const fallback = inputs.find((device) => device.default);
-  const deviceOptions = [
-    {
-      value: "",
-      label: fallback
-        ? t("settings.audio.defaultDeviceNamed", { name: fallback.name })
-        : t("settings.audio.defaultDevice"),
-    },
-    ...inputs.map((device) => ({ value: device.id, label: device.name })),
-  ];
-
-  const pickMix = (desktop: boolean) => {
-    if (desktop !== audio.desktop_in_full_mix) setAudio({ desktop_in_full_mix: desktop });
-    choices.current[desktop ? 1 : 0]?.focus();
-  };
-  const moveChoice = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
-      event.preventDefault();
-      pickMix(!audio.desktop_in_full_mix);
-    }
-  };
-
-  return (
-    <>
-      <SettingRow label={t("onboarding.audio.microphone")}>
-        <Switch
-          checked={audio.record_microphone}
-          label={t("onboarding.audio.microphone")}
-          onChange={(record_microphone) => setAudio({ record_microphone })}
-        />
-      </SettingRow>
-      {audio.record_microphone && (
-        <>
-          <SettingRow label={t("onboarding.audio.device")}>
-            <Select
-              label={t("onboarding.audio.device")}
-              className="w-80 max-w-full min-w-0"
-              value={audio.microphone_device_id ?? ""}
-              options={deviceOptions}
-              onChange={(id) => setAudio({ microphone_device_id: id || null })}
-            />
-          </SettingRow>
-          <SettingRow
-            label={t("onboarding.audio.voiceInMix")}
-            help={t("onboarding.audio.voiceInMixHelp", { name: mix })}
-          >
-            <Switch
-              checked={audio.microphone_in_full_mix}
-              label={t("onboarding.audio.voiceInMix")}
-              onChange={(microphone_in_full_mix) => setAudio({ microphone_in_full_mix })}
-            />
-          </SettingRow>
-        </>
-      )}
-      <div className="border-b border-line px-5 py-4">
-        <p id="mix-choice" className="text-[15px] font-semibold">
-          {t("onboarding.audio.mixTitle", { name: mix })}
-        </p>
-        <div role="radiogroup" aria-labelledby="mix-choice" className="mt-3 grid grid-cols-2 gap-3">
-          {[false, true].map((desktop) => {
-            const checked = audio.desktop_in_full_mix === desktop;
-            return (
-              <button
-                key={String(desktop)}
-                ref={(element) => {
-                  choices.current[desktop ? 1 : 0] = element;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={checked}
-                tabIndex={checked ? 0 : -1}
-                onClick={() => pickMix(desktop)}
-                onKeyDown={moveChoice}
-                className={`mix-choice pressable rounded-md border bg-surface px-4 py-3 text-left ${
-                  checked ? "border-ink outline outline-ink" : "border-line-strong hover:bg-surface-hover"
-                }`}
-              >
-                <span className="block font-semibold">
-                  {t(desktop ? "onboarding.audio.desktop" : "onboarding.audio.chosen")}
-                </span>
-                <span className="mt-1 block text-[13px] text-ink-2">
-                  {t(desktop ? "onboarding.audio.desktopHelp" : "onboarding.audio.chosenHelp")}
-                </span>
-              </button>
-            );
-          })}
+      {working.length === 0 && (
+        <div className="mt-4 overflow-hidden rounded-md border border-line">
+          <DiagnosticRow onError={onError} />
         </div>
-      </div>
-      <Roster tracks={engine.status?.tracks ?? []} appOrder={[]} flashAt={0} />
-      <p className="max-w-[78ch] px-5 pb-5 text-[13px] text-ink-2">{t("onboarding.audio.apps")}</p>
+      )}
     </>
   );
 }
 
-function ReplayStep() {
-  const t = useT();
-  const { config, loadError } = useConfigDraft();
-  const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
-  const draft = config?.draft ?? null;
-
-  useEffect(() => {
-    if (!draft) return;
-    let current = true;
-    estimateReplay(draft).then(
-      (value) => current && setEstimate(value),
-      () => current && setEstimate(null),
-    );
-    return () => {
-      current = false;
-    };
-  }, [draft]);
-
-  if (!config || !draft) return <LoadError message={loadError} />;
-  const replay = (patch: Partial<typeof draft.replay>) => config.commit({ ...draft, replay: { ...draft.replay, ...patch } });
-
-  const size = estimate ? bytes(estimate.bytes) : "—";
-
-  return (
-    <>
-      <SettingRow label={t("settings.replay.duration")}>
-        <Select
-          label={t("settings.replay.duration")}
-          value={draft.replay.duration_secs}
-          options={withCurrent(DURATIONS, draft.replay.duration_secs).map((seconds) => ({
-            value: seconds,
-            label: durationLabel(seconds),
-          }))}
-          onChange={(duration_secs) => replay({ duration_secs })}
-        />
-      </SettingRow>
-      <SettingRow
-        label={t("onboarding.replay.storage")}
-        help={t(draft.replay.storage === "ram" ? "onboarding.replay.ramHelp" : "onboarding.replay.diskHelp", { size })}
-      >
-        <Segmented<ReplayStorage>
-          value={draft.replay.storage}
-          options={[
-            { value: "ram", label: t("onboarding.replay.ram") },
-            { value: "disk", label: t("onboarding.replay.disk") },
-          ]}
-          label={t("onboarding.replay.storage")}
-          onChange={(storage) => replay({ storage })}
-        />
-      </SettingRow>
-      <SettingRow label={t("settings.general.armOnStartup")}>
-        <Switch
-          checked={draft.replay.arm_on_startup}
-          label={t("settings.general.armOnStartup")}
-          onChange={(arm_on_startup) => replay({ arm_on_startup })}
-        />
-      </SettingRow>
-      <HotkeysSection only="save_replay" />
-    </>
-  );
-}
-
-function TestStep({ engine, startedAt, onGallery }: { engine: Engine; startedAt: number; onGallery: () => void }) {
+function TestClip({ engine, saveKeys, startedAt, onGallery }: { engine: Engine; saveKeys: string | null; startedAt: number; onGallery: () => void }) {
   const t = useT();
   const armOnce = useRef(false);
 
@@ -335,7 +255,7 @@ function TestStep({ engine, startedAt, onGallery }: { engine: Engine; startedAt:
     body = (
       <>
         <p className="text-[22px] font-semibold">{t("onboarding.test.failed")}</p>
-        {failure && <p className="mt-2 max-w-[78ch] text-warn">{message(failure)}</p>}
+        {failure && <p className="mt-2 text-warn">{message(failure)}</p>}
         <button type="button" onClick={engine.arm} className={`${SECONDARY} mt-4`}>
           {t("onboarding.test.retry")}
         </button>
@@ -357,10 +277,10 @@ function TestStep({ engine, startedAt, onGallery }: { engine: Engine; startedAt:
     body = (
       <>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[22px] font-semibold">
-          {engine.saveKeys ? (
+          {saveKeys ? (
             <>
               {beforeKeys}
-              <Keys keys={engine.saveKeys} />
+              <Keys keys={saveKeys} />
               {afterKeys}
             </>
           ) : (
@@ -375,10 +295,10 @@ function TestStep({ engine, startedAt, onGallery }: { engine: Engine; startedAt:
   }
 
   return (
-    <div className="px-5 py-6" aria-live="polite">
+    <div aria-live="polite">
       {body}
       {engine.actionError && (
-        <p role="alert" className="mt-3 max-w-[78ch] text-[13px] text-warn">
+        <p role="alert" className="mt-3 text-[13px] text-warn">
           {engine.actionError}
         </p>
       )}
@@ -388,38 +308,125 @@ function TestStep({ engine, startedAt, onGallery }: { engine: Engine; startedAt:
 
 export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: View) => void }) {
   const t = useT();
-  const [step, setStep] = useState<Step>("checks");
-  const [reached, setReached] = useState(0);
+  const { config, loadError } = useConfigDraft();
+  const [screen, setScreen] = useState<Screen>("loading");
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const [editing, setEditing] = useState(false);
   const [checks, setChecks] = useState<OnboardingChecks | null>(null);
   const [checksError, setChecksError] = useState<string | null>(null);
   const [encoders, setEncoders] = useState<HardwareEncoder[] | null>(null);
+  const [inputs, setInputs] = useState<AudioDevice[]>([]);
+  const [targets, setTargets] = useState<TargetInfo[]>([]);
+  const [estimates, setEstimates] = useState<Record<number, number>>({});
+  const [storageSize, setStorageSize] = useState<number | null>(null);
+  const [saveKeys, setSaveKeys] = useState<string | null>(null);
+  const [customKeys, setCustomKeys] = useState(false);
+  const [chooseMic, setChooseMic] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const testStartedAt = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
-  const first = useRef(true);
-  const index = STEPS.indexOf(step);
-  const previous = STEPS[index - 1];
-  const following = STEPS[index + 1];
-  const blocked = encoders !== null && !encoders.some((encoder) => !encoder.failure);
+  const draft = config?.draft ?? null;
+  const main = useRef<HTMLElement>(null);
+
+  const refreshKeys = () =>
+    getHotkeys().then(
+      (view) => setSaveKeys(view.hotkeys.save_replay),
+      () => setSaveKeys(null),
+    );
 
   useEffect(() => {
     onboardingChecks().then(setChecks, (failure) => setChecksError(errorText(failure)));
     listEncoders().then(setEncoders, () => setEncoders([]));
+    listAudioDevices(true).then(setInputs, () => setInputs([]));
+    listCaptureTargets().then(setTargets, () => setTargets([]));
+    refreshKeys();
   }, []);
 
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
+    if (screen !== "loading" || encoders === null || (checks === null && checksError === null)) return;
+    const blocked = !encoders.some((encoder) => !encoder.failure);
+    const trouble = blocked || checksError !== null || !checks?.windows_supported || !checks?.clips_dir_writable;
+    setScreen(trouble ? "checks" : "screen");
+  }, [screen, encoders, checks, checksError]);
+
+  useEffect(() => {
+    if (screen === "duration" && draft) {
+      for (const seconds of DURATION_CHOICES) {
+        estimateReplay({ ...draft, replay: { ...draft.replay, duration_secs: seconds } }).then(
+          (estimate) => setEstimates((current) => ({ ...current, [seconds]: estimate.bytes })),
+          () => undefined,
+        );
+      }
+    }
+    if (screen === "storage" && draft) {
+      estimateReplay(draft).then(
+        (estimate) => setStorageSize(estimate.bytes),
+        () => setStorageSize(null),
+      );
+    }
+    if (screen !== "loading" && !main.current?.contains(document.activeElement)) heading.current?.focus({ preventScroll: true });
+  }, [screen]);
+
+  if (!config || !draft) {
+    return (
+      <div className="grid h-full place-items-center">
+        {loadError ? <LoadError message={loadError} /> : <LoaderCircle aria-hidden className="check-spin text-ink-3" />}
+      </div>
+    );
+  }
+
+  const questions = questionsFor(draft);
+  const clipsDir = draft.storage.clips_dir ?? engine.storage?.clips_dir ?? "—";
+  const shownError = error ?? config.error;
+  const position = questions.indexOf(screen as Question);
+  const audio = draft.audio;
+  const mix = trackTitle(audio, "mix");
+  const fallbackInput = inputs.find((device) => device.default);
+  const micName =
+    inputs.find((device) => device.id === audio.microphone_device_id)?.name ?? fallbackInput?.name ?? t("settings.audio.defaultDevice");
+
+  const go = (next: Screen, back = false) => {
+    setError(null);
+    setChooseMic(false);
+    setCustomKeys(false);
+    setDirection(back ? "back" : "forward");
+    if (next === "test" && screen !== "test") testStartedAt.current = Date.now();
+    setScreen(next);
+  };
+
+  const advance = (next: EngineConfig = draft) => {
+    if (editing) {
+      setEditing(false);
+      go("summary");
       return;
     }
-    heading.current?.focus();
-  }, [step]);
+    const flow = questionsFor(next);
+    const index = flow.indexOf(screen as Question);
+    go(flow[index + 1] ?? "summary");
+  };
 
-  const go = (next: Step) => {
-    setError(null);
-    if (next === "test" && step !== "test") testStartedAt.current = Date.now();
-    setStep(next);
-    setReached((current) => Math.max(current, STEPS.indexOf(next)));
+  const goBack = () => {
+    if (editing) {
+      setEditing(false);
+      go("summary", true);
+      return;
+    }
+    if (screen === "summary") return go(questions[questions.length - 1] ?? "screen", true);
+    if (screen === "test") return go("summary", true);
+    const previous = questions[position - 1];
+    if (previous) go(previous, true);
+  };
+
+  const commit = (next: EngineConfig) => {
+    config.commit(next);
+    return next;
+  };
+  const setAudio = (patch: Partial<EngineConfig["audio"]>) => commit({ ...draft, audio: { ...audio, ...patch } });
+  const setReplay = (patch: Partial<EngineConfig["replay"]>) => commit({ ...draft, replay: { ...draft.replay, ...patch } });
+
+  const edit = (question: Question) => {
+    setEditing(true);
+    go(question, true);
   };
 
   const finish = (view: View) => {
@@ -430,111 +437,387 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
     );
   };
 
-  return (
-    <div className="grid h-full grid-cols-[232px_minmax(0,1fr)]">
-      <nav aria-label={t("onboarding.stepsLabel")} className="flex flex-col border-r border-line bg-rail px-3 py-4">
-        <div className="flex items-center gap-2.5 px-2 pb-5">
-          <Mark className="size-8" />
-          <p className="text-[17px] font-semibold">{t("onboarding.title")}</p>
+  const saveDefaultKeys = () =>
+    getHotkeys()
+      .then((view) => setHotkeys({ ...view.hotkeys, save_replay: DEFAULT_SAVE_KEYS }))
+      .then(getHotkeys)
+      .then((view) => {
+        setSaveKeys(view.hotkeys.save_replay);
+        if (view.unavailable.includes("save_replay")) {
+          setCustomKeys(true);
+          setError(t("onboarding.hotkey.taken", { keys: DEFAULT_SAVE_KEYS }));
+        } else advance();
+      })
+      .catch((failure) => setError(errorText(failure)));
+
+  const screenName = (() => {
+    const monitors = targets.filter((target): target is Extract<TargetInfo, { kind: "monitor" }> => target.kind === "monitor");
+    const capture = draft.capture;
+    if (capture.kind === "monitor") {
+      const found = monitors.find((monitor) =>
+        capture.monitor_path ? monitor.monitor_path === capture.monitor_path : monitor.device_name === capture.device_name,
+      );
+      return found?.name ?? capture.device_name;
+    }
+    if (capture.kind === "window") return capture.exe_name;
+    const primary = monitors.find((monitor) => monitor.primary);
+    return primary ? t("onboarding.summary.primaryNamed", { name: primary.name }) : t("onboarding.summary.primary");
+  })();
+
+  const yesNo = (value: boolean) => (value ? t("onboarding.summary.yes") : t("onboarding.summary.no"));
+  const summaryRows: { question: Question; label: string; value: ReactNode }[] = [
+    { question: "screen", label: t("onboarding.summary.screen"), value: screenName },
+    {
+      question: "mic",
+      label: t("onboarding.summary.mic"),
+      value: audio.record_microphone ? micName : t("onboarding.summary.no"),
+    },
+    ...(audio.record_microphone
+      ? [{ question: "voice" as const, label: t("onboarding.summary.voice", { name: mix }), value: yesNo(audio.microphone_in_full_mix) }]
+      : []),
+    {
+      question: "mix",
+      label: t("onboarding.summary.mix", { name: mix }),
+      value: audio.desktop_in_full_mix ? t("onboarding.mix.desktop") : t("onboarding.mix.chosen"),
+    },
+    { question: "duration", label: t("onboarding.summary.duration"), value: durationLabel(draft.replay.duration_secs) },
+    {
+      question: "storage",
+      label: t("onboarding.summary.storage"),
+      value: draft.replay.storage === "ram" ? t("onboarding.storage.ram") : t("onboarding.storage.disk"),
+    },
+    { question: "folder", label: t("onboarding.summary.folder"), value: clipsDir },
+    {
+      question: "hotkey",
+      label: t("onboarding.summary.hotkey"),
+      value: saveKeys ? <Keys keys={saveKeys} /> : t("settings.hotkeys.none"),
+    },
+  ];
+
+  let title = "";
+  let hint: ReactNode = null;
+  let body: ReactNode = null;
+  let footer: ReactNode = null;
+
+  switch (screen) {
+    case "loading":
+      body = <LoaderCircle aria-hidden className="check-spin mx-auto text-ink-3" />;
+      break;
+    case "checks": {
+      const blocked = encoders !== null && !encoders.some((encoder) => !encoder.failure);
+      title = t("onboarding.checks.title");
+      body = (
+        <Checks
+          checks={checks}
+          checksError={checksError}
+          encoders={encoders ?? []}
+          clipsDir={clipsDir}
+          onError={setError}
+        />
+      );
+      footer = !blocked && (
+        <button type="button" onClick={() => go("screen")} className={PRIMARY}>
+          {t("onboarding.checks.continueAnyway")}
+        </button>
+      );
+      break;
+    }
+    case "screen":
+      title = t("onboarding.screen.question");
+      hint = t("onboarding.screen.hint");
+      body = (
+        <div className="-mx-5">
+          <CaptureSection screensOnly />
         </div>
-        <ol className="flex flex-col gap-0.5">
-          {STEPS.map((id, position) => {
-            const current = id === step;
-            const done = position < reached && !current;
-            const open = position <= reached;
-            return (
-              <li key={id}>
+      );
+      footer = (
+        <button
+          type="button"
+          onClick={() =>
+            getConfig().then(
+              (fresh) => advance(commit({ ...draft, capture: fresh.capture })),
+              (failure) => setError(errorText(failure)),
+            )
+          }
+          className={PRIMARY}
+        >
+          {t("onboarding.next")}
+        </button>
+      );
+      break;
+    case "mic":
+      title = t("onboarding.mic.question");
+      body = (
+        <>
+          <ChoiceCards
+            label={title}
+            choices={[
+              { id: "yes", label: t("onboarding.mic.yes"), detail: t("onboarding.mic.yesDetail", { device: micName }), recommended: true, open: chooseMic },
+              { id: "no", label: t("onboarding.mic.no"), detail: t("onboarding.mic.noDetail") },
+            ]}
+            onPick={(id) => {
+              const next = setAudio({ record_microphone: id === "yes" });
+              if (id === "yes" && inputs.length > 1) setChooseMic(true);
+              else advance(next);
+            }}
+          />
+          {chooseMic && (
+            <div className="choice-extra mt-5 flex flex-wrap items-center gap-3">
+              <span className="text-[15px] font-semibold">{t("onboarding.mic.device")}</span>
+              <Select
+                label={t("onboarding.mic.device")}
+                className="w-80 max-w-full min-w-0"
+                value={audio.microphone_device_id ?? ""}
+                options={[
+                  {
+                    value: "",
+                    label: fallbackInput
+                      ? t("settings.audio.defaultDeviceNamed", { name: fallbackInput.name })
+                      : t("settings.audio.defaultDevice"),
+                  },
+                  ...inputs.map((device) => ({ value: device.id, label: device.name })),
+                ]}
+                onChange={(id) => setAudio({ microphone_device_id: id || null })}
+              />
+            </div>
+          )}
+        </>
+      );
+      footer = chooseMic && (
+        <button type="button" onClick={() => advance()} className={PRIMARY}>
+          {t("onboarding.next")}
+        </button>
+      );
+      break;
+    case "voice":
+      title = t("onboarding.voice.question", { name: mix });
+      body = (
+        <ChoiceCards
+          label={title}
+          choices={[
+            { id: "yes", label: t("onboarding.voice.yes"), detail: t("onboarding.voice.yesDetail"), recommended: true },
+            { id: "no", label: t("onboarding.voice.no"), detail: t("onboarding.voice.noDetail") },
+          ]}
+          onPick={(id) => advance(setAudio({ microphone_in_full_mix: id === "yes" }))}
+        />
+      );
+      break;
+    case "mix":
+      title = t("onboarding.mix.question", { name: mix });
+      body = (
+        <ChoiceCards
+          label={title}
+          choices={[
+            { id: "chosen", label: t("onboarding.mix.chosen"), detail: t("onboarding.mix.chosenDetail"), recommended: true },
+            { id: "desktop", label: t("onboarding.mix.desktop"), detail: t("onboarding.mix.desktopDetail") },
+          ]}
+          onPick={(id) => advance(setAudio({ desktop_in_full_mix: id === "desktop" }))}
+        />
+      );
+      break;
+    case "duration":
+      title = t("onboarding.duration.question");
+      body = (
+        <ChoiceCards
+          label={title}
+          choices={DURATION_CHOICES.map((seconds) => ({
+            id: String(seconds),
+            label: <span className="score text-[22px]">{durationLabel(seconds)}</span>,
+            detail:
+              estimates[seconds] === undefined
+                ? "—"
+                : t("onboarding.duration.detail", { size: bytes(estimates[seconds]) }),
+            recommended: seconds === DEFAULT_DURATION_SECS,
+          }))}
+          onPick={(id) => {
+            const seconds = Number(id);
+            advance(
+              setReplay({
+                duration_secs: seconds,
+                storage: seconds > DISK_ADVISED_AFTER_SECS && draft.replay.storage === "ram" ? "disk" : draft.replay.storage,
+              }),
+            );
+          }}
+        />
+      );
+      break;
+    case "storage": {
+      const size = storageSize === null ? "—" : bytes(storageSize);
+      const diskAdvised = draft.replay.duration_secs > DISK_ADVISED_AFTER_SECS;
+      title = t("onboarding.storage.question");
+      body = (
+        <ChoiceCards
+          label={title}
+          choices={[
+            { id: "ram", label: t("onboarding.storage.ram"), detail: t("onboarding.storage.ramDetail", { size }), recommended: !diskAdvised },
+            { id: "disk", label: t("onboarding.storage.disk"), detail: t("onboarding.storage.diskDetail", { size }), recommended: diskAdvised },
+          ]}
+          onPick={(id) => advance(setReplay({ storage: id === "disk" ? "disk" : "ram" }))}
+        />
+      );
+      break;
+    }
+    case "folder":
+      title = t("onboarding.folder.question");
+      body = (
+        <ChoiceCards
+          label={title}
+          choices={[
+            { id: "keep", label: t("onboarding.folder.keep"), detail: clipsDir, recommended: true },
+            { id: "pick", label: t("onboarding.folder.pick"), detail: t("onboarding.folder.pickDetail") },
+          ]}
+          onPick={(id) => {
+            if (id === "keep") return advance();
+            pickClipsDir()
+              .then((dir) => {
+                if (dir) advance(commit({ ...draft, storage: { ...draft.storage, clips_dir: dir } }));
+                else go("folder");
+              })
+              .catch((failure) => setError(errorText(failure)));
+          }}
+        />
+      );
+      break;
+    case "hotkey":
+      title = t("onboarding.hotkey.question");
+      body = (
+        <>
+          <ChoiceCards
+            label={title}
+            choices={[
+              {
+                id: "default",
+                label: <Keys keys={DEFAULT_SAVE_KEYS} />,
+                detail: t("onboarding.hotkey.defaultDetail"),
+                recommended: true,
+              },
+              {
+                id: "custom",
+                label: t("onboarding.hotkey.custom"),
+                detail: t("onboarding.hotkey.customDetail"),
+                open: customKeys,
+              },
+            ]}
+            onPick={(id) => {
+              if (id === "default") saveDefaultKeys();
+              else setCustomKeys(true);
+            }}
+          />
+          {customKeys && (
+            <div className="choice-extra -mx-5 mt-5 border-t border-line">
+              <HotkeysSection only="save_replay" />
+            </div>
+          )}
+        </>
+      );
+      footer = customKeys && (
+        <button
+          type="button"
+          onClick={() => {
+            refreshKeys();
+            advance();
+          }}
+          className={PRIMARY}
+        >
+          {t("onboarding.next")}
+        </button>
+      );
+      break;
+    case "summary":
+      title = t("onboarding.summary.title");
+      body = (
+        <dl className="border-t border-line">
+          {summaryRows.map((row) => (
+            <div key={row.question} className="grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)_auto] items-center gap-x-5 border-b border-line py-3">
+              <dt className="text-[13px] text-ink-2">{row.label}</dt>
+              <dd className="min-w-0 font-semibold [overflow-wrap:anywhere]">{row.value}</dd>
+              <dd>
                 <button
                   type="button"
-                  disabled={!open}
-                  onClick={() => go(id)}
-                  aria-current={current ? "step" : undefined}
-                  className={`pressable flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-[14px] ${
-                    current
-                      ? "bg-surface-2 font-semibold text-ink"
-                      : open
-                        ? "text-ink-2 hover:bg-surface-hover hover:text-ink"
-                        : "cursor-default text-ink-3"
-                  }`}
+                  onClick={() => edit(row.question)}
+                  aria-label={t("onboarding.summary.editLabel", { name: row.label })}
+                  className="pressable h-8 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-hover hover:text-ink"
                 >
-                  <span
-                    className={`score flex h-6 w-8 shrink-0 items-center justify-center rounded-[4px] text-[14px] font-semibold ${
-                      current ? "bg-ink text-ground" : "bg-surface-2"
-                    }`}
-                  >
-                    {done ? <Check size={15} strokeWidth={2.4} aria-hidden /> : String(position + 1).padStart(2, "0")}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    {t(`onboarding.steps.${id}`)}
-                    {done && <span className="sr-only">, {t("onboarding.done")}</span>}
-                  </span>
+                  {t("onboarding.summary.edit")}
                 </button>
-              </li>
-            );
-          })}
-        </ol>
-        <button type="button" onClick={() => finish("status")} className={`${SECONDARY} mx-2 mt-auto`}>
-          {t("onboarding.skip")}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      );
+      footer = (
+        <>
+          <button type="button" onClick={() => finish("settings")} className={SECONDARY}>
+            {t("onboarding.summary.manual")}
+          </button>
+          <button type="button" onClick={() => go("test")} className={PRIMARY}>
+            {t("onboarding.summary.confirm")}
+          </button>
+        </>
+      );
+      break;
+    case "test":
+      title = t("onboarding.test.title");
+      body = (
+        <TestClip engine={engine} saveKeys={saveKeys} startedAt={testStartedAt.current} onGallery={() => finish("gallery")} />
+      );
+      footer = (
+        <button type="button" onClick={() => finish("status")} className={PRIMARY}>
+          {t("onboarding.finish")}
         </button>
-      </nav>
-      <main className="flex min-h-0 min-w-0 flex-col">
-        <div key={step} className="onboarding-step min-h-0 flex-1 overflow-y-auto">
-          <h1
-            ref={heading}
-            tabIndex={-1}
-            className="border-b border-line px-5 pt-6 pb-4 text-[22px] font-semibold outline-none"
-          >
-            {t(`onboarding.steps.${step}`)}
-          </h1>
-          {step === "checks" && (
-            <ChecksStep
-              checks={checks}
-              checksError={checksError}
-              encoders={encoders}
-              clipsDir={engine.storage?.clips_dir ?? "—"}
-              onError={setError}
-            />
-          )}
-          {step === "capture" && (
-            <>
-              <CaptureSection screensOnly />
-              <p className="max-w-[78ch] px-5 pb-5 text-[13px] text-ink-2">{t("onboarding.capture.help")}</p>
-            </>
-          )}
-          {step === "audio" && <AudioStep engine={engine} />}
-          {step === "folder" && <StorageSection folderOnly />}
-          {step === "replay" && <ReplayStep />}
-          {step === "test" && (
-            <TestStep engine={engine} startedAt={testStartedAt.current} onGallery={() => finish("gallery")} />
-          )}
-        </div>
-        {error && (
-          <p role="alert" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-warn">
-            {error}
+      );
+      break;
+  }
+
+  const canGoBack = editing || screen === "summary" || screen === "test" || position > 0;
+
+  return (
+    <div
+      className="flex h-full flex-col"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && canGoBack && !event.defaultPrevented) goBack();
+      }}
+    >
+      <header className="flex items-center gap-4 border-b border-line px-5 py-3">
+        <Mark className="size-7" />
+        <p className="text-[15px] font-semibold">{t("onboarding.title")}</p>
+        {position >= 0 && (
+          <p className="score ml-auto text-[14px] text-ink-2" aria-live="polite">
+            {t("onboarding.progress", { step: position + 1, total: questions.length })}
           </p>
         )}
-        <footer className="flex justify-end gap-2 border-t border-line bg-surface px-5 py-3">
-          {previous && (
-            <button type="button" onClick={() => go(previous)} className={SECONDARY}>
-              {t("onboarding.back")}
-            </button>
+        <button
+          type="button"
+          onClick={() => finish("status")}
+          className={`pressable h-9 rounded-md px-3 text-[13px] font-medium text-ink-2 hover:bg-surface-hover hover:text-ink ${position >= 0 ? "" : "ml-auto"}`}
+        >
+          {t("onboarding.skip")}
+        </button>
+      </header>
+      <main ref={main} className="min-h-0 flex-1 overflow-y-auto">
+        <div key={screen} data-direction={direction} className="onboarding-question mx-auto w-full max-w-[760px] px-5 pt-14 pb-10">
+          {title && (
+            <h1 ref={heading} tabIndex={-1} className="text-[28px] leading-tight font-semibold outline-none">
+              {title}
+            </h1>
           )}
-          {following ? (
-            <button
-              type="button"
-              disabled={step === "checks" && (encoders === null || blocked)}
-              onClick={() => go(following)}
-              className={PRIMARY}
-            >
-              {t("onboarding.next")}
-            </button>
-          ) : (
-            <button type="button" onClick={() => finish("status")} className={PRIMARY}>
-              {t("onboarding.finish")}
-            </button>
-          )}
-        </footer>
+          {hint && <p className="mt-2 text-[14px] text-ink-2">{hint}</p>}
+          <div className="mt-8">{body}</div>
+        </div>
       </main>
+      {shownError && (
+        <p role="alert" className="border-t border-line bg-surface-2 px-5 py-3 text-[13px] text-warn">
+          {shownError}
+        </p>
+      )}
+      <footer className="flex items-center gap-2 border-t border-line px-5 py-3">
+        {canGoBack && (
+          <button type="button" onClick={goBack} className={SECONDARY}>
+            {editing ? t("onboarding.backToSummary") : t("onboarding.back")}
+          </button>
+        )}
+        <span className="ml-auto flex gap-2">{footer}</span>
+      </footer>
     </div>
   );
 }
