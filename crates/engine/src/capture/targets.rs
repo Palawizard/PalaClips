@@ -13,6 +13,7 @@ use crate::error::{EngineError, MissingTarget, Result};
 pub enum TargetInfo {
     Monitor {
         device_name: String,
+        monitor_path: Option<String>,
         name: String,
         width: u32,
         height: u32,
@@ -48,6 +49,17 @@ impl ResolvedTarget {
     }
 }
 
+pub fn current_device_name(
+    device_name: &str,
+    monitor_path: Option<&str>,
+    lookup: impl Fn(&str) -> Option<String>,
+) -> Option<String> {
+    match monitor_path {
+        Some(path) => lookup(path),
+        None => Some(device_name.to_owned()),
+    }
+}
+
 pub fn list_targets() -> Result<Vec<TargetInfo>> {
     let primary = Monitor::primary()
         .and_then(|monitor| monitor.device_name())
@@ -63,6 +75,7 @@ pub fn list_targets() -> Result<Vec<TargetInfo>> {
             height: monitor.height().ok()?,
             refresh_rate: monitor.refresh_rate().unwrap_or_default(),
             primary: primary.as_deref() == Some(device_name.as_str()),
+            monitor_path: super::display::monitor_path(&device_name),
             device_name,
         })
     });
@@ -114,17 +127,26 @@ pub fn resolve_target(target: &CaptureTarget) -> Result<ResolvedTarget> {
         CaptureTarget::PrimaryMonitor => Monitor::primary()
             .map(ResolvedTarget::Monitor)
             .map_err(|_| EngineError::TargetNotFound(MissingTarget::PrimaryMonitor)),
-        CaptureTarget::Monitor { device_name } => Monitor::enumerate()
+        CaptureTarget::Monitor {
+            device_name,
+            monitor_path,
+        } => Monitor::enumerate()
             .map_err(windows_error)?
             .into_iter()
             .find(|monitor| {
-                monitor
-                    .device_name()
-                    .is_ok_and(|name| name.eq_ignore_ascii_case(device_name))
+                monitor.device_name().is_ok_and(|name| {
+                    current_device_name(device_name, monitor_path.as_deref(), |path| {
+                        super::display::device_name_of(path)
+                    })
+                    .is_some_and(|wanted| name.eq_ignore_ascii_case(&wanted))
+                })
             })
             .map(ResolvedTarget::Monitor)
             .ok_or_else(|| {
-                EngineError::TargetNotFound(MissingTarget::Monitor(device_name.clone()))
+                EngineError::TargetNotFound(MissingTarget::Monitor(match monitor_path {
+                    Some(path) if device_name.is_empty() => path.clone(),
+                    _ => device_name.clone(),
+                }))
             }),
         CaptureTarget::Window {
             exe_name: wanted,
@@ -184,4 +206,41 @@ fn exe_name(process_id: u32) -> Option<String> {
 
 fn windows_error(error: impl std::fmt::Display) -> EngineError {
     EngineError::Capture(error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn lookup(path: &str) -> Option<String> {
+        (path == r"\\?\DISPLAY#GSM5B7F#UID4352").then(|| r"\\.\DISPLAY1".to_owned())
+    }
+
+    #[test]
+    fn a_known_monitor_is_found_under_its_new_gdi_name() {
+        assert_eq!(
+            current_device_name(
+                r"\\.\DISPLAY2",
+                Some(r"\\?\DISPLAY#GSM5B7F#UID4352"),
+                lookup
+            ),
+            Some(r"\\.\DISPLAY1".to_owned())
+        );
+    }
+
+    #[test]
+    fn an_unplugged_monitor_is_not_replaced_by_another_one() {
+        assert_eq!(
+            current_device_name(r"\\.\DISPLAY2", Some(r"\\?\DISPLAY#OTHER"), lookup),
+            None
+        );
+    }
+
+    #[test]
+    fn a_setting_saved_before_the_monitor_path_keeps_its_gdi_name() {
+        assert_eq!(
+            current_device_name(r"\\.\DISPLAY2", None, lookup),
+            Some(r"\\.\DISPLAY2".to_owned())
+        );
+    }
 }
