@@ -75,8 +75,22 @@ impl<P: TimedPacket> PacketRing<P> {
         candidate
     }
 
+    pub fn index_at_or_before(&self, at: Hns) -> usize {
+        self.packets
+            .partition_point(|p| p.pts() <= at)
+            .saturating_sub(1)
+    }
+
     pub fn iter_from(&self, index: usize) -> impl Iterator<Item = &P> {
         self.packets.iter().skip(index)
+    }
+
+    pub fn get(&self, index: usize) -> Option<&P> {
+        self.packets.get(index)
+    }
+
+    pub fn newest(&self) -> Option<Hns> {
+        self.packets.back().map(TimedPacket::pts)
     }
 
     pub fn bytes(&self) -> usize {
@@ -96,6 +110,12 @@ impl<P: TimedPacket> PacketRing<P> {
 
     pub fn is_empty(&self) -> bool {
         self.packets.is_empty()
+    }
+
+    pub fn discard_before(&mut self, index: usize) {
+        for old in self.packets.drain(..index.min(self.packets.len())) {
+            self.bytes -= old.size();
+        }
     }
 
     pub fn clear(&mut self) {
@@ -159,6 +179,18 @@ mod tests {
         let first = ring.iter_from(idx).next().expect("packet");
         assert!(first.key);
         assert_eq!(first.pts, Hns::from_millis(4_000));
+    }
+
+    #[test]
+    fn discarding_keeps_the_byte_count() {
+        let mut ring = PacketRing::new(Hns::from_millis(10_000));
+        push_video_10fps_keyframe_every_second(&mut ring, 5);
+        ring.discard_before(20);
+        assert_eq!(ring.len(), 30);
+        assert_eq!(ring.bytes(), 30 * 100);
+        ring.discard_before(1_000);
+        assert!(ring.is_empty());
+        assert_eq!(ring.bytes(), 0);
     }
 
     #[test]

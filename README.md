@@ -1,70 +1,193 @@
-# PalaClips
+<p align="center">
+  <img src="app/src-tauri/icons/app-icon.svg" width="112" height="112" alt="PalaClips logo">
+</p>
 
-Enregistrement et **replay instantané** pour Windows, léger, gratuit et open source — avec
-**une piste audio par logiciel** (jeu, Discord, musique, navigateur, micro), prête pour le
-montage dans DaVinci Resolve.
+<h1 align="center">PalaClips</h1>
 
-> **Statut : en développement — phase 0.** Voir [`docs/HANDOFF.md`](docs/HANDOFF.md) et
-> [`docs/PLAN.md`](docs/PLAN.md).
+<p align="center">
+  Free and open-source instant replay and screen recorder for Windows,<br>
+  with a separate audio track for every app.
+</p>
 
-## Ce que fait la V1
+<p align="center">
+  <a href="https://github.com/Palawizard/PalaClips/releases/latest"><img src="https://img.shields.io/github/v/release/Palawizard/PalaClips?label=release" alt="Latest release"></a>
+  <a href="https://github.com/Palawizard/PalaClips/releases"><img src="https://img.shields.io/github/downloads/Palawizard/PalaClips/total" alt="Downloads"></a>
+  <a href="https://github.com/Palawizard/PalaClips/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Palawizard/PalaClips/ci.yml?branch=dev&label=CI" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2011-0078D4" alt="Platform: Windows 11">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Palawizard/PalaClips" alt="License: MIT"></a>
+</p>
 
-- Replay instantané : les dernières secondes (5 s à 60 min) gardées en mémoire, sauvegardées
-  d'un raccourci sans quitter le jeu.
-- Enregistrement manuel, résistant aux crashs.
-- **Séparation réelle de l'audio** : mix complet, micro, puis une piste par logiciel choisi,
-  nommée, synchronisée.
-- Capture d'un écran ou d'une fenêtre, fps constant, encodage matériel (NVIDIA, AMD, Intel).
-- Galerie avec lecteur (écoute piste par piste), découpe et export.
-- Vit dans la zone de notification ; fenêtre fermée = un seul petit processus.
-- Aucune injection dans les jeux (compatible anti-cheat), aucun compte, aucune télémétrie.
+<p align="center"><strong>English</strong> · <a href="README.fr.md">Français</a></p>
 
-Détail complet : [`docs/SPEC.md`](docs/SPEC.md).
+PalaClips keeps the last moments of your game in a buffer and saves them as a clip with one
+hotkey, like NVIDIA ShadowPlay Instant Replay or the OBS replay buffer. Every clip carries
+**one audio track per app** (game, Discord, music, browser, microphone), so you can mute a
+voice chat or a song when editing in DaVinci Resolve, Premiere Pro or any multitrack editor.
+It is lightweight, injects nothing into games and works with anti-cheats such as Easy
+Anti-Cheat.
 
-## Prérequis (développement)
+![The PalaClips player: the video, then one row per audio track with its waveform](docs/screenshots/en/player.png)
 
-- Windows 11 (ou Windows 10 build 20348+), GPU avec encodeur matériel.
-- [Rust](https://rustup.rs) (toolchain MSVC), Visual Studio Build Tools (C++), LLVM
-  (`winget install LLVM.LLVM`), Node.js ≥ 20.19, PowerShell 7 (`pwsh`).
-- Claude Code avec les skills de design :
-  - impeccable : dans Claude Code, `/plugin marketplace add pbakaus/impeccable`, puis
-    `/plugin` → installer **impeccable** ;
-  - emil-design-eng : `npx -y skills add emilkowalski/skill --skill emil-design-eng --agent claude-code`.
+## Table of contents
 
-## Démarrer
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
+- [Building from source](#building-from-source)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- **Instant replay**: the last 5 seconds to 60 minutes stay in memory or on disk. A hotkey
+  (`Alt+F10` by default) saves them without leaving the game; a sound and a notification
+  confirm the save.
+- **Screen recording** (`Ctrl+Alt+F9`) in a fragmented MP4 that stays readable even if the PC
+  crashes mid-way.
+- **Separate audio tracks**: track 1 is the full mix, track 2 the microphone, then one track
+  per app you pick (Discord, Spotify, browser...) and a "Game" track that follows the game in
+  the foreground. Each track carries its name in the file.
+- **Hardware encoding** on the graphics card (NVIDIA NVENC, AMD AMF, Intel Quick Sync) in
+  H.264, HEVC or AV1, at a constant frame rate up to 240 fps, with HDR screens supported.
+- **Screen or window capture** through Windows Graphics Capture; a window is found again by
+  its program name after a restart.
+- **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume), trim,
+  export, or copy the file to paste it into Discord.
+- **Lightweight**: lives in the notification area; with the window closed, only one small
+  process remains.
+- **Private**: no account, no telemetry, no injection into games.
+- **Automatic updates**, verified with a signature before they install.
+- Interface in English and French.
+
+## Screenshots
+
+| Gallery | Audio sources |
+|---|---|
+| ![The gallery, clips grouped by day](docs/screenshots/en/gallery.png) | ![Audio settings: one track per app, with a level meter](docs/screenshots/en/audio-sources.png) |
+
+![First launch, replay length question](docs/screenshots/en/first-launch.png)
+
+## Requirements
+
+- Windows 11. Windows 10 isn't supported: per-app audio capture needs build 20348 or later.
+- A graphics card with a hardware video encoder (NVIDIA, AMD or Intel).
+- WebView2, already present on Windows 11 (the installer downloads it if it's missing).
+
+## Installation
+
+1. Download `PalaClips_x.y.z_x64-setup.exe` from the
+   [latest release](https://github.com/Palawizard/PalaClips/releases/latest) and run it. It
+   installs for your account, without administrator rights.
+2. **SmartScreen**: the installer isn't signed with a paid certificate, so Windows may show
+   "Windows protected your PC". Click *More info*, then *Run anyway*.
+3. On first launch, PalaClips checks your PC, then asks a few questions one at a time: the
+   screen, the mic, what track 1 contains, the replay length and where it's kept, the clips
+   folder and the hotkey. A summary lets you change any answer, then you save a real test
+   clip. You can skip it: the default settings work as they are.
+
+**Updates**: PalaClips checks GitHub for new versions and installs them after verifying their
+signature, with the release notes.
+
+**Uninstalling**: Windows Settings → Apps. Your clips are never deleted; an optional box also
+removes the settings and the gallery history.
+
+## Usage
+
+| Action | Default hotkey |
+|---|---|
+| Save the replay | `Alt+F10` |
+| Arm or disarm the replay | `Ctrl+Alt+F10` |
+| Start or stop a recording | `Ctrl+Alt+F9` |
+
+Change the hotkeys in Settings → Hotkeys. Clips go to `Videos\PalaClips\<game>\`, one
+subfolder per game.
+
+## FAQ
+
+**The video is frozen while the game runs.** The game is in *exclusive fullscreen*: in this
+mode, Windows stops passing the image to capture software. PalaClips detects it and shows an
+alert. Switch the game to *borderless* (windowed fullscreen) in its display settings. Most
+recent games already use that mode.
+
+**Minecraft Java in fullscreen (F11).** F11 puts Minecraft Java in exclusive fullscreen, so
+the video freezes (PalaClips shows an alert; the NVIDIA "Vulkan/OpenGL present method" setting
+didn't help in our test). Play in a maximized window instead, or install a borderless
+fullscreen mod such as Borderless Fullscreen (Fabric): both capture normally.
+
+**Does it work with anti-cheats?** PalaClips injects nothing into games. It only uses the
+Windows capture APIs (Windows Graphics Capture for the image, WASAPI for the sound). It was
+tested with Fortnite (Easy Anti-Cheat).
+
+**The game loses fps when the graphics card is maxed out.** By default the game comes first:
+if the GPU is saturated, the video may stutter, and an alert says so. In Settings → Replay &
+quality, "When the GPU is maxed out" → *Capture first* makes the video smooth, but the game
+loses about 7% fps. Capping the game's fps also leaves headroom.
+
+**My mic is also in track 1.** That's the "Also in Full mix" setting (Settings → Audio), so a
+clip is ready to share as is. Your voice keeps its own track either way.
+
+**Track 1 doesn't contain notifications or music.** By default, track 1 is the sum of the
+tracks you picked. Turn on "Desktop audio" (Settings → Audio) to have it contain everything
+you hear.
+
+**Memory or disk for the replay?** In memory, nothing is written to the disk until you save,
+but the replay takes RAM (about 320 MB for one minute at 1440p; the estimate shows in
+Settings → Replay & quality). On disk, RAM stays free but the replay is written continuously;
+it's the right choice for long durations.
+
+**How do I open the tracks in DaVinci Resolve?** Import the clip: each audio track comes in
+separately, with its name, already in sync with the video.
+
+**Something doesn't work.** Settings → General → Diagnostics → *Export...* creates a zip with
+the logs, the settings and system info. Your profile path, PC name and account name are
+masked; *Open zip* shows you what you're sending. Attach it to a
+[GitHub issue](https://github.com/Palawizard/PalaClips/issues).
+
+## Roadmap
+
+Compatibility on more systems, encoding on the processor and other leads: see the
+[roadmap](ROADMAP.md). Changes between versions are listed in the
+[releases](https://github.com/Palawizard/PalaClips/releases) and in the
+[changelog](CHANGELOG.md).
+
+## Building from source
+
+The project documentation is in French. Requirements: Windows 11,
+[Rust](https://rustup.rs) (MSVC toolchain), Visual Studio Build Tools (C++), LLVM
+(`winget install LLVM.LLVM`), Node.js 20.19 or later, PowerShell 7 (`pwsh`).
 
 ```powershell
 git clone https://github.com/Palawizard/PalaClips.git
 cd PalaClips
-pwsh scripts/check-env.ps1          # vérifie la machine
-pwsh scripts/fetch-ffmpeg.ps1       # FFmpeg LGPL (DLL) dans third_party/
+pwsh scripts/check-env.ps1
+pwsh scripts/fetch-ffmpeg.ps1
 cd app
 npm ci
 npm run tauri dev
 ```
 
-Banc de test du moteur : `cargo run -p palaclips-cli -- info`.
+`check-env.ps1` checks the machine and `fetch-ffmpeg.ps1` downloads the FFmpeg LGPL libraries
+into `third_party/`. The engine test bench runs with `cargo run -p palaclips-cli -- info`.
+Architecture and decisions are in [`docs/`](docs) ([`SPEC`](docs/SPEC.md),
+[`ARCHITECTURE`](docs/ARCHITECTURE.md), [`DECISIONS`](docs/DECISIONS.md)).
 
-## Documentation
+Stack: Rust engine (Windows Graphics Capture, WASAPI, FFmpeg), Tauri 2 shell, React and
+TypeScript interface.
 
-| Fichier | Contenu |
-|---|---|
-| [`CLAUDE.md`](CLAUDE.md) | Règles de travail pour Claude Code |
-| [`docs/SPEC.md`](docs/SPEC.md) | Tout ce que contient la V1 |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modules, threads, IPC, données |
-| [`docs/PLAN.md`](docs/PLAN.md) | Phases et critères d'acceptation |
-| [`docs/HANDOFF.md`](docs/HANDOFF.md) | Où on en est |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Choix d'architecture (ADR) |
-| [`docs/RESEARCH.md`](docs/RESEARCH.md) | Faits vérifiés et pièges, avec sources |
-| [`docs/TESTING.md`](docs/TESTING.md) | Protocoles de test manuels |
-| [`docs/DESIGN-BRIEF.md`](docs/DESIGN-BRIEF.md) | Brief pour la conception de l'interface |
+## Contributing
 
-## Installation (utilisateurs, à partir de la V1)
+Bug reports and ideas are welcome in the
+[issues](https://github.com/Palawizard/PalaClips/issues); attach the diagnostic zip for a bug.
+Pull requests target the `dev` branch and use
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Before opening one,
+run `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`,
+`cargo test --workspace`, then `npm run build` and `npm test` in `app/`.
 
-L'installeur n'est pas signé par un certificat payant : au premier lancement, Windows
-SmartScreen peut afficher « Windows a protégé votre ordinateur » → *Informations
-complémentaires* → *Exécuter quand même*.
+## License
 
-## Licence
-
-[MIT](LICENSE). PalaClips utilise FFmpeg (LGPL 2.1+) en bibliothèques dynamiques.
+[MIT](LICENSE). PalaClips uses [FFmpeg](https://ffmpeg.org) (LGPL) as dynamic libraries; the
+licenses are installed with the app. Built with [Tauri](https://tauri.app).

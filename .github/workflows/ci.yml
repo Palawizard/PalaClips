@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 concurrency:
@@ -17,9 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+      - name: Toolchain Rust
+        run: rustup toolchain install
 
       - uses: Swatinem/rust-cache@v2
 
@@ -49,3 +48,7 @@ jobs:
       - name: Front — types et build
         working-directory: app
         run: npm run build
+
+      - name: Front — textes traduits
+        working-directory: app
+        run: npm test
