@@ -110,6 +110,11 @@ avec les journaux, les réglages et les infos système. Le chemin de ton profil,
 le nom de ton compte y sont masqués ; *Ouvrir le zip* te montre ce que tu envoies. Joins-le à
 une [issue GitHub](https://github.com/Palawizard/PalaClips/issues).
 
+## Et ensuite
+
+Compatibilité sur plus de systèmes, encodage par le processeur et autres pistes : voir la
+[feuille de route](ROADMAP.fr.md).
+
 ## Licence
 
 [MIT](LICENSE). PalaClips utilise FFmpeg (LGPL) en bibliothèques dynamiques ; les licences
