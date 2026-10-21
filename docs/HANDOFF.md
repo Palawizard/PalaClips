@@ -5,10 +5,9 @@
 
 ## État actuel
 
-- **Phase en cours :** 8 — Release V1, presque finie. Tout le travail de la phase est mergé dans
-  `dev` (#71 à #85) ; revue finale `docs/reports/release-v1.md` : chaque exigence de la SPEC a sa
-  preuve (T10 dans la VM et Minecraft faits le 2026-10-21) ; reste la release, avec l'accord de
-  Palawi. Avant la release, Palawi a demandé (2026-10-21) un nouveau logo (#83, triangle de
+- **V1 publiée :** v1.0.0 le 2026-10-21 (https://github.com/Palawizard/PalaClips/releases/tag/v1.0.0),
+  `dev` mergée dans `main` (#88), tag `v1.0.0` sur `main`. Phase 8 terminée ; revue finale
+  `docs/reports/release-v1.md` : chaque exigence de la SPEC a sa preuve. Avant la release, Palawi a demandé (2026-10-21) un nouveau logo (#83, triangle de
   lecture en 3 bandes), une feuille de route publique (#84, `ROADMAP.md` / `ROADMAP.fr.md`) et un
   premier lancement en questions (#85) : tout est mergé, captures du README refaites.
   Branche : `dev`.
@@ -206,11 +205,13 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. **Release** (seulement avec l'accord explicite de Palawi) : `release/v1.0.0` depuis `dev`,
-   version 1.0.0 dans `Cargo.toml` (workspace), `app/src-tauri/tauri.conf.json` et
-   `app/package.json`, section `## [1.0.0] - date` du CHANGELOG (ses notes deviennent celles de
-   l'updater), PR vers `main`, puis tag `v1.0.0` sur `main` : le workflow `Release` crée la release
-   en brouillon, Palawi la publie.
+1. **Prochaine version** (seulement avec l'accord explicite de Palawi) : version X.Y.Z dans
+   `Cargo.toml` (workspace), `app/src-tauri/tauri.conf.json`, `app/package.json` et
+   `app/package-lock.json`, section `## [X.Y.Z] - date` du CHANGELOG, PR `dev` → `main`, tag
+   `vX.Y.Z` sur `main`. Le workflow `Release` crée le brouillon : notes générées par
+   `scripts/release-notes.ps1` (PR mergées depuis le tag précédent, par type), `latest.json` avec
+   le lien de téléchargement public. Vérifier les fichiers, puis publier
+   (`gh release edit vX.Y.Z --draft=false --latest`). Pistes de la suite : `ROADMAP.md`.
 2. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
    `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` posés ; clé publique dans `tauri.conf.json`. Claude ne
    lit jamais le fichier privé ni le mot de passe. Un build local avec installeur exige la clé :
@@ -353,5 +354,6 @@ Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défa
 | 2026-10-17 | 5 | PR #25 clip < 3 s ignoré ; PR #26 démarrage avec Windows (0 WebView2) ; raccourcis personnalisables (conflit réel détecté : Alt+Shift+F10 pris par NVIDIA → défaut Ctrl+Alt+F10) ; écran Réglages (Raccourcis, Général, thème) testé par Palawi au clavier ; revue impeccable 2 tours | Sections Réglages restantes |
 | 2026-10-17 | 5 | Socle i18n avant la phase 6 (ADR-028) : fr/en complets, langue de Windows par défaut, codes + paramètres côté Rust, menu de la zone de notification et toasts traduits, test anti-chaînes en dur | Revue de Palawi (anglais + sélecteurs), phase 6 |
 | 2026-10-20/21 | 8 | Journaux + diagnostic anonymisé (#71) ; premier lancement en 6 étapes, 27,5 s jusqu'au clip (#72) ; relecture de l'anglais (#73) ; README EN/FR + captures (#74) ; bug Vesktop trouvé par Palawi : applis en plusieurs instances additionnées (#76) ; Windows 11 requis (#77) ; `NotImplemented` supprimé (#78) ; updater + workflow de release, essai 1.0.0 → 1.0.1 et fausse signature automatisés (#75) ; écran par chemin stable (#79) ; REC-02 et `dumpbin` prouvés ; session Windows propre abandonnée ; revue finale | T10 (VM), Minecraft, release avec l'accord de Palawi |
+| 2026-10-21 | 8 | Release v1.0.0 : notes de release automatiques (PR par type), README EN/FR à la structure classique et SEO (description, 20 topics, page d'accueil du dépôt), version 1.0.0 (#87), `dev` → `main` (#88), tag, installeur signé + `latest.json` vérifiés, release publiée ; URL de l'updater corrigée à la main puis automatisée | Suivre les issues ; prochaine version avec l'accord de Palawi |
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
 | 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
