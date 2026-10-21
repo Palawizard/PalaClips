@@ -167,6 +167,23 @@ export function pickClipsDir(): Promise<string | null> {
   return invoke<string | null>("pick_clips_dir");
 }
 
+export interface UpdateInfo {
+  current: string;
+  available: { version: string; notes: string | null } | null;
+}
+
+export function getUpdate(): Promise<UpdateInfo> {
+  return invoke("get_update");
+}
+
+export function checkUpdate(): Promise<UpdateInfo> {
+  return invoke("check_update");
+}
+
+export function installUpdate(): Promise<void> {
+  return invoke("install_update");
+}
+
 export interface OnboardingChecks {
   windows_build: number | null;
   windows_supported: boolean;
