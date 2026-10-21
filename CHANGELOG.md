@@ -178,6 +178,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Changé
 - Nouveau logo : un triangle de lecture découpé en trois bandes, les pistes séparées qui jouent
   ensemble ; icônes de l'appli, de l'installeur et de la zone de notification régénérées.
+- Premier lancement en questions : une question à la fois avec de grandes réponses cliquables
+  (écran, micro, piste 1, durée et stockage du replay, dossier, raccourci), au clavier aussi ;
+  les vérifications ne s'affichent qu'en cas de problème ; récapitulatif où chaque réponse se
+  modifie avant le clip de test.
 
 ### Corrigé
 - Minecraft Java en plein écran (F11) : l'alerte « plein écran exclusif » donne la solution qui

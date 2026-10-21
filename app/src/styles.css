@@ -179,7 +179,29 @@ body {
   }
 }
 
-.onboarding-step {
+.onboarding-question {
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.onboarding-question[data-direction="back"] {
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+.choice-card[data-picked="true"] {
+  transform: scale(0.97);
+}
+
+.choice-extra {
   transition:
     opacity 200ms var(--ease-out),
     transform 200ms var(--ease-out);
@@ -375,8 +397,8 @@ body {
   .export-chevron,
   .performance-cells,
   .waveform,
-  .onboarding-step,
-  .mix-choice {
+  .onboarding-question,
+  .choice-extra {
     transition-duration: 0ms !important;
   }
 
@@ -401,7 +423,8 @@ body {
     animation: none;
   }
 
-  .pressable:active:not(:disabled) {
+  .pressable:active:not(:disabled),
+  .choice-card[data-picked="true"] {
     transform: none;
   }
 }

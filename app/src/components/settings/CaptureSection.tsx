@@ -317,7 +317,7 @@ export function CaptureSection({ screensOnly = false }: { screensOnly?: boolean 
   }, [targets, draft === null]);
 
   useEffect(() => {
-    const wanted = new Set(visible && focused ? live : []);
+    const wanted = new Set(visible && (focused || screensOnly) ? live : []);
     for (const [key, id] of running.current) {
       if (wanted.has(key)) continue;
       running.current.delete(key);
@@ -341,7 +341,7 @@ export function CaptureSection({ screensOnly = false }: { screensOnly?: boolean 
       });
       running.current.set(key, started);
     }
-  }, [live, visible, focused]);
+  }, [live, visible, focused, screensOnly]);
 
   if (!config || !draft) return <LoadError message={loadError} />;
 
@@ -384,7 +384,7 @@ export function CaptureSection({ screensOnly = false }: { screensOnly?: boolean 
       {group.length === 0 ? (
         <p className="text-[13px] text-ink-2">{empty}</p>
       ) : (
-        <ul className="grid grid-cols-2 gap-3 @3xl:grid-cols-3">
+        <ul className={`grid gap-3 ${screensOnly ? "auto-cols-fr grid-flow-col" : "grid-cols-2 @3xl:grid-cols-3"}`}>
           {group.map((card) => (
             <CaptureCard
               key={card.key}
