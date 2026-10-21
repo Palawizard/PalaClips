@@ -649,6 +649,7 @@ fn list_targets(json: bool) -> Result<()> {
         match target {
             TargetInfo::Monitor {
                 device_name,
+                monitor_path: _,
                 name,
                 width,
                 height,
@@ -1075,6 +1076,11 @@ fn parse_target(value: &str) -> std::result::Result<CaptureTarget, String> {
     match value.split_once(':') {
         Some(("monitor", device_name)) if !device_name.is_empty() => Ok(CaptureTarget::Monitor {
             device_name: device_name.into(),
+            monitor_path: None,
+        }),
+        Some(("monitor-path", path)) if !path.is_empty() => Ok(CaptureTarget::Monitor {
+            device_name: String::new(),
+            monitor_path: Some(path.into()),
         }),
         Some(("window", rest)) if !rest.is_empty() => {
             let (exe_name, title_hint) = match rest.split_once(':') {
@@ -1102,7 +1108,8 @@ mod tests {
         assert_eq!(
             parse_target(r"monitor:\.\DISPLAY2"),
             Ok(CaptureTarget::Monitor {
-                device_name: r"\.\DISPLAY2".into()
+                device_name: r"\.\DISPLAY2".into(),
+                monitor_path: None,
             })
         );
         assert_eq!(
