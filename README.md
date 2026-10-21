@@ -40,11 +40,12 @@ DaVinci Resolve.
 3. **SmartScreen**: the installer isn't signed with a paid certificate, so Windows may show
    "Windows protected your PC". Click *More info*, then *Run anyway*.
 
-On first launch, a guided setup checks your PC and lets you pick the screen, the mic, what
-track 1 contains, the clips folder, the replay length and the hotkey, then has you save a
-real test clip. You can skip it: the default settings work as they are.
+On first launch, PalaClips checks your PC, then asks a few questions one at a time: the
+screen, the mic, what track 1 contains, the replay length and where it's kept, the clips
+folder and the hotkey. A summary lets you change any answer, then you save a real test clip.
+You can skip it: the default settings work as they are.
 
-![First launch, audio step](docs/screenshots/en/first-launch-audio.png)
+![First launch, replay length question](docs/screenshots/en/first-launch.png)
 
 **Updates**: PalaClips checks GitHub for updates and installs them after verifying their
 signature, with the release notes.
