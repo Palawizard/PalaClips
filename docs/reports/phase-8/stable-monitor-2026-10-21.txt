@@ -1,0 +1,6 @@
+2026-10-21 CAP-03 : écran mémorisé par son chemin stable (palaclips-cli list-targets --json puis resolve-target --target monitor-path:<chemin>)
+GO27Q24 (principal)  \.\DISPLAY2  \?\DISPLAY#GBT274A#5&38763f74&1&UID4357#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}  → écran \.\DISPLAY2
+PLE2483H-DP          \.\DISPLAY3  \?\DISPLAY#IVM611E#5&38763f74&1&UID4352#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}  → écran \.\DISPLAY3
+ASUS VG32VQ1B        \.\DISPLAY1  \?\DISPLAY#AUS32E0#5&38763f74&1&UID4355#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}  → écran \.\DISPLAY1
+chemin absent \?\DISPLAY#ABSENT#0#{x}  → Error: cible de capture introuvable (écran non branché), aucun autre écran choisi
+Tests : a_known_monitor_is_found_under_its_new_gdi_name, an_unplugged_monitor_is_not_replaced_by_another_one, a_setting_saved_before_the_monitor_path_keeps_its_gdi_name, a_monitor_keeps_its_stable_path_and_old_settings_still_load
