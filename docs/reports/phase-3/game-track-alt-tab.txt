@@ -1,0 +1,80 @@
+2026-10-16T15:25:47 game-track : « jeu » sans bordure plein écran 440 Hz (tone-game.exe), fenêtre normale 880 Hz (tone-chat.exe), sortie « Realtek », capture 30 s
+15:25:49.793 premier plan → jeu sans bordure : OK
+15:26:00.258 premier plan → fenêtre normale (Alt+Tab) : OK
+15:26:10.572 premier plan → retour au jeu : OK
+h264_nvenc → 640x360 @ 30 i/s, 30 s, 2 piste(s) audio
+2026-10-16T13:25:50.745529Z  INFO palaclips_engine::audio::track: la piste Jeu suit le nouveau jeu track=Jeu from=None to=tone-game.exe
+2026-10-16T13:25:50.747376Z  INFO palaclips_engine::audio::track: application rattachée track=tone-chat app=tone-chat.exe (PID 16080)
+2026-10-16T13:25:50.752476Z  INFO palaclips_engine::audio::track: application rattachée track=Jeu app=tone-game.exe (PID 26704)
+2026-10-16T13:26:20.734292Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=900 captured=28 duplicated=884 max_lateness_ms=0.9874
+2026-10-16T13:26:20.741983Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Jeu packets=2998 silence_ms=21 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.25
+2026-10-16T13:26:20.742037Z  INFO ffmpeg: [aac @ 000002030d79a9c0] Qavg: 13763.671
+2026-10-16T13:26:20.751293Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone-chat packets=2999 silence_ms=19 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.25
+2026-10-16T13:26:20.751583Z  INFO ffmpeg: [aac @ 000002030fc882c0] Qavg: 65173.328
+900 images écrites (28 reçues de Windows, 884 dupliquées, 0 changements de résolution, retard max 0.99 ms) → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\clips\game-track-2026-10-16_15-25.mp4
+piste « tone-chat » : 2999 paquets WASAPI, silence comblé 19 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.250, écart max entre paquets AAC reçus 32 ms
+piste « Jeu » : 2998 paquets WASAPI, silence comblé 21 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.250, écart max entre paquets AAC reçus 31 ms
+secondes de capture : jeu au premier plan de 0 à 10 s, fenêtre normale de 10 à 20 s, jeu ensuite
+piste audio 0 « tone-chat » (dBFS, vide = rien)
+     0 s  440.0 Hz   -72  880.0 Hz   -10
+     1 s  440.0 Hz        880.0 Hz    -9
+     2 s  440.0 Hz        880.0 Hz    -9
+     3 s  440.0 Hz        880.0 Hz    -9
+     4 s  440.0 Hz        880.0 Hz    -9
+     5 s  440.0 Hz        880.0 Hz    -9
+     6 s  440.0 Hz        880.0 Hz    -9
+     7 s  440.0 Hz        880.0 Hz    -9
+     8 s  440.0 Hz        880.0 Hz    -9
+     9 s  440.0 Hz        880.0 Hz    -9
+    10 s  440.0 Hz        880.0 Hz    -9
+    11 s  440.0 Hz        880.0 Hz    -9
+    12 s  440.0 Hz        880.0 Hz    -9
+    13 s  440.0 Hz        880.0 Hz    -9
+    14 s  440.0 Hz        880.0 Hz    -9
+    15 s  440.0 Hz        880.0 Hz    -9
+    16 s  440.0 Hz        880.0 Hz    -9
+    17 s  440.0 Hz        880.0 Hz    -9
+    18 s  440.0 Hz        880.0 Hz    -9
+    19 s  440.0 Hz        880.0 Hz    -9
+    20 s  440.0 Hz        880.0 Hz    -9
+    21 s  440.0 Hz        880.0 Hz    -9
+    22 s  440.0 Hz        880.0 Hz    -9
+    23 s  440.0 Hz        880.0 Hz    -9
+    24 s  440.0 Hz        880.0 Hz    -9
+    25 s  440.0 Hz        880.0 Hz    -9
+    26 s  440.0 Hz        880.0 Hz    -9
+    27 s  440.0 Hz        880.0 Hz    -9
+    28 s  440.0 Hz        880.0 Hz    -9
+    29 s  440.0 Hz  -113  880.0 Hz    -9
+piste audio 1 « Jeu » (dBFS, vide = rien)
+     0 s  440.0 Hz   -10  880.0 Hz   -75
+     1 s  440.0 Hz    -9  880.0 Hz      
+     2 s  440.0 Hz    -9  880.0 Hz      
+     3 s  440.0 Hz    -9  880.0 Hz      
+     4 s  440.0 Hz    -9  880.0 Hz      
+     5 s  440.0 Hz    -9  880.0 Hz      
+     6 s  440.0 Hz    -9  880.0 Hz      
+     7 s  440.0 Hz    -9  880.0 Hz      
+     8 s  440.0 Hz    -9  880.0 Hz      
+     9 s  440.0 Hz    -9  880.0 Hz      
+    10 s  440.0 Hz    -9  880.0 Hz      
+    11 s  440.0 Hz    -9  880.0 Hz      
+    12 s  440.0 Hz    -9  880.0 Hz      
+    13 s  440.0 Hz    -9  880.0 Hz      
+    14 s  440.0 Hz    -9  880.0 Hz      
+    15 s  440.0 Hz    -9  880.0 Hz      
+    16 s  440.0 Hz    -9  880.0 Hz      
+    17 s  440.0 Hz    -9  880.0 Hz      
+    18 s  440.0 Hz    -9  880.0 Hz      
+    19 s  440.0 Hz    -9  880.0 Hz      
+    20 s  440.0 Hz    -9  880.0 Hz      
+    21 s  440.0 Hz    -9  880.0 Hz      
+    22 s  440.0 Hz    -9  880.0 Hz      
+    23 s  440.0 Hz    -9  880.0 Hz      
+    24 s  440.0 Hz    -9  880.0 Hz      
+    25 s  440.0 Hz    -9  880.0 Hz      
+    26 s  440.0 Hz    -9  880.0 Hz      
+    27 s  440.0 Hz    -9  880.0 Hz      
+    28 s  440.0 Hz    -9  880.0 Hz      
+    29 s  440.0 Hz    -9  880.0 Hz   -98
+2026-10-16T15:26:21 fin, fenêtres de test fermées, vidéo supprimée, premier plan rendu, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\game-track-2026-10-16_15-25.txt

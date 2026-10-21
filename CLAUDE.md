@@ -23,17 +23,48 @@ galerie de clips, et une UI **Tauri 2 + React**. Spécification complète : `doc
 
 ## 1. Protocole de session
 
+0. **Toujours répondre à Palawi en français**, y compris les récapitulatifs de fin de tâche
+   et après une reprise de contexte. Commits, branches et noms de tests restent en anglais.
+
 1. Début : lance la commande `/reprendre` (`.claude/commands/reprendre.md`).
 2. Travaille **une phase à la fois**, dans l'ordre de `docs/PLAN.md`. Une phase n'est terminée
    que quand **tous** ses critères d'acceptation sont vérifiés, avec un rapport dans
    `docs/reports/phase-N.md` (`/valider-phase`).
 3. Fin de session (ou contexte qui se remplit) : lance `/handoff`. `docs/HANDOFF.md` doit
    permettre à une nouvelle session de reprendre **sans rien te demander**.
-4. Une phase = une ou plusieurs branches conventionnelles (§ 4 Git) = une PR par branche vers
-   `main` (modèle dans `.github/`).
+4. Une phase = une ou plusieurs branches conventionnelles parties de `dev` (§ 4 Git) = une PR
+   par branche vers `dev` (modèle dans `.github/`), mergée par toi une fois la CI verte, puis
+   branche supprimée. `main` ne reçoit que les versions publiées.
 5. Les critères qui exigent la machine de Palawi (jeu, Resolve, test d'une heure...) : prépare
    tout (commande CLI, script, protocole de `docs/TESTING.md`), puis demande-lui de lancer le
    test et de te donner le résultat. Ne coche jamais un critère que personne n'a vérifié.
+   Quand Palawi doit agir pendant une mesure (basculer le HDR, lancer un jeu, changer la
+   résolution…) : attends d'abord son « prêt », puis lance la mesure et dis-lui qu'elle a
+   commencé et quoi faire, et dis-lui quand elle est finie. Jamais de mesure lancée avant sa
+   réponse : il fait souvent autre chose en même temps.
+6. **Tests longs sans surveillance.** Aucun test de plus de 5 min sans l'accord de Palawi. Un
+   test en arrière-plan ne bloque jamais le travail : tu le lances et tu avances pendant ce
+   temps sur la tâche suivante indépendante, sans attendre. Tout test de plus de 10 min
+   tourne sans Palawi : il le lance seulement (la nuit ou en partant), avec une seule
+   commande. Le script :
+   - empêche la mise en veille (`SetThreadExecutionState`) et la rétablit à la fin ;
+   - capture en débit et résolution bas ;
+   - n'utilise que l'écran principal pour l'émetteur, sans autre fenêtre de Palawi ;
+   - supprime les fichiers vidéo après la mesure ;
+   - écrit le résultat dans un journal (`target/journals/`) que tu lis ensuite.
+   Modèle : `scripts/av-drift.ps1`. Ne demande jamais à Palawi de rester devant un test.
+7. **Un test range ce qu'il ouvre.** Un test n'utilise jamais les applis de Palawi
+   (navigateur, Discord…) quand un outil du projet peut produire le son (`play-tone`, VLC
+   lancé et fermé par le script). Tout processus, onglet, fenêtre ou son lancé par un test est
+   arrêté à la fin, même en cas d'échec. Si un test a besoin d'une appli de Palawi, demande-lui
+   avant et dis-lui exactement quoi refermer après.
+8. **Un test ne touche jamais à la configuration de Palawi.** Toute capture d'écran ou tout
+   essai de l'app passe par `pwsh scripts/app-isolated.ps1 [-Settings '<json partiel>']` :
+   build release lancée avec `PALACLIPS_CONFIG_DIR=target/test-config` (settings.json et
+   clips du test dans ce dossier, recréé à chaque lancement). Le `settings.json` de Palawi
+   (`%APPDATA%\com.palawi.palaclips\`, avant la migration d'ADR-032 `%APPDATA%\PalaClips\`) et
+   ses autres données (`%LOCALAPPDATA%\com.palawi.palaclips\`, dont le stockage WebView2) ne
+   sont jamais modifiés, même temporairement.
 
 ## 2. Front : skills de design obligatoires
 
@@ -74,8 +105,9 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 
 ## 4. Conventions de code
 
-- `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`
-  et `npm run build` (dans `app/`) passent avant chaque commit. La CI fait pareil sur Windows.
+- `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`,
+  `npm run build` et `npm test` (dans `app/`) passent avant chaque commit. La CI fait pareil sur
+  Windows.
 
 ### Commentaires
 
@@ -92,14 +124,19 @@ Le détail et les sources sont dans `docs/ARCHITECTURE.md` et `docs/RESEARCH.md`
 - Le contexte, les règles et les raisons vivent dans `docs/` (ARCHITECTURE, DECISIONS,
   RESEARCH), jamais dans le code.
 - Noms de tests en anglais, au format comportement (`replay_starts_on_keyframe`).
-- Les textes visibles par l'utilisateur (erreurs, `about` de la CLI) restent en français.
-- Messages d'erreur destinés à l'utilisateur : en **français**, actionnables. Logs : `tracing`,
-  structurés, avec par piste : paquets, trous comblés, crête.
+- **Textes visibles = clés i18n** (ADR-028). Front : `t("clé")` / `useT()` de
+  `app/src/lib/i18n.ts`, textes dans `app/src/locales/fr.json` **et** `en.json`, jamais en dur
+  dans un composant (`npm test` échoue sinon). Moteur et shell : tout texte qui s'affiche part
+  en `Localized::new("code").with("param", valeur)`, texte sous `messages.<code>` dans les deux
+  fichiers ; le message français du moteur reste pour les journaux et la CLI.
+- Messages d'erreur destinés à l'utilisateur : actionnables, en français et en anglais. Le
+  `about` de la CLI reste en français. Logs : `tracing`, structurés, avec par piste : paquets,
+  trous comblés, crête.
 - Nouvelle dépendance : justifiée dans la PR, version **stable**, ajoutée à
   `[workspace.dependencies]` si partagée.
 - Contrat IPC (commandes Tauri + `EngineEvent`) : toujours synchronisé entre
-  `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`, `app/src/lib/ipc.ts` et
-  `docs/ARCHITECTURE.md` § IPC.
+  `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`, `app/src/lib/ipc.ts`,
+  `app/src/locales/*.json` (codes d'alerte et d'erreur) et `docs/ARCHITECTURE.md` § IPC.
 - Doute sur le comportement d'une API Windows : écris d'abord une sous-commande de test dans
   `crates/cli`, ne suppose pas.
 
@@ -115,7 +152,8 @@ strictement :
 - `type` : `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`, `style`,
   `revert`.
 - `scope` (obligatoire) : `engine`, `capture`, `audio`, `encode`, `replay`, `record`, `mux`,
-  `library`, `cli`, `app`, `ui`, `ipc`, `deps`, `ci`, `scripts`, `docs`, `repo`.
+  `library`, `cli`, `app`, `ui`, `ipc`, `deps`, `ci`, `scripts`, `docs`, `handoff`, `reports`,
+  `repo`.
 - `description` : en anglais, à l'impératif, en minuscules, sans point final, ≤ 72 caractères
   pour toute la première ligne. Ex. : `feat(capture): add cfr frame pacer`,
   `fix(audio): fill silence gaps from qpc timestamps`, `docs(handoff): update session notes`.
@@ -134,9 +172,29 @@ strictement :
 - `description` : minuscules, chiffres et tirets uniquement, courte. Ex. :
   `feature/video-capture`, `feature/per-app-audio`, `fix/replay-keyframe-alignment`,
   `chore/ffmpeg-setup`, `release/v1.0.0`.
-- `main` est la seule branche longue. Pas de commit direct sur `main` : tout passe par une PR.
+**Branches longues** — deux, et **jamais de commit direct** sur l'une ou l'autre : tout passe
+par une PR.
 
-**Tags** : `vMAJEUR.MINEUR.CORRECTIF` (`v1.0.0`).
+- `main` : versions publiées uniquement. Alimentée seulement par des PR `dev` → `main` ou
+  `release/vX.Y.Z` → `main` (et les `hotfix/`).
+- `dev` : branche d'intégration. Toute branche `feature/`, `fix/`, `chore/` part de `dev` et
+  revient dans `dev` par PR.
+- `release/vX.Y.Z` part de `dev`, est mergée dans `main` (puis le tag), et `main` est remergée
+  dans `dev` si la release a reçu des correctifs.
+- `hotfix/` part de `main` et est mergée dans `main` **et** dans `dev`.
+
+**Merge et ménage** — dès que la CI d'une PR vers `dev` est verte et que les critères de la
+tâche sont vérifiés, tu la merges toi-même puis tu supprimes la branche :
+
+- `gh pr merge <N> --merge --subject "<titre conventionnel de la PR> (#<N>)" --delete-branch`
+  (commit de merge au format conventionnel, branche supprimée en local et sur GitHub) ;
+- puis `git switch dev && git pull --ff-only && git fetch --prune`, et supprime toute autre
+  branche locale déjà contenue dans `dev` (`git branch -d`).
+- Il ne reste que `main` et `dev` (plus les branches de travail en cours).
+- Jamais de merge vers `main` sans demande explicite de Palawi (publication d'une version ou
+  `hotfix/`).
+
+**Tags** : `vMAJEUR.MINEUR.CORRECTIF` (`v1.0.0`), posés uniquement sur `main`.
 
 - **Identité des commits** : tout agent (Claude Code ou autre) commite **uniquement** avec le
   profil git de l'utilisateur (`git config user.name` / `user.email`, aujourd'hui

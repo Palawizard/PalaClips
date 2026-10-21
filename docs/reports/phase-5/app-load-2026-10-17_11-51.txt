@@ -1,0 +1,5 @@
+2026-10-17T11:51:12 app-load : build release, replay armé (config par défaut), mise en régime 20 s, mesures de 60 s ; écran secondaire \\.\DISPLAY2 1920x1080
+fenêtre PalaClips au premier plan : False (attendu : False)
+fenêtre ouverte, sans focus        CPU 0,57 % de la machine (11,5 % d'un cœur), 7 processus ; GPU moyen par moteur : 3d 0,45 %, copy 0,00 %, legacyoverlay 0,00 %, ofa_0 0,00 %, security 0,00 %, security_1 0,00 %, videodecode 0,00 %, videoencode 19,32 %, vr 0,00 %
+fenêtre fermée (zone de notification) CPU 0,27 % de la machine (5,3 % d'un cœur), 1 processus ; GPU moyen par moteur : 3d 0,43 %, copy 0,00 %, legacyoverlay 0,00 %, ofa_0 0,00 %, security 0,00 %, security_1 0,00 %, videodecode 0,00 %, videoencode 19,32 %, vr 0,00 %
+2026-10-17T11:53:39 fin : PalaClips arrêté, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\app-load-2026-10-17_11-51.txt

@@ -1,0 +1,17 @@
+h264_nvenc → 2560x1440 @ 60 i/s, 60 s, 2 piste(s) audio
+2026-10-15T21:26:07.520481Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Haut-parleurs (3- Apogee BOOM)
+2026-10-15T21:26:07.529727Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Micro device=CABLE Output (VB-Audio Virtual Cable)
+2026-10-15T21:26:21.509993Z  WARN palaclips_engine::audio::track: flux audio interrompu track=Mix complet error=la capture audio a échoué : Windows returned an error: 0x88890004
+2026-10-15T21:26:21.522797Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-15T21:26:54.290146Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Haut-parleurs (3- Apogee BOOM)
+2026-10-15T21:27:07.501732Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=5954 silence_ms=602 dropped_ms=136 drift_corrections=102 device_switches=2 peak=0.01649671234190464
+2026-10-15T21:27:07.501786Z  INFO ffmpeg: [aac @ 00000223a10a7b80] Qavg: 13337.595
+2026-10-15T21:27:07.508267Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=3600 captured=5660 duplicated=24 max_lateness_ms=5.1973
+2026-10-15T21:27:07.523239Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Micro packets=5999 silence_ms=24 dropped_ms=0 drift_corrections=33 device_switches=0 peak=0.11203384399414063
+2026-10-15T21:27:07.523350Z  INFO ffmpeg: [aac @ 00000223a116eac0] Qavg: 64959.078
+3600 images écrites (5660 reçues de Windows, 24 dupliquées, 0 changements de résolution, retard max 5.20 ms) → C:\Users\super\AppData\Local\Temp\claude\C--Projets-NAS-Sync-Code-apps-PalaClips\d3a812b2-9003-4fad-b72a-7e1858e890f4\scratchpad\unplug.mp4
+piste « Mix complet » : 5954 paquets WASAPI, silence comblé 602 ms, chevauchement coupé 136 ms, 102 corrections de dérive, 2 changements de périphérique, crête 0.016
+  alerte : Piste « Mix complet » : la capture suit maintenant « Voicemeeter Input (VB-Audio Voicemeeter VAIO) ».
+  alerte : Piste « Mix complet » : la capture suit maintenant « Haut-parleurs (3- Apogee BOOM) ».
+piste « Micro » : 5999 paquets WASAPI, silence comblé 24 ms, chevauchement coupé 0 ms, 33 corrections de dérive, 0 changements de périphérique, crête 0.112
+

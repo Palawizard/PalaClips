@@ -1,0 +1,7 @@
+2026-10-20 premier lancement guidé (APP-06, critère « clip en moins de 2 min »)
+Méthode : app isolée (scripts/app-isolated.ps1 -MainScreen -Settings '{"onboarded":false}', réglages et WebView dans target/test-config), parcours fait par Palawi jusqu'au clip de test.
+Lignes du journal de l'app (target/test-config/local/logs/palaclips.2026-10-20.log, relevées pendant l'essai ; le dossier de test est recréé à chaque lancement) :
+2026-10-20T20:49:34.795863Z  INFO palaclips_app_lib: démarrage de PalaClips version="0.1.0"
+2026-10-20T20:49:35.548267Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=2560 height=1440 fps=60 tracks=3 duration_s=60 storage=Ram
+2026-10-20T20:50:02.248211Z  INFO palaclips_engine::engine: clip sauvegardé path=…\target\test-config\clips\Bureau\Bureau_2026-10-20_22-50-02_replay.mp4 duration_s=26.3893333 latency_ms=70
+RÉSULTAT : 27,5 s entre le démarrage et le clip de test sauvegardé (critère : moins de 2 min).

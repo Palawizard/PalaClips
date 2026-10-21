@@ -18,10 +18,21 @@ tauri-build = { version = "2.7", features = [] }
 
 [dependencies]
 palaclips-engine.workspace = true
-tauri = { version = "2.12", features = [] }
+tauri = { version = "2.12", features = ["protocol-asset", "tray-icon"] }
+tauri-plugin-global-shortcut = "2.4"
+tauri-plugin-single-instance = "2.5"
+tauri-plugin-notification = "2.6"
+tauri-plugin-autostart = "2.7"
+tauri-plugin-dialog = "2.8"
+tauri-plugin-updater = "2.14"
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender = "0.2.5"
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_Globalization", "Win32_Media_Audio", "Win32_UI_WindowsAndMessaging"] }
 
 [lints]
 workspace = true

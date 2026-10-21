@@ -1,0 +1,6 @@
+2026-10-19T19:16:24 build installée C:\Users\super\AppData\Local\PalaClips\palaclips-app.exe (0.1.0), réglages isolés dans C:\Projets-NAS-Sync\Code\apps\PalaClips\target\perf-config, 20 cœurs logiques
+PERF-01 zone de notification, replay désarmé : 4,9 Mo (working set privé, médiane), CPU 0,00 % de la machine, 1 processus (seuils 30 Mo, ~0 %)
+PERF-04 ouverture de la fenêtre jusqu'au premier rendu avec l'état : première 652 ms, à chaud 534, 538, 563 ms (médiane 538 ms, seuil 1000)
+PERF-02 replay armé, fenêtre fermée : 243,4 Mo privés, tampon 164,7 Mo (33,0 s) → moteur hors tampon 67,3 Mo (seuil 150) ; capture 2560x1440 à 60 i/s, 3 pistes
+PERF-03 (part CPU) replay armé, fenêtre fermée : CPU 0,39 % de la machine (seuil 2 %)
+OK

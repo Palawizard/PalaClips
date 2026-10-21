@@ -1,0 +1,16 @@
+2026-10-19T20:36:12 fps-impact : MSI-Kombustor-x64.exe, 20 s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger
+mise en route (non comptée)     256,4 i/s, 1 % bas  226,7 i/s, GPU 97 %, 5122 présentations, mode « Composed: Copy with GPU GDI » 
+sans capture                    254,8 i/s, 1 % bas  226,5 i/s, GPU 97 %, 5089 présentations, mode « Composed: Copy with GPU GDI » 
+fenêtre 60 i/s                  244,9 i/s, 1 % bas  208,9 i/s, GPU 98 %, 4893 présentations, mode « Composed: Copy with GPU GDI » frames=1560 captured=3061 duplicated=2 max_lateness_ms=10.7084
+écran principal 60 i/s          243,7 i/s, 1 % bas  201,7 i/s, GPU 98 %, 4868 présentations, mode « Composed: Copy with GPU GDI » frames=1560 captured=3060 duplicated=1 max_lateness_ms=6.5587
+écran 1440p60 + 4 pistes        243,2 i/s, 1 % bas  200,8 i/s, GPU 98 %, 4859 présentations, mode « Composed: Copy with GPU GDI » track=Jeu packets=0 silence_ms=26000 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 frames=1560 captured=3048 duplicated=0 max_lateness_ms=2.8294 track=vesktop packets=2598 silence_ms=21 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 track=Micro packets=2598 silence_ms=23 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.01165008544921875 track=Mix complet packets=2601 silence_ms=0 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0
+fenêtre 30 i/s                  247,0 i/s, 1 % bas  209,3 i/s, GPU 98 %, 4937 présentations, mode « Composed: Copy with GPU GDI » frames=780 captured=1557 duplicated=0 max_lateness_ms=0.791
+WGC seul (sans encodage)        248,8 i/s, 1 % bas  218,3 i/s, GPU 97 %, 4971 présentations, mode « Composed: Copy with GPU GDI » images reçues : 3089 en 26 s
+sans capture (fin)              250,1 i/s, 1 % bas  223,8 i/s, GPU 97 %, 4995 présentations, mode « Composed: Copy with GPU GDI » 
+RÉFÉRENCE : moyenne des 2 essais sans capture (mise en route exclue) = 252,4 i/s
+PERTE fenêtre 60 i/s                  3,0 % (-7,5 i/s)
+PERTE écran principal 60 i/s          3,5 % (-8,8 i/s)
+PERTE écran 1440p60 + 4 pistes        3,7 % (-9,3 i/s)
+PERTE fenêtre 30 i/s                  2,2 % (-5,5 i/s)
+PERTE WGC seul (sans encodage)        1,5 % (-3,7 i/s)
+2026-10-19T20:39:27 fin : captures arrêtées et supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\fps-impact-2026-10-19_20-36.txt

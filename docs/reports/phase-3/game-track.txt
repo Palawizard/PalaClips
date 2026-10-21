@@ -1,0 +1,80 @@
+h264_nvenc → 640x360 @ 60 i/s, 30 s, 2 piste(s) audio
+2026-10-16T11:19:23.830209Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-16T11:19:23.830289Z  INFO palaclips_engine::audio::track: application rattachée track=Jeu app=WindowsTerminal.exe (PID 17652)
+2026-10-16T11:19:24.340472Z  INFO palaclips_engine::audio::track: la piste Jeu suit l'appli au premier plan track=Jeu from=Some("WindowsTerminal.exe") to=zen.exe
+2026-10-16T11:19:24.348432Z  INFO palaclips_engine::audio::track: application rattachée track=Jeu app=zen.exe (PID 12752)
+2026-10-16T11:19:35.516042Z  INFO palaclips_engine::audio::track: la piste Jeu suit l'appli au premier plan track=Jeu from=Some("zen.exe") to=WindowsTerminal.exe
+2026-10-16T11:19:35.524332Z  INFO palaclips_engine::audio::track: application rattachée track=Jeu app=WindowsTerminal.exe (PID 17652)
+2026-10-16T11:19:45.652600Z  INFO palaclips_engine::audio::track: la piste Jeu suit l'appli au premier plan track=Jeu from=Some("WindowsTerminal.exe") to=zen.exe
+2026-10-16T11:19:45.660052Z  INFO palaclips_engine::audio::track: application rattachée track=Jeu app=zen.exe (PID 12752)
+2026-10-16T11:19:53.819493Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=772 duplicated=1114 max_lateness_ms=1.0166
+2026-10-16T11:19:53.829574Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=3000 silence_ms=0 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.20000076293945313
+2026-10-16T11:19:53.829662Z  INFO ffmpeg: [aac @ 000001cbae1d60c0] Qavg: 3979.418
+2026-10-16T11:19:53.830754Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Jeu packets=2993 silence_ms=75 dropped_ms=0 drift_corrections=0 device_switches=3 peak=0.20000000298023224
+2026-10-16T11:19:53.830862Z  INFO ffmpeg: [aac @ 000001cbae29f3c0] Qavg: 63157.398
+1800 images écrites (772 reçues de Windows, 1114 dupliquées, 0 changements de résolution, retard max 1.02 ms) → target\clips\game.mp4
+piste « Mix complet » : 3000 paquets WASAPI, silence comblé 0 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.200, écart max entre paquets AAC reçus 31 ms
+piste « Jeu » : 2993 paquets WASAPI, silence comblé 75 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 3 changements de périphérique ou rattachements, crête 0.200, écart max entre paquets AAC reçus 37 ms
+
+piste audio 0 « Mix complet » (dBFS, vide = rien)
+     0 s  440.0 Hz   -11
+     1 s  440.0 Hz   -11
+     2 s  440.0 Hz   -11
+     3 s  440.0 Hz   -11
+     4 s  440.0 Hz   -11
+     5 s  440.0 Hz   -11
+     6 s  440.0 Hz   -11
+     7 s  440.0 Hz   -11
+     8 s  440.0 Hz   -11
+     9 s  440.0 Hz   -11
+    10 s  440.0 Hz   -11
+    11 s  440.0 Hz   -11
+    12 s  440.0 Hz   -11
+    13 s  440.0 Hz   -11
+    14 s  440.0 Hz   -11
+    15 s  440.0 Hz   -11
+    16 s  440.0 Hz   -11
+    17 s  440.0 Hz   -11
+    18 s  440.0 Hz   -11
+    19 s  440.0 Hz   -11
+    20 s  440.0 Hz   -11
+    21 s  440.0 Hz   -11
+    22 s  440.0 Hz   -11
+    23 s  440.0 Hz   -11
+    24 s  440.0 Hz   -11
+    25 s  440.0 Hz   -11
+    26 s  440.0 Hz   -11
+    27 s  440.0 Hz   -11
+    28 s  440.0 Hz   -11
+    29 s  440.0 Hz   -11
+piste audio 1 « Jeu » (dBFS, vide = rien)
+     0 s  440.0 Hz   -18
+     1 s  440.0 Hz   -11
+     2 s  440.0 Hz   -11
+     3 s  440.0 Hz   -11
+     4 s  440.0 Hz   -11
+     5 s  440.0 Hz   -11
+     6 s  440.0 Hz   -11
+     7 s  440.0 Hz   -11
+     8 s  440.0 Hz   -11
+     9 s  440.0 Hz   -11
+    10 s  440.0 Hz   -11
+    11 s  440.0 Hz   -14
+    12 s  440.0 Hz      
+    13 s  440.0 Hz      
+    14 s  440.0 Hz      
+    15 s  440.0 Hz      
+    16 s  440.0 Hz      
+    17 s  440.0 Hz      
+    18 s  440.0 Hz      
+    19 s  440.0 Hz      
+    20 s  440.0 Hz      
+    21 s  440.0 Hz   -29
+    22 s  440.0 Hz   -11
+    23 s  440.0 Hz   -11
+    24 s  440.0 Hz   -11
+    25 s  440.0 Hz   -11
+    26 s  440.0 Hz   -11
+    27 s  440.0 Hz   -11
+    28 s  440.0 Hz   -11
+    29 s  440.0 Hz   -11

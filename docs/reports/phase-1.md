@@ -1,0 +1,106 @@
+# Phase 1 — Vidéo
+
+- Date : 2026-10-15
+- Commits : `14a7a2c` (PR #5, `feature/video-capture`) et `537f5cb` (`fix/hdr-capture`)
+- Machine : Windows 11 build 26200, NVIDIA GeForce RTX 4070 SUPER pilote 617.42,
+  Intel Core i5-13600KF (sans iGPU), écrans 2560×1440 240 Hz (principal), 2560×1440 165 Hz,
+  1920×1080 60 Hz
+
+**Statut : ✅ validée le 2026-10-15.** Tests 👤 menés avec Palawi : les commandes lancées par
+Claude, les actions et l'avis visuel par Palawi.
+
+## Critères
+
+| Critère | Type | Résultat | Preuve |
+|---|---|---|---|
+| Le MP4 se lit ; `ffprobe` : `r_frame_rate` = `avg_frame_rate`, bonne durée (±1 image) | 🤖 | ✅ | `capture-video --target primary --fps 60 --seconds 10` → `600 images écrites` ; `ffprobe` : `codec_name=h264 width=2560 height=1440 r_frame_rate=60/1 avg_frame_rate=60/1 duration=10.000000 nb_frames=600` ; `ffmpeg -i … -f null -` code 0. Aussi `--fps 144 --codec hevc --height 1080 --seconds 5` → `r_frame_rate=144/1 avg_frame_rate=144/1 duration=5.000000 nb_frames=720` |
+| Aucune lecture CPU de la texture (pas de `Map` de staging dans le chemin nominal) | 🤖 | ✅ | `grep -rnE "\.Map\(\|Unmap\|STAGING\|CPU_ACCESS_READ\|\.buffer\(\|buffer_crop\|hwframe_transfer" crates/` → aucun résultat ; dans `windows-capture` 2.0.1 le seul `Map` est dans `Frame::buffer()`/`buffer_crop()`, jamais appelés. Chemin : `CopyResource` GPU → Video Processor → frame `d3d11` → NVENC. CPU mesuré pendant une capture 1440p60 : 0,4 % de la machine (391 ms CPU sur 5 s, build debug) |
+| Capture de Fortnite en fenêtre et en plein écran : image correcte, pas de saccade | 👤 | ✅ | Fenêtré : `window:FortniteClient-Win64-Shipping.exe` 1366×768, `1800 images écrites (2558 reçues de Windows, 59 dupliquées)`, `r_frame_rate=60/1 avg_frame_rate=60/1 duration=30.000000 nb_frames=1800`. Plein écran : capture de fenêtre sans repli, 2560×1440, `1800 images (2548 reçues, 40 dupliquées, retard max 13 ms)`, `nb_frames=1800`. Palawi : « Fluide » pour les deux, image correcte (images extraites vérifiées) |
+| Écran HDR : couleurs correctes (CAP-09) | 👤 | ✅ après correction | Premier essai (HDR actif, blanc SDR 280 nits) : Palawi « Trop claires / délavées » ❌. Cause mesurée par `probe-hdr` (courbe BGRA8 de Windows). Correction `537f5cb` (FP16 scRGB ÷ blanc SDR → sRGB). Nouvel essai Fortnite plein écran 15 s : `900 images`, `r_frame_rate=60/1 avg_frame_rate=60/1`, Palawi : couleurs « Identiques / correctes », « Fluide » |
+
+## Tâches
+
+| Tâche | Résultat | Preuve |
+|---|---|---|
+| Énumération écrans/fenêtres, `list-targets` | ✅ | 3 écrans (`monitor:\\.\DISPLAY1..3`, nom, définition, Hz, principal) + fenêtres `window:<exe>` ; nom d'exe via `PROCESS_QUERY_LIMITED_INFORMATION` (processus protégés) ; `resolve-target --target window:VESKTOP.exe` retrouve la fenêtre par nom d'exe sans tenir compte de la casse |
+| WGC → D3D11 → NV12 GPU → encodeur matériel sans copie CPU | ✅ | `probe-wgc` : `ID3D11VideoDevice` et `ID3D11VideoContext1` disponibles sur le périphérique WGC ; voir critères 🤖 |
+| Pacer CFR sur QPC | ✅ | `CfrClock` + 6 tests (échéance exacte à 30/60/144/165/240 i/s, ticks manqués réémis, 600 images en 10 s, pas de dérive sur 1 h) ; nombres d'images exacts ci-dessus |
+| Mise à l'échelle GPU | ✅ | `--height 1080` → 1920×1080, `--height 720` → 1280×720 depuis 2560×1440 |
+| Curseur, bordure | ✅ | `--border` : bordure jaune vue à l'écran par Palawi, absente sans l'option (DWM ne la met pas dans l'image) ; `--no-cursor` : aucun curseur dans la vidéo (Palawi), curseur visible par défaut (images Fortnite) |
+| Mise à l'échelle Windows (CAP-08) | ✅ | `DISPLAY3` réglé à 150 % par Palawi : `monitor:\\.\DISPLAY3` → 1920×1080, 180 images / 3 s |
+| Changement de résolution à chaud | ✅ | Bloc-notes capturé à 790×596 puis agrandi à 1500×700 et réduit pendant la capture : `2 changements de résolution`, 480 images pour 8 s, image agrandie mise en bandes noires (frame extraite à 4,2 s) |
+| Multi-écrans | ✅ | `DISPLAY1` 2560×1440 → 120 images / 2 s ; `DISPLAY3` 1920×1080 → 120 images / 2 s |
+| Détection des encodeurs par encodage de test ; message si aucun | ✅ | `ffmpeg-info` : `h264_nvenc`, `hevc_nvenc`, `av1_nvenc` disponibles (5 images converties + encodées chacun) ; `*_amf` « DLL amfrt64.dll failed to open », `*_qsv` « Error creating a MFX session: -9. » ; sans encodeur → `EngineError::NoHardwareEncoder` (« aucun encodeur vidéo matériel n'a fonctionné … Mets à jour le pilote … ») ; stderr vide (logs FFmpeg routés vers `tracing`) |
+| Repli fenêtre → écran (CAP-04) | ✅ | Fenêtre réduite → « La fenêtre « … – Bloc-notes » ne peut pas être capturée : PalaClips capture son écran à la place. », 90 images 2560×1440 ; alerte `capture_fallback_monitor` |
+| CLI `capture-video` | ✅ | Voir critères ; options `--target --fps --seconds --out --codec --height --quality --bitrate-mbps --no-cursor --border` |
+| Préréglages de débit (ENC-02) | ✅ | Test `quality_presets_scale_bitrate_with_pixels_per_second` ; 1440p60 Léger → `bit_rate=17695440`, Qualité → `66355365`, `--bitrate-mbps 8` → `8000413` |
+
+Automatique sur `14a7a2c` : `cargo fmt --check` ok, `cargo clippy --workspace --all-targets -- -D warnings` ok,
+`cargo test --workspace` : 27 + 2 tests ok, `npm run build` ok. Aucun `todo!()` ni
+`EngineError::NotImplemented` dans le code.
+
+## Exigences SPEC couvertes
+
+CAP-01, CAP-03, CAP-04, CAP-05, CAP-06, CAP-07, CAP-08 (multi-écrans, mise à l'échelle 150 %,
+changement de résolution à chaud ; robustesse complète en phase 7), CAP-09,
+CAP-10 (WGC uniquement, aucune injection), ENC-01 (NVENC vérifié ; AMF et QSV codés et
+détectés, non testables sur cette machine), ENC-02, ENC-03 (GOP = intervalle × fps, images
+clés à 0, 1, 2… s dans `ffprobe -show_entries packet=pts_time,flags`), ENC-04, ENC-05.
+
+## Écarts et corrections
+
+- **rsmpeg** : `AVCodecContext::open(Some(dict))` libère deux fois le dictionnaire quand
+  l'ouverture échoue (plantage pendant la détection d'AMF) ; options privées passées par
+  `av_opt_set`.
+- **QSV** : FFmpeg 8.1 n'accepte que des frames `qsv` ; dérivation D3D11 → QSV + `av_hwframe_map`.
+  Non testé sur du matériel Intel ni AMD (pas d'iGPU sur le 13600KF) : la détection par
+  encodage réel écartera l'encodeur s'il ne fonctionne pas.
+- **Pacer** : un test a révélé une échéance de tick qui n'était pas « due » à son instant exact
+  (arrondi) ; corrigé avant commit.
+- **Arrêt** : l'envoi des paquets ne bloque plus l'arrêt si plus personne ne les lit.
+- **HDR** : la conversion BGRA8 de Windows délave l'image sur écran HDR ; capture FP16 et
+  conversion par shader avec le blanc SDR de l'écran (ADR-015, sonde `probe-hdr`). Le HDR
+  basculé pendant une capture n'est pris en compte qu'au démarrage suivant (phase 7).
+- Capture lancée dans le Bloc-notes de Palawi pour le test de redimensionnement : il affichait
+  une boîte « Conserver les modifications non enregistrées ? » sur un de ses fichiers, laissée
+  telle quelle.
+
+## Suivi après validation (`fix/phase-1-followups`)
+
+- **Détection du HDR** : `advancedColorEnabled` vaut 1 sur un écran SDR avec la gestion
+  automatique des couleurs, ce qui envoyait la capture dans le shader HDR → SDR. Détection par
+  `activeColorMode` (`GET_ADVANCED_COLOR_INFO_2`), avec repli ; les 4 états HDR × ACM sont
+  mesurés dans `RESEARCH.md` (Capture vidéo).
+- **Hautes lumières HDR** (ADR-016) : atténuation douce au-dessus de 90 % du blanc SDR au lieu
+  de l'écrêtage. Scène HDR10 de synthèse (ciel 60 → 400 nits, soleil 2000 nits, explosion
+  1000 nits, rampe 0 → 1500 nits) jouée par VLC en plein écran sur l'écran 2 (blanc SDR
+  280 nits), capturée 2 s avec chaque shader, image extraite à 1 s. Rampe (niveau 8 bits) :
+
+  | nits | 100 | 200 | 250 | 280 | 350 | 500 | 1000 | 1500 |
+  |---|---|---|---|---|---|---|---|---|
+  | écrêtage | 159 | 218 | 242 | 254 | 255 | 255 | 255 | 255 |
+  | atténuation | 159 | 218 | 242 | 248 | 251 | 252 | 254 | 254 |
+
+  À l'œil : avec l'écrêtage, ciel au-delà de 280 nits, soleil et cœur de l'explosion en
+  aplats blancs ; avec l'atténuation, dégradé du ciel, disque et halo du soleil, explosion
+  orange conservés.
+- **240 i/s** (Fortnite plein écran 2560×1440 sur l'écran 240 Hz, `window:FortniteClient-Win64-Shipping.exe`,
+  build release, `TESTING.md` § phase 1 point 8) :
+  - Premier essai : `7200 images écrites (3882 reçues de Windows, 3361 dupliquées, retard max
+    18.96 ms)` ❌ — jeu dans le menu (plafonné à 120 i/s) et retard > 1 période (4,17 ms).
+    Instrumentation temporaire du fil d'encodage : seul le tout premier tick était en retard
+    (compilation du shader HDR puis premier encodage NVENC de 3 à 9 ms, après la pose de
+    l'origine de l'horloge) ; ensuite p99,9 < 1 ms. Correction `fix(capture): start the frame
+    clock after the first encode` : l'origine est posée une fois le tick 0 encodé.
+  - Après correction, G-Sync actif, jeu à 225 i/s (plafond Reflex, Palawi) : `7200 images
+    écrites (5046 reçues de Windows, 2250 dupliquées, 0 changements de résolution, retard max
+    0.81 ms)` ; `ffprobe` : `codec_name=h264 width=2560 height=1440 r_frame_rate=240/1
+    avg_frame_rate=240/1 duration=30.000000 nb_frames=7200 bit_rate=161766980`. Windows ne
+    livre que 168 i/s : limite de WGC avec G-Sync et des écrans à fréquences différentes
+    (`RESEARCH.md`, mesures `probe-wgc`), pas du pipeline (identique sans encodage).
+  - G-Sync désactivé : `7200 images écrites (5992 reçues de Windows, 1321 dupliquées, 0
+    changements de résolution, retard max 2.65 ms)` ; `ffprobe` : `codec_name=h264
+    width=2560 height=1440 r_frame_rate=240/1 avg_frame_rate=240/1 duration=30.000000
+    nb_frames=7200 bit_rate=160506217`. 200 i/s reçus pendant l'encodage, 219 i/s sans.
+  - Décision de Palawi (2026-10-15) : documenter la limite G-Sync et proposer une alerte
+    « images de la source limitées » (`HANDOFF.md`, à intégrer à la SPEC s'il la valide).

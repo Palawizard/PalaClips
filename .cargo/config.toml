@@ -1,3 +1,6 @@
 [env]
 FFMPEG_INCLUDE_DIR = { value = "third_party/ffmpeg/include", relative = true }
 FFMPEG_DLL_PATH = { value = "third_party/ffmpeg/bin", relative = true }
+
+[target.x86_64-pc-windows-msvc]
+runner = "scripts/with-ffmpeg.cmd"

@@ -1,0 +1,23 @@
+HAGS (HwSchMode) : activé
+administrateur : false
+conversion 1440p → NV12 à 60 i/s, 5 s par essai
+  sans charge, défaut                p50   0.53 ms  p95   1.03 ms  max   59.98 ms  > 1 image :   0.3 %  (299 conv.)
+charge au premier plan : true
+charge GPU, tour 1
+  défaut [lu : thread 0, classe NORMAL] p50  31.96 ms  p95  62.45 ms  max   80.00 ms  > 1 image :  99.3 %  (136 conv.)
+  SetGPUThreadPriority(7) [thread 7 OK, relu 7] p50  31.97 ms  p95  46.99 ms  max   63.93 ms  > 1 image : 100.0 %  (145 conv.)
+  classe ABOVE_NORMAL [classe ABOVE_NORMAL OK, relue ABOVE_NORMAL] p50  31.53 ms  p95  47.50 ms  max   65.50 ms  > 1 image : 100.0 %  (147 conv.)
+  classe HIGH [classe HIGH OK, relue HIGH] p50  31.60 ms  p95  46.99 ms  max   63.48 ms  > 1 image : 100.0 %  (148 conv.)
+  classe REALTIME [classe REALTIME OK, relue REALTIME] p50   5.49 ms  p95   6.51 ms  max    7.00 ms  > 1 image :   0.0 %  (301 conv.)
+  thread 7 + classe HIGH [thread 7 OK, relu 7, classe HIGH OK, relue HIGH] p50  40.48 ms  p95  56.50 ms  max   60.01 ms  > 1 image : 100.0 %  (120 conv.)
+charge GPU, tour 2
+  défaut [lu : thread 0, classe NORMAL] p50  38.00 ms  p95  56.00 ms  max   56.52 ms  > 1 image : 100.0 %  (130 conv.)
+  SetGPUThreadPriority(7) [thread 7 OK, relu 7] p50  38.00 ms  p95  56.00 ms  max   70.49 ms  > 1 image : 100.0 %  (131 conv.)
+  classe ABOVE_NORMAL [classe ABOVE_NORMAL OK, relue ABOVE_NORMAL] p50  38.48 ms  p95  55.01 ms  max   56.51 ms  > 1 image : 100.0 %  (129 conv.)
+  classe HIGH [classe HIGH OK, relue HIGH] p50  38.49 ms  p95  55.05 ms  max   62.95 ms  > 1 image : 100.0 %  (129 conv.)
+  classe REALTIME [classe REALTIME OK, relue REALTIME] p50   5.00 ms  p95   6.52 ms  max    7.02 ms  > 1 image :   0.0 %  (301 conv.)
+  thread 7 + classe HIGH [thread 7 OK, relu 7, classe HIGH OK, relue HIGH] p50  45.52 ms  p95  56.01 ms  max   67.74 ms  > 1 image : 100.0 %  (117 conv.)
+--- capture-video sous charge au premier plan
+
+2026-10-20T14:07:59.536853Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1135 captured=308 duplicated=1127 max_lateness_ms=11212.7588
+

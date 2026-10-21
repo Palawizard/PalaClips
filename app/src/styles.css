@@ -1,7 +1,95 @@
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/600.css";
+@import "@fontsource/barlow-condensed/500.css";
+@import "@fontsource/barlow-condensed/600.css";
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
+  --ground: #0f1420;
+  --rail: #0a0e17;
+  --surface: #171d2b;
+  --surface-2: #1e2536;
+  --surface-hover: #232b3e;
+  --line: #262e40;
+  --line-strong: #343d52;
+  --ink: #e8ecf4;
+  --ink-2: #a7b0c3;
+  --ink-3: #7b869c;
+  --rec: #ff4d5e;
+  --rec-ink: #ffffff;
+  --warn: #f2b84b;
+  --focus: #8fb8ff;
+  --track-mix: #e8ecf4;
+  --track-mic: #f2b84b;
+  --track-game: #7fd18b;
+  --track-1: #4fc1b9;
+  --track-2: #8f86f5;
+  --track-3: #5aa9e6;
+  --track-4: #e58fb8;
+  --track-5: #c9b458;
+  --track-6: #6fd6e8;
+  --track-7: #b98cf2;
+  --track-8: #e6a16a;
+  --track-9: #9cc2ff;
+  --track-10: #8fd1a6;
+  --track-11: #d6a0e0;
+  --meter-ground: #0b0f18;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #eef1f6;
+  --rail: #e2e7ef;
+  --surface: #ffffff;
+  --surface-2: #f5f7fb;
+  --surface-hover: #edf1f7;
+  --line: #d9dfe9;
+  --line-strong: #c3cbd9;
+  --ink: #121826;
+  --ink-2: #445066;
+  --ink-3: #536076;
+  --rec: #d92639;
+  --warn: #9a6200;
+  --focus: #2f6fd8;
+  --track-mix: #2b3345;
+  --track-mic: #8a5f00;
+  --track-game: #23703a;
+  --track-1: #127a73;
+  --track-2: #5b4fd6;
+  --track-3: #1f6fb3;
+  --track-4: #b23f78;
+  --track-5: #7d6a00;
+  --track-6: #0d778a;
+  --track-7: #7d3fc7;
+  --track-8: #a85314;
+  --track-9: #2f5fbf;
+  --track-10: #2d7a4c;
+  --track-11: #9a3fa8;
+  --meter-ground: #e4e9f1;
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-rail: var(--rail);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rec: var(--rec);
+  --color-rec-ink: var(--rec-ink);
+  --color-warn: var(--warn);
+  --color-focus: var(--focus);
+  --color-meter-ground: var(--meter-ground);
+  --font-sans: "Barlow", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-score: "Barlow Condensed", "Barlow", "Segoe UI", sans-serif;
+  --ease-out: var(--ease-out);
 }
 
 html,
@@ -12,6 +100,331 @@ body,
 
 body {
   margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--focus) 35%, transparent);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:not(button, input, select, textarea, a)[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.score {
+  font-family: var(--font-score);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+}
+
+.label {
+  font-family: var(--font-score);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pressable {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.pressable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.roster-row {
+  transition: background-color 600ms var(--ease-out);
+}
+
+.roster-row[data-flash="true"] {
+  background-color: color-mix(in srgb, var(--row-color) 16%, transparent);
+  transition-duration: 80ms;
+}
+
+.clip-card {
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 240ms var(--ease-out);
+}
+
+.clip-card[data-fresh="true"] {
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+}
+
+.onboarding-question {
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.onboarding-question[data-direction="back"] {
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+.choice-card[data-picked="true"] {
+  transform: scale(0.97);
+}
+
+.choice-extra {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.check-spin {
+  animation: check-spin 900ms linear infinite;
+}
+
+@keyframes check-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alert-item {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.capture-card {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.capture-card:has(> [data-card]:active) {
+  transform: scale(0.98);
+}
+
+.capture-card > [data-card]:focus-visible {
+  outline-offset: -3px;
+  border-radius: inherit;
+}
+
+.session-meter {
+  transition: transform 90ms linear;
+}
+
+.gallery-card {
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.gallery-card:has(> [data-clip]:focus) {
+  border-color: var(--ink);
+  background-color: var(--surface-hover);
+}
+
+.gallery-card > [data-clip]:focus-visible {
+  outline-offset: -3px;
+  border-radius: inherit;
+}
+
+.gallery-card:has(> [data-clip]:active) {
+  transform: scale(0.985);
+  transition: transform 140ms var(--ease-out);
+}
+
+.card-play {
+  transition: opacity 160ms var(--ease-out);
+}
+
+.clip-menu {
+  transform-origin: top right;
+  transition:
+    opacity 150ms var(--ease-out),
+    transform 150ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.skeleton {
+  animation: skeleton 1.2s var(--ease-out) infinite alternate;
+}
+
+@keyframes skeleton {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.player {
+  animation: player-in 160ms var(--ease-out);
+}
+
+@keyframes player-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.export-fill {
+  transition: transform 200ms linear;
+}
+
+.cut-handle:focus-visible {
+  outline-offset: 0;
+}
+
+.waveform {
+  transition: opacity 160ms var(--ease-out);
+}
+
+.track-lane[data-audible="false"] .waveform {
+  opacity: 0.3;
+}
+
+.performance-cells {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.export-chevron {
+  transition: transform 160ms var(--ease-out);
+}
+
+.volume-slider {
+  height: 20px;
+  cursor: pointer;
+}
+
+.capture-frame {
+  transition: opacity 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+.switch-thumb {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms ease;
+}
+
+.hotkey-field[data-listening="true"],
+.hotkey-field[data-listening="true"]:focus-visible {
+  border-color: var(--ink);
+  background-color: var(--surface-2);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  animation: listening 1.2s var(--ease-out) infinite alternate;
+}
+
+@keyframes listening {
+  to {
+    outline-color: transparent;
+  }
+}
+
+.meter-fill,
+.meter-hold {
+  transform-origin: left center;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .roster-row,
+  .clip-card,
+  .alert-item,
+  .switch-thumb,
+  .capture-card,
+  .capture-frame,
+  .session-meter,
+  .gallery-card,
+  .card-play,
+  .clip-menu,
+  .export-fill,
+  .export-chevron,
+  .performance-cells,
+  .waveform,
+  .onboarding-question,
+  .choice-extra {
+    transition-duration: 0ms !important;
+  }
+
+  .check-spin {
+    animation: none;
+  }
+
+  .skeleton,
+  .player {
+    animation: none;
+  }
+
+  .gallery-card:has(> [data-clip]:active) {
+    transform: none;
+  }
+
+  .capture-card:has(> [data-card]:active) {
+    transform: none;
+  }
+
+  .hotkey-field[data-listening="true"] {
+    animation: none;
+  }
+
+  .pressable:active:not(:disabled),
+  .choice-card[data-picked="true"] {
+    transform: none;
+  }
 }

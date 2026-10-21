@@ -1,0 +1,41 @@
+    Finished `release` profile [optimized] target(s) in 0.34s
+Calibrage (35 s) : casque ou enceintes près du micro, écran principal libre.
+11:12:04  émetteur flash + bip pendant 20 s
+h264_nvenc ÔåÆ 2560x1440 @ 60 i/s, 35 s, 2 piste(s) audio
+2026-10-16T09:11:57.136884Z  INFO palaclips_engine::audio::track: p├®riph├®rique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-16T09:11:57.144968Z  INFO palaclips_engine::audio::track: p├®riph├®rique audio ouvert track=Micro device=CABLE Output (VB-Audio Virtual Cable)
+2026-10-16T09:12:32.125462Z  INFO palaclips_engine::capture::video: capture vid├®o arr├¬t├®e frames=2100 captured=140 duplicated=1988 max_lateness_ms=0.8864
+2026-10-16T09:12:32.134827Z  INFO palaclips_engine::audio::track: piste audio arr├¬t├®e track=Mix complet packets=3500 silence_ms=5 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.5
+2026-10-16T09:12:32.134881Z  INFO ffmpeg: [aac @ 000001ae3991b4c0] Qavg: 64003.094
+2026-10-16T09:12:32.142186Z  INFO palaclips_engine::audio::track: piste audio arr├¬t├®e track=Micro packets=3499 silence_ms=20 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.05086517333984375
+2026-10-16T09:12:32.142314Z  INFO ffmpeg: [aac @ 000001ae3bc0c800] Qavg: 62282.863
+2100 images ├®crites (140 re├ºues de Windows, 1988 dupliqu├®es, 0 changements de r├®solution, retard max 0.89 ms) ÔåÆ target\clips\t2-calibrage.mp4
+piste ┬½ Mix complet ┬╗ : 3500 paquets WASAPI, silence combl├® 5 ms, chevauchement coup├® 0 ms, 0 corrections de d├®rive, 0 changements de p├®riph├®rique, cr├¬te 0.500
+piste ┬½ Micro ┬╗ : 3499 paquets WASAPI, silence combl├® 20 ms, chevauchement coup├® 0 ms, 0 corrections de d├®rive, 0 changements de p├®riph├®rique, cr├¬te 0.051
+
+Décalages mesurés : mix 148.3 ms, micro 419.1 ms -> options --mix-offset-ms -148 --mic-offset-ms -419
+11:12:47  émetteur flash + bip pendant 20 s
+11:40:37  coupe tout son maintenant, pendant 2 min (jusqu'au prochain flash)
+11:42:37  émetteur flash + bip pendant 20 s
+12:12:37  émetteur flash + bip pendant 20 s
+h264_nvenc ÔåÆ 2560x1440 @ 60 i/s, 3640 s, 2 piste(s) audio
+2026-10-16T09:12:38.364485Z  INFO palaclips_engine::audio::track: p├®riph├®rique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-16T09:12:38.372340Z  INFO palaclips_engine::audio::track: p├®riph├®rique audio ouvert track=Micro device=CABLE Output (VB-Audio Virtual Cable)
+2026-10-16T10:13:18.354929Z  INFO palaclips_engine::capture::video: capture vid├®o arr├¬t├®e frames=218400 captured=4069 duplicated=214417 max_lateness_ms=2.7058
+2026-10-16T10:13:18.514780Z  INFO palaclips_engine::audio::track: piste audio arr├¬t├®e track=Mix complet packets=364015 silence_ms=0 dropped_ms=140 drift_corrections=68 device_switches=0 peak=0.5
+2026-10-16T10:13:18.515079Z  INFO ffmpeg: [aac @ 0000016529eec500] Qavg: 65495.039
+2026-10-16T10:13:18.784104Z  INFO palaclips_engine::audio::track: piste audio arr├¬t├®e track=Micro packets=364040 silence_ms=0 dropped_ms=400 drift_corrections=0 device_switches=0 peak=0.11941146850585938
+2026-10-16T10:13:18.784218Z  INFO ffmpeg: [aac @ 00000165279fd800] Qavg: 65434.750
+218400 images ├®crites (4069 re├ºues de Windows, 214417 dupliqu├®es, 0 changements de r├®solution, retard max 2.71 ms) ÔåÆ target\clips\t2.mp4
+piste ┬½ Mix complet ┬╗ : 364015 paquets WASAPI, silence combl├® 0 ms, chevauchement coup├® 140 ms, 68 corrections de d├®rive, 0 changements de p├®riph├®rique, cr├¬te 0.500
+piste ┬½ Micro ┬╗ : 364040 paquets WASAPI, silence combl├® 0 ms, chevauchement coup├® 400 ms, 0 corrections de d├®rive, 0 changements de p├®riph├®rique, cr├¬te 0.119
+
+stream|index=0|codec_name=h264|start_time=0.000000|duration=3640.000000|nb_frames=218400|tag:handler_name=VideoHandler
+stream|index=1|codec_name=aac|start_time=0.000000|duration=3640.000000|nb_frames=170626|tag:handler_name=Mix complet
+stream|index=2|codec_name=aac|start_time=0.000000|duration=3640.000000|nb_frames=170626|tag:handler_name=Micro
+mix        0 s :  20 paires, min    -8,7 ms, moy    +4,7 ms, max    +8,0 ms  OK
+mix     1800 s :  19 paires, min    -8,7 ms, moy    +0,1 ms, max    +8,0 ms  OK
+mix     3600 s :  20 paires, min    -8,7 ms, moy    -3,7 ms, max    +8,0 ms  OK
+micro      0 s :  19 paires, min    -8,9 ms, moy    +5,1 ms, max    +8,9 ms  OK
+micro   1800 s :  19 paires, min   -11,9 ms, moy    -0,3 ms, max    +8,5 ms  OK
+micro   3600 s :  19 paires, min    -7,9 ms, moy    -3,7 ms, max    +8,8 ms  OK

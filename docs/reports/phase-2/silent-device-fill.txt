@@ -1,0 +1,12 @@
+h264_nvenc → 640x360 @ 60 i/s, 20 s, 1 piste(s) audio
+2026-10-16T10:41:02.462365Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Realtek Digital Output (Realtek High Definition Audio)
+2026-10-16T10:41:22.451323Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1200 captured=43 duplicated=1157 max_lateness_ms=1.0227
+2026-10-16T10:41:22.553754Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=0 silence_ms=20000 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0
+2026-10-16T10:41:22.553841Z  INFO ffmpeg: [aac @ 000001bb1d42d840] Qavg: 65536.000
+1200 images écrites (43 reçues de Windows, 1157 dupliquées, 0 changements de résolution, retard max 1.02 ms) → target/clips/silent-device.mp4
+piste « Mix complet » : 0 paquets WASAPI, silence comblé 20000 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique, crête 0.000, écart max entre paquets AAC reçus 80 ms
+
+$ ffprobe -show_entries stream=codec_type,duration:format=duration
+stream|codec_type=video|duration=20.000000
+stream|codec_type=audio|duration=20.000000
+format|duration=20.000000

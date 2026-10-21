@@ -1,0 +1,16 @@
+2026-10-19T20:30:26 fps-impact : MSI-Kombustor-x64.exe, 20 s par essai, PresentMon (MsBetweenPresents) ; ne pas bouger
+mise en route (non comptée)     265,9 i/s, 1 % bas  240,3 i/s, GPU 94 %, 5317 présentations, mode « Hardware: Legacy Flip » 
+sans capture                    266,2 i/s, 1 % bas  241,4 i/s, GPU 97 %, 5321 présentations, mode « Hardware: Legacy Flip » 
+fenêtre 60 i/s                  265,3 i/s, 1 % bas  233,5 i/s, GPU 97 %, 5304 présentations, mode « Hardware: Legacy Flip » frames=1560 captured=2 duplicated=1559 max_lateness_ms=0.9567
+écran principal 60 i/s          265,0 i/s, 1 % bas  232,8 i/s, GPU 97 %, 5296 présentations, mode « Hardware: Legacy Flip » frames=1560 captured=2 duplicated=1559 max_lateness_ms=7.3408
+écran 1440p60 + 4 pistes        264,4 i/s, 1 % bas  231,4 i/s, GPU 97 %, 5283 présentations, mode « Hardware: Legacy Flip » frames=1560 captured=2 duplicated=1559 max_lateness_ms=3.6044 track=vesktop packets=2598 silence_ms=22 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 track=Jeu packets=2598 silence_ms=26 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 track=Mix complet packets=2600 silence_ms=6 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.0 track=Micro packets=2598 silence_ms=24 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.019901275634765625
+fenêtre 30 i/s                  265,6 i/s, 1 % bas  233,7 i/s, GPU 97 %, 5307 présentations, mode « Hardware: Legacy Flip » frames=780 captured=2 duplicated=779 max_lateness_ms=0.7595
+WGC seul (sans encodage)        264,7 i/s, 1 % bas  239,4 i/s, GPU 97 %, 5289 présentations, mode « Hardware: Legacy Flip » images reçues : 2 en 26 s
+sans capture (fin)              265,7 i/s, 1 % bas  240,3 i/s, GPU 97 %, 5310 présentations, mode « Hardware: Legacy Flip » 
+RÉFÉRENCE : moyenne des 2 essais sans capture (mise en route exclue) = 265,9 i/s
+PERTE fenêtre 60 i/s                  0,2 % (-0,6 i/s)
+PERTE écran principal 60 i/s          0,4 % (-1,0 i/s)
+PERTE écran 1440p60 + 4 pistes        0,6 % (-1,5 i/s)
+PERTE fenêtre 30 i/s                  0,1 % (-0,3 i/s)
+PERTE WGC seul (sans encodage)        0,5 % (-1,2 i/s)
+2026-10-19T20:33:41 fin : captures arrêtées et supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\fps-impact-2026-10-19_20-30.txt

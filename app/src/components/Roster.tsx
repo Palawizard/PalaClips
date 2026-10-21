@@ -1,0 +1,132 @@
+import { type CSSProperties, useEffect, useState } from "react";
+import { useT } from "../lib/i18n.ts";
+import type { TrackInfo, TrackState } from "../lib/ipc.ts";
+import { trackColor, trackIcon } from "../lib/tracks.ts";
+import { MeterBar, useTrackMeter } from "./MeterBar.tsx";
+
+const STATE_TONE: Record<TrackState, string> = {
+  capturing: "text-ink-2",
+  waiting: "text-ink-3",
+  silent: "text-warn",
+  unavailable: "text-warn",
+};
+
+const COLUMNS =
+  "grid grid-cols-[52px_minmax(0,1.3fr)_minmax(140px,2fr)_76px_minmax(0,1fr)] items-center gap-x-4";
+
+function TrackRow({
+  track,
+  index,
+  color,
+  flashing,
+}: {
+  track: TrackInfo;
+  index: number;
+  color: string;
+  flashing: boolean;
+}) {
+  const t = useT();
+  const { fill, hold, peak } = useTrackMeter(index);
+  const Icon = trackIcon(track.kind);
+
+  return (
+    <div
+      role="row"
+      data-flash={flashing}
+      style={{ "--row-color": color } as CSSProperties}
+      className={`roster-row ${COLUMNS} border-b border-line px-5 py-3`}
+    >
+      <span
+        role="cell"
+        className="score flex h-8 w-11 items-center justify-center rounded-[4px] text-[18px] font-semibold text-ground"
+        style={{ background: color }}
+      >
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <span role="cell" className="flex min-w-0 items-center gap-2.5">
+        <Icon size={18} className="shrink-0" style={{ color }} aria-hidden />
+        <span className="min-w-0">
+          <span className="block truncate font-semibold">{track.title}</span>
+          {track.source && (
+            <span className="block truncate text-[12px] text-ink-3" title={track.source}>
+              {track.source}
+            </span>
+          )}
+        </span>
+      </span>
+      <MeterBar cell color={color} fill={fill} hold={hold} />
+      <span role="cell" ref={peak} className="score text-right text-[19px] leading-none font-semibold text-ink">
+        −∞
+      </span>
+      <span role="cell" className={`truncate text-[13px] ${track.state ? STATE_TONE[track.state] : "text-ink-3"}`}>
+        {track.state ? t(`roster.states.${track.state}`) : "—"}
+      </span>
+    </div>
+  );
+}
+
+export function Roster({
+  tracks,
+  appOrder,
+  flashAt,
+}: {
+  tracks: TrackInfo[];
+  appOrder: string[];
+  flashAt: number;
+}) {
+  const t = useT();
+  const [flashing, setFlashing] = useState(false);
+
+  useEffect(() => {
+    if (!flashAt) return;
+    setFlashing(true);
+    const timer = window.setTimeout(() => setFlashing(false), 650);
+    return () => window.clearTimeout(timer);
+  }, [flashAt]);
+
+  return (
+    <section aria-labelledby="roster-title" className="min-w-0 pb-5">
+      <div className="flex items-baseline justify-between px-5 pt-5 pb-3">
+        <h2 id="roster-title" tabIndex={-1} className="text-[17px] font-semibold outline-none">
+          {t("roster.title")}
+        </h2>
+      </div>
+      <div role="table" aria-label={t("roster.table")} className="text-[14px]">
+        <div
+          role="row"
+          className={`${COLUMNS} border-y border-line px-5 py-2`}
+        >
+          <span role="columnheader" className="label">
+            {t("roster.number")}
+          </span>
+          <span role="columnheader" className="label">
+            {t("roster.track")}
+          </span>
+          <span role="columnheader" className="label">
+            {t("roster.level")}
+          </span>
+          <span role="columnheader" className="label text-right">
+            {t("roster.peak")}
+          </span>
+          <span role="columnheader" className="label">
+            {t("roster.state")}
+          </span>
+        </div>
+        {tracks.length === 0 && (
+          <p role="row" className="px-5 py-6 text-ink-2">
+            <span role="cell">{t("roster.empty")}</span>
+          </p>
+        )}
+        {tracks.map((track, index) => (
+          <TrackRow
+            key={index}
+            track={track}
+            index={index}
+            color={trackColor(track.kind, track.title, appOrder)}
+            flashing={flashing}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,114 @@
+h264_nvenc → 640x360 @ 60 i/s, 30 s, 3 piste(s) audio
+2026-10-16T11:02:53.800607Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Realtek Digital Output (Realtek High Definition Audio)
+2026-10-16T11:02:55.818842Z  INFO palaclips_engine::audio::track: application rattachée track=tone-b app=tone-b.exe (PID 21420)
+2026-10-16T11:02:55.818861Z  INFO palaclips_engine::audio::track: application rattachée track=tone-a app=tone-a.exe (PID 31208)
+2026-10-16T11:03:09.060206Z  INFO palaclips_engine::audio::track: application rattachée track=tone-b app=tone-b.exe (PID 20920)
+2026-10-16T11:03:23.688279Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone-b packets=1523 silence_ms=14767 dropped_ms=0 drift_corrections=103 device_switches=1 peak=0.25
+2026-10-16T11:03:23.688311Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=tone-a packets=2516 silence_ms=4840 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.25
+2026-10-16T11:03:23.688338Z  INFO ffmpeg: [aac @ 0000021ec9b46f00] Qavg: 63322.426
+2026-10-16T11:03:23.688340Z  INFO ffmpeg: [aac @ 0000021ec9ab7a00] Qavg: 62224.574
+2026-10-16T11:03:23.787583Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1800 captured=62 duplicated=1739 max_lateness_ms=1.091
+2026-10-16T11:03:23.891780Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=2602 silence_ms=3980 dropped_ms=0 drift_corrections=0 device_switches=0 peak=0.4975353479385376
+2026-10-16T11:03:23.891912Z  INFO ffmpeg: [aac @ 0000021ec9794f80] Qavg: 54232.523
+1800 images écrites (62 reçues de Windows, 1739 dupliquées, 0 changements de résolution, retard max 1.09 ms) → target\clips\t3-auto.mp4
+piste « Mix complet » : 2602 paquets WASAPI, silence comblé 3980 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.498, écart max entre paquets AAC reçus 150 ms
+piste « tone-a » : 2516 paquets WASAPI, silence comblé 4840 ms, chevauchement coupé 0 ms, 0 corrections de dérive, 0 changements de périphérique ou rattachements, crête 0.250, écart max entre paquets AAC reçus 128 ms
+piste « tone-b » : 1523 paquets WASAPI, silence comblé 14767 ms, chevauchement coupé 0 ms, 103 corrections de dérive, 1 changements de périphérique ou rattachements, crête 0.250, écart max entre paquets AAC reçus 170 ms
+
+stream|index=0|codec_type=video|duration=30.000000|tag:handler_name=VideoHandler
+stream|index=1|codec_type=audio|duration=30.000000|tag:handler_name=Mix complet
+stream|index=2|codec_type=audio|duration=30.000000|tag:handler_name=tone-a
+stream|index=3|codec_type=audio|duration=30.000000|tag:handler_name=tone-b
+piste audio 0 « Mix complet » (dBFS, vide = rien)
+     0 s  440.0 Hz        880.0 Hz      
+     1 s  440.0 Hz   -11  880.0 Hz   -12
+     2 s  440.0 Hz    -9  880.0 Hz    -9
+     3 s  440.0 Hz    -9  880.0 Hz    -9
+     4 s  440.0 Hz    -9  880.0 Hz    -9
+     5 s  440.0 Hz    -9  880.0 Hz    -9
+     6 s  440.0 Hz    -9  880.0 Hz    -9
+     7 s  440.0 Hz    -9  880.0 Hz    -9
+     8 s  440.0 Hz    -9  880.0 Hz    -9
+     9 s  440.0 Hz    -9  880.0 Hz   -21
+    10 s  440.0 Hz    -9  880.0 Hz      
+    11 s  440.0 Hz    -9  880.0 Hz      
+    12 s  440.0 Hz    -9  880.0 Hz      
+    13 s  440.0 Hz    -9  880.0 Hz      
+    14 s  440.0 Hz    -9  880.0 Hz      
+    15 s  440.0 Hz    -9  880.0 Hz   -13
+    16 s  440.0 Hz    -9  880.0 Hz    -9
+    17 s  440.0 Hz    -9  880.0 Hz    -9
+    18 s  440.0 Hz    -9  880.0 Hz    -9
+    19 s  440.0 Hz    -9  880.0 Hz    -9
+    20 s  440.0 Hz    -9  880.0 Hz    -9
+    21 s  440.0 Hz    -9  880.0 Hz    -9
+    22 s  440.0 Hz    -9  880.0 Hz    -9
+    23 s  440.0 Hz    -9  880.0 Hz   -18
+    24 s  440.0 Hz    -9  880.0 Hz      
+    25 s  440.0 Hz    -9  880.0 Hz      
+    26 s  440.0 Hz    -9  880.0 Hz      
+    27 s  440.0 Hz   -22  880.0 Hz   -72
+    28 s  440.0 Hz        880.0 Hz      
+    29 s  440.0 Hz        880.0 Hz      
+piste audio 1 « tone-a » (dBFS, vide = rien)
+     0 s  440.0 Hz        880.0 Hz      
+     1 s  440.0 Hz        880.0 Hz      
+     2 s  440.0 Hz   -10  880.0 Hz   -89
+     3 s  440.0 Hz    -9  880.0 Hz      
+     4 s  440.0 Hz    -9  880.0 Hz      
+     5 s  440.0 Hz    -9  880.0 Hz      
+     6 s  440.0 Hz    -9  880.0 Hz      
+     7 s  440.0 Hz    -9  880.0 Hz      
+     8 s  440.0 Hz    -9  880.0 Hz      
+     9 s  440.0 Hz    -9  880.0 Hz      
+    10 s  440.0 Hz    -9  880.0 Hz      
+    11 s  440.0 Hz    -9  880.0 Hz      
+    12 s  440.0 Hz    -9  880.0 Hz      
+    13 s  440.0 Hz    -9  880.0 Hz      
+    14 s  440.0 Hz    -9  880.0 Hz      
+    15 s  440.0 Hz    -9  880.0 Hz      
+    16 s  440.0 Hz    -9  880.0 Hz      
+    17 s  440.0 Hz    -9  880.0 Hz      
+    18 s  440.0 Hz    -9  880.0 Hz      
+    19 s  440.0 Hz    -9  880.0 Hz      
+    20 s  440.0 Hz    -9  880.0 Hz      
+    21 s  440.0 Hz    -9  880.0 Hz      
+    22 s  440.0 Hz    -9  880.0 Hz      
+    23 s  440.0 Hz    -9  880.0 Hz      
+    24 s  440.0 Hz    -9  880.0 Hz      
+    25 s  440.0 Hz    -9  880.0 Hz      
+    26 s  440.0 Hz    -9  880.0 Hz      
+    27 s  440.0 Hz   -23  880.0 Hz   -73
+    28 s  440.0 Hz        880.0 Hz      
+    29 s  440.0 Hz        880.0 Hz      
+piste audio 2 « tone-b » (dBFS, vide = rien)
+     0 s  440.0 Hz        880.0 Hz      
+     1 s  440.0 Hz        880.0 Hz      
+     2 s  440.0 Hz   -82  880.0 Hz   -10
+     3 s  440.0 Hz        880.0 Hz    -9
+     4 s  440.0 Hz        880.0 Hz    -9
+     5 s  440.0 Hz        880.0 Hz    -9
+     6 s  440.0 Hz        880.0 Hz    -9
+     7 s  440.0 Hz        880.0 Hz    -9
+     8 s  440.0 Hz        880.0 Hz    -9
+     9 s  440.0 Hz   -74  880.0 Hz   -22
+    10 s  440.0 Hz        880.0 Hz      
+    11 s  440.0 Hz        880.0 Hz      
+    12 s  440.0 Hz        880.0 Hz      
+    13 s  440.0 Hz        880.0 Hz      
+    14 s  440.0 Hz        880.0 Hz      
+    15 s  440.0 Hz   -69  880.0 Hz   -30
+    16 s  440.0 Hz   -77  880.0 Hz   -16
+    17 s  440.0 Hz   -80  880.0 Hz    -9
+    18 s  440.0 Hz        880.0 Hz    -9
+    19 s  440.0 Hz        880.0 Hz    -9
+    20 s  440.0 Hz        880.0 Hz    -9
+    21 s  440.0 Hz        880.0 Hz    -9
+    22 s  440.0 Hz        880.0 Hz    -9
+    23 s  440.0 Hz   -74  880.0 Hz   -19
+    24 s  440.0 Hz        880.0 Hz      
+    25 s  440.0 Hz        880.0 Hz      
+    26 s  440.0 Hz        880.0 Hz      
+    27 s  440.0 Hz        880.0 Hz      
+    28 s  440.0 Hz        880.0 Hz      
+    29 s  440.0 Hz        880.0 Hz      

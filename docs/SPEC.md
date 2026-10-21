@@ -13,7 +13,9 @@ Un joueur / créateur de contenu sur Windows qui veut :
   micro) pour le montage dans DaVinci Resolve ;
 - le tout avec un outil **léger**, gratuit, open source, sans compte ni télémétrie.
 
-Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur matériel
+Plateforme : **Windows 11** (et Windows Server 2022, build 20348 ou plus récent), x64 : la
+capture audio par processus exige le build 20348, que Windows 10 grand public (19045 au plus)
+n'atteint pas. GPU avec encodeur matériel
 (NVIDIA NVENC, AMD AMF ou Intel QSV).
 
 ## 2. Exigences
@@ -32,6 +34,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | CAP-08 | Multi-écrans et mise à l'échelle Windows (100–200 %) gérés ; changement de résolution à chaud géré. |
 | CAP-09 | Écran HDR : la vidéo SDR produite a des couleurs correctes (pas délavées ni sombres). |
 | CAP-10 | Aucune injection dans le processus capturé ; compatible Easy Anti-Cheat / BattlEye / Vanguard (capture via API Windows uniquement). |
+| CAP-11 | Alerte quand l'écran capturé est composé par Windows (cadence DWM) moins vite que le fps demandé, cas typique de G-Sync avec des écrans à fréquences différentes : message en français qui donne la cadence réelle et la marche à suivre. Un jeu plafonné sous le fps demandé ne la déclenche pas. |
 
 ### 2.2 Encodage (ENC)
 
@@ -47,16 +50,17 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 
 | ID | Exigence |
 |---|---|
-| AUD-01 | Piste **Mix complet** (tout ce que l'on entend), toujours en piste 1 si activée. |
+| AUD-01 | Piste **Mix complet**, toujours en piste 1 si activée : somme des pistes enregistrées et choisies (micro si « Aussi dans Mix complet », Jeu, applis), ou, avec le réglage « Audio du bureau » (désactivé par défaut), toute la sortie audio plus le micro. Les pistes suivantes restent séparées pour le montage. |
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
 | AUD-03 | Une **piste par logiciel** choisi (jusqu'à 6 par défaut, réglable jusqu'à 12), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
-| AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (visible dans Resolve). |
-| AUD-06 | Option « Piste Jeu automatique » : l'appli au premier plan alimente une piste dédiée. |
+| AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (lu par VLC, ffprobe… ; DaVinci Resolve ne l'affiche pas, ADR-021). |
+| AUD-06 | Option « Piste Jeu automatique » : une piste dédiée suit **le jeu**, pas le premier plan. Capture d'une fenêtre → l'appli de cette fenêtre. Capture d'un écran → la dernière appli passée au premier plan en plein écran ou en fenêtre sans bordure couvrant un écran ; un Alt+Tab vers une appli fenêtrée (Discord, navigateur, terminal…), le bureau ou PalaClips ne la change pas. L'utilisateur peut aussi la fixer sur un processus choisi dans le sélecteur AUD-04. |
 | AUD-07 | Appli fermée puis relancée : la piste se rattache seule, silence entre-temps, aucun fichier cassé. |
 | AUD-08 | Synchronisation audio/vidéo < 1 image sur **1 h**, y compris avec de longs silences. |
 | AUD-09 | Alerte si une piste reste muette alors que l'appli émet du son. |
 | AUD-10 | Changement de périphérique de sortie/entrée par défaut (casque branché/débranché) suivi à chaud. |
+| AUD-11 | **Décalage de synchro par piste** (−1000 à +1000 ms, positif = son retardé) pour compenser les périphériques virtuels (Voicemeeter…), avec un **assistant de calibrage** : flash + bip émis comme par un jeu, capturés et mesurés, valeur proposée pour chaque piste. |
 
 ### 2.4 Replay instantané (RPL)
 
@@ -64,12 +68,13 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 |---|---|
 | RPL-01 | Replay armé au démarrage (option), armé/désarmé par raccourci et par le menu de la zone de notification. |
 | RPL-02 | Durée réglable de 5 s à 60 min. |
-| RPL-03 | **Estimation de la RAM** affichée en direct pendant le réglage (débit × durée + audio). |
+| RPL-03 | **Estimation de la RAM** affichée en direct pendant le réglage ((débit vidéo + audio) × fenêtre du tampon, + 7 % de surcharge mesurée). |
 | RPL-04 | Stockage du buffer en **RAM** (défaut) ou sur **disque** (longues durées). |
 | RPL-05 | Sauvegarde par raccourci : fichier prêt en **< 500 ms** pour 60 s à 40 Mb/s, début sur image clé, pistes alignées. |
 | RPL-06 | La sauvegarde ne vole **jamais** le focus du jeu ; confirmation par toast Windows + son (désactivable). |
 | RPL-07 | Changer de sources ou de zone redémarre le buffer ; l'UI le dit avant d'appliquer. |
-| RPL-08 | RAM stable sur 2 h de replay armé (pas de fuite). |
+| RPL-08 | RAM stable en replay armé : pas de croissance avec le temps ni avec le nombre de sauvegardes. |
+| RPL-09 | Deux sauvegardes successives ne se répètent pas : le clip suivant commence où le précédent s'est arrêté (au plus un intervalle d'images clés en commun) ; « En mémoire » repart de zéro après chaque sauvegarde. Moins de 3 s en mémoire : pas de clip, message discret dans l'app (ni notification ni son en jeu). |
 
 ### 2.5 Enregistrement manuel (REC)
 
@@ -114,7 +119,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 | APP-03 | **Instance unique** : relancer l'app ouvre la fenêtre existante. |
 | APP-04 | **Démarrage avec Windows** (option), directement en zone de notification. |
 | APP-05 | Raccourcis globaux **personnalisables**, avec détection des conflits et touches réservées refusées. |
-| APP-06 | **Premier lancement guidé** : vérifications (Windows, encodeur, WebView2, dossier), choix des sources, du replay et des raccourcis, test de sauvegarde. |
+| APP-06 | **Premier lancement guidé** : vérifications (Windows, encodeur, WebView2, dossier), choix des sources (dont le micro, « Aussi dans Mix complet » et « Audio du bureau »), du dossier des clips, du replay et des raccourcis, test de sauvegarde. |
 | APP-07 | Réglages persistants, versionnés avec migration, bouton « Réinitialiser ». |
 | APP-08 | Interface en **français et en anglais** (langue du système par défaut). |
 | APP-09 | Journaux avec rotation ; **Exporter un diagnostic** (zip : logs, réglages anonymisés, infos système). |
@@ -129,6 +134,7 @@ Plateforme : **Windows 10 build 20348+ et Windows 11**, x64. GPU avec encodeur m
 |---|---|
 | PERF-01 | Zone de notification, replay désarmé : **< 30 Mo** de RAM, 0 % CPU au repos. |
 | PERF-02 | Replay armé : RAM du moteur hors buffer **< 150 Mo** ; taille du buffer affichée. |
+| | PERF-01 et PERF-02 : RAM = mémoire privée réellement occupée (*private working set*, ce qu'affiche le Gestionnaire des tâches), mesurée hors pression mémoire ; la mémoire engagée (*commit*) est relevée pour information (ADR-023). |
 | PERF-03 | Capture 1440p60 NVENC + 4 pistes : **< 2 % CPU** sur i5 13e gen, perte de fps en jeu ≤ 2 %. |
 | PERF-04 | Fenêtre ouverte : démarrage de l'UI **< 1 s** à chaud. |
 

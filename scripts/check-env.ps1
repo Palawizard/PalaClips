@@ -18,7 +18,7 @@ $root = Split-Path -Parent $PSScriptRoot
 Check "Windows build >= 20348 (capture audio par appli)" {
     $b = [int](Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion").CurrentBuildNumber
     if ($b -ge 20348) { "build $b" }
-} "Mettre Windows à jour (Windows 11 recommandé)"
+} "Windows 11 requis (build 20348 ou plus récent)"
 
 Check "Rust (rustc)" { (rustc --version) } "Installer rustup : https://rustup.rs"
 Check "Cible MSVC" { if ((rustup show active-toolchain) -match "msvc") { "msvc" } } "rustup default stable-x86_64-pc-windows-msvc"
@@ -26,7 +26,11 @@ Check "Visual Studio Build Tools (cl.exe)" {
     $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
     if (Test-Path $vswhere) { & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property displayName }
 } "winget install Microsoft.VisualStudio.2022.BuildTools (charge de travail 'Desktop C++')"
-Check "LLVM / libclang (bindgen)" { (clang --version | Select-Object -First 1) } "winget install LLVM.LLVM, puis rouvrir le terminal"
+Check "LLVM / libclang (bindgen)" { (clang --version | Select-Object -First 1) } "winget install LLVM.LLVM, ajouter C:\Program Files\LLVM\bin au PATH, puis rouvrir le terminal"
+Check "clang trouve MSVC et le Windows SDK" {
+    "#include <errno.h>" | clang -E -x c - 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { "errno.h trouvé" }
+} "clang choisit une installation Visual Studio sans outils C++ : ajouter la charge 'Développement Desktop en C++' à cette installation ou la désinstaller"
 Check "Node.js >= 20.19" { (node --version) } "winget install OpenJS.NodeJS.LTS"
 Check "WebView2 Runtime" {
     $k = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
@@ -40,10 +44,13 @@ Check "Icônes Tauri générées" {
     if (Test-Path (Join-Path $root "app/src-tauri/icons/icon.ico")) { "présentes" }
 } "cd app; npm run tauri icon src-tauri/icons/app-icon.svg"
 Check "Skill impeccable" {
-    if ((Test-Path "$env:USERPROFILE\.claude\plugins") -or (Test-Path (Join-Path $root ".claude/skills/impeccable"))) { "trouvé (à confirmer avec /plugin)" }
+    $installed = "$env:USERPROFILE\.claude\plugins\installed_plugins.json"
+    if ((Test-Path $installed) -and (Select-String -Path $installed -Pattern '"impeccable@' -Quiet)) { "plugin installé" }
+    elseif (Test-Path (Join-Path $root ".claude/skills/impeccable")) { "skill du projet" }
 } "Dans Claude Code : /plugin marketplace add pbakaus/impeccable puis /plugin -> installer impeccable"
 Check "Skill emil-design-eng" {
-    if ((Test-Path "$env:USERPROFILE\.claude\skills\emil-design-eng") -or (Test-Path (Join-Path $root ".claude/skills/emil-design-eng"))) { "présent" }
+    $dirs = @("$env:USERPROFILE\.claude\skills", (Join-Path $root ".claude/skills")) | Where-Object { Test-Path $_ }
+    if ($dirs | Get-ChildItem -Recurse -Depth 2 -Directory -Filter "emil-design-eng" -ErrorAction SilentlyContinue | Select-Object -First 1) { "présent" }
 } "npx -y skills add emilkowalski/skill --skill emil-design-eng --agent claude-code"
 
 Write-Host ""

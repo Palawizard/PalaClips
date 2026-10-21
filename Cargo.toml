@@ -6,9 +6,10 @@ members = [
     "app/src-tauri",
 ]
 default-members = ["crates/engine", "crates/cli"]
+exclude = ["third_party"]
 
 [workspace.package]
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MIT"
@@ -25,6 +26,12 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 crossbeam-channel = "0.5"
 parking_lot = "0.12"
 clap = { version = "4.6", features = ["derive"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+notify = "8.2"
+
+windows = "0.62.2"
+windows-capture = "2.0.1"
+wasapi = "0.26.0"
 
 palaclips-engine = { path = "crates/engine" }
 
@@ -46,3 +53,6 @@ panic = "unwind"
 
 [profile.dev.package."*"]
 opt-level = 2
+
+[patch.crates-io]
+rusty_ffmpeg = { path = "third_party/rusty_ffmpeg" }
