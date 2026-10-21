@@ -1,0 +1,8 @@
+2026-10-21T16:47:30 minecraft : capture de window:javaw.exe pendant 30 s (720p, 60 i/s) et sonde du plein écran exclusif
+capture : 2026-10-21T14:47:37.123273Z  WARN palaclips_engine::capture::rate: capture figée : plein écran exclusif
+capture : 1800 images écrites (1 reçues de Windows, 1799 dupliquées, 0 changements de résolution, retard max 14.35 ms) → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\minecraft\clip.mp4
+sonde : exclusif (D3DKMT) 32 s sur 32, notifications RUNNING_D3D_FULL_SCREEN 32 s, premier plan : javaw.exe 32 s
+vidéo : 30 s, image figée au total 0 s (0 passage(s) d'au moins 1 s sans changement)
+RÉSULTAT : image vivante ; plein écran exclusif détecté 32 s
+2026-10-21T16:48:05 fin : capture et sonde arrêtées, vidéo supprimée (3 images gardées dans C:\Projets-NAS-Sync\Code\apps\PalaClips\target\minecraft pour vérification), journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\minecraft-2026-10-21_16-47.txt
+Correction (2026-10-21) : la ligne « image vivante » ci-dessus est fausse. 1 seule image reçue de Windows en 30 s (1799 dupliquées) et les 3 images extraites sont identiques : la vidéo était figée. Le calcul du script ne comptait pas un gel qui dure jusqu à la fin de la vidéo ; corrigé (images reçues + freeze_start sans freeze_end).

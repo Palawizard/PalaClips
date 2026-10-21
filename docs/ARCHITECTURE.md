@@ -389,8 +389,10 @@ où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l
 `capture_gpu_saturated` (au moins 10 % des images de chaque seconde encodées plus d'une période
 en retard pendant 5 s : le jeu prend tout le GPU ; conseille de limiter ses fps) ;
 `capture_exclusive_fullscreen` (aucune image nouvelle de Windows pendant 5 s alors qu'une appli
-a la propriété exclusive de l'écran, `D3DKMTCheckExclusiveOwnership` ; conseille le plein écran
-fenêtré ou sans bordure) ; `audio_device_changed
+a la propriété exclusive de l'écran, `D3DKMTCheckExclusiveOwnership` ; paramètre `advice` :
+`exclusive_fullscreen_advice` (plein écran fenêtré ou sans bordure) ou, si l'appli au premier
+plan est `javaw.exe`/`java.exe`, `exclusive_fullscreen_advice_minecraft` (fenêtre agrandie ou
+mod sans bordure)) ; `audio_device_changed
 { track, device }` ; `app_track_silent { track, app }` ; `audio_device_unavailable { track,
 reason }` ; `hotkey_unavailable { keys }` ; `unsupported_windows_build` (au démarrage, si le build
 de Windows est connu et inférieur à 20348).

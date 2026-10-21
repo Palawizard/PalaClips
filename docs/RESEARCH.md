@@ -504,3 +504,21 @@ privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cl
   contient les deux à −23 dBFS jusqu'à la fin, aucune image perdue.
   Journal : `docs/reports/phase-8/multi-instance-2026-10-20_23-01.txt`.
 
+## Minecraft Java en plein écran (phase 8, 2026-10-21)
+
+- Machine de Palawi, Minecraft 26.2 lancé par ATLauncher (Fabric, Sodium), processus du jeu
+  `ATLauncher\runtimes\minecraft\java-runtime-epsilon\…\bin\javaw.exe` (classe
+  `net.minecraft.client.main.Main` ; le lanceur ATLauncher est un autre `javaw.exe`).
+  Banc `scripts/minecraft-test.ps1` : 30 s de `capture-video --target window:javaw.exe` et
+  `probe-fullscreen` en parallèle, images reçues de Windows et `freezedetect`.
+- F11 : **plein écran exclusif** (D3DKMT et `QUNS_RUNNING_D3D_FULL_SCREEN` les 32 s), **1 image
+  reçue en 30 s**, vidéo figée ; l'alerte `capture_exclusive_fullscreen` se lève au bout de 7 s.
+- F11 avec le réglage NVIDIA « Méthode de présentation Vulkan/OpenGL = Préférer la superposition
+  sur la chaîne d'échange DXGI » pour ce `javaw.exe` : **aucun changement** (1 image, exclusif).
+- Fenêtre agrandie : 2 724 images reçues, pas d'exclusivité, image juste.
+- Mod Borderless Fullscreen 2.4.1 (Fabric) : vrai plein écran sans barre de titre, 2 819 images
+  reçues, pas d'exclusivité.
+- Conséquence : conseil propre à Minecraft Java dans l'alerte quand l'appli au premier plan est
+  `javaw.exe` ou `java.exe`, et FAQ du README. Journaux et images :
+  `docs/reports/phase-8/minecraft-*.txt`, `minecraft-f11-frozen.jpg`, `minecraft-borderless.jpg`.
+
