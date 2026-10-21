@@ -5,6 +5,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.0.0] - 2026-10-21
+
 ### Ajouté
 - Création du repo : workspace Cargo (`palaclips-engine`, `palaclips-cli`, app Tauri 2),
   front React 19 + TypeScript + Tailwind 4, CI Windows.
@@ -182,6 +184,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   (écran, micro, piste 1, durée et stockage du replay, dossier, raccourci), au clavier aussi ;
   les vérifications ne s'affichent qu'en cas de problème ; récapitulatif où chaque réponse se
   modifie avant le clip de test.
+- Notes de release générées automatiquement à partir des PR mergées, classées par type
+  (fonctionnalités, corrections, performances, documentation, maintenance).
+- README anglais et français restructurés : logo, badges, sommaire, configuration requise,
+  contribution.
 
 ### Corrigé
 - Minecraft Java en plein écran (F11) : l'alerte « plein écran exclusif » donne la solution qui
