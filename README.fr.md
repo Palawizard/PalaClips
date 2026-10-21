@@ -73,8 +73,11 @@ mode, Windows ne transmet plus l'image aux logiciels de capture. PalaClips le d�
 affiche une alerte. Passe le jeu en *plein écran fenêtré* (ou *fenêtre sans bordure*) dans
 ses options d'affichage. La plupart des jeux récents utilisent déjà ce mode.
 
-**Minecraft Java en plein écran (F11).** Minecraft Java peut passer en plein écran exclusif
-selon la carte graphique et le pilote. Si la vidéo reste figée, joue en mode fenêtré agrandi.
+**Minecraft Java en plein écran (F11).** F11 met Minecraft Java en plein écran exclusif, et la
+vidéo reste figée (PalaClips affiche une alerte ; le réglage NVIDIA « Méthode de présentation
+Vulkan/OpenGL » n'a rien changé dans notre essai). Joue plutôt en fenêtre agrandie, ou installe
+un mod de plein écran sans bordure comme Borderless Fullscreen (Fabric) : les deux se
+capturent normalement.
 
 **Est-ce compatible avec les anti-triches ?** PalaClips n'injecte rien dans les jeux. Il
 utilise seulement les API de capture de Windows (Windows Graphics Capture pour l'image,
