@@ -423,7 +423,7 @@
   "messages": {
     "diagnostic_failed": "export du diagnostic impossible : {detail}",
     "invalid_config": "réglage invalide : {detail}",
-    "no_hardware_encoder": "aucun encodeur vidéo matériel n'a fonctionné : PalaClips encode uniquement avec la carte graphique (NVIDIA NVENC, AMD AMF ou Intel Quick Sync). Mets à jour le pilote de ta carte graphique puis relance PalaClips",
+    "no_hardware_encoder": "aucun encodeur vidéo matériel n'a fonctionné. PalaClips encode uniquement avec la carte graphique (NVIDIA NVENC, AMD AMF ou Intel Quick Sync) : mets à jour le pilote de ta carte graphique, puis relance PalaClips",
     "codec_unavailable": "ta carte graphique ne sait pas encoder en {codec} : choisis un autre codec",
     "unsupported_windows_build": "la capture audio par application nécessite Windows 11 (build 20348 ou plus récent) : mets Windows à jour",
     "primary_monitor_missing": "cible de capture introuvable : aucun écran principal",
