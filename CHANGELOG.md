@@ -173,6 +173,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Revue finale de la V1 (`docs/reports/release-v1.md`) : chaque exigence de la SPEC avec sa
   preuve ; bancs `shared-encoder.ps1` (un seul encodeur pour le replay et l'enregistrement).
 
+### Changé
+- Nouveau logo : un triangle de lecture découpé en trois bandes, les pistes séparées qui jouent
+  ensemble ; icônes de l'appli, de l'installeur et de la zone de notification régénérées.
+
 ### Corrigé
 - Minecraft Java en plein écran (F11) : l'alerte « plein écran exclusif » donne la solution qui
   marche (fenêtre agrandie ou mod de plein écran sans bordure), et la FAQ du README aussi.

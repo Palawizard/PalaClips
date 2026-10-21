@@ -234,7 +234,7 @@ Compact, tactile, quiet.
 - **Focus:** 2px focus-blue outline, 2px offset, 4px radius, on every focusable element.
 
 ### Navigation (rail)
-84 px column on rail-night with the PalaClips mark in ink at the top, then stacked items (icon above a 12px medium label, 68 px wide, 6px corners). Current: surface-raised fill, ink, heavier icon stroke, `aria-current="page"`. Rest: ink-faint; hover surface fill and ink.
+84 px column on rail-night with the PalaClips mark in ink at the top (a play triangle sliced into three horizontal bands: the separate tracks that play together; chosen by Palawi on 2026-10-21; ink only, never red or a track colour; the app icon is the same mark on a flat surface tile, 896 of 1024 px with 208 px corners, source `app/src-tauri/icons/app-icon.svg`), then stacked items (icon above a 12px medium label, 68 px wide, 6px corners). Current: surface-raised fill, ink, heavier icon stroke, `aria-current="page"`. Rest: ink-faint; hover surface fill and ink.
 
 ### Status banner
 Surface band of cells divided by 1 px rules. Each cell leads with its state as a 15px semibold heading, then its figures in score type, then its actions. The replay witness is a 12 px ring: rec-red when armed, warn-amber on error, ink-faint otherwise.
