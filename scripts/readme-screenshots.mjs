@@ -4,8 +4,8 @@ import { connect } from "./cdp.mjs";
 
 const [port, outDir, mode, language = "fr", playerQuery = ""] = process.argv.slice(2);
 const LABELS = {
-  fr: { next: "Continuer", gallery: "Galerie", settings: "Réglages", audio: "Audio", search: "Rechercher" },
-  en: { next: "Continue", gallery: "Gallery", settings: "Settings", audio: "Audio", search: "Search" },
+  fr: { next: "Continuer", yes: "Oui", chosen: "Les pistes enregistrées", gallery: "Galerie", settings: "Réglages", audio: "Audio", search: "Rechercher" },
+  en: { next: "Continue", yes: "Yes", chosen: "Recorded tracks", gallery: "Gallery", settings: "Settings", audio: "Audio", search: "Search" },
 }[language];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const cdp = await connect(port);
@@ -34,6 +34,12 @@ async function click(text, scope = "button") {
   if (!clicked) throw new Error(`bouton introuvable : ${text}`);
 }
 
+async function answer(label) {
+  await waitFor("document.querySelector('.choice-card') !== null", label);
+  await click(label, ".choice-card span span");
+  await sleep(600);
+}
+
 async function shot(name) {
   await sleep(700);
   const { result } = await cdp.send("Page.captureScreenshot", { format: "png" });
@@ -44,12 +50,15 @@ async function shot(name) {
 await waitFor("document.querySelector('main') !== null", "interface");
 
 if (mode === "onboarding") {
-  await waitFor("[...document.querySelectorAll('li')].filter((row) => row.querySelector('.check-spin')).length === 0", "vérifications");
+  await waitFor("document.querySelector('.capture-card') !== null", "question de l'écran");
   await click(LABELS.next);
-  await click(LABELS.next);
-  await waitFor("document.querySelector('[role=radiogroup]') !== null", "étape audio");
+  await answer(LABELS.yes);
+  if (await cdp.evaluate("document.querySelector('.choice-extra') !== null")) await click(LABELS.next);
+  await answer(LABELS.yes);
+  await answer(LABELS.chosen);
+  await waitFor("document.querySelectorAll('.choice-card').length === 4", "question de la durée");
   await sleep(2500);
-  await shot("first-launch-audio");
+  await shot("first-launch");
 } else {
   await click(LABELS.gallery);
   await waitFor("document.querySelectorAll('[data-clip]').length > 0", "galerie");

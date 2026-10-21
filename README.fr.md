@@ -42,12 +42,13 @@ montage dans DaVinci Resolve.
    afficher « Windows a protégé votre ordinateur ». Clique sur *Informations complémentaires*,
    puis sur *Exécuter quand même*.
 
-Au premier lancement, un parcours guidé vérifie la machine et te fait choisir l'écran, le
-micro, le contenu de la piste 1, le dossier des clips, la durée du replay et le raccourci,
-puis te fait sauvegarder un vrai clip de test. Tu peux le passer : les réglages par défaut
-fonctionnent tels quels.
+Au premier lancement, PalaClips vérifie la machine, puis pose quelques questions, une à la
+fois : l'écran, le micro, le contenu de la piste 1, la durée du replay et où le garder, le
+dossier des clips et le raccourci. Un récapitulatif permet de changer chaque réponse, puis tu
+sauvegardes un vrai clip de test. Tu peux le passer : les réglages par défaut fonctionnent
+tels quels.
 
-![Premier lancement, étape audio](docs/screenshots/fr/first-launch-audio.png)
+![Premier lancement, question de la durée du replay](docs/screenshots/fr/first-launch.png)
 
 **Mises à jour** : PalaClips les cherche sur GitHub et les installe après vérification de leur
 signature, avec les notes de version.
