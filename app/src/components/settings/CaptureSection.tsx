@@ -39,8 +39,8 @@ function toCards(targets: TargetInfo[], config: EngineConfig): Card[] {
   return targets.map((target) =>
     target.kind === "monitor"
       ? {
-          key: `monitor:${target.device_name}`,
-          target: { kind: "monitor", device_name: target.device_name },
+          key: `monitor:${target.monitor_path ?? target.device_name}`,
+          target: { kind: "monitor", device_name: target.device_name, monitor_path: target.monitor_path },
           kind: "monitor",
           name: target.name,
           detail: [
@@ -68,11 +68,20 @@ function toCards(targets: TargetInfo[], config: EngineConfig): Card[] {
 function selectedKey(cards: Card[], capture: CaptureTarget, targets: TargetInfo[]): string | null {
   if (capture.kind === "primary_monitor") {
     const primary = targets.find((target) => target.kind === "monitor" && target.primary);
-    return primary?.kind === "monitor" ? `monitor:${primary.device_name}` : null;
+    return primary?.kind === "monitor" ? `monitor:${primary.monitor_path ?? primary.device_name}` : null;
   }
   if (capture.kind === "monitor") {
+    const wantedPath = capture.monitor_path?.toLowerCase();
     const wanted = capture.device_name.toLowerCase();
-    return cards.find((card) => card.target.kind === "monitor" && card.target.device_name.toLowerCase() === wanted)?.key ?? null;
+    return (
+      cards.find(
+        (card) =>
+          card.target.kind === "monitor" &&
+          (wantedPath
+            ? card.target.monitor_path?.toLowerCase() === wantedPath
+            : card.target.device_name.toLowerCase() === wanted),
+      )?.key ?? null
+    );
   }
   const exe = capture.exe_name.toLowerCase();
   const windows = cards.filter((card) => card.exe?.toLowerCase() === exe);

@@ -227,6 +227,7 @@ pub fn system_report(extra: &[(&str, String)], anonymizer: &Anonymizer) -> Strin
     for target in list_targets().unwrap_or_default() {
         if let TargetInfo::Monitor {
             device_name,
+            monitor_path: _,
             name,
             width,
             height,

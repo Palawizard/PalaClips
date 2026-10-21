@@ -1,10 +1,11 @@
 use windows::Win32::Devices::Display::{
     DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO,
     DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL, DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME,
-    DISPLAYCONFIG_DEVICE_INFO_HEADER, DISPLAYCONFIG_DEVICE_INFO_TYPE,
-    DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO, DISPLAYCONFIG_MODE_INFO, DISPLAYCONFIG_PATH_INFO,
-    DISPLAYCONFIG_SDR_WHITE_LEVEL, DISPLAYCONFIG_SOURCE_DEVICE_NAME, DisplayConfigGetDeviceInfo,
-    GetDisplayConfigBufferSizes, QDC_ONLY_ACTIVE_PATHS, QueryDisplayConfig,
+    DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME, DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    DISPLAYCONFIG_DEVICE_INFO_TYPE, DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO, DISPLAYCONFIG_MODE_INFO,
+    DISPLAYCONFIG_PATH_INFO, DISPLAYCONFIG_SDR_WHITE_LEVEL, DISPLAYCONFIG_SOURCE_DEVICE_NAME,
+    DISPLAYCONFIG_TARGET_DEVICE_NAME, DisplayConfigGetDeviceInfo, GetDisplayConfigBufferSizes,
+    QDC_ONLY_ACTIVE_PATHS, QueryDisplayConfig,
 };
 use windows::Win32::Foundation::ERROR_SUCCESS;
 
@@ -80,20 +81,57 @@ pub fn display_color(device_name: &str) -> Option<DisplayColor> {
     })
 }
 
+pub fn monitor_path(device_name: &str) -> Option<String> {
+    active_paths()?
+        .iter()
+        .find(|path| source_name(path).is_some_and(|name| name.eq_ignore_ascii_case(device_name)))
+        .and_then(target_path)
+}
+
+pub fn device_name_of(monitor_path: &str) -> Option<String> {
+    active_paths()?
+        .iter()
+        .find(|path| {
+            target_path(path).is_some_and(|target| target.eq_ignore_ascii_case(monitor_path))
+        })
+        .and_then(source_name)
+}
+
+fn source_name(path: &DISPLAYCONFIG_PATH_INFO) -> Option<String> {
+    let mut source = DISPLAYCONFIG_SOURCE_DEVICE_NAME {
+        header: header::<DISPLAYCONFIG_SOURCE_DEVICE_NAME>(
+            DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME,
+            path.sourceInfo.adapterId,
+            path.sourceInfo.id,
+        ),
+        ..Default::default()
+    };
+    query(&mut source.header).then(|| wide_string(&source.viewGdiDeviceName))
+}
+
+fn target_path(path: &DISPLAYCONFIG_PATH_INFO) -> Option<String> {
+    let mut target = DISPLAYCONFIG_TARGET_DEVICE_NAME {
+        header: header::<DISPLAYCONFIG_TARGET_DEVICE_NAME>(
+            DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME,
+            path.targetInfo.adapterId,
+            path.targetInfo.id,
+        ),
+        ..Default::default()
+    };
+    query(&mut target.header)
+        .then(|| wide_string(&target.monitorDevicePath))
+        .filter(|path| !path.is_empty())
+}
+
+fn wide_string(text: &[u16]) -> String {
+    String::from_utf16_lossy(text)
+        .trim_end_matches('\0')
+        .to_owned()
+}
+
 pub fn display_color_info(device_name: &str) -> Option<DisplayColorInfo> {
     let path = active_paths()?.into_iter().find(|path| {
-        let mut source = DISPLAYCONFIG_SOURCE_DEVICE_NAME {
-            header: header::<DISPLAYCONFIG_SOURCE_DEVICE_NAME>(
-                DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME,
-                path.sourceInfo.adapterId,
-                path.sourceInfo.id,
-            ),
-            ..Default::default()
-        };
-        query(&mut source.header)
-            && String::from_utf16_lossy(&source.viewGdiDeviceName)
-                .trim_end_matches('\0')
-                .eq_ignore_ascii_case(device_name)
+        source_name(path).is_some_and(|name| name.eq_ignore_ascii_case(device_name))
     })?;
 
     let (adapter, id) = (path.targetInfo.adapterId, path.targetInfo.id);
