@@ -172,6 +172,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   release brouillon avec `latest.json` et les notes du CHANGELOG.
 
 ### Corrigé
+- L'écran choisi pour la capture est retrouvé même quand Windows renumérote ses écrans
+  (`\\.\DISPLAY1`, `2`…) : il est mémorisé par le chemin stable du moniteur ; un écran débranché
+  n'est jamais remplacé par un autre.
 - Windows requis : Windows 11 (le build 20348 de la capture audio par appli n'existe pas en
   Windows 10 grand public) ; sur un Windows trop ancien, une alerte le dit dès le démarrage.
 - Une appli lancée en plusieurs instances indépendantes (ex. deux Vesktop) : sa piste était

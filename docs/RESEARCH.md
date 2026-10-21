@@ -280,7 +280,11 @@
   plus à mesurer une pente ; utiliser `clock-drift.ps1`.
 - Les noms GDI `\\.\DISPLAYn` changent d'un moment à l'autre de la session (constaté le
   2026-10-15 : l'écran principal est passé de `DISPLAY2` à `DISPLAY1`) : ils ne suffisent pas
-  à mémoriser un écran (CAP-03).
+  à mémoriser un écran (CAP-03). Identifiant stable retenu (2026-10-21) : `monitorDevicePath` de
+  `DisplayConfigGetDeviceInfo(DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME)`, par exemple
+  `\\?\DISPLAY#GBT274A#5&38763f74&1&UID4357#{e6f07b5f-…}` (identifiant de l'écran + port). Vérifié
+  sur les 3 écrans de Palawi : chaque chemin redonne son nom GDI, un chemin absent est refusé
+  (`docs/reports/phase-8/stable-monitor-2026-10-21.txt`).
 - Jeux qui ouvrent le périphérique en mode exclusif : la capture loopback échoue
   (`AUDCLNT_E_DEVICE_IN_USE`), il faut réessayer et le signaler. — [ClipFlow CHANGELOG](https://github.com/jaimitus/ClipFlow/blob/main/CHANGELOG.md)
 

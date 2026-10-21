@@ -326,7 +326,7 @@ pub fn track_descriptors(config: &EngineConfig) -> Vec<TrackDescriptor> {
 fn capture_label(target: &CaptureTarget, fell_back: bool) -> Localized {
     match target {
         CaptureTarget::PrimaryMonitor => Localized::new("source_primary_screen"),
-        CaptureTarget::Monitor { device_name } => {
+        CaptureTarget::Monitor { device_name, .. } => {
             Localized::new("source_screen").with("name", device_name)
         }
         CaptureTarget::Window { exe_name, .. } if fell_back => {

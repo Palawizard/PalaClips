@@ -46,6 +46,8 @@ impl EngineConfig {
 pub enum CaptureTarget {
     Monitor {
         device_name: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        monitor_path: Option<String>,
     },
     Window {
         exe_name: String,
@@ -509,6 +511,29 @@ fn is_reserved_folder_name(name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_monitor_keeps_its_stable_path_and_old_settings_still_load() {
+        let saved = CaptureTarget::Monitor {
+            device_name: r"\\.\DISPLAY2".into(),
+            monitor_path: Some(r"\\?\DISPLAY#GBT274A#UID4357".into()),
+        };
+        let json = serde_json::to_string(&saved).expect("json");
+        assert_eq!(
+            serde_json::from_str::<CaptureTarget>(&json).expect("relu"),
+            saved
+        );
+        let old: CaptureTarget =
+            serde_json::from_str(r#"{"kind":"monitor","device_name":"\\\\.\\DISPLAY2"}"#)
+                .expect("ancien format");
+        assert_eq!(
+            old,
+            CaptureTarget::Monitor {
+                device_name: r"\\.\DISPLAY2".into(),
+                monitor_path: None,
+            }
+        );
+    }
 
     #[test]
     fn default_config_is_valid() {

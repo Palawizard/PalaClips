@@ -60,6 +60,11 @@ charges :
 
 **`capture`**
 - Énumérer écrans et fenêtres capturables (`Window::enumerate` + `is_valid()`), avec miniatures.
+- Écran choisi (CAP-03) : `CaptureTarget::Monitor { device_name, monitor_path }`. Les noms GDI
+  `\\.\DISPLAYn` se renumérotent pendant une session ; `monitor_path` (`monitorDevicePath` de
+  `DISPLAYCONFIG_TARGET_DEVICE_NAME`, modèle de l'écran + port) ne change pas. Au démarrage, le
+  chemin redonne le nom GDI du moment (`display::device_name_of`) ; un écran débranché donne
+  `monitor_missing` au lieu d'un autre écran. Réglage ancien sans chemin : nom GDI, comme avant.
 - Session WGC sur la `CaptureTarget` choisie : bordure (`DrawBorderSettings`) et curseur selon
   les réglages.
 - Le rappel WGC ne fait qu'un `CopyResource` GPU de `Frame::as_raw_texture` vers la « dernière
@@ -298,7 +303,7 @@ d'une erreur système.
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
 | `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
 | `pick_clips_dir` | 5 ✅ | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
-| `list_capture_targets` | 5 ✅ | écrans (nom, définition, Hz, principal) et fenêtres (exe, titre, PID, taille, réduite) ; PalaClips, fenêtres invisibles et fenêtres de moins de 160×90 exclues |
+| `list_capture_targets` | 5 ✅ | écrans (nom GDI, `monitor_path` stable de DisplayConfig, nom, définition, Hz, principal) et fenêtres (exe, titre, PID, taille, réduite) ; PalaClips, fenêtres invisibles et fenêtres de moins de 160×90 exclues |
 | `app_icon { processId }` | 5 ✅ | icône 48 px de l'exe en PNG (octets bruts, `SHDefExtractIconW` + encodeur PNG de FFmpeg) |
 | `set_performance_panel { open }` | 7 ✅ | panneau de performances (APP-12) ouvert ou fermé : le moteur n'envoie `performance_stats` que si le panneau est ouvert **et** la fenêtre visible (coupé à la réduction et à la destruction de la fenêtre) |
 | `start_preview { target, channel }` / `stop_preview { id }` / `stop_previews` | 5 ✅ | aperçu en direct d'une cible : session WGC à part, sans curseur ni bordure, ~1 image/s, réduite sur le GPU (≤ 384×216) puis JPEG envoyé en octets bruts sur un `Channel` ; 12 au plus ; toutes arrêtées à la destruction de la fenêtre. Jamais utilisé pour la capture réelle |
