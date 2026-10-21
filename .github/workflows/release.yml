@@ -81,3 +81,21 @@ jobs:
           prerelease: false
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
+
+      - name: Lien public dans latest.json
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $dir = New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP "updater")
+          gh release download $env:TAG -p latest.json -D $dir --clobber
+          $installer = gh release view $env:TAG --json assets -q '.assets[].name' | Where-Object { $_ -like '*-setup.exe' }
+          if (-not $installer) { throw "installeur introuvable dans la release $env:TAG" }
+          $manifest = Join-Path $dir "latest.json"
+          $json = Get-Content $manifest -Raw | ConvertFrom-Json
+          foreach ($platform in $json.platforms.PSObject.Properties) {
+            $platform.Value.url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:TAG/$installer"
+          }
+          $json | ConvertTo-Json -Depth 10 | Set-Content $manifest -Encoding utf8NoBOM
+          gh release upload $env:TAG $manifest --clobber
