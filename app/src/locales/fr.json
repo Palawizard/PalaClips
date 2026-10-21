@@ -452,7 +452,7 @@
     "clip_save_failed": "Clip non sauvegardé : {reason}.",
     "capture_fallback_monitor": "La fenêtre « {title} » ne peut pas être capturée : PalaClips capture son écran à la place.",
     "capture_source_rate_limited": "Windows ne compose ton écran qu'à {rate} Hz alors que tu enregistres à {fps} i/s : la vidéo répétera des images. Désactive G-Sync pour cet écran, ou passe tes autres écrans à au moins {fps} Hz.",
-    "capture_exclusive_fullscreen": "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
+    "capture_exclusive_fullscreen": "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. {advice}",
     "capture_gpu_saturated": "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu pour laisser un peu de marge, ou choisis « Priorité à la capture » dans Réglages → Replay & qualité.",
     "audio_device_changed": "Piste « {track} » : la capture suit maintenant « {device} ».",
     "app_track_silent": "Piste « {track} » : {app} émet du son mais la piste reste muette. Vérifie que l'appli n'utilise pas une sortie en mode exclusif, puis relance-la.",
@@ -512,7 +512,9 @@
     "update_available": "PalaClips {version} est disponible : installe-la dans Réglages → Général → Mises à jour.",
     "update_failed": "mise à jour impossible : {detail}",
     "update_while_recording": "un enregistrement est en cours : arrête-le avant d'installer la mise à jour",
-    "update_none": "aucune mise à jour à installer : relance la recherche"
+    "update_none": "aucune mise à jour à installer : relance la recherche",
+    "exclusive_fullscreen_advice": "Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
+    "exclusive_fullscreen_advice_minecraft": "Minecraft Java : quitte le plein écran (F11) et agrandis la fenêtre, ou installe un mod de plein écran sans bordure comme Borderless Fullscreen."
   },
   "player": {
     "back": "Retour à la galerie",

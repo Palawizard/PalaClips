@@ -452,7 +452,7 @@
     "clip_save_failed": "Clip not saved: {reason}.",
     "capture_fallback_monitor": "The “{title}” window can't be captured: PalaClips captures its screen instead.",
     "capture_source_rate_limited": "Windows only composes your screen at {rate} Hz while you record at {fps} fps: the video will repeat frames. Turn off G-Sync for this screen, or set your other screens to at least {fps} Hz.",
-    "capture_exclusive_fullscreen": "The game runs in exclusive fullscreen: Windows can't capture its image, so the video freezes. Switch the game to borderless (windowed fullscreen) in its display settings.",
+    "capture_exclusive_fullscreen": "The game runs in exclusive fullscreen: Windows can't capture its image, so the video freezes. {advice}",
     "capture_gpu_saturated": "Your GPU is maxed out: PalaClips can't get GPU time, so the video stutters. Cap the game's fps to leave some headroom, or pick “Capture first” in Settings → Replay & quality.",
     "audio_device_changed": "“{track}” track: capture now follows “{device}”.",
     "app_track_silent": "“{track}” track: {app} plays sound but the track stays silent. Check that the app doesn't use an output in exclusive mode, then restart it.",
@@ -512,7 +512,9 @@
     "update_available": "PalaClips {version} is available: install it in Settings → General → Updates.",
     "update_failed": "couldn't update: {detail}",
     "update_while_recording": "a recording is in progress: stop it before installing the update",
-    "update_none": "no update to install: check again"
+    "update_none": "no update to install: check again",
+    "exclusive_fullscreen_advice": "Switch the game to borderless (windowed fullscreen) in its display settings.",
+    "exclusive_fullscreen_advice_minecraft": "Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen."
   },
   "player": {
     "back": "Back to the gallery",
