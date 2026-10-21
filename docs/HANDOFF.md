@@ -7,7 +7,8 @@
 
 - **Phase en cours :** 8 — Release V1, presque finie. Tout le travail de la phase est mergé dans
   `dev` (#71 à #79) ; revue finale `docs/reports/release-v1.md` : chaque exigence de la SPEC a sa
-  preuve, sauf T10 (VM Windows 11 sans GPU, Palawi), Minecraft (quand Palawi le dit) et le tag.
+  preuve (T10 dans la VM fait le 2026-10-21) ; restent Minecraft (quand Palawi le dit) et la
+  release, avec son accord.
   Branche : `dev`.
 - **Piste 1 (ADR-029, ADR-030)** : Mix complet = somme des pistes choisies (micro si « Aussi
   dans Mix complet », Jeu, applis) ; « Audio du bureau » (désactivé par défaut) = toute la
@@ -203,27 +204,23 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. **T10** : Palawi installe le brouillon de release dans une VM Windows 11 sans GPU (checklist
-   `docs/TESTING.md` § T10) et rapporte les résultats et le zip de diagnostic. Pour lui donner un
-   installeur sans release publique : pousser un tag `test-v1.0.0` sur `dev` (brouillon « TEST »),
-   puis le supprimer avec `gh release delete test-v1.0.0 --cleanup-tag -y`.
-2. **Release** (seulement avec l'accord explicite de Palawi) : `release/v1.0.0` depuis `dev`,
+1. **Release** (seulement avec l'accord explicite de Palawi) : `release/v1.0.0` depuis `dev`,
    version 1.0.0 dans `Cargo.toml` (workspace), `app/src-tauri/tauri.conf.json` et
    `app/package.json`, section `## [1.0.0] - date` du CHANGELOG (ses notes deviennent celles de
    l'updater), PR vers `main`, puis tag `v1.0.0` sur `main` : le workflow `Release` crée la release
    en brouillon, Palawi la publie.
-3. Test Minecraft Java **seulement quand Palawi le dit** (demande du 2026-10-20) : Minecraft en
+2. Test Minecraft Java **seulement quand Palawi le dit** (demande du 2026-10-20) : Minecraft en
    plein écran F11, `capture-video --target window:javaw.exe --seconds 30` → l'image bouge-t-elle
    (`probe-fullscreen` en parallèle) ? Si figée : refaire avec le réglage NVIDIA « Méthode de
    présentation Vulkan/OpenGL = Préférer la superposition sur la chaîne d'échange DXGI », puis
    avec le mod Fullscreen+ en sans bordure. Résultats dans RESEARCH ; si une solution marche,
    texte propre à `javaw.exe` dans l'alerte `capture_exclusive_fullscreen` (paramètre `exe` +
    clé i18n dédiée).
-4. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
+3. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
    `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` posés ; clé publique dans `tauri.conf.json`. Claude ne
    lit jamais le fichier privé ni le mot de passe. Un build local avec installeur exige la clé :
    ajouter `--config '{"bundle":{"createUpdaterArtifacts":false}}'` pour les mesures locales.
-5. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
+4. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
    joue) `-Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`.
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
@@ -335,6 +332,9 @@ Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défa
 - Bancs ajoutés en phase 8 : `multi-instance.ps1` (deux instances d'un exe sur une piste),
   `shared-encoder.ps1` (sessions NVENC replay + enregistrement), `readme-screenshots.ps1`
   (captures du README par CDP dans l'app isolée), `update-test.ps1`.
+- Installeur pour un essai hors de la machine de dev sans release publique : tag `test-v1.0.0`
+  sur `dev` (brouillon « TEST »), `gh release download`, puis `gh release delete test-v1.0.0
+  --cleanup-tag -y`. Un brouillon n'est téléchargeable qu'avec le compte de Palawi.
 - Écran mémorisé par `monitor_path` (#79) : un réglage enregistré avant garde le nom GDI ; il
   passe au chemin stable dès que l'écran est rechoisi dans Réglages > Capture.
 
