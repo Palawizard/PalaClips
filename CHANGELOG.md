@@ -174,6 +174,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   preuve ; bancs `shared-encoder.ps1` (un seul encodeur pour le replay et l'enregistrement).
 
 ### Corrigé
+- Sans encodeur matériel : le message ne se coupe plus au milieu d'un mot au premier lancement
+  et se lit d'une traite dans l'alerte de l'accueil.
 - L'écran choisi pour la capture est retrouvé même quand Windows renumérote ses écrans
   (`\\.\DISPLAY1`, `2`…) : il est mémorisé par le chemin stable du moniteur ; un écran débranché
   n'est jamais remplacé par un autre.

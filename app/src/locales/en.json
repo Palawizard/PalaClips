@@ -423,7 +423,7 @@
   "messages": {
     "diagnostic_failed": "couldn't export diagnostics: {detail}",
     "invalid_config": "invalid setting: {detail}",
-    "no_hardware_encoder": "no hardware video encoder worked: PalaClips only encodes on the graphics card (NVIDIA NVENC, AMD AMF or Intel Quick Sync). Update your graphics driver, then restart PalaClips",
+    "no_hardware_encoder": "no hardware video encoder worked. PalaClips only encodes on the graphics card (NVIDIA NVENC, AMD AMF or Intel Quick Sync): update your graphics driver, then restart PalaClips",
     "codec_unavailable": "your graphics card can't encode {codec}: pick another codec",
     "unsupported_windows_build": "per-app audio capture needs Windows 11 (build 20348 or later): update Windows",
     "primary_monitor_missing": "capture target not found: no primary screen",

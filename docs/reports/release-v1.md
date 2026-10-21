@@ -8,7 +8,7 @@
 
 | ID | Exigence (courte) | Statut | Preuve |
 |---|---|---|---|
-| — | Plateforme : Windows 11 (et Server 2022, build ≥ 20348), x64 | ⏳ | SPEC corrigée et alerte `unsupported_windows_build` au démarrage (PR #77, test `only_a_known_build_below_20348_is_too_old`) ; aucune dépendance au Visual C++ redistribuable (`phase-8/dumpbin-2026-10-21.txt`). Reste l'installeur dans une VM Windows 11 sans GPU (T10, Palawi). Tous les essais faits sur le build 26200. |
+| — | Plateforme : Windows 11 (et Server 2022, build ≥ 20348), x64 | ✅ | SPEC corrigée et alerte `unsupported_windows_build` au démarrage (PR #77, test `only_a_known_build_below_20348_is_too_old`) ; aucune dépendance au Visual C++ redistribuable (`phase-8/dumpbin-2026-10-21.txt`) ; installeur essayé dans une VM Windows 11 26H2 vierge, sans GPU (`phase-8/vm-t10-2026-10-21.txt`). |
 | — | GPU avec encodeur matériel (NVENC, AMF, QSV) | ✅ | Voir ENC-01 : NVENC prouvé ; AMF et QSV écartés par l'encodage de test quand ils échouent (`phase-1.md`, tâche « Détection des encodeurs »). |
 | — | Léger | ✅ | Voir PERF-01 à PERF-04 (`phase-7.md`). |
 | — | Gratuit, open source | ✅ | `LICENSE` (MIT, ADR-011). |
@@ -38,7 +38,7 @@
 | ENC-02 | Débit 1–200 Mb/s, préréglages + libre | ✅ | `phase-1.md`, tâche « Préréglages de débit » (test `quality_presets_scale_bitrate_with_pixels_per_second`, débits mesurés) ; UI dans `phase-5.md`. |
 | ENC-03 | Intervalle d'images clés réglable (1 s par défaut) | ✅ | `phase-1.md` § Exigences (images clés à 0, 1, 2… s dans `ffprobe`) ; réglage dans `phase-5.md`. |
 | ENC-04 | Aucune copie CPU des images | ✅ | `phase-1.md`, critère « Aucune lecture CPU de la texture » (grep sans résultat, 0,4 % CPU). |
-| ENC-05 | Sans encodeur : message clair au démarrage | ⏳ | Message `NoHardwareEncoder` (`phase-1.md`) et blocage de l'étape Vérifications (PR #72), mais jamais vu sur une machine sans encodeur : c'est la ligne 3 de T10 (VM sans GPU), pas encore faite. |
+| ENC-05 | Sans encodeur : message clair au démarrage | ✅ | VM sans GPU (`phase-8/vm-t10-2026-10-21.txt`, captures `vm-t10-checks.png` et `vm-t10-home.png`) : avertissement à l'étape Vérifications, « Continuer » grisé, diagnostic proposé ; alerte à l'accueil ; ponctuation et coupure du texte corrigées (PR « fix: vm test findings »). |
 
 ## 2.3 Audio (AUD)
 
@@ -148,15 +148,14 @@
 | Premier lancement guidé → clip en < 2 min (app isolée, profil vierge, temps lu dans le journal) | ✅ | 27,5 s (`phase-8/first-launch-2026-10-20.txt`). |
 | Mise à jour 1.0.0 → 1.0.1 et fausse signature refusée (T8) | ✅ | `phase-8/update-test-2026-10-21_14-25.txt`. |
 | Dépendances de l'exe et des DLL (`dumpbin /dependents`) | ✅ | `phase-8/dumpbin-2026-10-21.txt` : aucun runtime VC++. |
-| Installeur dans une VM Windows 11 sans GPU (T10) | ⏳ | Protocole T10 (`docs/TESTING.md`) ; à faire par Palawi. |
+| Installeur dans une VM Windows 11 sans GPU (T10) | ✅ | 8 lignes OK (`phase-8/vm-t10-2026-10-21.txt`). |
 | `EngineError::NotImplemented` supprimée, grep vide | ✅ | PR #78 ; `grep -rn "todo!\|NotImplemented\|TODO\|FIXME" crates app/src app/src-tauri/src` ne renvoie rien. |
-| Test Minecraft Java | ⏳ | `HANDOFF.md`, Prochaines actions n° 1 ; seulement quand Palawi le dit. La FAQ du README sera précisée ensuite (PR #74). |
+| Test Minecraft Java | ⏳ | `HANDOFF.md`, Prochaines actions n° 2 ; seulement quand Palawi le dit. La FAQ du README sera précisée ensuite (PR #74). |
 | Tag `v1.0.0` | ⏳ | Pas posé. |
 
 ## Reste à faire avant v1.0.0
 
-1. **T10 (👤 Palawi)** : installeur dans une VM Windows 11 sans GPU, checklist de `docs/TESTING.md` ; couvre ENC-05 (message « aucun encodeur ») et la plateforme.
-2. **Minecraft Java (👤, quand Palawi le dit)** : test du plein écran F11 ; FAQ du README à ajuster selon le résultat.
-3. **Release** : branche `release/v1.0.0` (version 1.0.0 dans `Cargo.toml`, `tauri.conf.json` et `package.json`, section `## [1.0.0]` du CHANGELOG), PR vers `main` puis tag `v1.0.0`, **seulement avec l'accord de Palawi** ; le workflow crée la release en brouillon, Palawi la publie.
+1. **Minecraft Java (👤, quand Palawi le dit)** : test du plein écran F11 ; FAQ du README à ajuster selon le résultat.
+2. **Release** : branche `release/v1.0.0` (version 1.0.0 dans `Cargo.toml`, `tauri.conf.json` et `package.json`, section `## [1.0.0]` du CHANGELOG), PR vers `main` puis tag `v1.0.0`, **seulement avec l'accord de Palawi** ; le workflow crée la release en brouillon, Palawi la publie.
 
 Limites connues, non bloquantes au regard de la SPEC : AMF et QSV jamais essayés sur du vrai matériel (ENC-01) ; mise à l'échelle Windows essayée à 150 % seulement (CAP-08) ; BattlEye et Vanguard non essayés (CAP-10) ; aucun vrai cas positif d'`app_track_silent` provoqué (AUD-09) ; PERF-03 côté CPU mesuré avec 3 pistes au lieu de 4.
