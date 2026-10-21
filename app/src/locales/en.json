@@ -578,21 +578,16 @@
   },
   "onboarding": {
     "title": "First launch",
-    "stepsLabel": "First launch steps",
-    "done": "done",
     "skip": "Skip setup",
     "back": "Back",
+    "backToSummary": "Back to summary",
     "next": "Continue",
     "finish": "Finish",
-    "steps": {
-      "checks": "Checks",
-      "capture": "Capture area",
-      "audio": "Audio",
-      "folder": "Clips folder",
-      "replay": "Replay and hotkeys",
-      "test": "Test clip"
-    },
+    "recommended": "Recommended",
+    "progress": "{step} of {total}",
     "checks": {
+      "title": "Before you start",
+      "continueAnyway": "Continue anyway",
       "pending": "Checking…",
       "windows": "Windows",
       "windowsOk": "Build {build}",
@@ -605,24 +600,79 @@
       "webviewVersion": "Version {version}",
       "folder": "Clips folder",
       "folderOk": "{path}",
-      "folderReadOnly": "PalaClips can't write to {path}. Pick another folder in the Clips folder step."
+      "folderReadOnly": "PalaClips can't write to {path}. Pick another folder at the “Where should clips go?” question."
     },
-    "capture": {
-      "help": "To capture a single window, pick it in Settings → Capture."
+    "screen": {
+      "question": "Which screen should be captured?",
+      "hint": "A specific window can be picked in Settings → Capture."
     },
-    "audio": {
-      "microphone": "Record the mic",
-      "mixTitle": "Track 1 ({name}) contains",
-      "chosen": "The recorded tracks",
-      "chosenHelp": "The game and the apps you add, nothing else.",
+    "mic": {
+      "question": "Record your microphone?",
+      "yes": "Yes",
+      "yesDetail": "Your voice on its own track ({device})",
+      "no": "No",
+      "noDetail": "No microphone sound in clips",
+      "device": "Microphone"
+    },
+    "voice": {
+      "question": "Also put your voice in the {name} track?",
+      "yes": "Yes",
+      "yesDetail": "The clip is ready to share as is, voice included",
+      "no": "No",
+      "noDetail": "Your voice stays alone on its track"
+    },
+    "mix": {
+      "question": "What goes in the {name} track?",
+      "chosen": "Recorded tracks",
+      "chosenDetail": "The game and the apps you add, nothing else",
       "desktop": "All PC sound",
-      "desktopHelp": "Everything you hear, notifications and music included.",
-      "apps": "Add one track per app (Discord, music…) in Settings → Audio.",
-      "device": "Mic device",
-      "voiceInMix": "Also put your voice in track 1",
-      "voiceInMixHelp": "Your voice always has its own track. When on, it's also mixed into track 1 ({name}), so the clip is ready to share as is. When off, track 1 only holds the sound chosen below."
+      "desktopDetail": "Everything you hear, notifications and music included"
+    },
+    "duration": {
+      "question": "How much time should the replay keep?",
+      "detail": "About {size}"
+    },
+    "storage": {
+      "question": "Where should the replay be kept?",
+      "ram": "In memory (RAM)",
+      "ramDetail": "About {size} of RAM used while you play",
+      "disk": "On disk",
+      "diskDetail": "A temporary file of about {size}, RAM stays free"
+    },
+    "folder": {
+      "question": "Where should clips go?",
+      "keep": "Keep this folder",
+      "pick": "Pick another folder…",
+      "pickDetail": "Opens File Explorer"
+    },
+    "hotkey": {
+      "question": "Which hotkey saves the replay?",
+      "defaultDetail": "Same as ShadowPlay",
+      "custom": "Another combination",
+      "customDetail": "Press the keys of your choice",
+      "taken": "{keys} is already taken by another app. Pick another combination."
+    },
+    "summary": {
+      "title": "Summary",
+      "screen": "Screen",
+      "primary": "Primary screen",
+      "primaryNamed": "Primary screen ({name})",
+      "mic": "Microphone",
+      "voice": "Voice in the {name} track",
+      "mix": "{name} track content",
+      "duration": "Replay length",
+      "storage": "Replay kept",
+      "folder": "Clips folder",
+      "hotkey": "Save replay",
+      "yes": "Yes",
+      "no": "No",
+      "edit": "Edit",
+      "editLabel": "Edit: {name}",
+      "confirm": "Looks good",
+      "manual": "Set up manually"
     },
     "test": {
+      "title": "Test clip",
       "arming": "Starting the replay…",
       "failed": "The replay didn't start.",
       "retry": "Try again",
@@ -634,13 +684,6 @@
       "saved": "Clip saved",
       "gallery": "Open in gallery",
       "buffered": "{value} / {total} s"
-    },
-    "replay": {
-      "storage": "Where to keep the replay",
-      "ram": "In memory (RAM)",
-      "disk": "On disk",
-      "ramHelp": "Nothing is written until you save, but the replay takes about {size} of RAM while you play. Best for short durations.",
-      "diskHelp": "RAM stays free: the replay is written continuously to a temporary file of about {size} on the Windows drive. Best for long durations."
     }
   }
 }
