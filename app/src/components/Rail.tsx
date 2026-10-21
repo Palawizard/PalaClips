@@ -13,18 +13,12 @@ const ITEMS: { view: View; icon: LucideIcon }[] = [
 export function Mark({ className = "mb-5 size-8" }: { className?: string }) {
   const t = useT();
   return (
-    <svg viewBox="200 200 624 624" className={`${className} text-ink`} role="img" aria-label={t("app.name")}>
-      <circle cx="512" cy="512" r="276" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="56" />
-      <path d="M512 236 A276 276 0 1 1 268 386" fill="none" stroke="currentColor" strokeWidth="56" strokeLinecap="round" />
-      <path
-        d="M236 300 L282 404 L388 362"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="48"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M452 404 L452 620 L628 512 Z" fill="currentColor" />
+    <svg viewBox="0 0 64 64" className={`${className} text-ink`} role="img" aria-label={t("app.name")}>
+      <g transform="translate(3 0)" fill="currentColor">
+        <polygon points="14,10 34.6,21.3 14,21.3" />
+        <polygon points="14,26.3 43.7,26.3 54,32 43.7,37.7 14,37.7" />
+        <polygon points="14,42.7 34.6,42.7 14,54" />
+      </g>
     </svg>
   );
 }
