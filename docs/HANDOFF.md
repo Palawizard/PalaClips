@@ -5,9 +5,10 @@
 
 ## État actuel
 
-- **Phase en cours :** 8 — Release V1. Phase 7 **validée** le 2026-10-20
-  (`docs/reports/phase-7.md` : PERF-01 à 04 tenus, PERF-03 GPU-bound 0,7 % en priorité « jeu »,
-  tous les scénarios T7, défauts de la séance T7 corrigés, HDR basculé). Branche : `dev`.
+- **Phase en cours :** 8 — Release V1, presque finie. Tout le travail de la phase est mergé dans
+  `dev` (#71 à #79) ; revue finale `docs/reports/release-v1.md` : chaque exigence de la SPEC a sa
+  preuve, sauf T10 (VM Windows 11 sans GPU, Palawi), Minecraft (quand Palawi le dit) et le tag.
+  Branche : `dev`.
 - **Piste 1 (ADR-029, ADR-030)** : Mix complet = somme des pistes choisies (micro si « Aussi
   dans Mix complet », Jeu, applis) ; « Audio du bureau » (désactivé par défaut) = toute la
   sortie + micro. La CLI garde la sortie entière (`--tracks-mix` pour le nouveau mode).
@@ -15,7 +16,7 @@
   `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
   refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
-- **Dernière mise à jour :** 2026-10-20
+- **Dernière mise à jour :** 2026-10-21
 
 ## Ce qui existe
 
@@ -202,22 +203,27 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. Test Minecraft Java **seulement quand Palawi le dit** (demande du 2026-10-20) : Minecraft en
+1. **T10** : Palawi installe le brouillon de release dans une VM Windows 11 sans GPU (checklist
+   `docs/TESTING.md` § T10) et rapporte les résultats et le zip de diagnostic. Pour lui donner un
+   installeur sans release publique : pousser un tag `test-v1.0.0` sur `dev` (brouillon « TEST »),
+   puis le supprimer avec `gh release delete test-v1.0.0 --cleanup-tag -y`.
+2. **Release** (seulement avec l'accord explicite de Palawi) : `release/v1.0.0` depuis `dev`,
+   version 1.0.0 dans `Cargo.toml` (workspace), `app/src-tauri/tauri.conf.json` et
+   `app/package.json`, section `## [1.0.0] - date` du CHANGELOG (ses notes deviennent celles de
+   l'updater), PR vers `main`, puis tag `v1.0.0` sur `main` : le workflow `Release` crée la release
+   en brouillon, Palawi la publie.
+3. Test Minecraft Java **seulement quand Palawi le dit** (demande du 2026-10-20) : Minecraft en
    plein écran F11, `capture-video --target window:javaw.exe --seconds 30` → l'image bouge-t-elle
    (`probe-fullscreen` en parallèle) ? Si figée : refaire avec le réglage NVIDIA « Méthode de
    présentation Vulkan/OpenGL = Préférer la superposition sur la chaîne d'échange DXGI », puis
    avec le mod Fullscreen+ en sans bordure. Résultats dans RESEARCH ; si une solution marche,
    texte propre à `javaw.exe` dans l'alerte `capture_exclusive_fullscreen` (paramètre `exe` +
    clé i18n dédiée).
-2. Phase 8 (`docs/PLAN.md`) : premier lancement guidé (APP-06, `/impeccable shape` puis
-   `onboard`), relecture de l'anglais, journaux + export de diagnostic, updater, workflow de
-   release, README utilisateur, revue finale.
-   Clé de l'updater : Palawi la génère lui-même (`npx tauri signer generate -w
-   "$env:USERPROFILE\.tauri\palaclips.key"` dans `app/`) et pose les secrets GitHub
-   `TAURI_SIGNING_PRIVATE_KEY` (contenu du fichier, par `Get-Content -Raw … | gh secret set`) et
-   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Claude ne lit que `palaclips.key.pub` (clé publique,
-   dans `tauri.conf.json` `plugins.updater.pubkey`) ; jamais le fichier privé ni le mot de passe.
-3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
+4. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` posés ; clé publique dans `tauri.conf.json`. Claude ne
+   lit jamais le fichier privé ni le mot de passe. Un build local avec installeur exige la clé :
+   ajouter `--config '{"bundle":{"createUpdaterArtifacts":false}}'` pour les mesures locales.
+5. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
    joue) `-Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`.
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de
@@ -314,6 +320,23 @@ Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défa
 - Tauri 3 est en alpha sur crates.io : ne pas suivre les suggestions de mise à jour vers 3.x.
 - Fin de tâche : merger soi-même la PR vers `dev` quand la CI est verte, puis supprimer la
   branche (`CLAUDE.md` § 4 Git, « Merge et ménage »).
+- Session Windows propre (compte local temporaire) abandonnée par Palawi le 2026-10-20 : elle
+  partage WebView2, pilotes et bibliothèques avec sa session. Remplacée par l'app isolée avec un
+  profil vierge, l'essai de mise à jour automatisé et la VM (T10).
+- Essai de mise à jour (`scripts/update-test.ps1`, T8) : il installe vraiment dans
+  `%LOCALAPPDATA%\PalaClips` puis désinstalle ; il refuse de tourner si une installation existe.
+  Ce dossier existait **vide** chez Palawi (reste de la phase 7) : l'essai le recrée vide. Une
+  app isolée ne demande pas de relance à l'installeur (`restart_after_install(false)`) : la
+  relance de NSIS passe par l'Explorateur et perdrait l'environnement isolé, donc les vrais
+  réglages. Le plugin updater refuse le `http` en release sauf `dangerousInsecureTransportProtocol`,
+  activé seulement dans la build 1.0.0 de l'essai (fichier `--config`).
+- La ligne « démarrage de PalaClips » du journal porte la version du crate moteur (0.1.0 tant
+  que la release n'a pas monté la version du workspace), pas celle de Tauri.
+- Bancs ajoutés en phase 8 : `multi-instance.ps1` (deux instances d'un exe sur une piste),
+  `shared-encoder.ps1` (sessions NVENC replay + enregistrement), `readme-screenshots.ps1`
+  (captures du README par CDP dans l'app isolée), `update-test.ps1`.
+- Écran mémorisé par `monitor_path` (#79) : un réglage enregistré avant garde le nom GDI ; il
+  passe au chemin stable dès que l'écran est rechoisi dans Réglages > Capture.
 
 ## Journal des sessions
 
@@ -334,4 +357,5 @@ Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défa
 | 2026-10-17 | 5 | PR #21 réglages persistants ; PR #22 noms de jeux (Fortnite sans métadonnées → nom d'exe nettoyé, décision de Palawi, ADR-024) ; PR #23 carillon + toast, test Fortnite ✅ (carillon en jeu, toast bloqué en jeu puis dans le centre de notifications, toast + carillon au bureau, dossier « Fortnite ») ; PR #24 clips sans doublon (RPL-09, ADR-025, 20,2 s puis 10,2 s) | Raccourcis, démarrage avec Windows, écrans Réglages |
 | 2026-10-17 | 5 | PR #25 clip < 3 s ignoré ; PR #26 démarrage avec Windows (0 WebView2) ; raccourcis personnalisables (conflit réel détecté : Alt+Shift+F10 pris par NVIDIA → défaut Ctrl+Alt+F10) ; écran Réglages (Raccourcis, Général, thème) testé par Palawi au clavier ; revue impeccable 2 tours | Sections Réglages restantes |
 | 2026-10-17 | 5 | Socle i18n avant la phase 6 (ADR-028) : fr/en complets, langue de Windows par défaut, codes + paramètres côté Rust, menu de la zone de notification et toasts traduits, test anti-chaînes en dur | Revue de Palawi (anglais + sélecteurs), phase 6 |
+| 2026-10-20/21 | 8 | Journaux + diagnostic anonymisé (#71) ; premier lancement en 6 étapes, 27,5 s jusqu'au clip (#72) ; relecture de l'anglais (#73) ; README EN/FR + captures (#74) ; bug Vesktop trouvé par Palawi : applis en plusieurs instances additionnées (#76) ; Windows 11 requis (#77) ; `NotImplemented` supprimé (#78) ; updater + workflow de release, essai 1.0.0 → 1.0.1 et fausse signature automatisés (#75) ; écran par chemin stable (#79) ; REC-02 et `dumpbin` prouvés ; session Windows propre abandonnée ; revue finale | T10 (VM), Minecraft, release avec l'accord de Palawi |
 | 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
