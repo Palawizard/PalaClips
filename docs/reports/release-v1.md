@@ -113,7 +113,7 @@
 | APP-03 | Instance unique | ✅ | `phase-5.md` § Livrables ; `phase-7.md`, PERF-04 (relance par l'instance unique → premier rendu). |
 | APP-04 | Démarrage avec Windows, en zone de notification | ✅ | PR #26 (`HANDOFF.md`, journal du 2026-10-17 : 0 WebView2) ; `phase-7.md`, PERF-01 (`--autostart`, `phase-7/perf-installed-2026-10-19.txt`). |
 | APP-05 | Raccourcis personnalisables, conflits, touches réservées refusées | ✅ | `phase-5.md` § Exigences ; tests `reserved_and_game_breaking_shortcuts_are_refused`, `one_shortcut_cannot_serve_two_actions` ; conflit réel Alt+Shift+F10 (overlay NVIDIA, `HANDOFF.md`). |
-| APP-06 | Premier lancement guidé complet, test de sauvegarde | ✅ | PR #72 (6 étapes, brief validé, parcouru par Palawi, test `only_a_first_launch_needs_onboarding`) ; 27,5 s jusqu'au clip de test (`phase-8/first-launch-2026-10-20.txt`). |
+| APP-06 | Premier lancement guidé complet, test de sauvegarde | ✅ | PR #72 (6 étapes, brief validé, parcouru par Palawi, test `only_a_first_launch_needs_onboarding`) ; 27,5 s jusqu'au clip de test (`phase-8/first-launch-2026-10-20.txt`). Refait en 8 questions (#85, v1.0.0) : 70,9 s jusqu'au clip de test, parcouru par Palawi (`phase-8/first-launch-2026-10-21.txt`). |
 | APP-07 | Réglages persistants, versionnés, migration, réinitialisation | ✅ | Tests `corrupt_file_is_backed_up_and_reset`, `newer_format_is_left_untouched`, `version_one_names_equal_to_a_default_become_default_again`, `missing_fields_take_their_defaults` ; migration des dossiers (ADR-032, `phase-7.md` § Installation) ; `phase-5.md`, APP-07. |
 | APP-08 | Français et anglais, langue du système par défaut | ✅ | ADR-028 (PR #37) ; PR #73 (relecture de l'anglais, `npm test` : mêmes clés et paramètres, aucune chaîne en dur). |
 | APP-09 | Journaux avec rotation ; export de diagnostic | ✅ | PR #71 (7 jours gardés, zip anonymisé, tests d'anonymisation, contenu vu par Palawi). |
@@ -145,7 +145,7 @@
 
 | Critère | Statut | Preuve ou manque |
 |---|---|---|
-| Premier lancement guidé → clip en < 2 min (app isolée, profil vierge, temps lu dans le journal) | ✅ | 27,5 s (`phase-8/first-launch-2026-10-20.txt`). |
+| Premier lancement guidé → clip en < 2 min (app isolée, profil vierge, temps lu dans le journal) | ✅ | 27,5 s en 6 étapes (`phase-8/first-launch-2026-10-20.txt`) ; 70,9 s en 8 questions, v1.0.0 (`phase-8/first-launch-2026-10-21.txt`). |
 | Mise à jour 1.0.0 → 1.0.1 et fausse signature refusée (T8) | ✅ | `phase-8/update-test-2026-10-21_14-25.txt`. |
 | Dépendances de l'exe et des DLL (`dumpbin /dependents`) | ✅ | `phase-8/dumpbin-2026-10-21.txt` : aucun runtime VC++. |
 | Installeur dans une VM Windows 11 sans GPU (T10) | ✅ | 8 lignes OK (`phase-8/vm-t10-2026-10-21.txt`). |

@@ -5,6 +5,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+### Changé
+- Notes de version : un court résumé rédigé en français et en anglais remplace la liste brute
+  des PR, sur GitHub comme dans l'app ; l'app n'affiche que la partie dans sa langue.
+
 ## [1.0.0] - 2026-10-21
 
 ### Ajouté

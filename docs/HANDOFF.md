@@ -205,13 +205,26 @@
 
 ## Prochaines actions (dans l'ordre)
 
-1. **Prochaine version** (seulement avec l'accord explicite de Palawi) : version X.Y.Z dans
-   `Cargo.toml` (workspace), `app/src-tauri/tauri.conf.json`, `app/package.json` et
-   `app/package-lock.json`, section `## [X.Y.Z] - date` du CHANGELOG, PR `dev` → `main`, tag
-   `vX.Y.Z` sur `main`. Le workflow `Release` crée le brouillon : notes générées par
-   `scripts/release-notes.ps1` (PR mergées depuis le tag précédent, par type), `latest.json` avec
-   le lien de téléchargement public. Vérifier les fichiers, puis publier
-   (`gh release edit vX.Y.Z --draft=false --latest`). Pistes de la suite : `ROADMAP.md`.
+1. **Prochaine version** (seulement avec l'accord explicite de Palawi). Pistes : `ROADMAP.md`.
+   1. Notes : `pwsh scripts/release-notes.ps1 -Tag dev` liste les PR visibles par l'utilisateur
+      depuis le dernier tag (`feat`/`fix`/`perf`, sans scripts, tests, outils, docs, maintenance).
+      En tirer `docs/release-notes/X.Y.Z.md` : `## Français` puis `## English`, quelques puces
+      sur ce qui change pour l'utilisateur, lien vers `CHANGELOG.md` au tag `vX.Y.Z` (modèle :
+      `1.0.0.md`). Ce texte devient la page de release et les notes de l'updater ; l'app n'en
+      montre que la partie de sa langue (titres = `settings.general.languages`, depuis 1.0.1).
+      Le workflow échoue si le fichier manque. Faire valider le texte par Palawi.
+   2. Version X.Y.Z dans `Cargo.toml` (workspace), `Cargo.lock`, `app/src-tauri/tauri.conf.json`,
+      `app/package.json`, `app/package-lock.json` ; section `## [X.Y.Z] - date` du CHANGELOG ;
+      PR vers `dev`, puis PR `dev` → `main`, tag `vX.Y.Z` sur `main`.
+   3. **Toujours en brouillon d'abord** : le workflow `Release` crée un brouillon. Le relire
+      connecté (`gh release download vX.Y.Z -p latest.json`) : version, signature, et URL déjà
+      sous la forme publique `https://github.com/Palawizard/PalaClips/releases/download/vX.Y.Z/…`
+      (réécriture automatique de #89, à vérifier pour la première fois à la 1.0.1).
+   4. Publier (`gh release edit vX.Y.Z --draft=false --latest`), puis tout de suite, **sans être
+      connecté** (`curl`) : `releases/latest/download/latest.json` donne X.Y.Z et son URL
+      télécharge l'installeur. Un brouillon n'est pas lisible sans connexion : cette vérification
+      ne peut se faire qu'après publication. En cas d'échec, remettre en brouillon
+      (`gh release edit vX.Y.Z --draft=true`), corriger, recommencer.
 2. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
    `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` posés ; clé publique dans `tauri.conf.json`. Claude ne
    lit jamais le fichier privé ni le mot de passe. Un build local avec installeur exige la clé :
