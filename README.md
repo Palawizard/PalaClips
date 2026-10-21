@@ -70,8 +70,10 @@ mode, Windows stops passing the image to capture software. PalaClips detects it 
 alert. Switch the game to *borderless* (windowed fullscreen) in its display settings. Most
 recent games already use that mode.
 
-**Minecraft Java in fullscreen (F11).** Depending on the graphics card and driver, Minecraft
-Java can switch to exclusive fullscreen. If the video stays frozen, play in a maximized window.
+**Minecraft Java in fullscreen (F11).** F11 puts Minecraft Java in exclusive fullscreen, so
+the video freezes (PalaClips shows an alert; the NVIDIA "Vulkan/OpenGL present method" setting
+didn't help in our test). Play in a maximized window instead, or install a borderless
+fullscreen mod such as Borderless Fullscreen (Fabric): both capture normally.
 
 **Does it work with anti-cheats?** PalaClips injects nothing into games. It only uses the
 Windows capture APIs (Windows Graphics Capture for the image, WASAPI for the sound). It was

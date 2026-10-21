@@ -7,8 +7,8 @@
 
 - **Phase en cours :** 8 — Release V1, presque finie. Tout le travail de la phase est mergé dans
   `dev` (#71 à #79) ; revue finale `docs/reports/release-v1.md` : chaque exigence de la SPEC a sa
-  preuve (T10 dans la VM fait le 2026-10-21) ; restent Minecraft (quand Palawi le dit) et la
-  release, avec son accord.
+  preuve (T10 dans la VM et Minecraft faits le 2026-10-21) ; reste la release, avec l'accord de
+  Palawi.
   Branche : `dev`.
 - **Piste 1 (ADR-029, ADR-030)** : Mix complet = somme des pistes choisies (micro si « Aussi
   dans Mix complet », Jeu, applis) ; « Audio du bureau » (désactivé par défaut) = toute la
@@ -209,18 +209,11 @@
    `app/package.json`, section `## [1.0.0] - date` du CHANGELOG (ses notes deviennent celles de
    l'updater), PR vers `main`, puis tag `v1.0.0` sur `main` : le workflow `Release` crée la release
    en brouillon, Palawi la publie.
-2. Test Minecraft Java **seulement quand Palawi le dit** (demande du 2026-10-20) : Minecraft en
-   plein écran F11, `capture-video --target window:javaw.exe --seconds 30` → l'image bouge-t-elle
-   (`probe-fullscreen` en parallèle) ? Si figée : refaire avec le réglage NVIDIA « Méthode de
-   présentation Vulkan/OpenGL = Préférer la superposition sur la chaîne d'échange DXGI », puis
-   avec le mod Fullscreen+ en sans bordure. Résultats dans RESEARCH ; si une solution marche,
-   texte propre à `javaw.exe` dans l'alerte `capture_exclusive_fullscreen` (paramètre `exe` +
-   clé i18n dédiée).
-3. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
+2. Clé de l'updater : générée par Palawi le 2026-10-20, secrets `TAURI_SIGNING_PRIVATE_KEY` et
    `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` posés ; clé publique dans `tauri.conf.json`. Claude ne
    lit jamais le fichier privé ni le mot de passe. Un build local avec installeur exige la clé :
    ajouter `--config '{"bundle":{"createUpdaterArtifacts":false}}'` pour les mesures locales.
-4. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
+3. Essai visuel : `pwsh scripts/app-isolated.ps1 -MainScreen` (ou `-LeftScreen` quand Palawi
    joue) `-Settings '{"language":"en","engine":{"replay":{"arm_on_startup":false}}}'`.
 - ⚠️ Toujours : demander avant de lancer l'app (elle arme le replay) ; jamais de touches
   synthétiques ; tout essai par `scripts/app-isolated.ps1` (jamais le `settings.json` de

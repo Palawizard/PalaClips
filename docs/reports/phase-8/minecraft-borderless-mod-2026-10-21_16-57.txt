@@ -1,0 +1,7 @@
+2026-10-21T16:57:22 minecraft-borderless-mod : capture de window:javaw.exe pendant 30 s (720p, 60 i/s) et sonde du plein écran exclusif
+capture : 1800 images écrites (2819 reçues de Windows, 4 dupliquées, 0 changements de résolution, retard max 4.51 ms) → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\minecraft-borderless-mod\clip.mp4
+sonde : exclusif (D3DKMT) 0 s sur 32, notifications RUNNING_D3D_FULL_SCREEN 0 s, premier plan : javaw.exe 32 s
+images reçues de Windows : 2819 en 30 s
+vidéo : 30 s, image figée au total 0 s (0 passage(s) d'au moins 1 s sans changement)
+RÉSULTAT : image vivante ; plein écran exclusif détecté 0 s
+2026-10-21T16:57:55 fin : capture et sonde arrêtées, vidéo supprimée (3 images gardées dans C:\Projets-NAS-Sync\Code\apps\PalaClips\target\minecraft-borderless-mod pour vérification), journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\minecraft-borderless-mod-2026-10-21_16-57.txt

@@ -150,12 +150,11 @@
 | Dépendances de l'exe et des DLL (`dumpbin /dependents`) | ✅ | `phase-8/dumpbin-2026-10-21.txt` : aucun runtime VC++. |
 | Installeur dans une VM Windows 11 sans GPU (T10) | ✅ | 8 lignes OK (`phase-8/vm-t10-2026-10-21.txt`). |
 | `EngineError::NotImplemented` supprimée, grep vide | ✅ | PR #78 ; `grep -rn "todo!\|NotImplemented\|TODO\|FIXME" crates app/src app/src-tauri/src` ne renvoie rien. |
-| Test Minecraft Java | ⏳ | `HANDOFF.md`, Prochaines actions n° 2 ; seulement quand Palawi le dit. La FAQ du README sera précisée ensuite (PR #74). |
+| Test Minecraft Java | ✅ | F11 figé (plein écran exclusif, 1 image en 30 s, alerte levée), réglage NVIDIA sans effet, fenêtre agrandie et mod Borderless Fullscreen capturés (`phase-8/minecraft-*.txt`) ; conseil propre à Minecraft dans l'alerte et la FAQ. |
 | Tag `v1.0.0` | ⏳ | Pas posé. |
 
 ## Reste à faire avant v1.0.0
 
-1. **Minecraft Java (👤, quand Palawi le dit)** : test du plein écran F11 ; FAQ du README à ajuster selon le résultat.
-2. **Release** : branche `release/v1.0.0` (version 1.0.0 dans `Cargo.toml`, `tauri.conf.json` et `package.json`, section `## [1.0.0]` du CHANGELOG), PR vers `main` puis tag `v1.0.0`, **seulement avec l'accord de Palawi** ; le workflow crée la release en brouillon, Palawi la publie.
+1. **Release** : branche `release/v1.0.0` (version 1.0.0 dans `Cargo.toml`, `tauri.conf.json` et `package.json`, section `## [1.0.0]` du CHANGELOG), PR vers `main` puis tag `v1.0.0`, **seulement avec l'accord de Palawi** ; le workflow crée la release en brouillon, Palawi la publie.
 
 Limites connues, non bloquantes au regard de la SPEC : AMF et QSV jamais essayés sur du vrai matériel (ENC-01) ; mise à l'échelle Windows essayée à 150 % seulement (CAP-08) ; BattlEye et Vanguard non essayés (CAP-10) ; aucun vrai cas positif d'`app_track_silent` provoqué (AUD-09) ; PERF-03 côté CPU mesuré avec 3 pistes au lieu de 4.
