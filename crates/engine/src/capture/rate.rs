@@ -16,6 +16,25 @@ const TOLERANCE: f64 = 0.98;
 const SUSTAINED: Hns = Hns::from_millis(5_000);
 const LATE_SHARE: f64 = 0.1;
 const FREEZE_WINDOW: usize = 5;
+const MINECRAFT_JAVA: [&str; 2] = ["javaw.exe", "java.exe"];
+
+pub fn exclusive_fullscreen_advice(game: Option<&str>) -> (Localized, &'static str) {
+    if game.is_some_and(|exe| {
+        MINECRAFT_JAVA
+            .iter()
+            .any(|java| exe.eq_ignore_ascii_case(java))
+    }) {
+        (
+            Localized::new("exclusive_fullscreen_advice_minecraft"),
+            "Minecraft Java : quitte le plein écran (F11) et agrandis la fenêtre, ou installe un mod de plein écran sans bordure comme Borderless Fullscreen.",
+        )
+    } else {
+        (
+            Localized::new("exclusive_fullscreen_advice"),
+            "Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
+        )
+    }
+}
 
 pub fn composition_rate() -> Option<f64> {
     let mut timing = DWM_TIMING_INFO {
@@ -200,11 +219,15 @@ impl FreezeWatch {
         };
         match self.sustained.observe(now, frozen)? {
             true => {
-                tracing::warn!("capture figée : plein écran exclusif");
+                let game = crate::sources::foreground_window().map(|window| window.exe_name);
+                tracing::warn!(?game, "capture figée : plein écran exclusif");
+                let (advice, advice_message) = exclusive_fullscreen_advice(game.as_deref());
                 Some(EngineEvent::Alert {
                     severity: Severity::Warning,
-                    text: Localized::new(EXCLUSIVE_FULLSCREEN),
-                    message: "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.".into(),
+                    text: Localized::new(EXCLUSIVE_FULLSCREEN).with("advice", advice),
+                    message: format!(
+                        "Le jeu est en plein écran exclusif : Windows ne transmet plus son image et la vidéo reste figée. {advice_message}"
+                    ),
                 })
             }
             false => {
@@ -385,6 +408,28 @@ mod tests {
                 }
             )
         ));
+    }
+
+    #[test]
+    fn minecraft_java_gets_its_own_fullscreen_advice() {
+        assert_eq!(
+            exclusive_fullscreen_advice(Some("javaw.exe")).0.code,
+            "exclusive_fullscreen_advice_minecraft"
+        );
+        assert_eq!(
+            exclusive_fullscreen_advice(Some("JAVA.EXE")).0.code,
+            "exclusive_fullscreen_advice_minecraft"
+        );
+        assert_eq!(
+            exclusive_fullscreen_advice(Some("FortniteClient-Win64-Shipping.exe"))
+                .0
+                .code,
+            "exclusive_fullscreen_advice"
+        );
+        assert_eq!(
+            exclusive_fullscreen_advice(None).0.code,
+            "exclusive_fullscreen_advice"
+        );
     }
 
     #[test]

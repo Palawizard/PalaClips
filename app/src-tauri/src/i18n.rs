@@ -95,6 +95,18 @@ mod tests {
     }
 
     #[test]
+    fn the_exclusive_fullscreen_alert_carries_the_minecraft_advice() {
+        let (advice, _) = palaclips_engine::capture::exclusive_fullscreen_advice(Some("javaw.exe"));
+        let message = Localized::new("capture_exclusive_fullscreen").with("advice", advice);
+        assert!(render(Language::Fr, &message).ends_with(
+            "la vidéo reste figée. Minecraft Java : quitte le plein écran (F11) et agrandis la fenêtre, ou installe un mod de plein écran sans bordure comme Borderless Fullscreen."
+        ));
+        assert!(render(Language::En, &message).ends_with(
+            "so the video freezes. Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen."
+        ));
+    }
+
+    #[test]
     fn nested_messages_render_in_the_chosen_language() {
         let message = Localized::new("clip_save_failed").with(
             "reason",
