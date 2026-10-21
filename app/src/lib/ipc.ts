@@ -334,13 +334,14 @@ export type RecordSplit =
 
 export type CaptureTarget =
   | { kind: "primary_monitor" }
-  | { kind: "monitor"; device_name: string }
+  | { kind: "monitor"; device_name: string; monitor_path?: string | null }
   | { kind: "window"; exe_name: string; title_hint: string | null };
 
 export type TargetInfo =
   | {
       kind: "monitor";
       device_name: string;
+      monitor_path: string | null;
       name: string;
       width: number;
       height: number;
