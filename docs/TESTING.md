@@ -296,6 +296,30 @@ Avant l'étape 1 et après l'étape 3 : `pwsh scripts\real-data-fingerprint.ps1 
   capture, 20 s chacun ; référence = moyenne des essais sans capture ; perte par essai, 1 %
   bas, GPU (`nvidia-smi`) et mode de présentation dans `target\journals\fps-impact-*.txt`.
 
+## T8 — Mise à jour 1.0.0 → 1.0.1 (phase 8)
+
+Automatisé, sans Palawi : `pwsh scripts/update-test.ps1` (environ 5 min ; il faut le brouillon
+`test-v1.0.1`, créé en poussant ce tag sur le commit à tester). Jamais de release publique.
+
+1. Garde-fous : PalaClips fermé, aucune installation dans `%LOCALAPPDATA%\PalaClips` ;
+   empreinte (taille et date) de chaque fichier de données de Palawi, en lecture seule.
+2. Télécharge l'installeur 1.0.1 signé et sa signature depuis le brouillon, écrit
+   `latest.json` (bonne signature) et `latest-bad.json` (version 1.0.2, signature altérée), sert le
+   dossier sur `127.0.0.1:8765`.
+3. Compile l'app en version 1.0.0 avec `dangerousInsecureTransportProtocol` (fichier passé à
+   `--config`, seulement pour cette build : la build publiée refuse le `http`), la lance isolée avec
+   `PALACLIPS_UPDATE_URL` et le port CDP.
+4. Fausse signature : Réglages → Général → Rechercher → « 1.0.2 disponible » → Installer →
+   erreur `update_failed`, l'app reste en 1.0.0.
+5. Bonne signature : Rechercher → « 1.0.1 disponible », notes → Installer → l'installeur NSIS
+   (passif) installe dans `%LOCALAPPDATA%\PalaClips` ; en mode isolé, l'updater ne demande pas
+   de relance (`restart_after_install(false)` : la relance de l'installeur passe par
+   l'Explorateur et perdrait l'environnement isolé). Le script lance l'exe installé en mode
+   isolé : CDP lit « Version 1.0.1 », le journal du dossier de test montre `version="1.0.1"`.
+6. Ménage : app arrêtée, désinstallation silencieuse (`uninstall.exe /S`, données gardées),
+   dossier, raccourci et clé de désinstallation vérifiés absents, serveur arrêté, brouillon et
+   tag supprimés, empreintes des données de Palawi comparées (aucune différence attendue).
+
 ## T10 — Installateur dans une VM Windows 11 sans GPU (phase 8)
 
 Ce qu'un PC neuf révèle et que la machine de dev cache : DLL manquantes, WebView2, droits,

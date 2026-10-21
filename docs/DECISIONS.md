@@ -538,3 +538,36 @@ phase 8).
   `capture` (temps réel), Réglages > Replay & qualité « Quand le GPU est à fond ». Appliqué à
   chaque démarrage de capture. L'alerte de saturation renvoie à ce réglage. File bornée et
   alerte inchangées.
+
+## ADR-034 — Mises à jour et releases (phase 8)
+**Statut :** acceptée (2026-10-20).
+- Contexte : APP-10 demande des mises à jour automatiques depuis GitHub Releases, signature
+  vérifiée, avec notes de version. La clé privée reste à Palawi : secret GitHub seulement,
+  jamais sur le disque du dépôt ni lue par l'agent.
+- Décision :
+  - `tauri-plugin-updater` 2.14, appelé côté Rust uniquement (aucune permission JS). Recherche
+    au démarrage puis toutes les 6 h (fil qui dort, pas d'attente active) sur
+    `releases/latest/download/latest.json`. Une version nouvelle lève l'alerte
+    `update_available` (info) ; l'installation se fait seulement sur clic dans Réglages →
+    Général, jamais pendant un enregistrement, jamais en pleine partie sans action du joueur.
+    Téléchargement d'abord, arrêt du moteur ensuite, installateur NSIS en mode `passive`, puis
+    redémarrage.
+  - Clé publique dans `tauri.conf.json` (`plugins.updater.pubkey`) ;
+    `createUpdaterArtifacts` produit la signature `.sig` de l'installeur.
+  - Workflow `release.yml` : un tag `vX.Y.Z` (version égale à `tauri.conf.json`, sinon échec)
+    construit, signe et crée une release **brouillon** avec `latest.json` et les notes tirées
+    de la section `## [X.Y.Z]` du CHANGELOG ; Palawi la publie. Un tag `test-vX.Y.Z` fait la
+    même chose avec la version forcée, pour l'essai 1.0.0 → 1.0.1, en brouillon nommé « TEST »,
+    supprimé avec son tag après l'essai. `workflow_dispatch` était écarté : GitHub ne l'accepte
+    que pour un workflow présent sur `main`.
+  - `PALACLIPS_UPDATE_URL` remplace l'adresse de `latest.json` pour l'essai sur serveur local
+    (les fichiers d'une release brouillon ne sont pas téléchargeables sans authentification).
+    Seule une adresse `http://127.0.0.1` ou `http://localhost` est acceptée, toute autre est
+    ignorée (test `only_a_loopback_http_feed_can_replace_github`) ; même redirigé, l'updater
+    n'installe qu'un paquet signé par la clé de Palawi. De plus, le plugin refuse toute adresse
+    `http` en build release tant que `dangerousInsecureTransportProtocol` est faux, ce qui est le
+    cas de `tauri.conf.json` : dans la build publiée, la redirection locale ne marche donc pas.
+    Seule la build 1.0.0 de l'essai active cette option, par le fichier passé à `--config`.
+- Conséquence : un build local avec installeur (`tauri build` sans `--no-bundle`) exige
+  désormais la clé ; pour les mesures locales, ajouter
+  `--config '{"bundle":{"createUpdaterArtifacts":false}}'`.

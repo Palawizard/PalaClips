@@ -165,6 +165,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   SmartScreen, raccourcis, FAQ (plein écran exclusif, Minecraft Java, anti-triches, GPU à fond,
   pistes dans Resolve, diagnostic), captures faites dans l'app isolée par
   `scripts/readme-screenshots.ps1`.
+- Mises à jour : recherche au démarrage puis toutes les 6 h, alerte quand une version sort,
+  Réglages → Général → Mises à jour avec les notes de version et « Installer et redémarrer »
+  (signature vérifiée, refusé pendant un enregistrement).
+- Workflow de release : un tag `vX.Y.Z` construit et signe l'installeur, puis prépare une
+  release brouillon avec `latest.json` et les notes du CHANGELOG.
 
 ### Corrigé
 - Windows requis : Windows 11 (le build 20348 de la capture audio par appli n'existe pas en
