@@ -103,6 +103,11 @@ the logs, the settings and system info. Your profile path, PC name and account n
 masked; *Open zip* shows you what you're sending. Attach it to a
 [GitHub issue](https://github.com/Palawizard/PalaClips/issues).
 
+## What's next
+
+Compatibility on more systems, encoding on the processor and other leads: see the
+[roadmap](ROADMAP.md).
+
 ## License
 
 [MIT](LICENSE). PalaClips uses FFmpeg (LGPL) as dynamic libraries; the licenses are installed

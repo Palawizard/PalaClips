@@ -165,6 +165,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   SmartScreen, raccourcis, FAQ (plein écran exclusif, Minecraft Java, anti-triches, GPU à fond,
   pistes dans Resolve, diagnostic), captures faites dans l'app isolée par
   `scripts/readme-screenshots.ps1`.
+- Feuille de route publique (`ROADMAP.md`, `ROADMAP.fr.md`) : compatibilité sur plus de
+  systèmes, encodage par le processeur, autres pistes.
 - Mises à jour : recherche au démarrage puis toutes les 6 h, alerte quand une version sort,
   Réglages → Général → Mises à jour avec les notes de version et « Installer et redémarrer »
   (signature vérifiée, refusé pendant un enregistrement).
