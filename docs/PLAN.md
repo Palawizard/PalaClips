@@ -193,20 +193,21 @@ Critères :
 
 ## Phase 8 — Release V1 (APP-06, 08–11)
 
-- [ ] Premier lancement guidé (APP-06), avec `/impeccable onboard` : micro et « Aussi dans Mix
+- [x] Premier lancement guidé (APP-06), avec `/impeccable onboard` : micro et « Aussi dans Mix
       complet », « Audio du bureau », dossier des clips, replay, raccourcis, test de sauvegarde.
 - [x] Socle i18n FR/EN fait avant la phase 6 (ADR-028) : clés typées, langue du système par
       défaut, choix dans Réglages > Général, codes + paramètres côté Rust, test contre les
       chaînes en dur.
-- [ ] i18n FR/EN complète (aucune chaîne en dur) : relecture de l'anglais de toute l'app.
-- [ ] Journaux + export de diagnostic.
+- [x] i18n FR/EN complète (aucune chaîne en dur) : relecture de l'anglais de toute l'app.
+- [x] Journaux + export de diagnostic.
 - [x] Bundle NSIS avec DLL FFmpeg + licences (LGPL), installation par utilisateur (avancé en
       phase 7 pour les mesures PERF : 7 DLL à côté de l'exe, LGPL v3 + GPL v3 + notice tiers dans
       `licenses\`, page de licence, case de désinstallation qui dit ce qui part).
-- [ ] Updater (clé de signature Tauri générée par Palawi, jamais commitée), workflow de release
-      GitHub Actions (`tauri-action`) qui publie l'installeur et `latest.json`.
-- [ ] README utilisateur (installation, SmartScreen, FAQ), CHANGELOG, captures d'écran.
-- [ ] Revue finale : chaque exigence de la SPEC cochée dans `docs/reports/release-v1.md`
+- [x] Updater (clé de signature Tauri générée par Palawi, jamais commitée), workflow de release
+      GitHub Actions (`tauri-action`) qui prépare l'installeur et `latest.json` en release
+      brouillon (Palawi la publie).
+- [x] README utilisateur (installation, SmartScreen, FAQ), CHANGELOG, captures d'écran.
+- [x] Revue finale : chaque exigence de la SPEC cochée dans `docs/reports/release-v1.md`
       avec la preuve (rapport de phase, test, capture).
 
 Critères :

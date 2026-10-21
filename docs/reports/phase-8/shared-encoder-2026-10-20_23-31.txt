@@ -1,0 +1,3 @@
+2026-10-20T23:32:25 shared-encoder : sessions NVENC (nvidia-smi, maximum sur 5 relevés) au repos 0, replay armé 1, replay + enregistrement 1 ; fichiers écrits : 1
+RÉSULTAT : un seul encodeur pour le replay et l'enregistrement
+2026-10-20T23:32:25 fin : replay arrêté, fichiers supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\shared-encoder-2026-10-20_23-31.txt
