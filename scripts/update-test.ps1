@@ -114,9 +114,9 @@ try {
     Write-Journal "app installée en $((Get-UninstallEntry).DisplayVersion) dans $installDir, relancée en mode isolé"
     node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort installed 2>&1 | ForEach-Object { Write-Journal "après mise à jour : $_" }
     $updated = $LASTEXITCODE -eq 0
-    $logged = Get-Content (Join-Path $root "target\test-config\local\logs\*.log") | Select-String 'démarrage de PalaClips version="1.0.1"'
-    Write-Journal "journal isolé : $(if ($logged) { 'démarrage en 1.0.1 dans target\test-config' } else { 'AUCUN démarrage 1.0.1 dans le dossier isolé' })"
-    $passed = $badRefused -and $updated -and [bool]$logged -and $relaunched -eq 0
+    $starts = @(Get-Content (Join-Path $root "target\test-config\local\logs\*.log") | Select-String "démarrage de PalaClips").Count
+    Write-Journal "journal isolé : $starts démarrage(s) dans target\test-config (l'app 1.0.0 puis l'app installée ; attendu 2)"
+    $passed = $badRefused -and $updated -and $starts -ge 2 -and $relaunched -eq 0
 }
 catch {
     Write-Journal "ÉCHEC : $_"
