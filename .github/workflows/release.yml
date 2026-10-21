@@ -18,8 +18,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Toolchain Rust
         run: rustup toolchain install
@@ -61,7 +59,10 @@ jobs:
         run: |
           $version = (Get-Content app/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           if ($env:TAG -ne "v$version" -and $env:TAG -ne "test-v$version") { throw "le tag $env:TAG ne correspond pas à la version $version de tauri.conf.json" }
-          $notes = ./scripts/release-notes.ps1 -Tag $env:TAG -Repository $env:GITHUB_REPOSITORY
+          $file = "docs/release-notes/$version.md"
+          $notes = if (Test-Path $file) { (Get-Content $file -Raw).Trim() }
+                   elseif ($env:TAG -like "test-v*") { "Version de test." }
+                   else { throw "notes de version manquantes : $file (voir docs/HANDOFF.md, procédure de release)" }
           "body<<NOTES_END" >> $env:GITHUB_OUTPUT
           $notes >> $env:GITHUB_OUTPUT
           "NOTES_END" >> $env:GITHUB_OUTPUT
