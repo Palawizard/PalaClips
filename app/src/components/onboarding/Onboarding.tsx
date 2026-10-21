@@ -49,7 +49,7 @@ function CheckRow({ state, label, detail }: { state: CheckState; label: string; 
       />
       <div className="min-w-0">
         <p className="text-[15px] font-semibold">{label}</p>
-        <p className={`mt-0.5 max-w-[62ch] break-all text-[13px] ${state === "warn" ? "text-warn" : "text-ink-2"}`}>
+        <p className={`mt-0.5 max-w-[62ch] text-[13px] [overflow-wrap:anywhere] ${state === "warn" ? "text-warn" : "text-ink-2"}`}>
           {detail}
         </p>
       </div>
