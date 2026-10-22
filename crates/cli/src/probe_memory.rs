@@ -5,7 +5,7 @@ use anyhow::Result;
 use palaclips_engine::audio::{AudioSource, AudioTrack, Mixdown};
 use palaclips_engine::capture::VideoCapture;
 use palaclips_engine::clock::Hns;
-use palaclips_engine::encode::{create_device, hardware_video_encoders, pick_encoder};
+use palaclips_engine::encode::{create_device, pick_encoder, video_encoders};
 use palaclips_engine::sources::CurrentGame;
 use windows::Win32::System::Memory::{
     GetProcessHeaps, HEAP_SUMMARY, HeapSummary, MEM_COMMIT, MEM_IMAGE, MEM_MAPPED, MEM_PRIVATE,
@@ -164,11 +164,11 @@ pub fn probe_memory(args: &ProbeMemoryArgs) -> Result<()> {
     let settings = args.video.video_settings();
     let device = create_device()?;
     step("périphérique D3D11", &mut last);
-    let encoders = hardware_video_encoders()?;
+    let encoders = video_encoders()?;
     step("sondage des encodeurs", &mut last);
     drop(device);
     step("périphérique D3D11 libéré", &mut last);
-    let encoder = pick_encoder(&encoders, settings.codec)?;
+    let encoder = pick_encoder(&encoders, settings.codec, settings.encoder)?;
     let capture = VideoCapture::start(&args.video.target, &settings, &encoder.name)?;
     let video_packets = capture.packets().clone();
     let drain = std::thread::spawn(move || while video_packets.recv().is_ok() {});

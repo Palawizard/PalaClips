@@ -10,7 +10,28 @@ use windows::Win32::Graphics::Direct3D11::ID3D11Device;
 use super::convert::Size;
 use super::d3d11::{ffmpeg_error, hw_device_context, hw_frames_context};
 use super::log::route_ffmpeg_logs;
+use super::threads::lower_encoder_threads;
+use crate::config::VideoCodec;
 use crate::error::{EngineError, Result};
+
+pub const SOFTWARE_ENCODERS: [(&str, VideoCodec); 2] = [
+    ("h264_mf", VideoCodec::H264),
+    ("libsvtav1", VideoCodec::Av1),
+];
+
+pub fn is_software_encoder(name: &str) -> bool {
+    SOFTWARE_ENCODERS
+        .iter()
+        .any(|(software, _)| *software == name)
+}
+
+pub fn system_pixel_format(encoder: &str) -> ffi::AVPixelFormat {
+    if encoder == "libsvtav1" {
+        ffi::AV_PIX_FMT_YUV420P
+    } else {
+        ffi::AV_PIX_FMT_NV12
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VideoEncoderSettings {
@@ -23,9 +44,10 @@ pub struct VideoEncoderSettings {
 
 pub struct VideoEncoder {
     context: AVCodecContext,
-    frames: AVHWFramesContext,
+    frames: Option<AVHWFramesContext>,
     qsv_frames: Option<AVHWFramesContext>,
     size: Size,
+    threads_to_lower: bool,
 }
 
 impl std::fmt::Debug for VideoEncoder {
@@ -44,22 +66,27 @@ impl VideoEncoder {
         let codec = AVCodec::find_encoder_by_name(&name).ok_or_else(|| {
             EngineError::Encoder(format!("encodeur {} absent de FFmpeg", settings.encoder))
         })?;
-        let hw_device = hw_device_context(device)?;
-        let frames = hw_frames_context(&hw_device, settings.size.width, settings.size.height)?;
-        let qsv_frames = settings
-            .encoder
-            .ends_with("_qsv")
-            .then(|| qsv_frames_context(&hw_device, &frames))
-            .transpose()?;
+        let (frames, qsv_frames) = if is_software_encoder(&settings.encoder) {
+            (None, None)
+        } else {
+            let hw_device = hw_device_context(device)?;
+            let frames = hw_frames_context(&hw_device, settings.size.width, settings.size.height)?;
+            let qsv_frames = settings
+                .encoder
+                .ends_with("_qsv")
+                .then(|| qsv_frames_context(&hw_device, &frames))
+                .transpose()?;
+            (Some(frames), qsv_frames)
+        };
 
         let bit_rate = settings.bitrate_kbps as i64 * 1_000;
         let mut context = AVCodecContext::new(&codec);
         context.set_width(settings.size.width as i32);
         context.set_height(settings.size.height as i32);
-        context.set_pix_fmt(if qsv_frames.is_some() {
-            ffi::AV_PIX_FMT_QSV
-        } else {
-            ffi::AV_PIX_FMT_D3D11
+        context.set_pix_fmt(match (&frames, &qsv_frames) {
+            (None, _) => system_pixel_format(&settings.encoder),
+            (Some(_), Some(_)) => ffi::AV_PIX_FMT_QSV,
+            (Some(_), None) => ffi::AV_PIX_FMT_D3D11,
         });
         context.set_time_base(ra(1, settings.fps as i32));
         context.set_framerate(ra(settings.fps as i32, 1));
@@ -80,16 +107,23 @@ impl VideoEncoder {
             raw.color_primaries = ffi::AVCOL_PRI_BT709;
             raw.color_trc = ffi::AVCOL_TRC_BT709;
         }
-        context.set_hw_frames_ctx(qsv_frames.as_ref().unwrap_or(&frames).clone());
-        set_private_options(&mut context, &settings.encoder, settings.fps)?;
+        if let Some(frames) = qsv_frames.as_ref().or(frames.as_ref()) {
+            context.set_hw_frames_ctx(frames.clone());
+        }
+        set_private_options(&mut context, &settings.encoder, settings.size, settings.fps)?;
         context
             .open(None)
             .map_err(|error| EngineError::Encoder(format!("{} : {error}", settings.encoder)))?;
+        let threads_to_lower = frames.is_none();
+        if threads_to_lower {
+            lower_encoder_threads();
+        }
         Ok(Self {
             context,
             frames,
             qsv_frames,
             size: settings.size,
+            threads_to_lower,
         })
     }
 
@@ -105,9 +139,25 @@ impl VideoEncoder {
         self.context.extract_codecpar()
     }
 
+    pub fn is_hardware(&self) -> bool {
+        self.frames.is_some()
+    }
+
+    pub fn pixel_format(&self) -> ffi::AVPixelFormat {
+        self.context.pix_fmt
+    }
+
     pub fn acquire_frame(&mut self) -> Result<AVFrame> {
         let mut frame = AVFrame::new();
-        self.frames.get_buffer(&mut frame).map_err(ffmpeg_error)?;
+        match &mut self.frames {
+            Some(frames) => frames.get_buffer(&mut frame).map_err(ffmpeg_error)?,
+            None => {
+                frame.set_width(self.size.width as i32);
+                frame.set_height(self.size.height as i32);
+                frame.set_format(self.context.pix_fmt);
+                frame.alloc_buffer().map_err(ffmpeg_error)?;
+            }
+        }
         Ok(frame)
     }
 
@@ -125,6 +175,9 @@ impl VideoEncoder {
         self.context
             .send_frame(Some(&frame))
             .map_err(ffmpeg_error)?;
+        if std::mem::take(&mut self.threads_to_lower) {
+            lower_encoder_threads();
+        }
         self.drain(on_packet)
     }
 
@@ -148,6 +201,7 @@ impl VideoEncoder {
 
 pub struct SystemFrameEncoder {
     context: AVCodecContext,
+    threads_to_lower: bool,
 }
 
 impl std::fmt::Debug for SystemFrameEncoder {
@@ -176,7 +230,7 @@ impl SystemFrameEncoder {
         let mut context = AVCodecContext::new(&codec);
         context.set_width(size.width as i32);
         context.set_height(size.height as i32);
-        context.set_pix_fmt(ffi::AV_PIX_FMT_NV12);
+        context.set_pix_fmt(system_pixel_format(encoder));
         context.set_time_base(time_base);
         context.set_framerate(frame_rate);
         context.set_gop_size((fps * 2).max(1) as i32);
@@ -189,15 +243,26 @@ impl SystemFrameEncoder {
             raw.rc_max_rate = bit_rate;
             raw.rc_buffer_size = bit_rate.min(i32::MAX as i64) as i32;
         }
-        set_private_options(&mut context, encoder, fps.max(1))?;
+        set_private_options(&mut context, encoder, size, fps.max(1))?;
         context
             .open(None)
             .map_err(|error| EngineError::Encoder(format!("{encoder} : {error}")))?;
-        Ok(Self { context })
+        let threads_to_lower = is_software_encoder(encoder);
+        if threads_to_lower {
+            lower_encoder_threads();
+        }
+        Ok(Self {
+            context,
+            threads_to_lower,
+        })
     }
 
     pub fn codec_parameters(&self) -> AVCodecParameters {
         self.context.extract_codecpar()
+    }
+
+    pub fn pixel_format(&self) -> ffi::AVPixelFormat {
+        self.context.pix_fmt
     }
 
     pub fn encode(
@@ -206,6 +271,9 @@ impl SystemFrameEncoder {
         on_packet: &mut impl FnMut(AVPacket) -> Result<()>,
     ) -> Result<()> {
         self.context.send_frame(frame).map_err(ffmpeg_error)?;
+        if std::mem::take(&mut self.threads_to_lower) {
+            lower_encoder_threads();
+        }
         loop {
             match self.context.receive_packet() {
                 Ok(packet) => on_packet(packet)?,
@@ -272,7 +340,20 @@ fn nvenc_pipeline_depth(fps: u32) -> (&'static CStr, &'static CStr) {
     }
 }
 
-fn set_private_options(context: &mut AVCodecContext, encoder: &str, fps: u32) -> Result<()> {
+pub fn svt_preset(size: Size, fps: u32) -> &'static CStr {
+    if u64::from(size.width) * u64::from(size.height) * u64::from(fps) <= 1280 * 720 * 30 {
+        c"10"
+    } else {
+        c"12"
+    }
+}
+
+fn set_private_options(
+    context: &mut AVCodecContext,
+    encoder: &str,
+    size: Size,
+    fps: u32,
+) -> Result<()> {
     let options: &[(&CStr, &CStr)] = if encoder.ends_with("_nvenc") {
         let (surfaces, delay) = nvenc_pipeline_depth(fps);
         &[
@@ -284,6 +365,13 @@ fn set_private_options(context: &mut AVCodecContext, encoder: &str, fps: u32) ->
         ]
     } else if encoder.ends_with("_amf") {
         &[(c"rc", c"cbr"), (c"quality", c"balanced")]
+    } else if encoder == "h264_mf" {
+        &[(c"hw_encoding", c"0"), (c"rate_control", c"cbr")]
+    } else if encoder == "libsvtav1" {
+        &[
+            (c"preset", svt_preset(size, fps)),
+            (c"svtav1-params", c"rtc=1:rc=2:lp=2"),
+        ]
     } else {
         &[]
     };

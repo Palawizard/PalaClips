@@ -245,7 +245,7 @@ pub fn system_report(extra: &[(&str, String)], anonymizer: &Anonymizer) -> Strin
         }
     }
     let _ = writeln!(report, "Encodeurs :");
-    match crate::encode::hardware_video_encoders() {
+    match crate::encode::video_encoders() {
         Ok(encoders) => {
             for encoder in encoders {
                 let _ = writeln!(

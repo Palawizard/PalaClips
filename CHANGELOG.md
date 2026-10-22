@@ -5,6 +5,32 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.1.0] - 2026-10-22
+
+### Ajouté
+- Encodage par le processeur quand aucun encodeur de la carte graphique ne marche : H.264 par
+  l'encodeur logiciel de Windows, AV1 par SVT-AV1, détectés par un encodage de test réel
+  (ENC-06, ADR-035). Conversion d'image sur le GPU puis une seule relecture, ou par le
+  processeur quand il n'y a pas de Video Processor (machine virtuelle) ; fils d'encodage en
+  priorité basse ; au-delà d'une demi-seconde de retard, des images sont sautées et l'alerte
+  « le processeur n'arrive pas à encoder » s'affiche.
+- Réglage « Encodeur » dans Réglages → Replay & qualité : Automatique (carte graphique si elle
+  marche, sinon processeur), Carte graphique ou Processeur. Sur le processeur : passage en
+  1080p30, avertissement sur la charge en jeu, mémoire de l'encodeur ajoutée à l'estimation.
+- Découpe précise et export réencodent aussi sur le processeur sans encodeur matériel du codec.
+- CLI : `--encoder auto|materiel|cpu`, `probe-encoder-threads` ; banc `scripts/cpu-encoders.ps1`
+  (coût et qualité des encodeurs logiciels), `fps-impact.ps1 -Cpu`, `t2-av-sync.ps1 -VideoArgs`.
+
+### Changé
+- Premier lancement : sans encodeur matériel, il propose le processeur au lieu de bloquer ;
+  il ne bloque plus que si aucun encodeur ne marche.
+- Panneau de performances : « Processeur · H.264 » au lieu du nom de l'encodeur FFmpeg.
+- Message « aucun encodeur de la carte graphique » : propose de choisir le processeur.
+- Notes de version : un court résumé rédigé en français et en anglais remplace la liste brute
+  des PR, sur GitHub comme dans l'app ; l'app n'affiche que la partie dans sa langue.
+- Essai de mise à jour (`scripts/update-test.ps1`) : version prise dans le tag de test, notes
+  de version réelles dans le flux local.
+
 ## [1.0.0] - 2026-10-21
 
 ### Ajouté

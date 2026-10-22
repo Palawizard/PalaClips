@@ -15,6 +15,10 @@ $journalDir = Join-Path $root "target\journals"
 New-Item -ItemType Directory -Force $journalDir | Out-Null
 $journal = Join-Path $journalDir "$Name-$(Get-Date -Format "yyyy-MM-dd_HH-mm").txt"
 $uninstallKeys = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+$version = $Tag -replace '^test-v', ''
+$parts = $version.Split('.')
+$badVersion = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+$notesFile = Join-Path $root "docs\release-notes\$version.md"
 
 function Write-Journal([string]$Line) {
     $Line | Tee-Object -FilePath $journal -Append | Write-Host
@@ -30,7 +34,7 @@ function Stop-Apps {
 function Write-Feed([string]$File, [string]$Version, [string]$Signature, [string]$Installer) {
     @{
         version   = $Version
-        notes     = "Version de test $Version, jamais publiée."
+        notes     = if (Test-Path $notesFile) { (Get-Content $notesFile -Raw).Trim() } else { "Version de test $Version, jamais publiée." }
         pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
         platforms = @{ "windows-x86_64" = @{ signature = $Signature; url = "http://127.0.0.1:$Port/$Installer" } }
     } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $work $File) -Encoding utf8
@@ -81,8 +85,8 @@ try {
     $decoded = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($signature)) -split "`n"
     $decoded[1] = $decoded[1].Substring(0, 10) + $(if ($decoded[1][10] -eq "A") { "B" } else { "A" }) + $decoded[1].Substring(11)
     $tampered = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($decoded -join "`n"))
-    Write-Feed "latest.json" "1.0.1" $signature $installer.Name
-    Write-Feed "latest-bad.json" "1.0.2" $tampered $installer.Name
+    Write-Feed "latest.json" $version $signature $installer.Name
+    Write-Feed "latest-bad.json" $badVersion $tampered $installer.Name
     $python = (Get-Command python).Source
     $server = Start-Process $python -ArgumentList @("-m", "http.server", $Port, "--bind", "127.0.0.1", "-d", $work) -WindowStyle Hidden -PassThru
     Write-Journal "$(Get-Date -Format s) $Name : installeur $($installer.Name) du brouillon $Tag, serveur local 127.0.0.1:$Port"
@@ -95,16 +99,16 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "build 1.0.0 impossible" }
 
     Start-TestApp "latest-bad.json"
-    node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort bad 2>&1 | ForEach-Object { Write-Journal "signature fausse : $_" }
+    node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort bad $badVersion 2>&1 | ForEach-Object { Write-Journal "signature fausse : $_" }
     $badRefused = $LASTEXITCODE -eq 0
     Write-Journal "signature fausse refusée, app restée en 1.0.0 : $badRefused"
     Stop-Apps
 
     Start-TestApp "latest.json"
-    node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort good 2>&1 | ForEach-Object { Write-Journal "bonne signature : $_" }
+    node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort good $version 2>&1 | ForEach-Object { Write-Journal "bonne signature : $_" }
     $deadline = (Get-Date).AddSeconds(180)
-    while (-not ((Get-UninstallEntry).DisplayVersion -eq "1.0.1" -and (Test-Path $installedExe))) {
-        if ((Get-Date) -gt $deadline) { throw "l'installeur 1.0.1 n'a pas terminé" }
+    while (-not ((Get-UninstallEntry).DisplayVersion -eq $version -and (Test-Path $installedExe))) {
+        if ((Get-Date) -gt $deadline) { throw "l'installeur $version n'a pas terminé" }
         Start-Sleep -Seconds 1
     }
     Start-Sleep -Seconds 3
@@ -112,7 +116,7 @@ try {
     Write-Journal "relance automatique par l'installeur (désactivée en mode isolé) : $relaunched processus"
     Start-Process $installedExe | Out-Null
     Write-Journal "app installée en $((Get-UninstallEntry).DisplayVersion) dans $installDir, relancée en mode isolé"
-    node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort installed 2>&1 | ForEach-Object { Write-Journal "après mise à jour : $_" }
+    node (Join-Path $PSScriptRoot "update-test.mjs") $DebugPort installed $version 2>&1 | ForEach-Object { Write-Journal "après mise à jour : $_" }
     $updated = $LASTEXITCODE -eq 0
     $starts = @(Get-Content (Join-Path $root "target\test-config\local\logs\*.log") | Select-String "démarrage de PalaClips").Count
     Write-Journal "journal isolé : $starts démarrage(s) dans target\test-config (l'app 1.0.0 puis l'app installée ; attendu 2)"
@@ -142,6 +146,6 @@ finally {
         Write-Journal "données de Palawi après : $(if ($changed) { "MODIFIÉES : $($changed -join ' ; ')" } else { "$($after.Count) entrées identiques" })"
         if ($changed) { $passed = $false }
     }
-    Write-Journal "RÉSULTAT : $(if ($passed) { 'mise à jour 1.0.0 → 1.0.1 installée, fausse signature refusée' } else { 'ÉCHEC' })"
+    Write-Journal "RÉSULTAT : $(if ($passed) { "mise à jour 1.0.0 → $version installée, fausse signature refusée" } else { 'ÉCHEC' })"
     Write-Journal "$(Get-Date -Format s) fin : apps arrêtées, serveur arrêté, dossiers de test supprimés ; supprimer ensuite le brouillon : gh release delete $Tag --cleanup-tag -y"
 }

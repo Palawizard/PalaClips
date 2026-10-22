@@ -2,7 +2,8 @@ param(
     [int]$Minutes = 60,
     [string]$OutDir = "target\clips",
     [switch]$NoPause,
-    [switch]$CalibrateOnly
+    [switch]$CalibrateOnly,
+    [string[]]$VideoArgs = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,7 +22,7 @@ function Invoke-SyncCapture {
         Set-Location $root
         $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
         & $cli capture-av --target primary --seconds $seconds --out $file @extra 2>&1 | Out-String -Width 300
-    } -ArgumentList $root, $cli, $Seconds, $File, $Extra
+    } -ArgumentList $root, $cli, $Seconds, $File, ($Extra + $VideoArgs)
     $clock = [Diagnostics.Stopwatch]::StartNew()
     $events = @($EmitAt | ForEach-Object { [pscustomobject]@{ At = $_; Kind = "emit" } })
     if ($SilenceAt -ge 0) { $events += [pscustomobject]@{ At = $SilenceAt; Kind = "silence" } }

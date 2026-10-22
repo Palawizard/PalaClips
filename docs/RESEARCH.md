@@ -522,3 +522,143 @@ privée (`PrivateUsage`, engagée) en Mo de 10⁶ octets. Outils : `palaclips-cl
   `javaw.exe` ou `java.exe`, et FAQ du README. Journaux et images :
   `docs/reports/phase-8/minecraft-*.txt`, `minecraft-f11-frozen.jpg`, `minecraft-borderless.jpg`.
 
+
+## Encodage par le processeur (v1.1, 2026-10-22)
+
+### Ce que contient notre FFmpeg (BtbN n8.1.3 LGPL, vérifié)
+
+- `ffmpeg -encoders` : `libopenh264` (H.264, compilé depuis les sources et lié **statiquement**
+  dans `avcodec-62.dll`), `libsvtav1` (SVT-AV1 v4.2.0), `libaom-av1`, `librav1e`, `libvpx` /
+  `libvpx-vp9`, `libkvazaar` (HEVC), `libvvenc` (VVC), et les encodeurs Media Foundation
+  `h264_mf` / `hevc_mf` / `av1_mf`. Pas de x264/x265 (GPL, `--disable-libx264`).
+- `h264_mf` sans `hw_encoding` ouvre le MFT logiciel de Windows : journal FFmpeg
+  `MFT_FRIENDLY_NAME_Attribute='H264 Encoder MFT'`,
+  `MFT_TRANSFORM_CLSID_Attribute={6ca50344-051a-4ded-9779-a43305165e35}`
+  (`CLSID_CMSH264EncoderMFT`). Il accepte NV12, yuv420p et `d3d11` ; profil par défaut
+  Constrained Baseline (celui du banc) ; `-profile:v 100` donne High, le nom `high` est refusé par l'option FFmpeg. FFmpeg n'expose ni le
+  nombre de fils ni leur priorité (« Threading capabilities: none »).
+  — [mfenc.c](https://ffmpeg.org/doxygen/trunk/mfenc_8c_source.html)
+- `libsvtav1` : le mode temps réel `rtc=1` impose la structure « low delay » et le débit
+  constant (`rc=2`) ; sans `rtc`, « Non-RTC M10+ are meant for automation tooling usage.
+  Visual artifacts may occur » et M12 est ramené à M11.
+- `libaom-av1 -usage realtime` : `cpu-used` 0 à 8 seulement.
+- `libopenh264` n'utilise qu'un fil sans `-slices` (le temps CPU = le temps d'horloge).
+
+### Coût et qualité (machine de Palawi, sans jeu)
+
+Banc `scripts/cpu-encoders.ps1` : 10 s de Rocket League (vidéo de Palawi, lue seulement,
+1080p60 HEVC), référence brute redimensionnée, débit du préréglage Équilibré, encodage sans
+cadence imposée. « Cœurs » = temps CPU ÷ durée (cœurs occupés si l'encodage suit le temps
+réel), sur 20 processeurs logiques (i5-13600KF) ; vitesse < 1 = ne suit pas. VMAF NEG, car le
+VMAF standard donne 100 à `h264_mf` (adm2 et vif > 1 : accentuation récompensée) alors que son
+PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-22_13-31.txt`.
+
+| Encodeur | 720p30 (5 Mb/s) | 1080p30 (11,2 Mb/s) | 1080p60 (22,4 Mb/s) |
+|---|---|---|---|
+| `h264_nvenc` p4 (référence actuelle) | 0 cœur · VMAF 91,6 | 0 · 93,9 | 0 · 95,5 |
+| `libopenh264` (4 tranches) | 0,2 · 83,3 | 0,4 · 85,8 | 0,8 · 89,5 |
+| `h264_mf` (Windows) | 0,4 · 87,2 | 1,0 · 89,3 | 1,9 · 90,1 |
+| `libsvtav1` M12 rtc | 0,5 · 86,8 | 1,3 · 89,5 | 2,2 · 90,5 (1,09×) |
+| `libsvtav1` M10 rtc | 0,7 · 88,7 | 1,7 · 91,1 | 3,3 · 91,8 (**0,87×**) |
+| `libsvtav1` M8 rtc | 2,1 · 91,0 | 4,3 · 93,3 (**0,71×**) | 7,9 · 93,7 (**0,39×**) |
+| `libvpx-vp9` realtime 8 | 0,5 · 88,2 | 1,1 · 90,1 | 2,5 · 92,5 |
+| `libaom-av1` realtime 8 | 1,4 · 89,6 | 3,2 · 92,7 (**0,84×**) | 4,6 · 93,9 (**0,56×**) |
+
+- Aucun encodeur logiciel n'atteint NVENC p4 au même débit à coût raisonnable ; l'écart se
+  ferme en montant le débit (pas mesuré).
+- 1080p60 est à la limite pour SVT-AV1 même sur 20 fils ; 1080p30 est le plafond raisonnable
+  d'un préréglage CPU par défaut, 720p30 pour une petite machine.
+- Coût du décodage de la référence soustrait ; conversion BGRA → NV12 non comptée (elle sera
+  sur le GPU, ou swscale sans Video Processor).
+
+### Fils, doublons et profil (mesuré le 2026-10-22)
+
+- `palaclips-cli probe-encoder-threads` : `h264_mf` crée 16 fils à la **première image** (pas à
+  l'ouverture), point de départ `mfh264enc.dll` ; `libsvtav1` en crée 63 à l'**ouverture**
+  (défaut sur 20 processeurs logiques), point de départ `avcodec-62.dll` (winpthreads lié dans la
+  DLL). Tous en priorité normale ; aucun fil du système (`ntdll`, `combase`) n'est propre à
+  l'encodeur.
+- SVT-AV1 M12 rtc 1080p30, `lp` 1 / 2 / 3 / défaut : 0,67 / 0,82 / 0,92 / 0,97 cœur,
+  1,50× / 1,84× / 2,22× / 2,07× le temps réel.
+- Image figée répétée 10 s en 1080p60 : `h264_mf` 1,36 cœur (1,9 avec du mouvement), SVT-AV1
+  M12 1,15 (2,2) : un doublon n'est pas gratuit sur le CPU.
+- `h264_mf` profil Baseline / Main / High (`-profile:v 66/77/100`) : VMAF NEG identique (89,32)
+  et coût identique en 1080p30 → profil par défaut gardé.
+- Mémoire privée au pic (`ffmpeg`, 5 s de `testsrc2` à 30 i/s) : `h264_mf` 366 / 720 / 1 122 Mo
+  en 720p / 1080p / 1440p, SVT-AV1 (`lp=2`) 87 / 150 / 238 Mo. `scenario` (6 valeurs),
+  `rate_control ld_vbr` et une affinité à 4 cœurs ne changent rien pour `h264_mf` (le nombre
+  de fils baisse, pas la mémoire). `probe-memory` 1080p30 : capture + encodeur +773 Mo
+  (`h264_mf`), +153 Mo (SVT-AV1), +104 Mo (NVENC). Panneau de performances de l'app : 470 Mo
+  hors tampon en `h264_mf` contre 73 Mo en NVENC (même session). Choix de Palawi : H.264 reste
+  le codec CPU par défaut ; l'estimation de Réglages ajoute la mémoire de l'encodeur CPU
+  (`h264_mf` ≈ 50 Mo + 315 o/pixel, SVT-AV1 ≈ 25 Mo + 57 o/pixel).
+- Capture CLI de l'écran principal (bureau) en 1080p30 forcée sur le CPU : 300 images en 10 s,
+  CFR, 0 en retard ; ~0,4 cœur en H.264 comme en AV1.
+
+### Licences et brevets (recherche du 2026-10-22)
+
+- **OpenH264** : Cisco ne paie les redevances MPEG LA que pour **son** binaire, téléchargé
+  séparément sur la machine de l'utilisateur (« not integrated into or combined with third
+  party software prior to being downloaded »), que l'utilisateur peut activer et désactiver, avec
+  « OpenH264 Video Codec provided by Cisco Systems, Inc. » affiché là où se trouve ce contrôle
+  et le texte de la licence dans les mentions. Couverture limitée à « personal use of a consumer
+  or other uses in which it does not receive remuneration ». Une compilation depuis les sources
+  (BtbN) n'est pas couverte. — [BINARY_LICENSE](https://www.openh264.org/BINARY_LICENSE.txt),
+  [FAQ](https://www.openh264.org/faq.html)
+- Dernier binaire : v2.7.0, `https://ciscobinary.openh264.org/openh264-2.7.0-win64.dll.bz2`,
+  empreinte `….signed.sha256.txt`, binaires signés.
+  — [release v2.7.0](https://github.com/cisco/openh264/releases/tag/v2.7.0)
+- FFmpeg amont lie `libopenh264` à la compilation, sans chargement à l'exécution (seul Fedora a
+  un patch `--enable-libopenh264-dlopen`). Utiliser la DLL de Cisco demande donc un FFmpeg
+  construit par nous, ou une interface Rust directe vers l'API C d'OpenH264.
+  — [patch Fedora](https://http-dist-git.apps.ocp.stg.fedoraproject.org/rpms/ffmpeg/src/branch/f38/ffmpeg-dlopen-openh264.patch)
+- Firefox télécharge lui-même le plugin de Cisco ; Chromium compile OpenH264 et note que la
+  licence de brevets MPEG LA s'applique en plus.
+  — [README.chromium](https://chromium.googlesource.com/chromium/src/+/main/third_party/openh264/README.chromium)
+- **H.264 (Via LA)** : 0 $ pour 100 000 unités (encodeurs ou décodeurs) par an et par entité,
+  puis 0,20 $ ; aucune exemption trouvée pour un logiciel gratuit ni dispense de signer.
+  Dernier brevet américain du pool au moins jusqu'en novembre 2030.
+  — [Via LA](https://www.via-la.com/licensing-2/avc-h-264/),
+  [Wikipédia](https://en.wikipedia.org/wiki/Advanced_Video_Coding)
+- **Encodeur H.264 de Windows** (`Mfh264enc.dll`) : Baseline/Main/High, CBR, VBR, qualité,
+  0 à 16 fils (`CODECAPI_AVEncNumWorkerThreads`, hors de portée par FFmpeg). Éditions N : Media
+  Feature Pack requis ; serveur : « None supported » (Windows Server 2022 : fonctionnalité
+  Server Media Foundation, non confirmé). Via LA facture les codecs « incorporated into a PC
+  operating system » ; aucune déclaration de Microsoft sur la couverture des applis qui
+  l'appellent n'a été trouvée. Discord renvoie ses utilisateurs vers un paquet Store « AVC
+  Encoder Video Extension » : à vérifier dans la VM qu'il est bien présent par défaut.
+  — [Microsoft](https://learn.microsoft.com/en-us/windows/win32/medfound/h-264-video-encoder),
+  [Media Feature Pack](https://support.microsoft.com/en-us/topic/media-feature-pack-list-for-windows-n-editions-c1c6fffa-d052-8338-7a79-a4bb980a700a),
+  [Discord](https://support.discord.com/hc/en-us/articles/37976724130711)
+- **AV1** : SVT-AV1 sous BSD 3-Clause Clear + licence de brevets AOM 1.0 (gratuite, résiliée
+  en cas de procès en contrefaçon). Sisvel revendique un pool AV1 facturé par appareil grand
+  public (0,32 € avec écran), rien sur les encodeurs logiciels seuls.
+  — [SVT-AV1](https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/LICENSE.md),
+  [AOM](https://aomedia.org/license/patent-license/),
+  [Sisvel](https://sisvel.com/licensing-programmes/audio-and-video-coding-decoding/video-coding-platform-av1)
+- **VP9** : licence de brevets gratuite de Google ; pool Sisvel aussi. **HEVC** (kvazaar) :
+  deux pools actifs (Access Advance, Via LA) → écarté.
+  — [WebM](https://www.webmproject.org/license/additional/)
+- Déjà livré aujourd'hui par PalaClips : l'OpenH264 compilé de BtbN (inutilisé), le décodeur
+  H.264 natif de FFmpeg et l'encodeur AAC de FFmpeg. Ce n'est pas nouveau avec cette version.
+
+### Compatibilité de lecture (2026)
+
+- DaVinci Resolve 20 (Windows) : AV1 en MP4 décodé (gratuit, depuis 17.2), VP9 en MP4 oui,
+  H.264 8 bits oui. — [liste des codecs Resolve 20](https://documents.blackmagicdesign.com/SupportNotes/DaVinci_Resolve_20_Supported_Codec_List.pdf)
+- WebView2 / Edge : H.264, VP9 et AV1 « Supported » (AV1 par défaut depuis Edge 121) ; HEVC
+  demande l'extension du Store.
+  — [Microsoft](https://learn.microsoft.com/en-us/troubleshoot/microsoft-edge/development/video-playback-issues),
+  [caniuse](https://caniuse.com/av1)
+- Discord desktop : lecture par les codecs de Windows, recommande les extensions AVC et AV1 du
+  Store ; MP4 H.264/HEVC/AV1 cités. Mobile : non documenté.
+  — [Discord](https://support.discord.com/hc/en-us/articles/37976724130711)
+- iPhone : AV1 seulement avec le décodage matériel (A17 Pro, M3 et plus récents) ; Android :
+  dav1d à partir d'Android 12 (mise à jour système), AV1 obligatoire dans le CDD d'Android 14.
+  — [Bitmovin](https://bitmovin.com/blog/apple-av1-support),
+  [9to5Google](https://9to5google.com/2024/04/19/android-av1-software-decoder/)
+- La machine de Palawi a l'extension AV1 (2.0.35) installée : un essai de lecture chez lui ne
+  prouve rien pour une machine vierge, d'où la VM.
+- Repli CPU ailleurs : OBS et Steam utilisent x264 (GPL) ; Xbox Game Bar exige un encodeur
+  matériel. — [OBS](https://obsproject.com/kb/hardware-encoding),
+  [Microsoft](https://support.microsoft.com/en-gb/windows/what-hardware-do-i-need-to-record-xbox-game-clips-on-windows-10-86acc559-b393-ecbd-7728-f3e725b5ae36)
