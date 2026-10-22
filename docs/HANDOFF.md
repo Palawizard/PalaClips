@@ -18,7 +18,10 @@
   `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
   refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
-- **Dernière mise à jour :** 2026-10-21
+- **v1.1 en cours (2026-10-22)** : encodage par le processeur (feuille de route § 3). Recherche
+  faite (`RESEARCH.md`, ADR-035 proposé, banc `scripts/cpu-encoders.ps1`) ; Palawi a choisi
+  D (`h264_mf` + SVT-AV1, ADR-035). Suite : moteur.
+- **Dernière mise à jour :** 2026-10-22
 
 ## Ce qui existe
 
@@ -241,7 +244,7 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 
 ## Décisions en attente de Palawi
 
-Aucune. (2026-10-20 : PERF-03 → réglage de priorité GPU, « jeu » par défaut, ADR-033 révisé.)
+Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV1, ADR-035.)
 
 ## Points d'attention
 
