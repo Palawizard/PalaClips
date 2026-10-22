@@ -134,13 +134,16 @@ in H.264 with the encoder built into Windows, or in AV1 with SVT-AV1. The first 
 and switches to 1080p at 30 fps. Expect about one processor core at 1080p30; a game already
 limited by the processor loses fps. Measured on an i5-13600KF in Fortnite capped at 225 fps:
 no loss in average fps, but the slowest 1% of frames drop by 3 to 5% (none with the graphics
-card). The Windows H.264 encoder also reserves memory: about
-700 MB at 1080p (350 MB at 720p), against 150 MB for AV1; Settings → Replay & quality adds it
-to the estimate. Settings → Replay & quality → *Encoder* also lets you
+card). The encoder also takes memory: about 170 MB at
+1080p (90 MB at 720p) in H.264, 150 MB in AV1; Settings → Replay & quality adds it to the
+estimate. Settings → Replay & quality → *Encoder* also lets you
 force the graphics card or the processor. If an alert says the processor can't keep up, lower
-the resolution or the frame rate (720p30 is the lightest). On an "N" edition of Windows, the
-Windows H.264 encoder needs the Media Feature Pack (Settings → Apps → Optional features); AV1
-works without it.
+the resolution or the frame rate (720p30 is the lightest). 
+
+**Windows "N" or "KN" edition (Europe, Korea).** These editions ship without Media Foundation,
+so the Windows H.264 encoder is missing until you install the Media Feature Pack (Settings →
+Apps → Optional features). Without it, PalaClips switches to AV1 on the processor on its own;
+install the pack to get H.264 back.
 
 **My mic is also in track 1.** That's the "Also in Full mix" setting (Settings → Audio), so a
 clip is ready to share as is. Your voice keeps its own track either way.
