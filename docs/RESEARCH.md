@@ -592,6 +592,27 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
   hors tampon en `h264_mf` contre 73 Mo en NVENC (même session). Choix de Palawi : H.264 reste
   le codec CPU par défaut ; l'estimation de Réglages ajoute la mémoire de l'encodeur CPU
   (`h264_mf` ≈ 50 Mo + 315 o/pixel, SVT-AV1 ≈ 25 Mo + 57 o/pixel).
+- **Mémoire de `h264_mf` : c'est le nombre de fils** (vérifié le 2026-10-22, sur demande de
+  Palawi). Dans le temps : 717 Mo privés dès la 1re seconde puis plats pendant 40 s, avec ou sans
+  `-flags low_delay` (CODECAPI_AVLowLatencyMode), `-bf 0`, `-compression_level 0` ou
+  `-scenario display_remoting` : aucune image ne s'accumule au fil du temps. Une affinité à 2
+  cœurs ne change rien (706 Mo, 446 Mo de working set privé). Sonde `palaclips-cli probe-mf`
+  (MFT `CMSH264EncoderMFT` piloté directement, 1080p30) : défaut +643 Mo et 74 paquets pour 90
+  images (16 images en vol, une par fil), `AVEncNumWorkerThreads` = 1 / 2 / 4 → +135 / +169 /
+  +237 Mo et 89 / 88 / 86 paquets ; `AVEncVideoMaxNumRefFrame = 1` sans effet ;
+  `AVLowLatencyMode` refusé par ce MFT. Le nombre de fils n'est lu qu'à la pose des types :
+  posé après, il est accepté mais ignoré, sauf si l'on repose ensuite les mêmes types. FFmpeg
+  n'expose pas ce réglage ; son `ICodecAPI` est le champ qui précède `opt_enc_rc` (option
+  `rate_control`) dans `MFContext` ([mfenc.c n8.1](https://github.com/FFmpeg/FFmpeg/blob/n8.1/libavcodec/mfenc.c)).
+- Coût sur 5 s de Rocket League en 1080p30 (`probe-mf --input`) : défaut 0,65 cœur, VMAF NEG
+  87,6 ; 1 fil 0,39 cœur, 2,8× le temps réel, 87,2 ; 2 fils 0,38 cœur, 5,4×, 87,5 ; 4 fils
+  0,45 cœur, 9,3×, 87,2. Choix : 2 fils jusqu'à 1080p60, 4 au-delà (`encode::mf`). Moteur
+  (`probe-memory`, 1080p30) : capture + encodeur +244 Mo au lieu de +773 (working set +131 au
+  lieu de +465), stable en régime ; 720p30 +150 Mo. Estimation de Réglages : ≈ 25 Mo + 70 o/pixel
+  (2 fils), 40 Mo + 84 o/pixel (4 fils).
+- Éditions N/KN : sans Media Feature Pack, FFmpeg ne trouve pas `mfplat.dll` et `h264_mf` échoue
+  à l'encodage de test ; `pick_encoder` prend alors l'encodeur CPU qui marche (SVT-AV1), test
+  `without_media_foundation_h264_falls_back_to_svt_av1`.
 - Capture CLI de l'écran principal (bureau) en 1080p30 forcée sur le CPU : 300 images en 10 s,
   CFR, 0 en retard ; ~0,4 cœur en H.264 comme en AV1.
 

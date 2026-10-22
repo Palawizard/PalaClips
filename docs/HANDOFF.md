@@ -269,10 +269,12 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 
 ## Points d'attention
 
-- Encodage CPU (v1.1) : `h264_mf` réserve ~720 Mo en 1080p (366 en 720p, 1,1 Go en 1440p)
-  quels que soient ses modes ; SVT-AV1 150 Mo. Décision de Palawi : H.264 reste le défaut CPU,
-  l'estimation de Réglages ajoute la mémoire de l'encodeur (`cpuEncoderBytes`, constantes
-  mesurées). Le VMAF standard est trompé par l'accentuation de `h264_mf` : utiliser
+- Encodage CPU (v1.1) : la mémoire de `h264_mf` dépend de son nombre de fils (16 par défaut →
+  ~720 Mo en 1080p). Limité à 2/4 fils par `encode::mf::limit_mf_workers` (ICodecAPI lu dans
+  `MFContext` juste avant `opt_enc_rc` : à revérifier si FFmpeg change `mfenc.c` ; en cas
+  d'échec, simple avertissement dans le journal et défaut gardé). L'estimation de Réglages
+  ajoute la mémoire de l'encodeur (`cpuEncoderBytes`, constantes mesurées). Sans Media
+  Foundation (éditions N/KN), `pick_encoder` bascule le CPU sur SVT-AV1. Le VMAF standard est trompé par l'accentuation de `h264_mf` : utiliser
   `vmaf_v0.6.1neg`. SVT-AV1 écrit ses `Svt[info]` sur stderr (bruit dans la CLI, invisible
   dans l'app). Les fils de l'encodeur sont repérés par leur module de départ
   (`encode::threads`) ; `mfh264enc.dll` les crée à la 1re image, pas à l'ouverture.
