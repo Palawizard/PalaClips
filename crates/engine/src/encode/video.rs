@@ -10,14 +10,15 @@ use windows::Win32::Graphics::Direct3D11::ID3D11Device;
 use super::convert::Size;
 use super::d3d11::{ffmpeg_error, hw_device_context, hw_frames_context};
 use super::log::route_ffmpeg_logs;
+use super::mf::{limit_mf_workers, mf_worker_threads};
 use super::threads::lower_encoder_threads;
 use crate::config::VideoCodec;
 use crate::error::{EngineError, Result};
 
-pub const SOFTWARE_ENCODERS: [(&str, VideoCodec); 2] = [
-    ("h264_mf", VideoCodec::H264),
-    ("libsvtav1", VideoCodec::Av1),
-];
+const MF_H264: &str = "h264_mf";
+
+pub const SOFTWARE_ENCODERS: [(&str, VideoCodec); 2] =
+    [(MF_H264, VideoCodec::H264), ("libsvtav1", VideoCodec::Av1)];
 
 pub fn is_software_encoder(name: &str) -> bool {
     SOFTWARE_ENCODERS
@@ -114,6 +115,9 @@ impl VideoEncoder {
         context
             .open(None)
             .map_err(|error| EngineError::Encoder(format!("{} : {error}", settings.encoder)))?;
+        if settings.encoder == MF_H264 {
+            limit_mf_workers(&mut context, mf_worker_threads(settings.size, settings.fps));
+        }
         let threads_to_lower = frames.is_none();
         if threads_to_lower {
             lower_encoder_threads();
@@ -247,6 +251,9 @@ impl SystemFrameEncoder {
         context
             .open(None)
             .map_err(|error| EngineError::Encoder(format!("{encoder} : {error}")))?;
+        if encoder == MF_H264 {
+            limit_mf_workers(&mut context, mf_worker_threads(size, fps.max(1)));
+        }
         let threads_to_lower = is_software_encoder(encoder);
         if threads_to_lower {
             lower_encoder_threads();
@@ -365,7 +372,7 @@ fn set_private_options(
         ]
     } else if encoder.ends_with("_amf") {
         &[(c"rc", c"cbr"), (c"quality", c"balanced")]
-    } else if encoder == "h264_mf" {
+    } else if encoder == MF_H264 {
         &[(c"hw_encoding", c"0"), (c"rate_control", c"cbr")]
     } else if encoder == "libsvtav1" {
         &[
@@ -393,4 +400,37 @@ fn set_private_options(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use rsmpeg::avutil::ra;
+
+    use super::*;
+
+    #[test]
+    fn the_windows_h264_encoder_gets_its_worker_limit_when_present() {
+        let Ok(mut encoder) =
+            SystemFrameEncoder::open(MF_H264, Size::new(1920, 1080), ra(1, 30), ra(30, 1), 11_200)
+        else {
+            return;
+        };
+        assert!(limit_mf_workers(&mut encoder.context, 2));
+        let mut packets = 0;
+        for pts in 0..40 {
+            let mut frame = AVFrame::new();
+            frame.set_width(1920);
+            frame.set_height(1080);
+            frame.set_format(encoder.pixel_format());
+            frame.alloc_buffer().expect("frame");
+            frame.set_pts(pts);
+            encoder
+                .encode(Some(&frame), &mut |_| {
+                    packets += 1;
+                    Ok(())
+                })
+                .expect("encode");
+        }
+        assert!(packets >= 35, "{packets} paquets pour 40 images");
+    }
 }

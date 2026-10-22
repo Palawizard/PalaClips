@@ -9,6 +9,8 @@ mod probe_gpu;
 #[cfg(windows)]
 mod probe_memory;
 #[cfg(windows)]
+mod probe_mf;
+#[cfg(windows)]
 mod replay;
 
 use anyhow::Result;
@@ -67,6 +69,14 @@ enum Command {
     #[cfg(windows)]
     #[command(about = "Affiche la version de FFmpeg liée et les encodeurs vidéo matériels")]
     FfmpegInfo,
+    #[cfg(windows)]
+    #[command(
+        about = "Pilote directement l'encodeur H.264 de Windows (MFT) et mesure sa mémoire selon ses réglages ICodecAPI"
+    )]
+    ProbeMf {
+        #[command(flatten)]
+        probe: probe_mf::ProbeMfArgs,
+    },
     #[cfg(windows)]
     #[command(
         about = "Ouvre un encodeur vidéo, encode des images et liste les fils qu'il crée (module de départ, priorité)"
@@ -428,6 +438,8 @@ fn main() -> Result<()> {
         }
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,
+        #[cfg(windows)]
+        Command::ProbeMf { probe } => probe_mf::probe_mf(&probe)?,
         #[cfg(windows)]
         Command::ProbeEncoderThreads {
             encoder,
