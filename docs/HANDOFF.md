@@ -24,7 +24,11 @@
   de mise à jour), #97 (`dev` → `main`, accord de Palawi), tag `v1.1.0` sur `main`,
   **publiée le 2026-10-22** (https://github.com/Palawizard/PalaClips/releases/tag/v1.1.0) avec
   l'accord de Palawi. Vérifié sans connexion : `latest.json` 1.1.0, installeur, `.sig`,
-  CHANGELOG et page en 200 ; la 1.0.0 installée de Palawi propose la 1.1.0. Reste : test VM T11.
+  CHANGELOG et page en 200 ; la 1.0.0 installée de Palawi propose la 1.1.0.
+- **v1.1.1 publiée le 2026-10-22** à la demande de Palawi, **sans le test VM** : #99 (mémoire de
+  l'encodeur H.264 de Windows ~170 Mo en 1080p au lieu de ~720, bascule AV1 sans Media
+  Foundation), #101 (version), #102 (`dev` → `main`), tag `v1.1.1`. Vérifié sans connexion après
+  1 min : `latest.json` 1.1.1, installeur, `.sig`, CHANGELOG et page en 200. Reste : test VM T11.
   Branche : `dev` (PR de handoff `docs/handoff-v1.1`).
 - **Dernière mise à jour :** 2026-10-22
 
@@ -225,13 +229,10 @@
 ## Prochaines actions (dans l'ordre)
 
 0. **Clore la v1.1** : quand Palawi rapporte le test VM T11 (`docs/TESTING.md`, installeur de
-   la release publiée copié dans `target\vm\PalaClips_1.1.0_x64-setup.exe`) : remplir la ligne
+   la release 1.1.1 dans `target\vm\PalaClips_1.1.1_x64-setup.exe` ; s'il a testé la 1.1.0,
+   noter laquelle) : remplir la ligne
    VM de `docs/reports/cpu-encoder.md`, cocher les cases restantes de PLAN v1.1. Un défaut trouvé
    → branche `fix/…` depuis `dev`, puis 1.1.1 avec son accord (même chemin de release).
-1. **1.1.1 à proposer** : #99 (sur `dev`, pas publié) limite la mémoire de l'encodeur H.264 de
-   Windows (~170 Mo au lieu de ~720 en 1080p) et bascule sur AV1 sans Media Foundation
-   (éditions N/KN). Publier seulement avec l'accord de Palawi, idéalement avec les correctifs du
-   test VM T11 (la VM teste la 1.1.0, sans ces correctifs).
 
 1. **Prochaine version** (seulement avec l'accord explicite de Palawi). Pistes : `ROADMAP.md`.
    1. Notes : `pwsh scripts/release-notes.ps1 -Tag dev` liste les PR visibles par l'utilisateur
@@ -416,4 +417,5 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 | 2026-10-21 | 8 | Release v1.0.0 : notes de release automatiques (PR par type), README EN/FR à la structure classique et SEO (description, 20 topics, page d'accueil du dépôt), version 1.0.0 (#87), `dev` → `main` (#88), tag, installeur signé + `latest.json` vérifiés, release publiée ; URL de l'updater corrigée à la main puis automatisée | Suivre les issues ; prochaine version avec l'accord de Palawi |
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
 | 2026-10-22 | v1.1 | Encodage par le processeur : recherche (encodeurs du FFmpeg BtbN, licences, lecture, banc VMAF NEG), choix D de Palawi ; moteur (`h264_mf` + SVT-AV1, Video Processor → NV12 → staging ou swscale, fils en priorité basse, file bornée, découpe précise CPU) ; app (réglage Encodeur, premier lancement, panneau), critique/audit impeccable ; validé : clip CPU, A/V 3,7 ms d'écart avec NVENC, Fortnite 0 % (1 % bas −3 à −5 %), mise à jour 1.0.0 → 1.1.0 ; mémoire de `h264_mf` (~720 Mo en 1080p) gardée par Palawi ; release v1.1.0 publiée (accord de Palawi), vérifiée sans connexion, sa 1.0.0 propose la 1.1.0 | Test VM T11 par Palawi |
+| 2026-10-22 | v1.1.1 | Mémoire de `h264_mf` : nombre de fils (16 images en vol), pas une file ; faible latence et B-frames sans effet ; limité à 2/4 fils par ICodecAPI (+244 Mo au lieu de +773 en 1080p30, moins de CPU, même VMAF) ; bascule AV1 sans Media Foundation (N/KN), FAQ ; v1.1.1 publiée sans le test VM (demande de Palawi) | Test VM T11 |
 | 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
