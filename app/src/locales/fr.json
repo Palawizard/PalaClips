@@ -150,7 +150,8 @@
       "other": "{count} sur la dernière minute"
     },
     "lag": "décalage max {value}",
-    "noEncoder": "Aucun encodeur matériel"
+    "noEncoder": "Aucun encodeur vidéo",
+    "cpuEncoder": "Processeur · {codec}"
   },
   "roster": {
     "title": "Pistes audio",
@@ -289,6 +290,15 @@
       "disk": "Disque",
       "codec": "Codec",
       "codecUnavailable": "Indisponible sur cette carte graphique : {codecs}.",
+      "codecUnavailableCpu": "Indisponible sur le processeur : {codecs}.",
+      "encoder": "Encodeur",
+      "encoders": {
+        "auto": "Automatique",
+        "hardware": "Carte graphique",
+        "cpu": "Processeur"
+      },
+      "encoderGpu": "Encodage par la carte graphique.",
+      "encoderCpu": "Encodage par le processeur : en jeu, compte environ 1 cœur en 1080p30, le jeu peut perdre des fps.",
       "quality": "Qualité",
       "qualities": {
         "quality": "Qualité",
@@ -597,7 +607,8 @@
       "windowsUnknown": "Version de Windows introuvable.",
       "encoder": "Encodeur vidéo",
       "encoderOk": "{codecs} sur la carte graphique",
-      "encoderMissing": "Aucun encodeur matériel n'a fonctionné. Mets à jour le pilote graphique, puis relance PalaClips.",
+      "encoderMissing": "Aucun encodeur n'a fonctionné, ni sur la carte graphique ni sur le processeur. Mets à jour Windows et le pilote graphique, puis relance PalaClips.",
+      "encoderCpu": "Aucun encodeur sur la carte graphique : le processeur encodera la vidéo ({codecs}). En jeu, compte environ 1 cœur en 1080p30, le jeu peut perdre des fps.",
       "webview": "WebView2",
       "webviewVersion": "Version {version}",
       "folder": "Dossier des clips",

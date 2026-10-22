@@ -150,7 +150,8 @@
       "other": "{count} in the last minute"
     },
     "lag": "max lag {value}",
-    "noEncoder": "No hardware encoder"
+    "noEncoder": "No video encoder",
+    "cpuEncoder": "Processor · {codec}"
   },
   "roster": {
     "title": "Audio tracks",
@@ -289,6 +290,15 @@
       "disk": "Disk",
       "codec": "Codec",
       "codecUnavailable": "Not available on this graphics card: {codecs}.",
+      "codecUnavailableCpu": "Not available on the processor: {codecs}.",
+      "encoder": "Encoder",
+      "encoders": {
+        "auto": "Automatic",
+        "hardware": "Graphics card",
+        "cpu": "Processor"
+      },
+      "encoderGpu": "Encoding on the graphics card.",
+      "encoderCpu": "Encoding on the processor: in game, expect about 1 core at 1080p30, and the game may lose fps.",
       "quality": "Quality",
       "qualities": {
         "quality": "Quality",
@@ -597,7 +607,8 @@
       "windowsUnknown": "Couldn't detect the Windows version.",
       "encoder": "Video encoder",
       "encoderOk": "{codecs} on the graphics card",
-      "encoderMissing": "No hardware encoder worked. Update your graphics driver, then restart PalaClips.",
+      "encoderMissing": "No encoder worked, neither on the graphics card nor on the processor. Update Windows and your graphics driver, then restart PalaClips.",
+      "encoderCpu": "No encoder on the graphics card: the processor will encode the video ({codecs}). In game, expect about 1 core at 1080p30, and the game may lose fps.",
       "webview": "WebView2",
       "webviewVersion": "Version {version}",
       "folder": "Clips folder",

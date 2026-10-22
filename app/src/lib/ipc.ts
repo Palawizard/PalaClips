@@ -30,6 +30,12 @@ export interface EncoderInfo {
 
 export type EncoderChoice = "auto" | "hardware" | "cpu";
 
+export const CPU_ENCODER_CODECS: Record<string, VideoCodec> = { h264_mf: "h264", libsvtav1: "av1" };
+
+export function encodesOnGpu(encoders: EncoderInfo[], choice: EncoderChoice): boolean {
+  return choice === "hardware" || (choice === "auto" && encoders.some((encoder) => encoder.hardware && !encoder.failure));
+}
+
 export function listEncoders(): Promise<EncoderInfo[]> {
   return invoke<EncoderInfo[]>("list_encoders");
 }
