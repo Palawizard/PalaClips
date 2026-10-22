@@ -3,6 +3,7 @@ mod convert;
 mod d3d11;
 mod hdr;
 mod log;
+mod mf;
 mod readback;
 pub mod threads;
 mod thumbnail;

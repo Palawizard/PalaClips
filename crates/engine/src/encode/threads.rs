@@ -117,7 +117,7 @@ fn close(handle: HANDLE) {
     let _ = unsafe { CloseHandle(handle) };
 }
 
-fn module_of(address: *mut c_void) -> Option<String> {
+pub(crate) fn module_of(address: *mut c_void) -> Option<String> {
     let mut module = HMODULE::default();
     let mut path = [0u16; 260];
     // SAFETY: with FROM_ADDRESS the "name" is any address inside a module; UNCHANGED_REFCOUNT
