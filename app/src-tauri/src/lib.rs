@@ -186,7 +186,7 @@ pub struct EngineSlot {
     settings_writable: bool,
     settings: Mutex<settings::Settings>,
     shortcuts: Mutex<Vec<(HotkeyAction, Shortcut)>>,
-    encoders: Mutex<Option<Vec<palaclips_engine::encode::HardwareEncoder>>>,
+    encoders: Mutex<Option<Vec<palaclips_engine::encode::EncoderInfo>>>,
     previews: Mutex<HashMap<u32, palaclips_engine::capture::PreviewCapture>>,
     next_preview: AtomicU32,
     performance_panel: AtomicBool,

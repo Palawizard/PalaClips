@@ -46,7 +46,7 @@ Modules du moteur (`crates/engine/src/`) :
 | `error` | `EngineError` (messages FR affichables) | 0 ✅ |
 | `replay` | `PacketRing` purgé par âge, estimation RAM, `plan_clip`, paquets en RAM ou sur disque (`Spool`) | 0 (file) ✅ / 4 ✅ |
 | `capture` | WGC, énumération écrans/fenêtres, pacer CFR, repli (miniatures : phase 5) | 1 ✅ |
-| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, conversion GPU, détection par test réel ; AAC | 1 ✅ / 2 |
+| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, encodeurs CPU (`h264_mf`, SVT-AV1), conversion GPU, détection par test réel ; AAC | 1 ✅ / 2 / v1.1 |
 | `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2–3 ✅ |
 | `sources` | Sessions audio, processus, jeu en cours (`CurrentGame`), périphériques | 3 ✅ |
 | `mux` | `Mp4Writer` multi-pistes titrées (vidéo, replay) ; MP4 hybride | 1–4 ✅ / 6 |
@@ -72,7 +72,9 @@ charges :
 - Pacer CFR (`CfrClock`) : tick `n` à `t0 + n / fps` sur l'horloge QPC ; à chaque tick, la
   dernière image reçue est convertie et encodée (doublon si Windows n'a rien envoyé, surplus
   ignorés). Tick en retard → tous les ticks manqués sont émis. `MinUpdateInterval` = moitié de
-  la période.
+  la période. Encodeur CPU : au plus une demi-seconde de ticks en retard est émise, les plus
+  anciens sont sautés (trou dans les PTS, la synchro A/V tient) ; comptés en retard, ils lèvent
+  `cpu_encoder_overloaded` (ADR-035).
 - Repli sur l'écran de la fenêtre si la capture de fenêtre échoue → alerte
   `capture_fallback_monitor`.
 - Suivre changement de résolution, fermeture de la fenêtre, perte du périphérique D3D.
@@ -121,7 +123,18 @@ charges :
 - Décalage de synchro par piste (AUD-11, ADR-017), positif = son retardé.
 
 **`encode`**
-- Encodeurs `h264/hevc/av1` × `nvenc/amf/qsv`, détectés par un encodage de test réel.
+- Encodeurs `h264/hevc/av1` × `nvenc/amf/qsv`, et sur le processeur `h264_mf` (MFT logiciel de
+  Windows, `hw_encoding=0`, CBR) et `libsvtav1` (`rtc=1:rc=2:lp=2`, M10 jusqu'à 720p30, M12
+  au-delà), tous détectés par un encodage de test réel (`video_encoders`, `EncoderInfo.hardware`).
+  Choix `video.encoder` = `auto` (matériel si un encodeur matériel marche, sinon CPU),
+  `hardware` ou `cpu` (`pick_encoder`) ; HEVC n'existe qu'en matériel (ADR-035).
+- Encodeur CPU : BGRA → NV12 par le Video Processor dans une texture NV12, une seule relecture
+  par texture de staging, puis swscale vers le format de l'encodeur (NV12, ou yuv420p pour
+  SVT-AV1). Sans Video Processor (création ou `VideoProcessorBlt` en échec, VM, WARP) :
+  relecture BGRA et conversion + mise à l'échelle + bandes noires par swscale (BT.709 limité).
+  Les fils créés par l'encodeur (départ dans `mfh264enc.dll` ou `avcodec-*.dll`) passent en
+  priorité « en dessous de la normale » à l'ouverture et après la première image
+  (`encode::threads`). ENC-04 reste vrai pour le chemin matériel.
 - Entrée en frames matérielles `d3d11va` (pool dynamique, `BIND_RENDER_TARGET`) sur le
   périphérique de WGC ; BGRA → NV12 + mise à l'échelle + bandes noires par le D3D11 Video
   Processor (BT.709 limité), écrit directement dans la frame de l'encodeur. QSV : contexte
@@ -312,7 +325,7 @@ d'une erreur système.
 | `export_diagnostic` | 8 ✅ | boîte « Enregistrer sous » (zip daté), puis `diagnostic::entries` + `write_archive` : `system.txt` (version, Windows, processeur, mémoire, cartes graphiques et pilotes, HAGS, écrans et HDR, encodeurs, périphériques audio, WebView2), `settings.json` et `logs/*.log` ; chemin du profil remplacé par `%USERPROFILE%` et nom du PC par `[pc]` partout ; nom d'utilisateur et mots du nom complet du compte (`NetUserGetInfo` niveau 10) remplacés par `[user]` dans les noms de périphériques, les réglages et les journaux (pas dans le reste de `system.txt`, où « RTX 4070 SUPER » se ferait masquer) ; titre de fenêtre capturée masqué ; `system.txt` donne aussi le fuseau horaire (les journaux sont en UTC) ; renvoie le nom du zip ou `null` si annulé ; erreur `diagnostic_failed { detail }`. Même contenu par `palaclips-cli diagnostic --out` |
 | `open_diagnostic` | 8 ✅ | ouvre dans l'Explorateur le dernier zip exporté pendant la session (chemin gardé côté Rust, jamais reçu du front) |
 | `open_clips_dir` | 5 ✅ | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
-| `list_encoders` | 5 ✅ | encodeurs matériels détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur est grisé dans Réglages |
+| `list_encoders` | 5 ✅ | encodeurs matériels et CPU (`{ name, description, codec, hardware, failure }`) détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur pour le choix courant est grisé dans Réglages |
 | `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
 | `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
 | `list_clips { query }` | 6 ✅ | clips de la bibliothèque (index SQLite) : filtres `game`, `kind` (`replay` / `recording`, d'après le nom), `favorites`, `since_ms`, `search` (nom ou jeu), tri `newest` / `oldest` / `largest` / `longest` / `name`, `limit` ; seuls les clips du dossier courant (racine + un niveau). Chaque clip : `path`, `name`, `game`, `kind`, `modified_ms`, `size_bytes`, `duration_secs`, `fps` (cadence vidéo moyenne, pas d'image du lecteur), `tracks` (titres), `thumbnail`, `favorite` |
@@ -322,7 +335,7 @@ d'une erreur système.
 | `prepare_player { path }` | 6 ✅ | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\com.palawi.palaclips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
 | `track_peaks { path }` | 6 ✅ | forme d'onde d'une piste du cache : 1 600 pics (0–255, octets bruts), calculés en décodant le `.m4a` une fois puis gardés à côté (`.peaks`) ; chemin hors du cache refusé |
 | `copy_clip { path }` | 6 ✅ | GAL-05 : copie le fichier dans le presse-papiers (`CF_HDROP`) pour le coller dans Discord ou l'Explorateur |
-| `start_export { export }` / `cancel_export { id }` | 6 ✅ | GAL-06/07 : `{ path, name, start_secs, end_secs, precise, tracks, gains, mix, mix_title }` → id. `gains` : un volume (0–1) par piste choisie, appliqué au mixage (le lecteur envoie ses volumes ; absent = 1). Rapide : copie depuis l'image clé au début ou juste avant ; précis : décodage puis réencodage matériel (même codec, débit de la source) à partir de l'image exacte. Pistes audio choisies (positions parmi les pistes audio), copiées, ou mixées en une piste AAC titrée `mix_title`. Fichier `<name>.mp4` dans le dossier du clip (suffixe `_2`… si pris), écrit en `.part.mp4` puis renommé (la bibliothèque ignore les `.part`). Événements Tauri `export-progress { id, progress }` (pas de 1 %) et `export-finished { id, path, error }` |
+| `start_export { export }` / `cancel_export { id }` | 6 ✅ | GAL-06/07 : `{ path, name, start_secs, end_secs, precise, tracks, gains, mix, mix_title }` → id. `gains` : un volume (0–1) par piste choisie, appliqué au mixage (le lecteur envoie ses volumes ; absent = 1). Rapide : copie depuis l'image clé au début ou juste avant ; précis : décodage puis réencodage matériel, ou sur le processeur sans encodeur matériel du codec (même codec, débit de la source) à partir de l'image exacte. Pistes audio choisies (positions parmi les pistes audio), copiées, ou mixées en une piste AAC titrée `mix_title`. Fichier `<name>.mp4` dans le dossier du clip (suffixe `_2`… si pris), écrit en `.part.mp4` puis renommé (la bibliothèque ignore les `.part`). Événements Tauri `export-progress { id, progress }` (pas de 1 %) et `export-finished { id, path, error }` |
 | `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 ✅ | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay`, `toggle_recording` (défaut `Ctrl+Alt+F9`) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab…), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
 | `performance_snapshot` | 7 | panneau de performances |
 | `export_diagnostics` | 8 | archive zip |
@@ -362,11 +375,11 @@ enregistrement ; chaque fichier terminé arrive en `clip_saved`), `alert { sever
 affiché, `message` en français pour les journaux et la CLI), `alert_cleared { code }` (la
 condition d'une alerte a disparu : l'app la retire de `AppStatus.alerts`). Alertes de capture
 (`events::CAPTURE_ALERTS` : `capture_source_rate_limited`, `capture_gpu_saturated`,
-`capture_exclusive_fullscreen`) : retirées par `alert_cleared` après 5 s de retour à la normale,
+`cpu_encoder_overloaded`, `capture_exclusive_fullscreen`) : retirées par `alert_cleared` après 5 s de retour à la normale,
 et à chaque démarrage ou arrêt de capture.
 
-Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `capture_gpu_saturated`, `capture_exclusive_fullscreen`, `app_track_silent`,
-`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`,
+Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `capture_gpu_saturated`, `cpu_encoder_overloaded`, `capture_exclusive_fullscreen`, `app_track_silent`,
+`audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`, `no_video_encoder`,
 `hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `recording_failed { reason }`
 (écriture impossible ou disque plein : l'enregistrement s'arrête, les fichiers déjà écrits
 restent lisibles), `disk_almost_full { free_mb }` (moins de 2 Go libres pendant un
@@ -388,6 +401,8 @@ pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo ; seules com
 où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l'alerte, ADR-018) ;
 `capture_gpu_saturated` (au moins 10 % des images de chaque seconde encodées plus d'une période
 en retard pendant 5 s : le jeu prend tout le GPU ; conseille de limiter ses fps) ;
+`cpu_encoder_overloaded` (même mesure avec un encodeur CPU, ticks sautés compris : le processeur
+ne suit pas ; conseille de baisser résolution ou fps) ;
 `capture_exclusive_fullscreen` (aucune image nouvelle de Windows pendant 5 s alors qu'une appli
 a la propriété exclusive de l'écran, `D3DKMTCheckExclusiveOwnership` ; paramètre `advice` :
 `exclusive_fullscreen_advice` (plein écran fenêtré ou sans bordure) ou, si l'appli au premier

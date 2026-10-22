@@ -16,7 +16,8 @@ use clap::{Parser, Subcommand};
 use palaclips_engine::{
     EngineConfig, VERSION,
     config::{
-        CaptureTarget, GpuPriority, OutputResolution, VideoCodec, VideoQuality, VideoSettings,
+        CaptureTarget, EncoderChoice, GpuPriority, OutputResolution, VideoCodec, VideoQuality,
+        VideoSettings,
     },
     replay::{buffer_window, estimate_buffer_bytes},
 };
@@ -68,6 +69,22 @@ enum Command {
     FfmpegInfo,
     #[cfg(windows)]
     #[command(
+        about = "Ouvre un encodeur vidéo, encode des images et liste les fils qu'il crée (module de départ, priorité)"
+    )]
+    ProbeEncoderThreads {
+        #[arg(long, default_value = "h264_mf")]
+        encoder: String,
+        #[arg(long, default_value_t = 1920)]
+        width: u32,
+        #[arg(long, default_value_t = 1080)]
+        height: u32,
+        #[arg(long, default_value_t = 60)]
+        fps: u32,
+        #[arg(long, default_value_t = 120)]
+        frames: i64,
+    },
+    #[cfg(windows)]
+    #[command(
         about = "Calibre la synchro par piste (flash + bip plein écran ~12 s) avec les réglages audio d'un settings.json, sans rien enregistrer"
     )]
     Calibrate {
@@ -92,6 +109,8 @@ enum Command {
     TryOutput {
         #[arg(long, value_parser = parse_codec, default_value = "h264")]
         codec: VideoCodec,
+        #[arg(long, value_parser = parse_encoder, default_value = "auto")]
+        encoder: EncoderChoice,
         #[arg(long)]
         width: u32,
         #[arg(long)]
@@ -410,6 +429,14 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::FfmpegInfo => ffmpeg_info()?,
         #[cfg(windows)]
+        Command::ProbeEncoderThreads {
+            encoder,
+            width,
+            height,
+            fps,
+            frames,
+        } => probe_encoder_threads(&encoder, width, height, fps, frames)?,
+        #[cfg(windows)]
         Command::Calibrate { settings } => calibrate(settings.as_deref())?,
         #[cfg(windows)]
         Command::AudioSources => audio_sources()?,
@@ -422,11 +449,12 @@ fn main() -> Result<()> {
         #[cfg(windows)]
         Command::TryOutput {
             codec,
+            encoder,
             width,
             height,
             fps,
             skip_limit,
-        } => try_output(codec, width, height, fps, skip_limit)?,
+        } => try_output(codec, encoder, width, height, fps, skip_limit)?,
         #[cfg(windows)]
         Command::ListTargets { json } => list_targets(json)?,
         #[cfg(windows)]
@@ -595,19 +623,20 @@ fn main() -> Result<()> {
 #[cfg(windows)]
 fn try_output(
     codec: VideoCodec,
+    choice: EncoderChoice,
     width: u32,
     height: u32,
     fps: u32,
     skip_limit: bool,
 ) -> Result<()> {
-    use palaclips_engine::encode::{Size, hardware_video_encoders, probe_output, try_output};
+    use palaclips_engine::encode::{Size, probe_output, try_output, video_encoders};
 
-    let encoders = hardware_video_encoders()?;
+    let encoders = video_encoders()?;
     let size = Size::new(width, height);
     let outcome = if skip_limit {
-        probe_output(&encoders, codec, size, fps)
+        probe_output(&encoders, codec, choice, size, fps)
     } else {
-        try_output(&encoders, codec, size, fps)
+        try_output(&encoders, codec, choice, size, fps)
     };
     match outcome {
         Ok(()) => println!("{codec:?} {width}x{height} {fps} i/s : accepté"),
@@ -617,22 +646,87 @@ fn try_output(
 }
 
 fn ffmpeg_info() -> Result<()> {
-    use palaclips_engine::encode::{ffmpeg_version, hardware_video_encoders};
+    use palaclips_engine::encode::{ffmpeg_version, video_encoders};
 
     println!("FFmpeg {}", ffmpeg_version());
-    let encoders = hardware_video_encoders()?;
+    let encoders = video_encoders()?;
     for encoder in &encoders {
+        let kind = if encoder.hardware { "matériel" } else { "CPU" };
         match &encoder.failure {
             None => println!(
-                "  {:<14} disponible     {}",
+                "  {:<14} {kind:<9} disponible     {}",
                 encoder.name, encoder.description
             ),
-            Some(reason) => println!("  {:<14} indisponible   {reason}", encoder.name),
+            Some(reason) => println!("  {:<14} {kind:<9} indisponible   {reason}", encoder.name),
         }
     }
     if !encoders.iter().any(|encoder| encoder.is_available()) {
-        anyhow::bail!(palaclips_engine::EngineError::NoHardwareEncoder);
+        anyhow::bail!(palaclips_engine::EngineError::NoVideoEncoder);
     }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn probe_encoder_threads(
+    encoder: &str,
+    width: u32,
+    height: u32,
+    fps: u32,
+    frames: i64,
+) -> Result<()> {
+    use palaclips_engine::encode::{
+        Size, VideoEncoder, VideoEncoderSettings, create_device, threads,
+    };
+
+    let device = create_device()?;
+    let mut known = threads::thread_ids();
+    let mut report = |stage: &str| {
+        let now = threads::thread_ids();
+        let created: Vec<u32> = now.difference(&known).copied().collect();
+        println!(
+            "{stage} : {} fils de plus ({} au total)",
+            created.len(),
+            now.len()
+        );
+        for info in created.into_iter().filter_map(threads::thread_info) {
+            println!(
+                "  fil {:>6}  priorité {:>3}  départ {}",
+                info.id,
+                info.priority,
+                info.module.as_deref().unwrap_or("?")
+            );
+        }
+        known = now;
+    };
+    let mut encoder = VideoEncoder::open(
+        &device,
+        &VideoEncoderSettings {
+            encoder: encoder.to_owned(),
+            size: Size::new(width, height),
+            fps,
+            bitrate_kbps: 10_000,
+            keyframe_interval_secs: 1.0,
+        },
+    )?;
+    report("ouverture");
+    let mut packets = 0;
+    let mut count = |_| {
+        packets += 1;
+        Ok(())
+    };
+    for pts in 0..frames {
+        let frame = encoder.acquire_frame()?;
+        encoder.encode(frame, pts, &mut count)?;
+        if pts == 0 {
+            report("1re image");
+        }
+    }
+    report(&format!("{frames} images"));
+    encoder.finish(&mut count)?;
+    report("fin");
+    drop(encoder);
+    report("encodeur fermé");
+    println!("{packets} paquets");
     Ok(())
 }
 
@@ -817,6 +911,8 @@ struct VideoArgs {
     fps: u32,
     #[arg(long, value_parser = parse_codec, default_value = "h264")]
     codec: VideoCodec,
+    #[arg(long, value_parser = parse_encoder, default_value = "auto", help = "auto, materiel ou cpu")]
+    encoder: EncoderChoice,
     #[arg(
         long,
         help = "Hauteur de sortie (mise à l'échelle GPU) ; absente = native"
@@ -846,6 +942,7 @@ impl VideoArgs {
                 OutputResolution::Height { height }
             }),
             codec: self.codec,
+            encoder: self.encoder,
             quality: if self.bitrate_mbps.is_some() {
                 VideoQuality::Custom
             } else {
@@ -874,14 +971,14 @@ fn run_capture(
     use palaclips_engine::audio::{AudioTrack, Mixdown, SAMPLE_RATE};
     use palaclips_engine::capture::VideoCapture;
     use palaclips_engine::clock::{HNS_PER_SECOND, Hns};
-    use palaclips_engine::encode::{hardware_video_encoders, pick_encoder};
+    use palaclips_engine::encode::{pick_encoder, video_encoders};
     use palaclips_engine::events::EngineEvent;
     use palaclips_engine::mux::{Mp4Writer, MuxStream};
 
     let video = args.video.video_settings();
     palaclips_engine::capture::set_gpu_priority(video.gpu_priority);
-    let encoders = hardware_video_encoders()?;
-    let encoder = pick_encoder(&encoders, video.codec)?;
+    let encoders = video_encoders()?;
+    let encoder = pick_encoder(&encoders, video.codec, video.encoder)?;
     let capture = VideoCapture::start(&args.video.target, &video, &encoder.name)?;
     if let Some(EngineEvent::Alert { message, .. }) = capture.alert() {
         println!("{message}");
@@ -1057,6 +1154,15 @@ fn parse_quality(value: &str) -> std::result::Result<VideoQuality, String> {
         "equilibre" | "équilibré" => Ok(VideoQuality::Balanced),
         "leger" | "léger" => Ok(VideoQuality::Light),
         _ => Err("qualité attendue : qualite, equilibre ou leger".into()),
+    }
+}
+
+fn parse_encoder(value: &str) -> std::result::Result<EncoderChoice, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "auto" => Ok(EncoderChoice::Auto),
+        "materiel" | "matériel" | "gpu" => Ok(EncoderChoice::Hardware),
+        "cpu" | "processeur" => Ok(EncoderChoice::Cpu),
+        _ => Err("encodeur attendu : auto, materiel ou cpu".into()),
     }
 }
 

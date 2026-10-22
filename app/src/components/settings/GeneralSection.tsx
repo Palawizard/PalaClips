@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { type LanguageSetting, errorText, setLanguage, useT } from "../../lib/i18n.ts";
+import { type LanguageSetting, currentLanguage, errorText, setLanguage, t as translate, useT } from "../../lib/i18n.ts";
 import {
   type EngineConfig,
   type Feedback,
@@ -27,6 +27,12 @@ import { Segmented, SettingRow, Switch } from "./Settings.tsx";
 
 const THEMES: Theme[] = ["system", "dark", "light"];
 const LANGUAGES: LanguageSetting[] = ["system", "fr", "en"];
+
+function notesInLanguage(notes: string): string {
+  const heading = translate(`settings.general.languages.${currentLanguage()}`);
+  const block = notes.split(/^## /m).find((part) => part.split(/\r?\n/, 1)[0]?.trim() === heading);
+  return block ? block.slice(block.indexOf("\n") + 1).trim() : notes;
+}
 
 export function DiagnosticRow({ onError }: { onError: (message: string) => void }) {
   const t = useT();
@@ -138,7 +144,7 @@ function UpdateRow({ onError }: { onError: (message: string) => void }) {
             aria-label={t("settings.general.updateNotes")}
             className="mt-1 max-h-48 max-w-[78ch] overflow-y-auto text-[13px] whitespace-pre-line text-ink-2"
           >
-            {available.notes}
+            {notesInLanguage(available.notes)}
           </p>
         </div>
       )}
