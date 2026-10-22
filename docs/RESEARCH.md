@@ -662,3 +662,11 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
 - Repli CPU ailleurs : OBS et Steam utilisent x264 (GPL) ; Xbox Game Bar exige un encodeur
   matériel. — [OBS](https://obsproject.com/kb/hardware-encoding),
   [Microsoft](https://support.microsoft.com/en-gb/windows/what-hardware-do-i-need-to-record-xbox-game-clips-on-windows-10-86acc559-b393-ecbd-7728-f3e725b5ae36)
+
+## Publication d'une release et updater (constaté le 2026-10-22)
+
+- v1.1.0 publiée à 14:22:07 UTC ; la 1.0.0 de Palawi démarrée à 14:22:43 a répondu « à jour »,
+  puis a proposé la 1.1.0 au clic sur « Rechercher » une minute plus tard. `curl` sans connexion
+  sur `releases/latest/download/latest.json` donnait déjà 1.1.0 juste après la publication :
+  la bascule de `releases/latest` n'est pas instantanée pour tous les clients. Après une
+  publication, attendre ~1 min avant de juger l'updater.

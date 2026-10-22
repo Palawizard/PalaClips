@@ -18,9 +18,14 @@
   `app/src/locales/fr.json` / `en.json`, `t()` / `useT()` de `app/src/lib/i18n.ts`, alertes et
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
   refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
-- **v1.1 en cours (2026-10-22)** : encodage par le processeur (feuille de route § 3). Recherche
-  faite (`RESEARCH.md`, ADR-035 proposé, banc `scripts/cpu-encoders.ps1`) ; Palawi a choisi
-  D (`h264_mf` + SVT-AV1, ADR-035). Suite : moteur.
+- **v1.1.0 (2026-10-22)** : encodage par le processeur (ENC-05 révisé, ENC-06, ADR-035,
+  rapport `docs/reports/cpu-encoder.md`). PR #92 (recherche, choix D de Palawi : `h264_mf` +
+  SVT-AV1), #93 (moteur), #94 (app, docs), #95 (version 1.1.0, CHANGELOG, notes), #96 (essai
+  de mise à jour), #97 (`dev` → `main`, accord de Palawi), tag `v1.1.0` sur `main`,
+  **publiée le 2026-10-22** (https://github.com/Palawizard/PalaClips/releases/tag/v1.1.0) avec
+  l'accord de Palawi. Vérifié sans connexion : `latest.json` 1.1.0, installeur, `.sig`,
+  CHANGELOG et page en 200 ; la 1.0.0 installée de Palawi propose la 1.1.0. Reste : test VM T11.
+  Branche : `dev` (PR de handoff `docs/handoff-v1.1`).
 - **Dernière mise à jour :** 2026-10-22
 
 ## Ce qui existe
@@ -192,6 +197,17 @@
   pipeline. PERF-01/02 en working set privé (ADR-023) ; qualité d'ADR-022 vérifiée sur
   Fortnite (`scripts/nvenc-quality.ps1`) ; estimation RAM (RPL-03) = fenêtre du tampon + 7 %
   (`replay::buffer_window`, `estimate_buffer_bytes`).
+- **Encodage par le processeur (v1.1.0, 2026-10-22)** : `encode::video_encoders()` (matériel +
+  `SOFTWARE_ENCODERS` = `h264_mf`, `libsvtav1`, `EncoderInfo.hardware`), `pick_encoder(…,
+  EncoderChoice)`, `VideoSettings::encoder` (`auto` | `hardware` | `cpu`) ; `encode::readback`
+  (`FrameConverter`, `SystemConverter` : Video Processor → NV12 → staging, ou BGRA + swscale) ;
+  `encode::threads` (fils de l'encodeur en priorité basse) ; `capture::pacer::bounded_due` ;
+  `SaturationWatch::cpu_encoder()` → `cpu_encoder_overloaded` ; `EngineError::NoVideoEncoder`.
+  CLI : `--encoder auto|materiel|cpu`, `probe-encoder-threads`, `ffmpeg-info` (matériel/CPU).
+  Scripts : `cpu-encoders.ps1`, `fps-impact.ps1 -Cpu`, `t2-av-sync.ps1 -VideoArgs`,
+  `update-test.ps1 -Tag` (toute version). Front : ligne Encodeur (`ReplaySection.tsx`,
+  `cpuVideo`, `cpuEncoderBytes`), premier lancement, `CPU_ENCODER_CODECS` / `encodesOnGpu`
+  (`ipc.ts`).
 - **Robustesse de la capture (phase 7, 2026-10-20, #64–#67)** : `capture::pacer::emit_due`
   (seule l'échéance la plus récente reçoit une image convertie, les autres répètent la dernière
   `AVFrame` encodée) ; `capture::set_gpu_priority(GpuPriority)` (`D3DKMTSetProcessScheduling
@@ -207,6 +223,11 @@
   Scripts : `app-crash.ps1`, `fps-impact.ps1 -CapturePriority`.
 
 ## Prochaines actions (dans l'ordre)
+
+0. **Clore la v1.1** : quand Palawi rapporte le test VM T11 (`docs/TESTING.md`, installeur de
+   la release publiée copié dans `target\vm\PalaClips_1.1.0_x64-setup.exe`) : remplir la ligne
+   VM de `docs/reports/cpu-encoder.md`, cocher les cases restantes de PLAN v1.1. Un défaut trouvé
+   → branche `fix/…` depuis `dev`, puis 1.1.1 avec son accord (même chemin de release).
 
 1. **Prochaine version** (seulement avec l'accord explicite de Palawi). Pistes : `ROADMAP.md`.
    1. Notes : `pwsh scripts/release-notes.ps1 -Tag dev` liste les PR visibles par l'utilisateur
@@ -247,6 +268,22 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV1, ADR-035.)
 
 ## Points d'attention
+
+- Encodage CPU (v1.1) : `h264_mf` réserve ~720 Mo en 1080p (366 en 720p, 1,1 Go en 1440p)
+  quels que soient ses modes ; SVT-AV1 150 Mo. Décision de Palawi : H.264 reste le défaut CPU,
+  l'estimation de Réglages ajoute la mémoire de l'encodeur (`cpuEncoderBytes`, constantes
+  mesurées). Le VMAF standard est trompé par l'accentuation de `h264_mf` : utiliser
+  `vmaf_v0.6.1neg`. SVT-AV1 écrit ses `Svt[info]` sur stderr (bruit dans la CLI, invisible
+  dans l'app). Les fils de l'encodeur sont repérés par leur module de départ
+  (`encode::threads`) ; `mfh264enc.dll` les crée à la 1re image, pas à l'ouverture.
+- `fps-impact.ps1 -Cpu` : Fortnite plafonné à 225 i/s masque la perte moyenne (1 % bas −3 à
+  −5 %) ; pour une perte de jeu limité par le CPU, limite d'images « Illimité » (Palawi a gardé
+  le passage plafonné le 2026-10-22).
+- Juste après une publication, `releases/latest` peut encore pointer sur l'ancienne version
+  pendant ~1 min : la 1.0.0 de Palawi démarrée 36 s après la publication a dit « à jour », puis
+  a proposé la 1.1.0 au clic suivant sur « Rechercher » (2026-10-22).
+- `update-test.ps1 -Tag test-vX.Y.Z` prend la version dans le tag et met les vraies notes de
+  `docs/release-notes/X.Y.Z.md` dans le flux local.
 
 - Capture et fps du jeu (2026-10-17, `scripts/fps-impact.ps1`, journaux
   `docs/reports/phase-7/`) : aucune perte mesurable dans Fortnite plafonné à ~225 i/s, avec et
@@ -372,4 +409,5 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 | 2026-10-20/21 | 8 | Journaux + diagnostic anonymisé (#71) ; premier lancement en 6 étapes, 27,5 s jusqu'au clip (#72) ; relecture de l'anglais (#73) ; README EN/FR + captures (#74) ; bug Vesktop trouvé par Palawi : applis en plusieurs instances additionnées (#76) ; Windows 11 requis (#77) ; `NotImplemented` supprimé (#78) ; updater + workflow de release, essai 1.0.0 → 1.0.1 et fausse signature automatisés (#75) ; écran par chemin stable (#79) ; REC-02 et `dumpbin` prouvés ; session Windows propre abandonnée ; revue finale | T10 (VM), Minecraft, release avec l'accord de Palawi |
 | 2026-10-21 | 8 | Release v1.0.0 : notes de release automatiques (PR par type), README EN/FR à la structure classique et SEO (description, 20 topics, page d'accueil du dépôt), version 1.0.0 (#87), `dev` → `main` (#88), tag, installeur signé + `latest.json` vérifiés, release publiée ; URL de l'updater corrigée à la main puis automatisée | Suivre les issues ; prochaine version avec l'accord de Palawi |
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
+| 2026-10-22 | v1.1 | Encodage par le processeur : recherche (encodeurs du FFmpeg BtbN, licences, lecture, banc VMAF NEG), choix D de Palawi ; moteur (`h264_mf` + SVT-AV1, Video Processor → NV12 → staging ou swscale, fils en priorité basse, file bornée, découpe précise CPU) ; app (réglage Encodeur, premier lancement, panneau), critique/audit impeccable ; validé : clip CPU, A/V 3,7 ms d'écart avec NVENC, Fortnite 0 % (1 % bas −3 à −5 %), mise à jour 1.0.0 → 1.1.0 ; mémoire de `h264_mf` (~720 Mo en 1080p) gardée par Palawi ; release v1.1.0 publiée (accord de Palawi), vérifiée sans connexion, sa 1.0.0 propose la 1.1.0 | Test VM T11 par Palawi |
 | 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
