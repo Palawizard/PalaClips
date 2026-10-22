@@ -525,11 +525,14 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
       );
       const continueOnCpu = () =>
         estimateReplay(draft)
-          .then((estimate) => {
-            commit({ ...draft, video: cpuVideo(draft.video, estimate.source_height, encoders ?? []) });
+          .then(
+            (estimate) => estimate.source_height,
+            () => Number.POSITIVE_INFINITY,
+          )
+          .then((sourceHeight) => {
+            commit({ ...draft, video: cpuVideo(draft.video, sourceHeight, encoders ?? []) });
             go("screen");
-          })
-          .catch((failure) => setError(errorText(failure)));
+          });
       footer = !blocked && (
         <button
           type="button"
