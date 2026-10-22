@@ -139,7 +139,9 @@ marge.
 **Mon PC n'a pas d'encodeur vidéo sur la carte graphique.** PalaClips encode alors sur le
 processeur : en H.264 par l'encodeur intégré à Windows, ou en AV1 par SVT-AV1. Le premier
 lancement le signale et passe en 1080p à 30 i/s. Compte environ un cœur du processeur en
-1080p30 ; un jeu déjà limité par le processeur perd des fps. Réglages → Replay & qualité →
+1080p30 ; un jeu déjà limité par le processeur perd des fps. L'encodeur H.264 de Windows réserve
+aussi de la mémoire : environ 700 Mo en 1080p (350 Mo en 720p), contre 150 Mo pour l'AV1 ;
+Réglages → Replay & qualité l'ajoute à l'estimation. Réglages → Replay & qualité →
 *Encodeur* permet aussi de forcer la carte graphique ou le processeur. Si une alerte dit que le
 processeur n'arrive pas à suivre, baisse la résolution ou les images par seconde (720p30 est le
 plus léger). Sur une édition « N » de Windows, l'encodeur H.264 de Windows demande le Media

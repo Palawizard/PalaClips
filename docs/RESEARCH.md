@@ -584,6 +584,14 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
   M12 1,15 (2,2) : un doublon n'est pas gratuit sur le CPU.
 - `h264_mf` profil Baseline / Main / High (`-profile:v 66/77/100`) : VMAF NEG identique (89,32)
   et coût identique en 1080p30 → profil par défaut gardé.
+- Mémoire privée au pic (`ffmpeg`, 5 s de `testsrc2` à 30 i/s) : `h264_mf` 366 / 720 / 1 122 Mo
+  en 720p / 1080p / 1440p, SVT-AV1 (`lp=2`) 87 / 150 / 238 Mo. `scenario` (6 valeurs),
+  `rate_control ld_vbr` et une affinité à 4 cœurs ne changent rien pour `h264_mf` (le nombre
+  de fils baisse, pas la mémoire). `probe-memory` 1080p30 : capture + encodeur +773 Mo
+  (`h264_mf`), +153 Mo (SVT-AV1), +104 Mo (NVENC). Panneau de performances de l'app : 470 Mo
+  hors tampon en `h264_mf` contre 73 Mo en NVENC (même session). Choix de Palawi : H.264 reste
+  le codec CPU par défaut ; l'estimation de Réglages ajoute la mémoire de l'encodeur CPU
+  (`h264_mf` ≈ 50 Mo + 315 o/pixel, SVT-AV1 ≈ 25 Mo + 57 o/pixel).
 - Capture CLI de l'écran principal (bureau) en 1080p30 forcée sur le CPU : 300 images en 10 s,
   CFR, 0 en retard ; ~0,4 cœur en H.264 comme en AV1.
 
