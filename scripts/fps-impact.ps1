@@ -5,7 +5,8 @@ param(
     [int]$BitrateMbps = 40,
     [string]$PresentMon = "C:\Program Files (x86)\CapFrameX\PresentMon\PresentMon-2.4.1-x64.exe",
     [string]$Name = "fps-impact",
-    [switch]$CapturePriority
+    [switch]$CapturePriority,
+    [switch]$Cpu
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,7 +44,7 @@ function Measure-Fps([string]$Label, [string[]]$CliArguments) {
     $average = 1000 / ($frameTimes | Measure-Object -Average).Average
     $low = 1000 / ($frameTimes[[int]([math]::Floor($frameTimes.Count * 0.99))])
     $mode = ($rows | Group-Object PresentMode | Sort-Object Count -Descending | Select-Object -First 1).Name
-    $stats = (Get-Content "$csv.log", "$csv.out" -ErrorAction SilentlyContinue | Select-String "arrêtée|images reçues" | ForEach-Object { $_.Line -replace "`e\[[0-9;]*m", '' -replace '^.*arrêtée ', '' }) -join " "
+    $stats = (Get-Content "$csv.log", "$csv.out" -ErrorAction SilentlyContinue | Select-String "arrêtée|images reçues|ne suit pas" | ForEach-Object { $_.Line -replace "`e\[[0-9;]*m", '' -replace '^.*arrêtée ', '' }) -join " "
     Write-Journal ("{0,-30} {1,6:N1} i/s, 1 % bas {2,6:N1} i/s, {3}, {4} présentations, mode « {5} » {6}" -f $Label, $average, $low, $gpuBusy, $rows.Count, $mode, $stats)
     [pscustomobject]@{ Label = $Label; Fps = $average; Low = $low }
 }
@@ -61,8 +62,9 @@ $target = "window:$Game"
 $out = Join-Path $work "capture.mp4"
 $video = @("--bitrate-mbps", "$BitrateMbps", "--seconds", "$($Seconds + 6)", "--out", $out)
 if ($CapturePriority) { $video += "--capture-priority" }
+$cpuVideo = @("--encoder", "cpu", "--fps", "30", "--seconds", "$($Seconds + 6)", "--out", $out)
 try {
-    Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents), priorité GPU $(if ($CapturePriority) { 'capture (temps réel)' } else { 'jeu (normale)' }) ; ne pas bouger"
+    Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents), priorité GPU $(if ($CapturePriority) { 'capture (temps réel)' } else { 'jeu (normale)' }), encodeur $(if ($Cpu) { 'processeur (débit Équilibré)' } else { 'matériel' }) ; ne pas bouger"
     $null = Measure-Fps "mise en route (non comptée)" @()
     $runs = @(
         @{ Label = "fenêtre 60 i/s"; Arguments = (@("capture-video", "--target", $target, "--fps", "60") + $video) }
@@ -71,6 +73,14 @@ try {
         @{ Label = "fenêtre 30 i/s"; Arguments = (@("capture-video", "--target", $target, "--fps", "30") + $video) }
         @{ Label = "WGC seul (sans encodage)"; Arguments = @("probe-wgc", "--target", $target, "--seconds", "$($Seconds + 6)", "--min-interval-ms", "8") }
     )
+    if ($Cpu) {
+        $runs = @(
+            @{ Label = "CPU H.264 1080p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "1080", "--codec", "h264", "--mic", "--game", "--app", $App) + $cpuVideo) }
+            @{ Label = "CPU AV1 1080p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "1080", "--codec", "av1", "--mic", "--game", "--app", $App) + $cpuVideo) }
+            @{ Label = "CPU H.264 720p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "720", "--codec", "h264", "--mic", "--game", "--app", $App) + $cpuVideo) }
+            @{ Label = "GPU NVENC 1080p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "1080", "--fps", "30", "--encoder", "materiel", "--mic", "--game", "--app", $App, "--seconds", "$($Seconds + 6)", "--out", $out)) }
+        )
+    }
     $before = Measure-Fps "sans capture 1" @()
     $losses = @()
     $index = 1
