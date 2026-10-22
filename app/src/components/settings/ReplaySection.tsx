@@ -4,7 +4,7 @@ import { number, t, useT } from "../../lib/i18n.ts";
 import {
   type EngineConfig,
   type GpuPriority,
-  type HardwareEncoder,
+  type EncoderInfo,
   type MemoryStatus,
   type OutputResolution,
   type ReplayEstimate,
@@ -48,7 +48,7 @@ function resolutionKey(resolution: OutputResolution): string {
 export function ReplaySection() {
   const t = useT();
   const { config, loadError } = useConfigDraft();
-  const [encoders, setEncoders] = useState<HardwareEncoder[]>([]);
+  const [encoders, setEncoders] = useState<EncoderInfo[]>([]);
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
   const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
   const estimateRef = useRef<HTMLElement>(null);

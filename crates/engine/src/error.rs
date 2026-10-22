@@ -39,7 +39,12 @@ pub enum EngineError {
     )]
     NoHardwareEncoder,
 
-    #[error("ta carte graphique ne sait pas encoder en {} : choisis un autre codec", .0.label())]
+    #[error(
+        "aucun encodeur vidéo n'a fonctionné, ni sur la carte graphique ni sur le processeur : mets à jour Windows et le pilote de ta carte graphique, puis relance PalaClips"
+    )]
+    NoVideoEncoder,
+
+    #[error("PalaClips ne sait pas encoder en {} sur ce PC avec l'encodeur choisi : choisis un autre codec", .0.label())]
     CodecUnavailable(VideoCodec),
 
     #[error("la capture audio par application nécessite Windows 11 (build 20348 ou plus récent)")]
@@ -154,6 +159,7 @@ impl EngineError {
             Self::ClipNameTaken(name) => Localized::new("clip_name_taken").with("name", name),
             Self::Library(detail) => Localized::new("library_failed").with("detail", detail),
             Self::NoHardwareEncoder => Localized::new("no_hardware_encoder"),
+            Self::NoVideoEncoder => Localized::new("no_video_encoder"),
             Self::CodecUnavailable(codec) => {
                 Localized::new("codec_unavailable").with("codec", codec.label())
             }
@@ -230,6 +236,7 @@ mod tests {
         assert!(!EngineError::CapturedWindowClosed.is_transient());
         assert!(!EngineError::DiskFull.is_transient());
         assert!(!EngineError::NoHardwareEncoder.is_transient());
+        assert!(!EngineError::NoVideoEncoder.is_transient());
     }
 
     #[test]

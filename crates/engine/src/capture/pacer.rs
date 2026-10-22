@@ -50,6 +50,14 @@ impl CfrClock {
     }
 }
 
+pub fn bounded_due(due: Range<i64>, keep: usize) -> (Range<i64>, u64) {
+    let len = (due.end - due.start).max(0) as u64;
+    match len.checked_sub(keep as u64) {
+        Some(dropped) if dropped > 0 => (due.end - keep as i64..due.end, dropped),
+        _ => (due, 0),
+    }
+}
+
 pub fn emit_due<E>(
     due: Range<i64>,
     mut emit: impl FnMut(i64, bool) -> Result<(), E>,
@@ -66,6 +74,19 @@ mod tests {
     use super::*;
 
     const ORIGIN: Hns = Hns(1_000_000_000);
+
+    #[test]
+    fn a_short_backlog_is_kept_whole() {
+        assert_eq!(bounded_due(10..13, 30), (10..13, 0));
+        assert_eq!(bounded_due(10..40, 30), (10..40, 0));
+        assert_eq!(bounded_due(5..5, 30), (5..5, 0));
+    }
+
+    #[test]
+    fn a_long_backlog_keeps_only_the_newest_ticks() {
+        assert_eq!(bounded_due(0..100, 30), (70..100, 70));
+        assert_eq!(bounded_due(0..100, usize::MAX), (0..100, 0));
+    }
 
     #[test]
     fn first_tick_is_due_at_origin() {
