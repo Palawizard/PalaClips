@@ -15,8 +15,8 @@ Un joueur / créateur de contenu sur Windows qui veut :
 
 Plateforme : **Windows 11** (et Windows Server 2022, build 20348 ou plus récent), x64 : la
 capture audio par processus exige le build 20348, que Windows 10 grand public (19045 au plus)
-n'atteint pas. GPU avec encodeur matériel
-(NVIDIA NVENC, AMD AMF ou Intel QSV).
+n'atteint pas. GPU avec encodeur matériel conseillé (NVIDIA NVENC, AMD AMF ou Intel QSV) ;
+sans lui, encodage par le processeur (ENC-06, v1.1).
 
 ## 2. Exigences
 
@@ -44,7 +44,8 @@ n'atteint pas. GPU avec encodeur matériel
 | ENC-02 | Débit réglable (1–200 Mb/s), préréglages « Qualité / Équilibré / Léger » + réglage libre. |
 | ENC-03 | Intervalle d'images clés réglable (défaut 1 s) pour un replay précis. |
 | ENC-04 | Aucune copie CPU des images dans le chemin nominal (texture D3D11 → encodeur). |
-| ENC-05 | Sans encodeur matériel : message clair au démarrage expliquant pourquoi l'app ne peut pas capturer. |
+| ENC-05 | Sans encodeur matériel : le premier lancement et l'app disent que le processeur encodera, avec un avertissement sur la charge en jeu ; message clair au démarrage seulement si aucun encodeur, ni matériel ni processeur, ne fonctionne (v1.1). |
+| ENC-06 | **Encodage par le processeur** (v1.1, ADR-035) : H.264 par l'encodeur logiciel de Windows et AV1 par SVT-AV1, détectés par un encodage de test réel ; réglage « Encodeur » (Automatique = matériel si disponible sinon processeur, Carte graphique, Processeur) ; fils d'encodage en priorité basse et en nombre limité ; même contrat que le matériel (CFR, images clés réglables, file bornée, replay, enregistrement, découpe précise et export) ; 1080p30 par défaut sur le processeur ; alerte quand l'encodage ne suit pas. |
 
 ### 2.3 Audio (AUD)
 

@@ -52,7 +52,8 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
   choisie (Discord, Spotify, navigateur...) et une piste « Jeu » qui suit le jeu au premier
   plan. Chaque piste porte son nom dans le fichier.
 - **Encodage matériel** par la carte graphique (NVIDIA NVENC, AMD AMF, Intel Quick Sync) en
-  H.264, HEVC ou AV1, à fps constant jusqu'à 240 i/s, écrans HDR pris en charge.
+  H.264, HEVC ou AV1, à fps constant jusqu'à 240 i/s, écrans HDR pris en charge. Sans
+  encodeur matériel, **encodage par le processeur** en H.264 ou AV1.
 - **Capture d'un écran ou d'une fenêtre** par Windows Graphics Capture ; une fenêtre est
   retrouvée par le nom de son programme après un redémarrage.
 - **Galerie de clips** avec un lecteur multipiste : écoute piste par piste (muet, solo,
@@ -76,7 +77,9 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 
 - Windows 11. Windows 10 n'est pas pris en charge : la capture du son par appli demande le
   build 20348 ou plus récent.
-- Une carte graphique avec un encodeur vidéo matériel (NVIDIA, AMD ou Intel).
+- Une carte graphique avec un encodeur vidéo matériel (NVIDIA, AMD ou Intel) conseillée. Sans
+  elle, PalaClips encode sur le processeur, ce qui coûte du CPU en jeu (voir les questions
+  fréquentes).
 - WebView2, déjà présent sur Windows 11 (l'installeur le télécharge s'il manque).
 
 ## Installation
@@ -133,6 +136,15 @@ Réglages → Replay & qualité, « Quand le GPU est à fond » → *Priorité �
 vidéo fluide, mais le jeu perd environ 7 % de fps. Limiter les fps du jeu laisse aussi de la
 marge.
 
+**Mon PC n'a pas d'encodeur vidéo sur la carte graphique.** PalaClips encode alors sur le
+processeur : en H.264 par l'encodeur intégré à Windows, ou en AV1 par SVT-AV1. Le premier
+lancement le signale et passe en 1080p à 30 i/s. Compte environ un cœur du processeur en
+1080p30 ; un jeu déjà limité par le processeur perd des fps. Réglages → Replay & qualité →
+*Encodeur* permet aussi de forcer la carte graphique ou le processeur. Si une alerte dit que le
+processeur n'arrive pas à suivre, baisse la résolution ou les images par seconde (720p30 est le
+plus léger). Sur une édition « N » de Windows, l'encodeur H.264 de Windows demande le Media
+Feature Pack (Paramètres → Applications → Fonctionnalités facultatives) ; l'AV1 marche sans.
+
 **Mon micro est aussi dans la piste 1.** C'est le réglage « Aussi dans Mix complet »
 (Réglages → Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
 façon sa propre piste.
@@ -156,7 +168,7 @@ une [issue GitHub](https://github.com/Palawizard/PalaClips/issues).
 
 ## Feuille de route
 
-Compatibilité sur plus de systèmes, encodage par le processeur et autres pistes : voir la
+Compatibilité sur plus de systèmes, marqueurs, compression et autres pistes : voir la
 [feuille de route](ROADMAP.fr.md). Les changements entre versions sont dans les
 [releases](https://github.com/Palawizard/PalaClips/releases) et dans le
 [journal des modifications](CHANGELOG.md).

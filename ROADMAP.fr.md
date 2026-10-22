@@ -30,24 +30,16 @@ pourrait marcher :
   servent.
 - La bordure jaune que Windows dessine autour d'un écran capturé ne pourra probablement pas être
   masquée sous Windows 10.
-- Le test demande une vraie machine Windows 10. Avec l'encodage par le processeur (section
-  suivante), une machine virtuelle sans carte graphique pourrait aussi servir.
+- Le test demande une vraie machine Windows 10. Depuis l'encodage par le processeur (1.1.0),
+  une machine virtuelle sans carte graphique peut aussi servir.
 
-## 3. Encodage par le processeur (CPU)
-
-Aujourd'hui, PalaClips n'encode que par la carte graphique (NVIDIA NVENC, AMD AMF, Intel Quick
-Sync) : un PC sans encodeur matériel ne peut pas enregistrer. Ensuite : un encodeur sur le
-processeur, utilisé quand aucun encodeur matériel ne marche, avec un avertissement clair sur la
-charge qu'il ajoute en jeu. PalaClips livre FFmpeg sous licence LGPL : les candidats sont des
-encodeurs à licence compatible, comme OpenH264 ou SVT-AV1 (x264 et x265 sont sous GPL).
-
-## 4. Marqueurs
+## 3. Marqueurs
 
 - Un raccourci pour poser un marqueur pendant l'enregistrement ou pendant que le replay tourne.
 - Les marqueurs affichés sur la barre du lecteur, pour y aller directement.
 - Export vers DaVinci Resolve en EDL de marqueurs, pour les retrouver sur la timeline de montage.
 
-## 5. Compression à une taille cible
+## 4. Compression à une taille cible
 
 - Une page dédiée dans la barre latérale, et un bouton depuis la galerie et le lecteur.
 - Taille en Mo, avec des préréglages (20 Mo pour Discord, 500 Mo pour Nitro) ou une valeur libre.
@@ -57,15 +49,22 @@ encodeurs à licence compatible, comme OpenH264 ou SVT-AV1 (x264 et x265 sont so
 - La taille finale est vérifiée, et la vidéo est réencodée si elle dépasse la cible.
 - Accepte aussi une vidéo glissée depuis l'explorateur de fichiers.
 
-## 6. Capture et Audio dans la barre latérale
+## 5. Capture et Audio dans la barre latérale
 
 - Capture et Audio deviennent des pages à part entière : État, Galerie, Capture, Audio, Réglages.
 - Un avertissement quand on quitte une page avec un changement pas encore appliqué.
 - Sur l'écran État, la source et les pistes audio ouvrent ces pages au clic.
 
-## 7. Autres pistes, à décider
+## 6. Autres pistes, à décider
 
 - Signer l'installeur (Authenticode) pour que Windows SmartScreen n'avertisse plus.
 - D'autres langues que le français et l'anglais.
 - Vérifications sur la durée : mémoire après des centaines de sauvegardes, sessions de
   plusieurs heures.
+
+## Fait
+
+- **Encodage par le processeur (1.1.0)** : sans encodeur matériel qui marche, PalaClips encode
+  sur le processeur, en H.264 par l'encodeur intégré à Windows ou en AV1 par SVT-AV1, avec un
+  avertissement sur la charge en jeu. Le choix se fait dans Réglages → Replay & qualité →
+  Encodeur.
