@@ -132,7 +132,9 @@ loses about 7% fps. Capping the game's fps also leaves headroom.
 **My PC has no video encoder on the graphics card.** PalaClips then encodes on the processor:
 in H.264 with the encoder built into Windows, or in AV1 with SVT-AV1. The first launch says so
 and switches to 1080p at 30 fps. Expect about one processor core at 1080p30; a game already
-limited by the processor loses fps. The Windows H.264 encoder also reserves memory: about
+limited by the processor loses fps. Measured on an i5-13600KF in Fortnite capped at 225 fps:
+no loss in average fps, but the slowest 1% of frames drop by 3 to 5% (none with the graphics
+card). The Windows H.264 encoder also reserves memory: about
 700 MB at 1080p (350 MB at 720p), against 150 MB for AV1; Settings → Replay & quality adds it
 to the estimate. Settings → Replay & quality → *Encoder* also lets you
 force the graphics card or the processor. If an alert says the processor can't keep up, lower
