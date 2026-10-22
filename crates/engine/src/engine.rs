@@ -18,8 +18,7 @@ use crate::capture::{VideoCapture, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{AudioSettings, CaptureTarget, EngineConfig, ReplayStorage};
 use crate::encode::{
-    HardwareEncoder, Size, hardware_video_encoders, output_size, pick_encoder, try_output,
-    write_thumbnail,
+    EncoderInfo, Size, output_size, pick_encoder, try_output, video_encoders, write_thumbnail,
 };
 use crate::error::{EngineError, Result};
 use crate::events::{
@@ -365,10 +364,16 @@ pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
     })
 }
 
-pub fn try_video_output(config: &EngineConfig, encoders: &[HardwareEncoder]) -> Result<()> {
+pub fn try_video_output(config: &EngineConfig, encoders: &[EncoderInfo]) -> Result<()> {
     let (width, height) = target_size(&config.capture)?;
     let size = output_size(Size::new(width, height), config.video.resolution);
-    try_output(encoders, config.video.codec, size, config.video.fps)
+    try_output(
+        encoders,
+        config.video.codec,
+        config.video.encoder,
+        size,
+        config.video.fps,
+    )
 }
 
 fn current_game(config: &EngineConfig) -> CurrentGame {
@@ -872,8 +877,8 @@ struct PendingRecord {
 
 impl Pipeline {
     fn start(config: &EngineConfig, events: &Sender<EngineEvent>) -> Result<Self> {
-        let encoders = hardware_video_encoders()?;
-        let encoder = pick_encoder(&encoders, config.video.codec)?;
+        let encoders = video_encoders()?;
+        let encoder = pick_encoder(&encoders, config.video.codec, config.video.encoder)?;
         crate::capture::set_gpu_priority(config.video.gpu_priority);
         let capture = VideoCapture::start(&config.capture, &config.video, &encoder.name)?;
         if let Some(alert) = capture.alert() {

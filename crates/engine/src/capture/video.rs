@@ -19,7 +19,7 @@ use windows_capture::settings::{
 };
 
 use super::display::display_color;
-use super::pacer::{CfrClock, emit_due};
+use super::pacer::{CfrClock, bounded_due, emit_due};
 use super::rate::{
     FreezeWatch, RateWatch, SaturationWatch, composition_rate, exclusive_fullscreen,
 };
@@ -27,8 +27,8 @@ use super::targets::{ResolvedTarget, resolve_target};
 use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::{CaptureTarget, VideoSettings};
 use crate::encode::{
-    GpuConverter, HdrToSdr, Size, VideoEncoder, VideoEncoderSettings, check_output_size,
-    frame_texture, output_size, render_texture,
+    FrameConverter, HdrToSdr, Size, VideoEncoder, VideoEncoderSettings, check_output_size,
+    output_size, render_texture,
 };
 use crate::error::{EngineError, Result};
 use crate::events::{EngineEvent, Localized, Severity};
@@ -54,6 +54,7 @@ pub struct VideoCaptureStats {
     pub captured: u64,
     pub duplicated: u64,
     pub late: u64,
+    pub dropped: u64,
     pub resolution_changes: u64,
     pub max_lateness: Hns,
 }
@@ -411,7 +412,7 @@ fn run_encoder(
     } = outputs;
     let device = device.0;
     let output = encoder.size();
-    let mut converter: Option<GpuConverter> = None;
+    let mut converter: Option<FrameConverter> = None;
     let mut previous: Option<AVFrame> = None;
     let mut stats = VideoCaptureStats::default();
     let mut last_count = 0;
@@ -433,7 +434,16 @@ fn run_encoder(
     let mut clock = CfrClock::new(Hns::now(), fps);
     let mut origin = Some(origin);
     let mut rate_watch = RateWatch::new(fps);
-    let mut saturation_watch = SaturationWatch::default();
+    let mut saturation_watch = if encoder.is_hardware() {
+        SaturationWatch::default()
+    } else {
+        SaturationWatch::cpu_encoder()
+    };
+    let backlog = if encoder.is_hardware() {
+        usize::MAX
+    } else {
+        (fps as usize / 2).max(2)
+    };
     let mut freeze_watch = FreezeWatch::default();
     let mut next_rate_check = Hns::now() + RATE_CHECK;
     let mut frames_at_check = 0;
@@ -487,7 +497,12 @@ fn run_encoder(
             }
             emitted_at_check = (stats.frames, stats.late);
         }
-        let due = clock.take_due(now);
+        let (due, dropped) = bounded_due(clock.take_due(now), backlog);
+        if dropped > 0 {
+            stats.dropped += dropped;
+            stats.late += dropped;
+            tracing::debug!(dropped, "encodage en retard : échéances sautées");
+        }
         if due.is_empty() {
             continue;
         }
@@ -507,14 +522,15 @@ fn run_encoder(
                     "changement de résolution de la source"
                 );
             }
-            converter = Some(GpuConverter::new(
+            converter = Some(FrameConverter::new(
                 &device,
                 latest.size,
                 output,
                 clock.fps(),
+                &encoder,
             )?);
         }
-        let Some(converter) = converter.as_ref() else {
+        let Some(converter) = converter.as_mut() else {
             continue;
         };
         let frame_period = Hns(HNS_PER_SECOND / i64::from(clock.fps()));
@@ -533,11 +549,8 @@ fn run_encoder(
                         Some(hdr) => hdr.convert(&latest.texture.0)?,
                         None => latest.texture.0.clone(),
                     };
-                    let frame = encoder.acquire_frame()?;
-                    let (texture, slice) = frame_texture(&frame).ok_or_else(|| {
-                        EngineError::Encoder("image matérielle sans texture".into())
-                    })?;
-                    converter.convert(&source, texture, slice)?;
+                    let mut frame = encoder.acquire_frame()?;
+                    converter.convert(&source, &mut frame)?;
                     previous = Some(frame.clone());
                     frame
                 }
@@ -567,6 +580,7 @@ fn run_encoder(
         captured = stats.captured,
         duplicated = stats.duplicated,
         late = stats.late,
+        dropped = stats.dropped,
         max_lateness_ms = stats.max_lateness.0 as f64 / 10_000.0,
         "capture vidéo arrêtée"
     );
