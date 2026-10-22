@@ -573,7 +573,7 @@ phase 8).
   `--config '{"bundle":{"createUpdaterArtifacts":false}}'`.
 
 ## ADR-035 — Encodeur vidéo sur le processeur (v1.1)
-**Statut :** proposée (2026-10-22), en attente du choix de Palawi.
+**Statut :** acceptée (2026-10-22, choix de Palawi : D).
 - Contexte : sans encodeur matériel, PalaClips ne capture rien (ENC-05) ; c'est le cas des VM
   et de beaucoup de petits PC. La feuille de route (§ 3) prévoit un encodeur sur le processeur.
   On livre FFmpeg LGPL : x264/x265 (GPL) sont exclus. Mesures, licences et compatibilité :
@@ -607,4 +607,6 @@ phase 8).
   (Discord, téléphones, Resolve), AV1 au choix pour la qualité et la taille, aucun téléchargement
   ni licence à afficher, le tout déjà dans nos DLL ; risque brevets au plus bas des options
   H.264. B coûte le plus cher pour la plus mauvaise image.
-- Décision : à prendre par Palawi.
+- Décision : **D**. H.264 sur le CPU par `h264_mf` (MFT logiciel de Windows), AV1 sur le CPU
+  par `libsvtav1` en mode temps réel ; HEVC reste matériel seulement. Détection par encodage de
+  test réel, comme pour NVENC/AMF/QSV.
