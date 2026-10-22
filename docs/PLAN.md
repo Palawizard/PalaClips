@@ -225,3 +225,24 @@ Critères :
 - 🤖 La variante `EngineError::NotImplemented` est supprimée, et
   `grep -rn "todo!\|NotImplemented\|TODO\|FIXME" crates app/src app/src-tauri/src` ne renvoie rien.
 - Tag `v1.0.0`.
+
+## v1.1 — Encodage par le processeur (ENC-05, ENC-06 ; ADR-035)
+
+- [x] Recherche : encodeurs logiciels de notre FFmpeg, licences et brevets, lecture, coût et
+      qualité mesurés (`scripts/cpu-encoders.ps1`) ; choix de Palawi : `h264_mf` + SVT-AV1 (#92).
+- [x] Moteur : détection par encodage réel, réglage `video.encoder`, Video Processor → NV12 →
+      une relecture staging (swscale sans Video Processor), fils en priorité basse, file bornée
+      et alerte `cpu_encoder_overloaded`, découpe précise sur le CPU (#93).
+- [x] App : réglage « Encodeur », avertissement de charge, 1080p30 en passant au processeur,
+      premier lancement sans blocage, panneau de performances, textes FR/EN.
+- [ ] Validation sur la machine de Palawi (isolée) et dans la VM sans GPU, rapport
+      `docs/reports/cpu-encoder.md`.
+- [ ] Release v1.1.0.
+
+Critères :
+- 🤖 `ffmpeg-info` liste `h264_mf` et `libsvtav1` disponibles ; tests unitaires (sélection,
+  conversion sous WARP, file bornée, découpe précise AV1 sur le CPU) verts en CI.
+- 👤 Machine de Palawi, CPU forcé : capture et replay, clip lisible, A/V aligné, CPU de PalaClips
+  mesuré ; `fps-impact.ps1` en CPU forcé dans Fortnite, perte écrite dans le README.
+- 👤 VM Windows 11 sans GPU : installation, premier lancement qui propose le processeur, clip
+  capturé et sauvegardé.
