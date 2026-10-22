@@ -1,0 +1,36 @@
+2026-10-22T13:31:38 cpu-encoders : 10 s de « Rocket League 2026.09.15 - 17.01.55.01.mp4 » à partir de 300 s, 13th Gen Intel(R) Core(TM) i5-13600KF, 20 processeurs logiques
+Débit = préréglage Équilibré (0,18 bit/pixel). cœurs = temps CPU / durée de la vidéo (cœurs occupés en temps réel) ; machine = cœurs / 20 ; vitesse = durée / temps d'encodage sans cadence imposée (< 1 = ne suit pas le temps réel). Décodage de la référence soustrait. Qualité : VMAF NEG (insensible à l'accentuation), PSNR moyen, SSIM.
+
+== 720p30 (1280×720, 30 i/s, 5 Mb/s) — lecture de la référence : 0.28 s CPU
+encodeur                            cœurs  machine  vitesse  VMAF NEG     PSNR     SSIM     Mb/s
+h264_nvenc p4 (référence GPU)        0,00     0,0 %   12,24x     91,59    41,40   0,9666      5,1
+libopenh264 (4 tranches, 4 fils)     0,20     1,0 %   13,49x     83,31    39,47   0,9521      5,0
+h264_mf logiciel (Windows)           0,40     2,0 %   15,39x     87,18    38,04   0,9584      5,2
+libsvtav1 M8 rtc                     2,10    10,5 %    1,20x     91,03    41,05   0,9651      5,0
+libsvtav1 M10 rtc                    0,70     3,5 %    3,03x     88,68    40,51   0,9607      4,9
+libsvtav1 M12 rtc                    0,50     2,5 %    3,77x     86,82    40,03   0,9568      4,9
+libvpx-vp9 realtime 8 (6 fils)       0,50     2,5 %    7,67x     88,17    40,17   0,9591      5,1
+libaom-av1 realtime 8 (6 fils)       1,40     7,0 %    2,11x     89,58    40,81   0,9635      4,9
+
+== 1080p30 (1920×1080, 30 i/s, 11.2 Mb/s) — lecture de la référence : 0.41 s CPU
+encodeur                            cœurs  machine  vitesse  VMAF NEG     PSNR     SSIM     Mb/s
+h264_nvenc p4 (référence GPU)        0,00     0,0 %   11,28x     93,93    43,08   0,9762     11,4
+libopenh264 (4 tranches, 4 fils)     0,40     2,0 %    6,15x     85,80    40,91   0,9646     11,2
+h264_mf logiciel (Windows)           1,00     5,0 %    8,18x     89,32    38,70   0,9691     11,8
+libsvtav1 M8 rtc                     4,30    21,5 %    0,71x     93,34    42,58   0,9747     11,1
+libsvtav1 M10 rtc                    1,70     8,5 %    1,51x     91,05    42,05   0,9713     11,0
+libsvtav1 M12 rtc                    1,30     6,5 %    1,79x     89,45    41,54   0,9683     10,9
+libvpx-vp9 realtime 8 (6 fils)       1,10     5,5 %    3,62x     90,11    41,58   0,9695     10,9
+libaom-av1 realtime 8 (6 fils)       3,20    16,0 %    0,84x     92,65    42,73   0,9755     11,1
+
+== 1080p60 (1920×1080, 60 i/s, 22.4 Mb/s) — lecture de la référence : 0.8 s CPU
+encodeur                            cœurs  machine  vitesse  VMAF NEG     PSNR     SSIM     Mb/s
+h264_nvenc p4 (référence GPU)        0,00     0,0 %    7,50x     95,49    44,86   0,9832     22,5
+libopenh264 (4 tranches, 4 fils)     0,80     4,0 %    3,34x     89,52    42,42   0,9734     22,4
+h264_mf logiciel (Windows)           1,90     9,5 %    4,36x     90,05    39,16   0,9750     22,9
+libsvtav1 M8 rtc                     7,90    39,5 %    0,39x     93,65    43,61   0,9792     21,4
+libsvtav1 M10 rtc                    3,30    16,5 %    0,87x     91,76    43,05   0,9764     21,2
+libsvtav1 M12 rtc                    2,20    11,0 %    1,09x     90,52    42,50   0,9738     21,4
+libvpx-vp9 realtime 8 (6 fils)       2,50    12,5 %    1,60x     92,51    43,19   0,9777     22,5
+libaom-av1 realtime 8 (6 fils)       4,60    23,0 %    0,56x     93,94    44,16   0,9814     22,1
+2026-10-22T13:35:44 fin : vidéos supprimées, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\cpu-encoders-2026-10-22_13-31.txt
