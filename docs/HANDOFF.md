@@ -228,6 +228,10 @@
    la release publiée copié dans `target\vm\PalaClips_1.1.0_x64-setup.exe`) : remplir la ligne
    VM de `docs/reports/cpu-encoder.md`, cocher les cases restantes de PLAN v1.1. Un défaut trouvé
    → branche `fix/…` depuis `dev`, puis 1.1.1 avec son accord (même chemin de release).
+1. **1.1.1 à proposer** : #99 (sur `dev`, pas publié) limite la mémoire de l'encodeur H.264 de
+   Windows (~170 Mo au lieu de ~720 en 1080p) et bascule sur AV1 sans Media Foundation
+   (éditions N/KN). Publier seulement avec l'accord de Palawi, idéalement avec les correctifs du
+   test VM T11 (la VM teste la 1.1.0, sans ces correctifs).
 
 1. **Prochaine version** (seulement avec l'accord explicite de Palawi). Pistes : `ROADMAP.md`.
    1. Notes : `pwsh scripts/release-notes.ps1 -Tag dev` liste les PR visibles par l'utilisateur
