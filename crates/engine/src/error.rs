@@ -35,7 +35,7 @@ pub enum EngineError {
     Library(String),
 
     #[error(
-        "aucun encodeur vidéo matériel n'a fonctionné. PalaClips encode uniquement avec la carte graphique (NVIDIA NVENC, AMD AMF ou Intel Quick Sync) : mets à jour le pilote de ta carte graphique, puis relance PalaClips"
+        "aucun encodeur de la carte graphique n'a fonctionné : mets à jour le pilote de ta carte graphique, ou choisis « Processeur » dans Réglages > Replay & qualité"
     )]
     NoHardwareEncoder,
 

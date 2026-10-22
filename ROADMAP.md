@@ -26,24 +26,16 @@ PalaClips needs Windows 11 today. Windows 10 version 2004 (build 19041) and late
   from build 19041: OBS (with the win-capture-audio plugin) and GStreamer rely on it.
 - The yellow border Windows draws around a captured screen probably cannot be hidden on
   Windows 10.
-- Testing needs a real Windows 10 machine. With processor encoding (next section), a virtual
-  machine without a graphics card could be used too.
+- Testing needs a real Windows 10 machine. Since processor encoding (1.1.0), a virtual
+  machine without a graphics card can be used too.
 
-## 3. Encoding on the processor (CPU)
-
-Today PalaClips only encodes on the graphics card (NVIDIA NVENC, AMD AMF, Intel Quick Sync):
-a PC without a hardware encoder cannot record. Next: a processor encoder, used when no
-hardware encoder works, with a clear warning about the CPU load it adds in game. PalaClips
-ships FFmpeg under the LGPL, so the candidates are encoders with a compatible license, such
-as OpenH264 or SVT-AV1 (x264 and x265 are GPL).
-
-## 4. Markers
+## 3. Markers
 
 - A hotkey to drop a marker while recording or while the replay is running.
 - Markers shown on the player's timeline, to jump straight to them.
 - Export to DaVinci Resolve as a marker EDL, so they land on the editing timeline.
 
-## 5. Compress to a target size
+## 4. Compress to a target size
 
 - A dedicated page in the sidebar, plus a button from the gallery and the player.
 - Size in MB, with presets (20 MB for Discord, 500 MB for Nitro) or a free value.
@@ -52,14 +44,20 @@ as OpenH264 or SVT-AV1 (x264 and x265 are GPL).
 - The final size is checked, and the video is encoded again if it is over the target.
 - Also accepts a video dragged in from File Explorer.
 
-## 6. Capture and Audio in the sidebar
+## 5. Capture and Audio in the sidebar
 
 - Capture and Audio become pages of their own: Status, Gallery, Capture, Audio, Settings.
 - A warning when leaving a page with a change that is not applied yet.
 - On the Status screen, the source and the audio tracks open these pages when clicked.
 
-## 7. Other leads, to be decided
+## 6. Other leads, to be decided
 
 - Signing the installer (Authenticode) so Windows SmartScreen no longer warns.
 - More interface languages than French and English.
 - Long-run checks: memory over hundreds of saves and multi-hour sessions.
+
+## Done
+
+- **Encoding on the processor (1.1.0)**: when no hardware encoder works, PalaClips encodes on
+  the processor, in H.264 with the encoder built into Windows or in AV1 with SVT-AV1, with a
+  warning about the load in game. Choose it in Settings → Replay & quality → Encoder.

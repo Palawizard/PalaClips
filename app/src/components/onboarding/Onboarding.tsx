@@ -11,6 +11,7 @@ import {
   estimateReplay,
   finishOnboarding,
   getConfig,
+  encodesOnGpu,
   getHotkeys,
   listAudioDevices,
   listCaptureTargets,
@@ -26,7 +27,7 @@ import { ClipCard } from "../RecentClips.tsx";
 import { CaptureSection } from "../settings/CaptureSection.tsx";
 import { DiagnosticRow } from "../settings/GeneralSection.tsx";
 import { HotkeysSection, Keys } from "../settings/HotkeysSection.tsx";
-import { durationLabel } from "../settings/ReplaySection.tsx";
+import { cpuVideo, durationLabel } from "../settings/ReplaySection.tsx";
 import { Select } from "../settings/Settings.tsx";
 import { LoadError, useConfigDraft } from "../settings/configDraft.tsx";
 
@@ -168,7 +169,10 @@ function Checks({
 }) {
   const t = useT();
   const working = encoders.filter((encoder) => !encoder.failure);
-  const codecs = [...new Set(working.map((encoder) => t(`codecs.${encoder.codec}`)))].join(" · ");
+  const onGpu = encodesOnGpu(encoders, "auto");
+  const codecs = [
+    ...new Set(working.filter((encoder) => encoder.hardware === onGpu).map((encoder) => t(`codecs.${encoder.codec}`))),
+  ].join(" · ");
   const unknown = checksError ?? t("onboarding.checks.pending");
   return (
     <>
@@ -187,9 +191,13 @@ function Checks({
           }
         />
         <CheckRow
-          state={working.length > 0 ? "ok" : "warn"}
+          state={working.length > 0 && onGpu ? "ok" : "warn"}
           label={t("onboarding.checks.encoder")}
-          detail={working.length > 0 ? t("onboarding.checks.encoderOk", { codecs }) : t("onboarding.checks.encoderMissing")}
+          detail={
+            working.length === 0
+              ? t("onboarding.checks.encoderMissing")
+              : t(onGpu ? "onboarding.checks.encoderOk" : "onboarding.checks.encoderCpu", { codecs })
+          }
         />
         <CheckRow
           state={!checks ? "warn" : "ok"}
@@ -345,7 +353,7 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
   useEffect(() => {
     if (screen !== "loading" || encoders === null || (checks === null && checksError === null)) return;
     const blocked = !encoders.some((encoder) => !encoder.failure);
-    const trouble = blocked || checksError !== null || !checks?.windows_supported || !checks?.clips_dir_writable;
+    const trouble = blocked || !encodesOnGpu(encoders, "auto") || checksError !== null || !checks?.windows_supported || !checks?.clips_dir_writable;
     setScreen(trouble ? "checks" : "screen");
   }, [screen, encoders, checks, checksError]);
 
@@ -515,8 +523,22 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
           onError={setError}
         />
       );
+      const continueOnCpu = () =>
+        estimateReplay(draft)
+          .then(
+            (estimate) => estimate.source_height,
+            () => Number.POSITIVE_INFINITY,
+          )
+          .then((sourceHeight) => {
+            commit({ ...draft, video: cpuVideo(draft.video, sourceHeight, encoders ?? []) });
+            go("screen");
+          });
       footer = !blocked && (
-        <button type="button" onClick={() => go("screen")} className={PRIMARY}>
+        <button
+          type="button"
+          onClick={encodesOnGpu(encoders ?? [], "auto") ? () => go("screen") : continueOnCpu}
+          className={PRIMARY}
+        >
           {t("onboarding.checks.continueAnyway")}
         </button>
       );

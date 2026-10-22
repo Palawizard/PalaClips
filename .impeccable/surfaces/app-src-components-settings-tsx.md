@@ -85,3 +85,18 @@ plaques `kbd`) ; l'état « Appuie sur la combinaison… » est le seul moment a
 - Calibrage (AUD-11) : « Calibrer » en haut → encart d'avertissement en ligne (écran
   principal ~20 s, bips, rappel Voicemeeter/LightHost) → plein écran flash + bip → valeurs
   proposées par piste + Appliquer ; « Recalibrer » toujours visible. Deuxième PR.
+
+## Encodeur CPU, brief confirmé (shape, 2026-10-22, v1.1)
+
+- Replay & qualité : ligne « Encodeur » au-dessus de « Codec », segments Automatique · Carte
+  graphique · Processeur ; un segment est grisé si aucun encodeur de ce type ne marche sur ce PC.
+- Ligne d'aide = ce qui encode réellement ; quand c'est le processeur, en ambre : charge en jeu
+  (environ 1 cœur en 1080p30, le jeu peut perdre des fps).
+- Passer à « Processeur » ramène les i/s à 30 et la résolution à 1080p si elles étaient plus
+  hautes, et HEVC à H.264 ; application par la barre de confirmation habituelle (RPL-07).
+- Codecs grisés selon l'encodeur effectif (« Indisponible sur le processeur : HEVC. »).
+- Premier lancement sans encodeur matériel : la vérification « Encodeur vidéo » passe en ambre,
+  dit que le processeur encodera avec le même avertissement, « Continuer » au lieu du blocage,
+  1080p30 appliqué. Blocage seulement si rien ne marche (`no_video_encoder`).
+- Panneau de performances : « Processeur · H.264 » / « Processeur · AV1 » au lieu du nom
+  FFmpeg de l'encodeur.

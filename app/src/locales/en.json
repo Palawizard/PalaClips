@@ -150,7 +150,8 @@
       "other": "{count} in the last minute"
     },
     "lag": "max lag {value}",
-    "noEncoder": "No hardware encoder"
+    "noEncoder": "No video encoder",
+    "cpuEncoder": "Processor · {codec}"
   },
   "roster": {
     "title": "Audio tracks",
@@ -289,6 +290,17 @@
       "disk": "Disk",
       "codec": "Codec",
       "codecUnavailable": "Not available on this graphics card: {codecs}.",
+      "codecUnavailableCpu": "Not available on the processor: {codecs}.",
+      "encoder": "Encoder",
+      "encoders": {
+        "auto": "Automatic",
+        "hardware": "Graphics card",
+        "cpu": "Processor"
+      },
+      "encoderGpu": "Encoding on the graphics card.",
+      "encoderMemory": "encoder ≈ {size} in RAM",
+      "encoderCpuNoGpu": "No encoder on the graphics card: the processor encodes the video. In game, expect about 1 core at 1080p30.",
+      "encoderCpu": "Encoding on the processor: in game, expect about 1 core at 1080p30, and the game may lose fps.",
       "quality": "Quality",
       "qualities": {
         "quality": "Quality",
@@ -423,7 +435,7 @@
   "messages": {
     "diagnostic_failed": "couldn't export diagnostics: {detail}",
     "invalid_config": "invalid setting: {detail}",
-    "no_hardware_encoder": "no hardware video encoder worked. PalaClips only encodes on the graphics card (NVIDIA NVENC, AMD AMF or Intel Quick Sync): update your graphics driver, then restart PalaClips",
+    "no_hardware_encoder": "no graphics card encoder worked: update your graphics driver, or pick “Processor” in Settings → Replay & quality",
     "no_video_encoder": "no video encoder worked, neither on the graphics card nor on the processor: update Windows and your graphics driver, then restart PalaClips",
     "codec_unavailable": "PalaClips can't encode {codec} on this PC with the chosen encoder: pick another codec",
     "unsupported_windows_build": "per-app audio capture needs Windows 11 (build 20348 or later): update Windows",
@@ -597,7 +609,8 @@
       "windowsUnknown": "Couldn't detect the Windows version.",
       "encoder": "Video encoder",
       "encoderOk": "{codecs} on the graphics card",
-      "encoderMissing": "No hardware encoder worked. Update your graphics driver, then restart PalaClips.",
+      "encoderMissing": "No encoder worked, neither on the graphics card nor on the processor. Update Windows and your graphics driver, then restart PalaClips.",
+      "encoderCpu": "No encoder on the graphics card: the processor will encode the video ({codecs}). In game, expect about 1 core at 1080p30, and the game may lose fps. To encode on the graphics card, update its driver.",
       "webview": "WebView2",
       "webviewVersion": "Version {version}",
       "folder": "Clips folder",
