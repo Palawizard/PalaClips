@@ -19,8 +19,8 @@
   erreurs Rust en `Localized { code, params }`, langue dans Réglages > Général, `npm test`
   refuse les chaînes en dur. Anglais vu par Palawi dans l'app isolée.
 - **v1.1 en cours (2026-10-22)** : encodage par le processeur (feuille de route § 3). Recherche
-  faite (`RESEARCH.md`, ADR-035 proposé, banc `scripts/cpu-encoders.ps1`) ; choix de
-  l'encodeur en attente de Palawi.
+  faite (`RESEARCH.md`, ADR-035 proposé, banc `scripts/cpu-encoders.ps1`) ; Palawi a choisi
+  D (`h264_mf` + SVT-AV1, ADR-035). Suite : moteur.
 - **Dernière mise à jour :** 2026-10-22
 
 ## Ce qui existe
@@ -244,18 +244,7 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 
 ## Décisions en attente de Palawi
 
-- **Encodeur CPU (v1.1, ADR-035, posée le 2026-10-22)** : quel encodeur logiciel ? Mesures,
-  licences et lecture dans `RESEARCH.md` § Encodage par le processeur.
-  - A. SVT-AV1 seul : libre de redevances, meilleure image, 1,3–1,7 cœur en 1080p30 ; AV1 mal lu
-    sur les iPhone d'avant le 15 Pro.
-  - B. OpenH264 par le binaire de Cisco téléchargé : H.264, le moins cher en CPU mais la moins
-    bonne image ; FFmpeg à construire nous-mêmes (ou interface Rust), téléchargement,
-    interrupteur, mention Cisco ; usage personnel non rémunéré seulement.
-  - C. Encodeur H.264 de Windows (`h264_mf`) : H.264, rien à télécharger, 1,0 cœur en 1080p30 ;
-    absent des éditions N sans Media Feature Pack, couverture des brevets par Windows sans écrit
-    de Microsoft.
-  - D. (recommandé) C pour H.264 + A pour AV1, selon le réglage Codec ; H.264 par défaut.
-  Aucun code moteur avant le choix.
+Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV1, ADR-035.)
 
 ## Points d'attention
 
