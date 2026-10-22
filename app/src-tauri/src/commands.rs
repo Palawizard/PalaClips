@@ -2,7 +2,7 @@ use palaclips_engine::EngineConfig;
 use palaclips_engine::calibrate::Calibration;
 use palaclips_engine::capture::{PreviewCapture, TargetInfo, list_targets};
 use palaclips_engine::config::CaptureTarget;
-use palaclips_engine::encode::{HardwareEncoder, hardware_video_encoders};
+use palaclips_engine::encode::{EncoderInfo, video_encoders};
 use palaclips_engine::engine::ReplayEstimate;
 use palaclips_engine::events::Localized;
 use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
@@ -570,15 +570,15 @@ pub fn set_performance_panel(slot: State<'_, EngineSlot>, open: bool) {
 }
 
 #[tauri::command]
-pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<HardwareEncoder>, Localized> {
+pub async fn list_encoders(slot: State<'_, EngineSlot>) -> Result<Vec<EncoderInfo>, Localized> {
     cached_encoders(&slot)
 }
 
-pub(crate) fn cached_encoders(slot: &EngineSlot) -> Result<Vec<HardwareEncoder>, Localized> {
+pub(crate) fn cached_encoders(slot: &EngineSlot) -> Result<Vec<EncoderInfo>, Localized> {
     if let Some(encoders) = slot.encoders.lock().ok().and_then(|cache| cache.clone()) {
         return Ok(encoders);
     }
-    let encoders = hardware_video_encoders()?;
+    let encoders = video_encoders()?;
     if let Ok(mut cache) = slot.encoders.lock() {
         *cache = Some(encoders.clone());
     }

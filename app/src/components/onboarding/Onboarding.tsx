@@ -5,7 +5,7 @@ import { errorText, message, useT } from "../../lib/i18n.ts";
 import {
   type AudioDevice,
   type EngineConfig,
-  type HardwareEncoder,
+  type EncoderInfo,
   type OnboardingChecks,
   type TargetInfo,
   estimateReplay,
@@ -162,7 +162,7 @@ function Checks({
 }: {
   checks: OnboardingChecks | null;
   checksError: string | null;
-  encoders: HardwareEncoder[];
+  encoders: EncoderInfo[];
   clipsDir: string;
   onError: (message: string) => void;
 }) {
@@ -314,7 +314,7 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
   const [editing, setEditing] = useState(false);
   const [checks, setChecks] = useState<OnboardingChecks | null>(null);
   const [checksError, setChecksError] = useState<string | null>(null);
-  const [encoders, setEncoders] = useState<HardwareEncoder[] | null>(null);
+  const [encoders, setEncoders] = useState<EncoderInfo[] | null>(null);
   const [inputs, setInputs] = useState<AudioDevice[]>([]);
   const [targets, setTargets] = useState<TargetInfo[]>([]);
   const [estimates, setEstimates] = useState<Record<number, number>>({});

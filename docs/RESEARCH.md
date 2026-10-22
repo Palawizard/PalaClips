@@ -571,6 +571,22 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
 - Coût du décodage de la référence soustrait ; conversion BGRA → NV12 non comptée (elle sera
   sur le GPU, ou swscale sans Video Processor).
 
+### Fils, doublons et profil (mesuré le 2026-10-22)
+
+- `palaclips-cli probe-encoder-threads` : `h264_mf` crée 16 fils à la **première image** (pas à
+  l'ouverture), point de départ `mfh264enc.dll` ; `libsvtav1` en crée 63 à l'**ouverture**
+  (défaut sur 20 processeurs logiques), point de départ `avcodec-62.dll` (winpthreads lié dans la
+  DLL). Tous en priorité normale ; aucun fil du système (`ntdll`, `combase`) n'est propre à
+  l'encodeur.
+- SVT-AV1 M12 rtc 1080p30, `lp` 1 / 2 / 3 / défaut : 0,67 / 0,82 / 0,92 / 0,97 cœur,
+  1,50× / 1,84× / 2,22× / 2,07× le temps réel.
+- Image figée répétée 10 s en 1080p60 : `h264_mf` 1,36 cœur (1,9 avec du mouvement), SVT-AV1
+  M12 1,15 (2,2) : un doublon n'est pas gratuit sur le CPU.
+- `h264_mf` profil Baseline / Main / High (`-profile:v 66/77/100`) : VMAF NEG identique (89,32)
+  et coût identique en 1080p30 → profil par défaut gardé.
+- Capture CLI de l'écran principal (bureau) en 1080p30 forcée sur le CPU : 300 images en 10 s,
+  CFR, 0 en retard ; ~0,4 cœur en H.264 comme en AV1.
+
 ### Licences et brevets (recherche du 2026-10-22)
 
 - **OpenH264** : Cisco ne paie les redevances MPEG LA que pour **son** binaire, téléchargé

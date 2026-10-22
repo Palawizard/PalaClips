@@ -8,6 +8,7 @@ use windows::Win32::UI::Shell::{QUNS_RUNNING_D3D_FULL_SCREEN, SHQueryUserNotific
 use crate::clock::Hns;
 
 use crate::events::{
+    ALERT_CPU_ENCODER_OVERLOADED as CPU_ENCODER_OVERLOADED,
     ALERT_EXCLUSIVE_FULLSCREEN as EXCLUSIVE_FULLSCREEN, ALERT_GPU_SATURATED as GPU_SATURATED,
     ALERT_RATE_LIMITED as RATE_LIMITED, EngineEvent, Localized, Severity,
 };
@@ -148,25 +149,44 @@ impl RateWatch {
 #[derive(Debug, Default)]
 pub struct SaturationWatch {
     sustained: Sustained,
+    cpu_encoder: bool,
 }
 
 impl SaturationWatch {
+    pub fn cpu_encoder() -> Self {
+        Self {
+            cpu_encoder: true,
+            ..Self::default()
+        }
+    }
+
     pub fn observe(&mut self, now: Hns, frames: u64, late: u64) -> Option<EngineEvent> {
         let starved = (frames > 0).then_some(late as f64 >= frames as f64 * LATE_SHARE);
+        let code = if self.cpu_encoder {
+            CPU_ENCODER_OVERLOADED
+        } else {
+            GPU_SATURATED
+        };
         match self.sustained.observe(now, starved)? {
+            true if self.cpu_encoder => {
+                tracing::warn!(frames, late, "l'encodage par le processeur ne suit pas");
+                Some(EngineEvent::Alert {
+                    severity: Severity::Warning,
+                    text: Localized::new(code),
+                    message: "Ton processeur n'arrive pas à encoder la vidéo à temps : des images sont répétées ou sautées. Baisse la résolution ou les images par seconde dans Réglages > Replay & qualité (720p30 est le plus léger).".into(),
+                })
+            }
             true => {
                 tracing::warn!(frames, late, "capture en retard : GPU saturé");
                 Some(EngineEvent::Alert {
                     severity: Severity::Warning,
-                    text: Localized::new(GPU_SATURATED),
+                    text: Localized::new(code),
                     message: "Ton GPU est à fond : PalaClips n'obtient plus son tour et la vidéo saute. Limite les fps du jeu pour laisser un peu de marge, ou choisis « Priorité à la capture » dans Réglages > Replay & qualité.".into(),
                 })
             }
             false => {
                 tracing::info!("capture de nouveau à l'heure");
-                Some(EngineEvent::AlertCleared {
-                    code: GPU_SATURATED,
-                })
+                Some(EngineEvent::AlertCleared { code })
             }
         }
     }
@@ -366,6 +386,20 @@ mod tests {
                 }
             )
         ));
+    }
+
+    #[test]
+    fn a_cpu_encoder_that_falls_behind_raises_its_own_alert() {
+        let mut watch = SaturationWatch::cpu_encoder();
+        let codes: Vec<_> = (0..30)
+            .filter_map(|at| watch.observe(seconds(at), 30, if at < 15 { 20 } else { 0 }))
+            .map(|event| match event {
+                EngineEvent::Alert { text, .. } => text.code,
+                EngineEvent::AlertCleared { code } => code,
+                _ => "",
+            })
+            .collect();
+        assert_eq!(codes, [CPU_ENCODER_OVERLOADED, CPU_ENCODER_OVERLOADED]);
     }
 
     #[test]
