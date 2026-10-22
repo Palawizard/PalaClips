@@ -610,3 +610,16 @@ phase 8).
 - Décision : **D**. H.264 sur le CPU par `h264_mf` (MFT logiciel de Windows), AV1 sur le CPU
   par `libsvtav1` en mode temps réel ; HEVC reste matériel seulement. Détection par encodage de
   test réel, comme pour NVENC/AMF/QSV.
+- Mise en œuvre (2026-10-22) :
+  - Réglage `video.encoder` = `auto` (matériel dès qu'un encodeur matériel marche, sinon CPU),
+    `hardware` ou `cpu`. Erreur `no_video_encoder` quand rien ne marche ; `no_hardware_encoder`
+    seulement si l'utilisateur a forcé le matériel.
+  - File bornée : une image dupliquée coûte 50 à 70 % d'une vraie image sur le CPU (mesuré),
+    dupliquer ne suffit donc pas à rattraper un retard. Au-delà d'une demi-seconde de ticks en
+    retard, les plus anciens sont sautés : trou dans les PTS (le lecteur garde l'image
+    précédente), synchro A/V intacte, alerte `cpu_encoder_overloaded`. Le CFR strict n'est
+    rompu que quand le processeur ne suit plus, ce que l'alerte dit.
+  - Priorité : fils de l'encodeur repérés par leur point de départ (`mfh264enc.dll` : 16 fils à
+    la première image ; `avcodec-*.dll` : SVT-AV1 à l'ouverture) et passés « en dessous de la
+    normale ». SVT-AV1 en `lp=2` (0,82 cœur contre 0,97 par défaut en 1080p30, 1,84× le temps
+    réel). Le nombre de fils de `h264_mf` n'est pas réglable par FFmpeg.
