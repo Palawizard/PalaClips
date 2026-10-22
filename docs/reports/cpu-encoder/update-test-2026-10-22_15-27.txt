@@ -1,0 +1,21 @@
+données de Palawi avant : 593 entrées (taille et date de chaque fichier)
+2026-10-22T15:27:49 update-test : installeur PalaClips_1.1.0_x64-setup.exe du brouillon test-v1.1.0, serveur local 127.0.0.1:8765
+build 1.0.0 :        Built application at: C:\Projets-NAS-Sync\Code\apps\PalaClips\target\release\palaclips-app.exe
+signature fausse : avant : Mises à jourVersion 1.1.1 disponible (tu as la 1.0.0).
+signature fausse : proposé : Mises à jourVersion 1.1.1 disponible (tu as la 1.0.0).
+signature fausse : notes affichées : true
+signature fausse : refus : mise à jour impossible : The signature was created with a different key than the one provided
+signature fausse : après : Mises à jourVersion 1.1.1 disponible (tu as la 1.0.0).
+signature fausse refusée, app restée en 1.0.0 : True
+bonne signature : avant : Mises à jourVersion 1.1.0 disponible (tu as la 1.0.0).
+bonne signature : proposé : Mises à jourVersion 1.1.0 disponible (tu as la 1.0.0).
+bonne signature : notes affichées : true
+bonne signature : installation lancée
+relance automatique par l'installeur (désactivée en mode isolé) : 0 processus
+app installée en 1.1.0 dans C:\Users\super\AppData\Local\PalaClips, relancée en mode isolé
+après mise à jour : avant : Mises à jourVersion 1.1.0
+journal isolé : 2 démarrage(s) dans target\test-config (l'app 1.0.0 puis l'app installée ; attendu 2)
+désinstallation : dossier vidé (il existait vide avant l'essai), clé supprimée, raccourci supprimé
+données de Palawi après : 593 entrées identiques
+RÉSULTAT : mise à jour 1.0.0 → 1.1.0 installée, fausse signature refusée
+2026-10-22T15:33:26 fin : apps arrêtées, serveur arrêté, dossiers de test supprimés ; supprimer ensuite le brouillon : gh release delete test-v1.1.0 --cleanup-tag -y

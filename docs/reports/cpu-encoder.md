@@ -25,6 +25,7 @@ de `h264_mf` (décision de Palawi, ci-dessous).
 | A/V aligné | ✅ décalage de la piste mix 52,5 ms (NVENC) contre 48,8 ms (CPU) sur le même banc : écart 3,7 ms < 1 image (33 ms) ; les ~50 ms viennent de la chaîne Voicemeeter | `t2-av-sync.ps1 -CalibrateOnly -VideoArgs …` |
 | CPU de PalaClips | ✅ 0,36 cœur = 1,8 % de la machine (bureau, 1080p30 H.264, replay armé) ; panneau Performances 1,64 % (max 3,4 %) | app isolée |
 | Perte de fps dans Fortnite, CPU forcé | ✅ mesurée : 0 % en moyenne (jeu plafonné à 225 i/s, GPU 24–34 %) ; 1 % bas −5 % (H.264 1080p30), −4 % (AV1 1080p30), −3 % (H.264 720p30), 0 % (NVENC 1080p30) ; 0 image en retard ; écrite dans le README | `fps-impact-2026-10-22_14-49.txt` |
+| Mise à jour 1.0.0 → 1.1.0 (serveur local, installeur signé du brouillon `test-v1.1.0`) | ✅ fausse signature refusée, 1.1.0 installée, notes affichées, données de Palawi identiques (593 fichiers) ; `latest.json` du brouillon : version 1.1.0, signature, lien au format public `releases/download/<tag>/…` | `update-test-2026-10-22_15-27.txt` |
 | VM Windows 11 sans GPU : capture et sauvegarde d'un clip par le CPU | ⏳ protocole T11 (`TESTING.md`), installeur de test `test-v1.1.0` | à rapporter par Palawi |
 
 ## Mémoire
