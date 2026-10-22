@@ -26,11 +26,15 @@ de `h264_mf` (décision de Palawi, ci-dessous).
 | CPU de PalaClips | ✅ 0,36 cœur = 1,8 % de la machine (bureau, 1080p30 H.264, replay armé) ; panneau Performances 1,64 % (max 3,4 %) | app isolée |
 | Perte de fps dans Fortnite, CPU forcé | ✅ mesurée : 0 % en moyenne (jeu plafonné à 225 i/s, GPU 24–34 %) ; 1 % bas −5 % (H.264 1080p30), −4 % (AV1 1080p30), −3 % (H.264 720p30), 0 % (NVENC 1080p30) ; 0 image en retard ; écrite dans le README | `fps-impact-2026-10-22_14-49.txt` |
 | Mise à jour 1.0.0 → 1.1.0 (serveur local, installeur signé du brouillon `test-v1.1.0`) | ✅ fausse signature refusée, 1.1.0 installée, notes affichées, données de Palawi identiques (593 fichiers) ; `latest.json` du brouillon : version 1.1.0, signature, lien au format public `releases/download/<tag>/…` | `update-test-2026-10-22_15-27.txt` |
-| VM Windows 11 sans GPU : capture et sauvegarde d'un clip par le CPU | ⏳ protocole T11 (`TESTING.md`), installeur de test `test-v1.1.0` | à rapporter par Palawi |
+| VM Windows 11 sans GPU : capture et sauvegarde d'un clip par le CPU | ⏳ protocole T11 (`TESTING.md`), installeur de la release v1.1.0 | à rapporter par Palawi |
 
 ## Mémoire
 
-`h264_mf` réserve beaucoup de mémoire, quels que soient ses modes et son nombre de fils : 366 /
+**Corrigé le 2026-10-22 (après la 1.1.0)** : la mémoire vient du nombre de fils de `h264_mf`
+(16 images en vol). Limité à 2 fils jusqu'à 1080p60 : capture + encodeur +244 Mo au lieu de
++773 en 1080p30, moins de CPU, même VMAF (RESEARCH). Mesures d'origine :
+
+`h264_mf` réserve beaucoup de mémoire, quels que soient ses modes et son affinité : 366 /
 720 / 1 122 Mo en 720p / 1080p / 1440p (SVT-AV1 : 87 / 150 / 238 Mo). Dans l'app, panneau
 Performances : 470 Mo hors tampon en `h264_mf` contre 73 Mo en NVENC. Décision de Palawi :
 H.264 reste le défaut sur le CPU ; Réglages → Replay & qualité ajoute « encodeur ≈ X Mo en RAM »

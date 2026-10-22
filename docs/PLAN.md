@@ -237,7 +237,7 @@ Critères :
       premier lancement sans blocage, panneau de performances, textes FR/EN.
 - [ ] Validation sur la machine de Palawi (isolée) et dans la VM sans GPU, rapport
       `docs/reports/cpu-encoder.md`.
-- [ ] Release v1.1.0.
+- [x] Release v1.1.0 (publiée le 2026-10-22, #97).
 
 Critères :
 - 🤖 `ffmpeg-info` liste `h264_mf` et `libsvtav1` disponibles ; tests unitaires (sélection,

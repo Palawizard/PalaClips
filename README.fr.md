@@ -141,13 +141,17 @@ processeur : en H.264 par l'encodeur intégré à Windows, ou en AV1 par SVT-AV1
 lancement le signale et passe en 1080p à 30 i/s. Compte environ un cœur du processeur en
 1080p30 ; un jeu déjà limité par le processeur perd des fps. Mesuré sur un i5-13600KF dans
 Fortnite plafonné à 225 i/s : aucune perte de fps moyenne, mais les 1 % d'images les plus lentes
-baissent de 3 à 5 % (rien avec la carte graphique). L'encodeur H.264 de Windows réserve
-aussi de la mémoire : environ 700 Mo en 1080p (350 Mo en 720p), contre 150 Mo pour l'AV1 ;
-Réglages → Replay & qualité l'ajoute à l'estimation. Réglages → Replay & qualité →
+baissent de 3 à 5 % (rien avec la carte graphique). L'encodeur prend aussi de la mémoire :
+environ 170 Mo en 1080p (90 Mo en 720p) en H.264, 150 Mo en AV1 ; Réglages → Replay & qualité
+l'ajoute à l'estimation. Réglages → Replay & qualité →
 *Encodeur* permet aussi de forcer la carte graphique ou le processeur. Si une alerte dit que le
 processeur n'arrive pas à suivre, baisse la résolution ou les images par seconde (720p30 est le
-plus léger). Sur une édition « N » de Windows, l'encodeur H.264 de Windows demande le Media
-Feature Pack (Paramètres → Applications → Fonctionnalités facultatives) ; l'AV1 marche sans.
+plus léger). 
+
+**Windows en édition « N » ou « KN » (Europe, Corée).** Ces éditions n'ont pas Media Foundation :
+l'encodeur H.264 de Windows manque tant que le Media Feature Pack n'est pas installé
+(Paramètres → Applications → Fonctionnalités facultatives). Sans lui, PalaClips passe tout seul
+en AV1 sur le processeur ; installe le pack pour retrouver le H.264.
 
 **Mon micro est aussi dans la piste 1.** C'est le réglage « Aussi dans Mix complet »
 (Réglages → Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
