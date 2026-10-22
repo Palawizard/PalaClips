@@ -1,7 +1,13 @@
 import { ChevronDown } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { number, useT } from "../lib/i18n.ts";
-import { type ActiveAlert, type PerformanceStats, onEngineEvent, setPerformancePanel } from "../lib/ipc.ts";
+import {
+  type ActiveAlert,
+  CPU_ENCODER_CODECS,
+  type PerformanceStats,
+  onEngineEvent,
+  setPerformancePanel,
+} from "../lib/ipc.ts";
 import type { ReplayPhase } from "../lib/useEngine.ts";
 
 const OPEN_KEY = "palaclips.performance.open";
@@ -23,8 +29,9 @@ function saveOpen(open: boolean) {
 function lacksEncoder(alerts: ActiveAlert[]): boolean {
   return alerts.some(
     (alert) =>
-      alert.code === "no_hardware_encoder" ||
-      JSON.stringify(alert.params ?? {}).includes('"no_hardware_encoder"'),
+      ["no_hardware_encoder", "no_video_encoder"].some(
+        (code) => alert.code === code || JSON.stringify(alert.params ?? {}).includes(`"${code}"`),
+      ),
   );
 }
 
@@ -94,8 +101,11 @@ export function PerformancePanel({ phase, alerts }: { phase: ReplayPhase; alerts
     value === null || value === undefined ? "—" : number(value, digits);
   const megabytes = (value: number | null | undefined) =>
     value === null || value === undefined ? "—" : number(value / 1e6);
+  const cpuCodec = capture ? CPU_ENCODER_CODECS[capture.encoder] : undefined;
   const captureTitle = capture
-    ? capture.encoder
+    ? cpuCodec
+      ? t("performance.cpuEncoder", { codec: t(`codecs.${cpuCodec}`) })
+      : capture.encoder
     : lacksEncoder(alerts)
       ? t("performance.noEncoder")
       : t(`status.phase.${phase}`);
