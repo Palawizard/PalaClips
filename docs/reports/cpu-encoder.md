@@ -30,7 +30,11 @@ de `h264_mf` (décision de Palawi, ci-dessous).
 
 ## Mémoire
 
-`h264_mf` réserve beaucoup de mémoire, quels que soient ses modes et son nombre de fils : 366 /
+**Corrigé le 2026-10-22 (après la 1.1.0)** : la mémoire vient du nombre de fils de `h264_mf`
+(16 images en vol). Limité à 2 fils jusqu'à 1080p60 : capture + encodeur +244 Mo au lieu de
++773 en 1080p30, moins de CPU, même VMAF (RESEARCH). Mesures d'origine :
+
+`h264_mf` réserve beaucoup de mémoire, quels que soient ses modes et son affinité : 366 /
 720 / 1 122 Mo en 720p / 1080p / 1440p (SVT-AV1 : 87 / 150 / 238 Mo). Dans l'app, panneau
 Performances : 470 Mo hors tampon en `h264_mf` contre 73 Mo en NVENC. Décision de Palawi :
 H.264 reste le défaut sur le CPU ; Réglages → Replay & qualité ajoute « encodeur ≈ X Mo en RAM »

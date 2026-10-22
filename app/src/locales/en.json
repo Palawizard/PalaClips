@@ -291,6 +291,7 @@
       "codec": "Codec",
       "codecUnavailable": "Not available on this graphics card: {codecs}.",
       "codecUnavailableCpu": "Not available on the processor: {codecs}.",
+      "codecFallbackCpu": "{codec} isn't available on the processor: {fallback} is used instead.",
       "encoder": "Encoder",
       "encoders": {
         "auto": "Automatic",

@@ -623,7 +623,12 @@ phase 8).
     la première image ; `avcodec-*.dll` : SVT-AV1 à l'ouverture) et passés « en dessous de la
     normale ». SVT-AV1 en `lp=2` (0,82 cœur contre 0,97 par défaut en 1080p30, 1,84× le temps
     réel). Le nombre de fils de `h264_mf` n'est pas réglable par FFmpeg.
-  - Mémoire : `h264_mf` réserve ~720 Mo en 1080p (SVT-AV1 150 Mo), insensible aux modes et au
-    nombre de fils. Palawi garde H.264 par défaut (2026-10-22) ; l'estimation de RAM de
+  - Mémoire : `h264_mf` réservait ~720 Mo en 1080p (SVT-AV1 150 Mo). **Révision du
+    2026-10-22** : la cause est son nombre de fils de travail (une image en vol par fil, 16 sur
+    la machine de Palawi). Le moteur le limite à 2 jusqu'à 1080p60 et 4 au-delà, par l'`ICodecAPI`
+    de l'encodeur retrouvé dans le contexte FFmpeg puis en reposant les mêmes types : ~170 Mo
+    en 1080p, moins de CPU, même qualité (RESEARCH). Pointeur vérifié avant usage ; sinon le
+    défaut reste, sans erreur. Sans Media Foundation (éditions N/KN), le codec CPU retombe sur
+    SVT-AV1. Palawi garde H.264 par défaut (2026-10-22) ; l'estimation de RAM de
     Réglages ajoute la mémoire de l'encodeur CPU, et le README la donne. PERF-02 (< 150 Mo hors
     tampon) reste défini pour le chemin matériel.
