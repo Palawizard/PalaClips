@@ -104,9 +104,21 @@ pub fn pick_encoder(
             EngineError::NoVideoEncoder
         });
     }
-    available(hardware)
-        .find(|encoder| encoder.codec == codec)
-        .ok_or(EngineError::CodecUnavailable(codec))
+    if let Some(encoder) = available(hardware).find(|encoder| encoder.codec == codec) {
+        return Ok(encoder);
+    }
+    if hardware {
+        return Err(EngineError::CodecUnavailable(codec));
+    }
+    let fallback = available(false)
+        .next()
+        .ok_or(EngineError::CodecUnavailable(codec))?;
+    tracing::warn!(
+        wanted = codec.label(),
+        encoder = %fallback.name,
+        "codec indisponible sur le processeur : autre encodeur CPU"
+    );
+    Ok(fallback)
 }
 
 pub fn max_output_side(codec: VideoCodec) -> u32 {
@@ -295,7 +307,33 @@ mod tests {
         );
         assert_eq!(
             picked(&no_gpu, VideoCodec::Hevc, EncoderChoice::Auto),
-            "codec_unavailable"
+            "h264_mf"
+        );
+    }
+
+    #[test]
+    fn without_media_foundation_h264_falls_back_to_svt_av1() {
+        let n_edition = [
+            encoder("h264_nvenc", VideoCodec::H264, true, false),
+            encoder("h264_mf", VideoCodec::H264, false, false),
+            encoder("libsvtav1", VideoCodec::Av1, false, true),
+        ];
+        assert_eq!(
+            picked(&n_edition, VideoCodec::H264, EncoderChoice::Auto),
+            "libsvtav1"
+        );
+        assert_eq!(
+            picked(&n_edition, VideoCodec::H264, EncoderChoice::Cpu),
+            "libsvtav1"
+        );
+        let mf_missing = [encoder("libsvtav1", VideoCodec::Av1, false, true)];
+        assert_eq!(
+            picked(&mf_missing, VideoCodec::H264, EncoderChoice::Auto),
+            "libsvtav1"
+        );
+        assert_eq!(
+            picked(&n_edition, VideoCodec::H264, EncoderChoice::Hardware),
+            "no_hardware_encoder"
         );
     }
 
