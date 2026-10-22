@@ -571,3 +571,40 @@ phase 8).
 - Conséquence : un build local avec installeur (`tauri build` sans `--no-bundle`) exige
   désormais la clé ; pour les mesures locales, ajouter
   `--config '{"bundle":{"createUpdaterArtifacts":false}}'`.
+
+## ADR-035 — Encodeur vidéo sur le processeur (v1.1)
+**Statut :** proposée (2026-10-22), en attente du choix de Palawi.
+- Contexte : sans encodeur matériel, PalaClips ne capture rien (ENC-05) ; c'est le cas des VM
+  et de beaucoup de petits PC. La feuille de route (§ 3) prévoit un encodeur sur le processeur.
+  On livre FFmpeg LGPL : x264/x265 (GPL) sont exclus. Mesures, licences et compatibilité :
+  `RESEARCH.md` § Encodage par le processeur.
+- Options :
+  - **A. SVT-AV1 seul** (`libsvtav1` M10/M12 rtc, déjà dans nos DLL). Libre de redevances
+    (licence AOM ; Sisvel ne vise que les appareils). Meilleure qualité par bit ; 1,3 à 1,7 cœur
+    en 1080p30, 1080p60 à la limite. Lecture : Resolve, WebView2 et Android 12+ oui ; Discord
+    desktop via les codecs de Windows ; iPhone seulement A17 Pro et après. Pas de H.264 sur CPU.
+  - **B. OpenH264 par le binaire de Cisco**, téléchargé à la demande. H.264 (lecture partout),
+    0,4 cœur en 1080p30, mais qualité la plus basse (VMAF NEG 85,8 contre 89–91). Coût : notre
+    FFmpeg contient un OpenH264 compilé non couvert, et FFmpeg ne sait pas charger la DLL de
+    Cisco → construire FFmpeg nous-mêmes ou écrire une interface Rust à l'API C d'OpenH264 ;
+    téléchargement + vérification SHA-256, interrupteur, mention « OpenH264 Video Codec provided
+    by Cisco Systems, Inc. », licence de Cisco dans les mentions. Couverture limitée à l'usage
+    personnel non rémunéré (gênant pour un créateur payé).
+  - **C. Encodeur H.264 de Windows** (`h264_mf`, MFT logiciel de Microsoft, déjà dans nos DLL).
+    H.264 (lecture partout), rien à télécharger ; 1,0 cœur en 1080p30, 1,9 en 1080p60,
+    VMAF NEG 89,3 en 1080p30 (entre OpenH264 et SVT-AV1 M12). Brevets : l'encodeur fait partie
+    de Windows (Via LA facture les codecs intégrés au système), sans déclaration écrite de
+    Microsoft pour les applis qui l'appellent. Limites : éditions N sans Media Feature Pack,
+    Windows Server à vérifier, fils et priorité non réglables par FFmpeg (priorité abaissée en
+    retrouvant les fils créés à l'ouverture).
+  - **D. C + A selon le codec choisi** : H.264 → `h264_mf`, AV1 → `libsvtav1`. Le réglage
+    « Codec » existe déjà ; « Automatique » prend le premier qui passe l'encodage de test
+    (H.264 d'abord). Si l'encodeur de Windows manque (édition N), AV1 prend le relais.
+  - Écartés : VP9 (pas de gain sur AV1, peu courant en MP4), libaom (ne suit pas en 1080p),
+    rav1e (pas temps réel), kvazaar (brevets HEVC, lecture HEVC payante sous Windows), vvenc
+    (VVC illisible).
+- Recommandation de Claude : **D**. H.264 par défaut pour que les clips s'ouvrent partout
+  (Discord, téléphones, Resolve), AV1 au choix pour la qualité et la taille, aucun téléchargement
+  ni licence à afficher, le tout déjà dans nos DLL ; risque brevets au plus bas des options
+  H.264. B coûte le plus cher pour la plus mauvaise image.
+- Décision : à prendre par Palawi.
