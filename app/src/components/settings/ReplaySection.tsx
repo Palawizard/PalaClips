@@ -30,15 +30,26 @@ const KEYFRAMES = [0.5, 1, 2, 4];
 const CODECS: VideoCodec[] = ["h264", "hevc", "av1"];
 const ENCODER_CHOICES: EncoderChoice[] = ["auto", "hardware", "cpu"];
 const CPU_FPS = 30;
-const CPU_ENCODER_MEMORY: Partial<Record<VideoCodec, { base: number; perPixel: number }>> = {
-  h264: { base: 50e6, perPixel: 315 },
+const MF_TWO_WORKERS_UP_TO = 1920 * 1080 * 60;
+const CPU_ENCODER_MEMORY = {
+  h264: { base: 25e6, perPixel: 70 },
+  h264FourWorkers: { base: 40e6, perPixel: 84 },
   av1: { base: 25e6, perPixel: 57 },
 };
 
-export function cpuEncoderBytes(codec: VideoCodec, width: number, height: number): number {
-  const memory = CPU_ENCODER_MEMORY[codec];
-  return memory ? memory.base + memory.perPixel * width * height : 0;
+export function cpuEncoderBytes(codec: VideoCodec, width: number, height: number, fps: number): number {
+  const pixels = width * height;
+  const memory =
+    codec === "av1"
+      ? CPU_ENCODER_MEMORY.av1
+      : codec === "h264"
+        ? pixels * fps <= MF_TWO_WORKERS_UP_TO
+          ? CPU_ENCODER_MEMORY.h264
+          : CPU_ENCODER_MEMORY.h264FourWorkers
+        : null;
+  return memory ? memory.base + memory.perPixel * pixels : 0;
 }
+
 const CPU_HEIGHT = 1080;
 
 export function cpuVideo(
@@ -136,10 +147,13 @@ export function ReplaySection() {
             {t(works(true) ? "settings.replay.encoderCpu" : "settings.replay.encoderCpuNoGpu")}
           </span>
         );
+  const cpuFallback = CODECS.find(
+    (codec) => codec !== "hevc" && encoders.some((encoder) => encoder.codec === codec && !encoder.hardware && !encoder.failure),
+  );
   const unavailableCodecs = CODECS.filter((codec) => encoders.length > 0 && !available(codec)).map((codec) =>
     t(`codecs.${codec}`),
   );
-  const encoderBytes = estimate && onCpu ? cpuEncoderBytes(draft.video.codec, estimate.width, estimate.height) : 0;
+  const encoderBytes = estimate && onCpu ? cpuEncoderBytes(draft.video.codec, estimate.width, estimate.height, draft.video.fps) : 0;
   const ramShare = estimate && memory ? (estimate.bytes + encoderBytes) / memory.available_bytes : 0;
   const tooMuchRam = draft.replay.storage === "ram" && ramShare > RAM_SHARE_LIMIT;
   const sourceHeight = estimate?.source_height ?? 4320;
@@ -223,11 +237,16 @@ export function ReplaySection() {
       <SettingRow
         label={t("settings.replay.codec")}
         help={
-          unavailableCodecs.length > 0
-            ? t(onCpu ? "settings.replay.codecUnavailableCpu" : "settings.replay.codecUnavailable", {
-                codecs: unavailableCodecs.join(", "),
+          onCpu && cpuFallback && !available(draft.video.codec)
+            ? t("settings.replay.codecFallbackCpu", {
+                codec: t(`codecs.${draft.video.codec}`),
+                fallback: t(`codecs.${cpuFallback}`),
               })
-            : undefined
+            : unavailableCodecs.length > 0
+              ? t(onCpu ? "settings.replay.codecUnavailableCpu" : "settings.replay.codecUnavailable", {
+                  codecs: unavailableCodecs.join(", "),
+                })
+              : undefined
         }
       >
         <Segmented<VideoCodec>
