@@ -12,9 +12,8 @@ use serde::Deserialize;
 
 use super::media::open_input;
 use super::stream_title;
-use crate::encode::{
-    AacEncoder, HardwareEncoder, Size, SystemFrameEncoder, codec_of_id, pick_encoder,
-};
+use crate::config::EncoderChoice;
+use crate::encode::{AacEncoder, EncoderInfo, Size, SystemFrameEncoder, codec_of_id, pick_encoder};
 use crate::error::{EngineError, Result};
 use crate::mux::{Mp4Writer, MuxStream};
 
@@ -43,7 +42,7 @@ pub fn partial_path(output: &Path) -> PathBuf {
 
 pub fn export_clip(
     request: &ExportRequest,
-    encoders: &[HardwareEncoder],
+    encoders: &[EncoderInfo],
     progress: &mut dyn FnMut(f64),
     cancel: &AtomicBool,
 ) -> Result<()> {
@@ -177,11 +176,7 @@ struct Export<'a> {
 }
 
 impl<'a> Export<'a> {
-    fn open(
-        request: &'a ExportRequest,
-        encoders: &[HardwareEncoder],
-        partial: &Path,
-    ) -> Result<Self> {
+    fn open(request: &'a ExportRequest, encoders: &[EncoderInfo], partial: &Path) -> Result<Self> {
         if request.end_secs - request.start_secs.max(0.0) < MIN_EXPORT_SECS {
             return Err(EngineError::ExportTooShort);
         }
@@ -223,7 +218,8 @@ impl<'a> Export<'a> {
             let codec = codec_of_id(video_parameters.codec_id).ok_or_else(|| {
                 EngineError::Encoder("codec vidéo de ce clip non réencodable".into())
             })?;
-            let encoder = pick_encoder(encoders, codec)?;
+            let encoder = pick_encoder(encoders, codec, EncoderChoice::Auto)
+                .or_else(|_| pick_encoder(encoders, codec, EncoderChoice::Cpu))?;
             let size = Size::new(
                 video_parameters.width as u32,
                 video_parameters.height as u32,
@@ -413,7 +409,7 @@ impl<'a> Export<'a> {
                 finished = true;
                 continue;
             }
-            let mut converted = to_nv12(&frame, video)?;
+            let mut converted = to_encoder_format(&frame, video)?;
             converted.set_pts(timestamp(at - start, base));
             let writer = &mut self.writer;
             video
@@ -456,8 +452,9 @@ impl<'a> Export<'a> {
     }
 }
 
-fn to_nv12(frame: &AVFrame, video: &mut PreciseVideo) -> Result<AVFrame> {
+fn to_encoder_format(frame: &AVFrame, video: &mut PreciseVideo) -> Result<AVFrame> {
     let (width, height) = (video.size.width as i32, video.size.height as i32);
+    let format = video.encoder.pixel_format();
     if video.scaler.is_none() {
         video.scaler = SwsContext::get_context(
             frame.width,
@@ -465,7 +462,7 @@ fn to_nv12(frame: &AVFrame, video: &mut PreciseVideo) -> Result<AVFrame> {
             frame.format,
             width,
             height,
-            ffi::AV_PIX_FMT_NV12,
+            format,
             ffi::SWS_BILINEAR,
             None,
             None,
@@ -479,7 +476,7 @@ fn to_nv12(frame: &AVFrame, video: &mut PreciseVideo) -> Result<AVFrame> {
     let mut converted = AVFrame::new();
     converted.set_width(width);
     converted.set_height(height);
-    converted.set_format(ffi::AV_PIX_FMT_NV12);
+    converted.set_format(format);
     converted.alloc_buffer().map_err(ffmpeg_error)?;
     scaler
         .scale_frame(frame, 0, frame.height, &mut converted)
@@ -718,27 +715,29 @@ mod file_tests {
 }
 
 #[cfg(test)]
-mod hardware_tests {
+mod encoder_tests {
     use super::*;
-    use crate::encode::hardware_video_encoders;
+    use crate::config::VideoCodec;
+    use crate::encode::video_encoders;
     use crate::library::probe_clip;
 
-    #[test]
-    #[ignore = "needs a hardware video encoder"]
-    fn a_precise_cut_starts_on_the_exact_frame() -> Result<()> {
+    fn precise_cut_duration(
+        encoders: &[EncoderInfo],
+        codec: VideoCodec,
+        name: &str,
+    ) -> Result<f64> {
         let dir = std::env::temp_dir()
             .join("palaclips-export-tests")
-            .join(format!("precise-{}", std::process::id()));
+            .join(format!("precise-{name}-{}", std::process::id()));
         std::fs::remove_dir_all(&dir).ok();
         std::fs::create_dir_all(&dir)?;
-        let encoders = hardware_video_encoders()?;
-        let encoder = pick_encoder(&encoders, crate::config::VideoCodec::H264)?;
+        let encoder = pick_encoder(encoders, codec, EncoderChoice::Auto)?;
         let base = rsmpeg::avutil::ra(1, 30);
         let size = Size::new(320, 180);
-        let mut h264 =
+        let mut source_encoder =
             SystemFrameEncoder::open(&encoder.name, size, base, rsmpeg::avutil::ra(30, 1), 2_000)?;
         let stream = MuxStream {
-            codec_parameters: h264.codec_parameters(),
+            codec_parameters: source_encoder.codec_parameters(),
             time_base: base,
             frame_rate: Some(30),
             title: None,
@@ -749,12 +748,12 @@ mod hardware_tests {
             let mut frame = AVFrame::new();
             frame.set_width(320);
             frame.set_height(180);
-            frame.set_format(ffi::AV_PIX_FMT_NV12);
+            frame.set_format(source_encoder.pixel_format());
             frame.alloc_buffer().map_err(ffmpeg_error)?;
             frame.set_pts(index);
-            h264.encode(Some(&frame), &mut |packet| writer.write(0, packet))?;
+            source_encoder.encode(Some(&frame), &mut |packet| writer.write(0, packet))?;
         }
-        h264.encode(None, &mut |packet| writer.write(0, packet))?;
+        source_encoder.encode(None, &mut |packet| writer.write(0, packet))?;
         writer.finish()?;
         let request = ExportRequest {
             source,
@@ -767,14 +766,31 @@ mod hardware_tests {
             mix: false,
             mix_title: String::new(),
         };
-        export_clip(&request, &encoders, &mut |_| {}, &AtomicBool::new(false))?;
-        let info = probe_clip(&request.output)?;
+        export_clip(&request, encoders, &mut |_| {}, &AtomicBool::new(false))?;
+        let duration = probe_clip(&request.output)?.duration_secs;
         std::fs::remove_dir_all(&dir).ok();
-        assert!(
-            (info.duration_secs - 1.5).abs() < 0.07,
-            "{}",
-            info.duration_secs
-        );
+        Ok(duration)
+    }
+
+    #[test]
+    #[ignore = "needs a hardware video encoder"]
+    fn a_precise_cut_starts_on_the_exact_frame() -> Result<()> {
+        let duration = precise_cut_duration(&video_encoders()?, VideoCodec::H264, "h264")?;
+        assert!((duration - 1.5).abs() < 0.07, "{duration}");
+        Ok(())
+    }
+
+    #[test]
+    fn a_precise_cut_on_the_processor_starts_on_the_exact_frame() -> Result<()> {
+        let svt = [EncoderInfo {
+            name: "libsvtav1".into(),
+            description: String::new(),
+            codec: VideoCodec::Av1,
+            hardware: false,
+            failure: None,
+        }];
+        let duration = precise_cut_duration(&svt, VideoCodec::Av1, "av1")?;
+        assert!((duration - 1.5).abs() < 0.07, "{duration}");
         Ok(())
     }
 }

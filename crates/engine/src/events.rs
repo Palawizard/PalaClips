@@ -151,9 +151,11 @@ pub enum EngineEvent {
 
 pub const ALERT_RATE_LIMITED: &str = "capture_source_rate_limited";
 pub const ALERT_GPU_SATURATED: &str = "capture_gpu_saturated";
+pub const ALERT_CPU_ENCODER_OVERLOADED: &str = "cpu_encoder_overloaded";
 pub const ALERT_EXCLUSIVE_FULLSCREEN: &str = "capture_exclusive_fullscreen";
 pub const CAPTURE_ALERTS: &[&str] = &[
     ALERT_RATE_LIMITED,
     ALERT_GPU_SATURATED,
+    ALERT_CPU_ENCODER_OVERLOADED,
     ALERT_EXCLUSIVE_FULLSCREEN,
 ];

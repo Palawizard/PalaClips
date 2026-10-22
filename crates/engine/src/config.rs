@@ -93,6 +93,15 @@ pub enum GpuPriority {
     Capture,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EncoderChoice {
+    #[default]
+    Auto,
+    Hardware,
+    Cpu,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum OutputResolution {
@@ -106,6 +115,7 @@ pub struct VideoSettings {
     pub fps: u32,
     pub resolution: OutputResolution,
     pub codec: VideoCodec,
+    pub encoder: EncoderChoice,
     pub quality: VideoQuality,
     pub bitrate_kbps: u32,
     pub keyframe_interval_secs: f32,
@@ -120,6 +130,7 @@ impl Default for VideoSettings {
             fps: 60,
             resolution: OutputResolution::Native,
             codec: VideoCodec::H264,
+            encoder: EncoderChoice::Auto,
             quality: VideoQuality::Balanced,
             bitrate_kbps: 40_000,
             keyframe_interval_secs: 1.0,
