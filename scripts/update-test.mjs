@@ -1,6 +1,6 @@
 import { connect } from "./cdp.mjs";
 
-const [port, step] = process.argv.slice(2);
+const [port, step, version] = process.argv.slice(2);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function session() {
@@ -50,11 +50,11 @@ console.log(`avant : ${before}`);
 
 if (step === "installed") {
   cdp.close();
-  process.exit(before.includes("1.0.1") ? 0 : 1);
+  process.exit(before.includes(version) ? 0 : 1);
 }
 
 if (!before.includes("disponible")) await click("Rechercher");
-const wanted = step === "bad" ? "1.0.2" : "1.0.1";
+const wanted = version;
 const found = await waitFor(`${updatesRow}.includes("${wanted} disponible") && ${updatesRow}`, `version ${wanted} proposée`);
 console.log(`proposé : ${found}`);
 const notes = await cdp.evaluate(`document.body.textContent.includes("Nouveautés")`);
@@ -71,7 +71,7 @@ if (step === "bad") {
   const after = await cdp.evaluate(updatesRow);
   console.log(`après : ${after}`);
   cdp.close();
-  process.exit(after.includes("Version 1.0.2 disponible (tu as la 1.0.0)") ? 0 : 1);
+  process.exit(after.includes(`Version ${version} disponible (tu as la 1.0.0)`) ? 0 : 1);
 }
 
 console.log("installation lancée");
