@@ -55,7 +55,17 @@ pourrait marcher :
 - Un avertissement quand on quitte une page avec un changement pas encore appliqué.
 - Sur l'écran État, la source et les pistes audio ouvrent ces pages au clic.
 
-## 6. Autres pistes, à décider
+## 6. Enregistrer aussi après la sauvegarde
+
+- Un réglage « après le clic » (0 s par défaut, jusqu'à 60 s) en plus de la durée « avant ».
+  Exemple : 1 min avant + 10 s après. Le clip s'écrit une fois le temps « après » écoulé.
+- Confirmation au moment de l'appui (carillon et notification « clip en cours, encore 10 s »),
+  puis à l'écriture du clip.
+- Un nouvel appui pendant le temps « après » prolonge le même clip au lieu d'en créer un second.
+- Pas de doublon entre deux clips : le clip suivant commence là où celui-ci s'arrête.
+- Réglage dans Réglages → Replay & qualité ; l'estimation de la RAM ne change pas.
+
+## 7. Autres pistes, à décider
 
 - Signer l'installeur (Authenticode) pour que Windows SmartScreen n'avertisse plus.
 - D'autres langues que le français et l'anglais.
