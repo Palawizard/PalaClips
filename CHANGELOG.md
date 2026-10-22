@@ -5,6 +5,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.1.1] - 2026-10-22
+
 ### Corrigé
 - Encodage H.264 sur le processeur : environ 170 Mo de mémoire en 1080p au lieu de ~720 Mo, et
   moins de CPU, en limitant les fils de l'encodeur de Windows (2 jusqu'à 1080p60, 4 au-delà).
