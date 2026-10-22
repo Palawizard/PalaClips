@@ -53,6 +53,7 @@ Anti-Cheat.
   the foreground. Each track carries its name in the file.
 - **Hardware encoding** on the graphics card (NVIDIA NVENC, AMD AMF, Intel Quick Sync) in
   H.264, HEVC or AV1, at a constant frame rate up to 240 fps, with HDR screens supported.
+  Without a hardware encoder, **encoding on the processor** in H.264 or AV1.
 - **Screen or window capture** through Windows Graphics Capture; a window is found again by
   its program name after a restart.
 - **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume), trim,
@@ -74,7 +75,8 @@ Anti-Cheat.
 ## Requirements
 
 - Windows 11. Windows 10 isn't supported: per-app audio capture needs build 20348 or later.
-- A graphics card with a hardware video encoder (NVIDIA, AMD or Intel).
+- A graphics card with a hardware video encoder (NVIDIA, AMD or Intel) is recommended.
+  Without one, PalaClips encodes on the processor, which costs CPU in game (see the FAQ).
 - WebView2, already present on Windows 11 (the installer downloads it if it's missing).
 
 ## Installation
@@ -127,6 +129,19 @@ if the GPU is saturated, the video may stutter, and an alert says so. In Setting
 quality, "When the GPU is maxed out" → *Capture first* makes the video smooth, but the game
 loses about 7% fps. Capping the game's fps also leaves headroom.
 
+**My PC has no video encoder on the graphics card.** PalaClips then encodes on the processor:
+in H.264 with the encoder built into Windows, or in AV1 with SVT-AV1. The first launch says so
+and switches to 1080p at 30 fps. Expect about one processor core at 1080p30; a game already
+limited by the processor loses fps. Measured on an i5-13600KF in Fortnite capped at 225 fps:
+no loss in average fps, but the slowest 1% of frames drop by 3 to 5% (none with the graphics
+card). The Windows H.264 encoder also reserves memory: about
+700 MB at 1080p (350 MB at 720p), against 150 MB for AV1; Settings → Replay & quality adds it
+to the estimate. Settings → Replay & quality → *Encoder* also lets you
+force the graphics card or the processor. If an alert says the processor can't keep up, lower
+the resolution or the frame rate (720p30 is the lightest). On an "N" edition of Windows, the
+Windows H.264 encoder needs the Media Feature Pack (Settings → Apps → Optional features); AV1
+works without it.
+
 **My mic is also in track 1.** That's the "Also in Full mix" setting (Settings → Audio), so a
 clip is ready to share as is. Your voice keeps its own track either way.
 
@@ -149,7 +164,7 @@ masked; *Open zip* shows you what you're sending. Attach it to a
 
 ## Roadmap
 
-Compatibility on more systems, encoding on the processor and other leads: see the
+Compatibility on more systems, markers, compression and other leads: see the
 [roadmap](ROADMAP.md). Changes between versions are listed in the
 [releases](https://github.com/Palawizard/PalaClips/releases) and in the
 [changelog](CHANGELOG.md).

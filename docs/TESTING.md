@@ -341,3 +341,25 @@ téléchargé **dans la VM** par le navigateur, pour avoir la vraie marque « ve
 À me rapporter : pour chaque ligne, OK ou ce qui diffère (texte exact des messages) ; une
 capture de l'étape Vérifications et de l'accueil avec l'alerte ; le zip de diagnostic de
 l'étape 4 ; la version de Windows de la VM (`winver`).
+
+## T11 — Encodage par le processeur dans une VM sans GPU (v1.1)
+
+La VM n'a pas d'encodeur matériel ni, souvent, de Video Processor D3D11 : PalaClips doit
+proposer le processeur au premier lancement, capturer et sauvegarder un clip. Installeur : celui
+du brouillon de test (`test-v1.1.0`), copié dans la VM.
+
+| # | À faire dans la VM | Attendu |
+|---|---|---|
+| 1 | Installer, lancer | Premier lancement, étape Vérifications |
+| 2 | Lire « Encodeur vidéo » | Ambre : « Aucun encodeur sur la carte graphique : le processeur encodera la vidéo (H.264 · AV1)… » ; « Continuer quand même » actif |
+| 3 | Continuer, répondre aux questions, « C'est bon » | Test de sauvegarde : le replay s'arme, « En mémoire » monte |
+| 4 | Bouger une fenêtre quelques secondes, puis « Sauvegarder maintenant » | Clip dans la galerie avec miniature ; il se lit dans le lecteur intégré, image nette, son présent |
+| 5 | Accueil → panneau de performances ouvert 30 s | Encodeur « Processeur · H.264 » ; CPU de la machine et images en retard affichés ; pas d'alerte « le processeur n'arrive pas à encoder » à 1080p30 (sinon noter le nombre de cœurs de la VM) |
+| 6 | Réglages → Replay & qualité | Encodeur « Automatique », aide en ambre ; « Carte graphique » grisé ; 30 i/s, 1080p (ou natif si l'écran de la VM est plus petit) ; Codec : HEVC grisé |
+| 7 | Choisir le codec AV1, Appliquer, sauvegarder un clip | Clip AV1 lisible dans le lecteur intégré |
+| 8 | Ouvrir le clip H.264 de l'étape 4 dans le lecteur Films et TV de la VM | Se lit |
+
+À me rapporter : OK ou ce qui diffère pour chaque ligne (texte exact) ; une capture des étapes 2,
+5 et 6 ; le nombre de cœurs de la VM (`Gestionnaire des tâches → Performance`) et sa version de
+Windows (`winver`) ; le zip de diagnostic (Réglages → Général) **après** l'étape 7, qui dit si la
+conversion d'image passe par le Video Processor ou par le processeur.

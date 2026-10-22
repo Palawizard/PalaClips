@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { bytes } from "../../lib/format.ts";
 import { number, t, useT } from "../../lib/i18n.ts";
 import {
+  type EncoderChoice,
   type EngineConfig,
   type GpuPriority,
   type EncoderInfo,
@@ -11,6 +12,7 @@ import {
   type ReplayStorage,
   type VideoCodec,
   type VideoQuality,
+  encodesOnGpu,
   estimateReplay,
   listEncoders,
   memoryStatus,
@@ -26,6 +28,35 @@ const HEIGHTS = [720, 1080, 1440, 2160];
 const KEYFRAMES = [0.5, 1, 2, 4];
 
 const CODECS: VideoCodec[] = ["h264", "hevc", "av1"];
+const ENCODER_CHOICES: EncoderChoice[] = ["auto", "hardware", "cpu"];
+const CPU_FPS = 30;
+const CPU_ENCODER_MEMORY: Partial<Record<VideoCodec, { base: number; perPixel: number }>> = {
+  h264: { base: 50e6, perPixel: 315 },
+  av1: { base: 25e6, perPixel: 57 },
+};
+
+export function cpuEncoderBytes(codec: VideoCodec, width: number, height: number): number {
+  const memory = CPU_ENCODER_MEMORY[codec];
+  return memory ? memory.base + memory.perPixel * width * height : 0;
+}
+const CPU_HEIGHT = 1080;
+
+export function cpuVideo(
+  video: EngineConfig["video"],
+  sourceHeight: number,
+  encoders: EncoderInfo[],
+): EngineConfig["video"] {
+  const cpuCodecs = encoders.filter((encoder) => !encoder.hardware && !encoder.failure).map((encoder) => encoder.codec);
+  const tall = video.resolution.kind === "native" ? sourceHeight > CPU_HEIGHT : video.resolution.height > CPU_HEIGHT;
+  const fallbackCodec = cpuCodecs.includes("h264") ? "h264" : cpuCodecs[0];
+  return {
+    ...video,
+    fps: Math.min(video.fps, CPU_FPS),
+    resolution: tall ? { kind: "height", height: CPU_HEIGHT } : video.resolution,
+    codec: cpuCodecs.includes(video.codec) ? video.codec : (fallbackCodec ?? video.codec),
+  };
+}
+
 const QUALITIES: VideoQuality[] = ["quality", "balanced", "light", "custom"];
 
 export function durationLabel(seconds: number): string {
@@ -52,6 +83,7 @@ export function ReplaySection() {
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
   const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
   const estimateRef = useRef<HTMLElement>(null);
+  const beforeCpu = useRef<Pick<EngineConfig["video"], "fps" | "resolution" | "codec"> | null>(null);
   const draft = config?.draft ?? null;
 
   useEffect(() => {
@@ -77,11 +109,38 @@ export function ReplaySection() {
   const video = (patch: Partial<EngineConfig["video"]>) => change({ ...draft, video: { ...draft.video, ...patch } });
   const replay = (patch: Partial<EngineConfig["replay"]>) => change({ ...draft, replay: { ...draft.replay, ...patch } });
 
-  const available = (codec: VideoCodec) => encoders.some((encoder) => encoder.codec === codec && !encoder.failure);
+  const works = (hardware: boolean) => encoders.some((encoder) => encoder.hardware === hardware && !encoder.failure);
+  const known = encoders.length > 0;
+  const onGpu = encodesOnGpu(encoders, draft.video.encoder);
+  const onCpu = known && !onGpu;
+  const available = (codec: VideoCodec) =>
+    encoders.some((encoder) => encoder.codec === codec && encoder.hardware === onGpu && !encoder.failure);
+  const chooseEncoder = (encoder: EncoderChoice) => {
+    if (!encodesOnGpu(encoders, encoder)) {
+      if (!onCpu) beforeCpu.current = { fps: draft.video.fps, resolution: draft.video.resolution, codec: draft.video.codec };
+      video({ ...cpuVideo(draft.video, estimate?.source_height ?? Number.POSITIVE_INFINITY, encoders), encoder });
+      return;
+    }
+    const restored = onCpu ? beforeCpu.current : null;
+    beforeCpu.current = null;
+    video({ ...(restored ?? {}), encoder });
+  };
+  const encoderHelp = !known
+    ? undefined
+    : onGpu
+      ? draft.video.encoder === "auto"
+        ? t("settings.replay.encoderGpu")
+        : undefined
+      : (
+          <span className="text-warn">
+            {t(works(true) ? "settings.replay.encoderCpu" : "settings.replay.encoderCpuNoGpu")}
+          </span>
+        );
   const unavailableCodecs = CODECS.filter((codec) => encoders.length > 0 && !available(codec)).map((codec) =>
     t(`codecs.${codec}`),
   );
-  const ramShare = estimate && memory ? estimate.bytes / memory.available_bytes : 0;
+  const encoderBytes = estimate && onCpu ? cpuEncoderBytes(draft.video.codec, estimate.width, estimate.height) : 0;
+  const ramShare = estimate && memory ? (estimate.bytes + encoderBytes) / memory.available_bytes : 0;
   const tooMuchRam = draft.replay.storage === "ram" && ramShare > RAM_SHARE_LIMIT;
   const sourceHeight = estimate?.source_height ?? 4320;
   const currentHeight = draft.video.resolution.kind === "height" ? draft.video.resolution.height : null;
@@ -108,6 +167,7 @@ export function ReplaySection() {
             {estimate.width}×{estimate.height} · {t("units.fps", { value: draft.video.fps })} ·{" "}
             {t("units.mbps", { value: number(estimate.video_kbps / 1000, 1) })} ·{" "}
             {t("settings.replay.audioTracks", { count: estimate.audio_tracks })}
+            {encoderBytes > 0 && <> · {t("settings.replay.encoderMemory", { size: bytes(encoderBytes) })}</>}
           </p>
         )}
         {tooMuchRam && memory && (
@@ -148,11 +208,25 @@ export function ReplaySection() {
           onChange={(storage) => replay({ storage })}
         />
       </SettingRow>
+      <SettingRow label={t("settings.replay.encoder")} help={encoderHelp}>
+        <Segmented<EncoderChoice>
+          label={t("settings.replay.encoder")}
+          value={draft.video.encoder}
+          options={ENCODER_CHOICES.map((choice) => ({
+            value: choice,
+            label: t(`settings.replay.encoders.${choice}`),
+            disabled: known && choice !== "auto" && !works(choice === "hardware"),
+          }))}
+          onChange={chooseEncoder}
+        />
+      </SettingRow>
       <SettingRow
         label={t("settings.replay.codec")}
         help={
           unavailableCodecs.length > 0
-            ? t("settings.replay.codecUnavailable", { codecs: unavailableCodecs.join(", ") })
+            ? t(onCpu ? "settings.replay.codecUnavailableCpu" : "settings.replay.codecUnavailable", {
+                codecs: unavailableCodecs.join(", "),
+              })
             : undefined
         }
       >
