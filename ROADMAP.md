@@ -50,7 +50,17 @@ PalaClips needs Windows 11 today. Windows 10 version 2004 (build 19041) and late
 - A warning when leaving a page with a change that is not applied yet.
 - On the Status screen, the source and the audio tracks open these pages when clicked.
 
-## 6. Other leads, to be decided
+## 6. Keep recording after the save
+
+- An "after the press" setting (0 s by default, up to 60 s) next to the "before" length.
+  Example: 1 min before + 10 s after. The clip is written once the "after" time is over.
+- Confirmation when the hotkey is pressed (chime and notification "clip in progress, 10 s
+  left"), then again when the clip is written.
+- Pressing again during the "after" time extends the same clip instead of making a second one.
+- No overlap between clips: the next clip starts where this one ends.
+- Set in Settings → Replay & quality; the RAM estimate does not change.
+
+## 7. Other leads, to be decided
 
 - Signing the installer (Authenticode) so Windows SmartScreen no longer warns.
 - More interface languages than French and English.
