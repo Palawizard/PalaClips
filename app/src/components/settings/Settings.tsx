@@ -1,17 +1,14 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { GeneralSection } from "./GeneralSection.tsx";
 import { useT } from "../../lib/i18n.ts";
-import type { AppStatus } from "../../lib/ipc.ts";
-import { AudioSection } from "./AudioSection.tsx";
-import { CaptureSection } from "./CaptureSection.tsx";
 import { HotkeysSection } from "./HotkeysSection.tsx";
 import { RecordingSection } from "./RecordingSection.tsx";
 import { ReplaySection } from "./ReplaySection.tsx";
 import { StorageSection } from "./StorageSection.tsx";
 
-type SectionId = "capture" | "audio" | "replay" | "recording" | "hotkeys" | "storage" | "general";
+export type SectionId = "replay" | "recording" | "hotkeys" | "storage" | "general";
 
-const SECTIONS: SectionId[] = ["capture", "audio", "replay", "recording", "hotkeys", "storage", "general"];
+const SECTIONS: SectionId[] = ["replay", "recording", "hotkeys", "storage", "general"];
 
 export function SettingRow({
   label,
@@ -201,9 +198,8 @@ export function NumberField({
   );
 }
 
-export function Settings({ status }: { status: AppStatus | null }) {
+export function Settings({ section, onSection }: { section: SectionId; onSection: (section: SectionId) => void }) {
   const t = useT();
-  const [section, setSection] = useState<SectionId>("capture");
 
   return (
     <div className="grid min-h-full grid-cols-[200px_minmax(0,1fr)]">
@@ -217,7 +213,7 @@ export function Settings({ status }: { status: AppStatus | null }) {
               <li key={id}>
                 <button
                   type="button"
-                  onClick={() => setSection(id)}
+                  onClick={() => onSection(id)}
                   aria-current={active ? "page" : undefined}
                   className={`pressable w-full rounded-md px-3 py-2 text-left text-[14px] ${
                     active ? "bg-surface-2 font-semibold text-ink" : "text-ink-2 hover:bg-surface-hover hover:text-ink"
@@ -240,8 +236,6 @@ export function Settings({ status }: { status: AppStatus | null }) {
         {section === "replay" && <ReplaySection />}
         {section === "recording" && <RecordingSection />}
         {section === "storage" && <StorageSection />}
-        {section === "capture" && <CaptureSection />}
-        {section === "audio" && <AudioSection status={status} />}
       </section>
     </div>
   );

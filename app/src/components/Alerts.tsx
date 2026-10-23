@@ -1,13 +1,40 @@
 import { CircleAlert, Info, TriangleAlert, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { message, useT } from "../lib/i18n.ts";
+import type { Destination } from "../App.tsx";
+import { type Key, message, useT } from "../lib/i18n.ts";
 import type { ActiveAlert } from "../lib/ipc.ts";
 
 const ICONS = { info: Info, warning: TriangleAlert, error: CircleAlert };
 const TONE = { info: "text-ink-2", warning: "text-warn", error: "text-warn" };
 const FOCUS_FALLBACK = "roster-title";
 
-export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
+const CAPTURE: Destination = { view: "capture" };
+const AUDIO: Destination = { view: "audio" };
+const REPLAY: Destination = { view: "settings", section: "replay" };
+const FIXED_IN: Record<string, Destination> = {
+  capture_fallback_monitor: CAPTURE,
+  captured_window_closed: CAPTURE,
+  window_missing: CAPTURE,
+  monitor_missing: CAPTURE,
+  primary_monitor_missing: CAPTURE,
+  app_track_silent: AUDIO,
+  audio_device_unavailable: AUDIO,
+  no_audio_device: AUDIO,
+  device_in_exclusive_use: AUDIO,
+  cpu_encoder_overloaded: REPLAY,
+  capture_gpu_saturated: REPLAY,
+  no_hardware_encoder: REPLAY,
+  codec_unavailable: REPLAY,
+  hotkey_unavailable: { view: "settings", section: "hotkeys" },
+  hotkeys_taken: { view: "settings", section: "hotkeys" },
+  update_available: { view: "settings", section: "general" },
+};
+
+function destinationName(destination: Destination): Key {
+  return destination.section ? `settings.sections.${destination.section}` : `nav.${destination.view}`;
+}
+
+export function Alerts({ alerts, onOpen }: { alerts: ActiveAlert[]; onOpen: (destination: Destination) => void }) {
   const t = useT();
   const [dismissed, setDismissed] = useState<Record<string, string>>({});
   const list = useRef<HTMLUListElement>(null);
@@ -15,7 +42,7 @@ export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
 
   const dismiss = (alert: ActiveAlert, index: number) => {
     setDismissed((current) => ({ ...current, [alert.code]: alert.message }));
-    const buttons = list.current?.querySelectorAll<HTMLButtonElement>("button");
+    const buttons = list.current?.querySelectorAll<HTMLButtonElement>("button[data-dismiss]");
     const next = buttons?.[index + 1] ?? buttons?.[index - 1] ?? document.getElementById(FOCUS_FALLBACK);
     next?.focus();
   };
@@ -29,6 +56,7 @@ export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
     >
       {visible.map((alert, index) => {
         const Icon = ICONS[alert.severity];
+        const fix = FIXED_IN[alert.code];
         return (
           <li
             key={alert.code}
@@ -36,8 +64,18 @@ export function Alerts({ alerts }: { alerts: ActiveAlert[] }) {
           >
             <Icon size={18} className={`mt-0.5 shrink-0 ${TONE[alert.severity]}`} aria-hidden />
             <p className="max-w-[90ch] flex-1 text-ink">{message(alert)}</p>
+            {fix && (
+              <button
+                type="button"
+                onClick={() => onOpen(fix)}
+                className="pressable -my-1 h-8 shrink-0 rounded-md border border-line-strong px-2.5 text-[13px] font-medium text-ink hover:bg-surface-hover"
+              >
+                {t("alerts.open", { page: t(destinationName(fix)) })}
+              </button>
+            )}
             <button
               type="button"
+              data-dismiss
               onClick={() => dismiss(alert, index)}
               className="pressable -m-1 rounded-md p-1 text-ink-3 hover:bg-surface-hover hover:text-ink"
               aria-label={t("alerts.dismiss")}

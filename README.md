@@ -145,11 +145,11 @@ so the Windows H.264 encoder is missing until you install the Media Feature Pack
 Apps → Optional features). Without it, PalaClips switches to AV1 on the processor on its own;
 install the pack to get H.264 back.
 
-**My mic is also in track 1.** That's the "Also in Full mix" setting (Settings → Audio), so a
+**My mic is also in track 1.** That's the "Also in Full mix" setting (Audio page), so a
 clip is ready to share as is. Your voice keeps its own track either way.
 
 **Track 1 doesn't contain notifications or music.** By default, track 1 is the sum of the
-tracks you picked. Turn on "Desktop audio" (Settings → Audio) to have it contain everything
+tracks you picked. Turn on "Desktop audio" (Audio page) to have it contain everything
 you hear.
 
 **Memory or disk for the replay?** In memory, nothing is written to the disk until you save,

@@ -6,6 +6,8 @@
     "label": "Navigation",
     "status": "Status",
     "gallery": "Gallery",
+    "capture": "Capture",
+    "audio": "Audio",
     "settings": "Settings"
   },
   "gallery": {
@@ -107,7 +109,8 @@
   },
   "alerts": {
     "label": "Alerts",
-    "dismiss": "Dismiss this alert"
+    "dismiss": "Dismiss this alert",
+    "open": "Open {page}"
   },
   "status": {
     "title": "PalaClips status",
@@ -133,7 +136,8 @@
     "disk": "Disk",
     "free": "free",
     "recordingRunning": "Recording in progress",
-    "stop": "Stop"
+    "stop": "Stop",
+    "changeSource": "Change"
   },
   "performance": {
     "title": "Performance",
@@ -161,13 +165,14 @@
     "level": "Level",
     "peak": "Peak",
     "state": "State",
-    "empty": "No audio track: clips will be silent. Turn on the full mix, the mic or an app in Settings → Audio.",
+    "empty": "No audio track: clips will be silent. Turn on the full mix, the mic or an app on the Audio page.",
     "states": {
       "capturing": "Capturing",
       "waiting": "Waiting for the app",
       "silent": "Silent: check the output",
       "unavailable": "Device unavailable"
-    }
+    },
+    "edit": "Set up tracks"
   },
   "clips": {
     "title": "Latest clips",
@@ -189,8 +194,6 @@
     "title": "Settings",
     "nav": "Settings sections",
     "sections": {
-      "capture": "Capture",
-      "audio": "Audio",
       "replay": "Replay & quality",
       "recording": "Recording",
       "hotkeys": "Hotkeys",
@@ -620,7 +623,7 @@
     },
     "screen": {
       "question": "Which screen should be captured?",
-      "hint": "A specific window can be picked in Settings → Capture."
+      "hint": "A specific window can be picked on the Capture page."
     },
     "mic": {
       "question": "Record your microphone?",
@@ -701,5 +704,11 @@
       "gallery": "Open in gallery",
       "buffered": "{value} / {total} s"
     }
+  },
+  "leave": {
+    "title": "Changes not applied",
+    "pages": "Page: {pages}.",
+    "stay": "Stay",
+    "discard": "Don't apply"
   }
 }

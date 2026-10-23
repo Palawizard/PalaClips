@@ -69,10 +69,12 @@ export function Roster({
   tracks,
   appOrder,
   flashAt,
+  onOpenAudio,
 }: {
   tracks: TrackInfo[];
   appOrder: string[];
   flashAt: number;
+  onOpenAudio: () => void;
 }) {
   const t = useT();
   const [flashing, setFlashing] = useState(false);
@@ -90,6 +92,13 @@ export function Roster({
         <h2 id="roster-title" tabIndex={-1} className="text-[17px] font-semibold outline-none">
           {t("roster.title")}
         </h2>
+        <button
+          type="button"
+          onClick={onOpenAudio}
+          className="pressable -my-1 h-8 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-hover hover:text-ink"
+        >
+          {t("roster.edit")}
+        </button>
       </div>
       <div role="table" aria-label={t("roster.table")} className="text-[14px]">
         <div

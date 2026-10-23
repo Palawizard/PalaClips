@@ -19,7 +19,7 @@ function splitOf(kind: SplitKind, current: RecordSplit): RecordSplit {
 
 export function RecordingSection() {
   const t = useT();
-  const { config, loadError } = useConfigDraft();
+  const { config, loadError } = useConfigDraft("settings.sections.recording");
   const footerFocus = useRef<HTMLDivElement>(null);
   if (!config) return <LoadError message={loadError} />;
   const { draft } = config;

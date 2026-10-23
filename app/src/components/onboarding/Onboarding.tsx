@@ -769,7 +769,7 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
       );
       footer = (
         <>
-          <button type="button" onClick={() => finish("settings")} className={SECONDARY}>
+          <button type="button" onClick={() => finish("capture")} className={SECONDARY}>
             {t("onboarding.summary.manual")}
           </button>
           <button type="button" onClick={() => go("test")} className={PRIMARY}>
