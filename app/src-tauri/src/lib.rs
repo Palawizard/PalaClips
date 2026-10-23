@@ -74,6 +74,7 @@ pub struct AppStatus {
     pub buffer_bytes: u64,
     pub recording_secs: f64,
     pub recording_bytes: u64,
+    pub clip_ends_at_ms: Option<u64>,
     pub capture: Option<CaptureInfo>,
     pub tracks: Vec<TrackInfo>,
     pub alerts: Vec<ActiveAlert>,
@@ -154,6 +155,11 @@ impl AppStatus {
             EngineEvent::ClipSaved { .. } => {
                 self.alerts
                     .retain(|alert| alert.text.code != "clip_too_short");
+            }
+            EngineEvent::PostRoll { ends_in_secs } => {
+                self.clip_ends_at_ms = ends_in_secs.map(|seconds| {
+                    unix_millis().saturating_add((seconds * 1000.0).round() as u64)
+                });
             }
             EngineEvent::Alert {
                 severity,
@@ -283,6 +289,16 @@ impl EngineSlot {
             .unwrap_or_default()
     }
 
+    fn tray_state(&self) -> TrayState {
+        self.status
+            .lock()
+            .map(|status| TrayState {
+                recording: status.state == EngineState::Recording,
+                clip_in_progress: status.clip_ends_at_ms.is_some(),
+            })
+            .unwrap_or_default()
+    }
+
     fn language(&self) -> Language {
         self.settings
             .lock()
@@ -335,7 +351,7 @@ impl EngineSlot {
             settings.engine = config.clone();
         })?;
         self.handle.configure(config)?;
-        refresh_tray(app, resolved, self.state() == EngineState::Recording);
+        refresh_tray(app, resolved, self.tray_state());
         Ok(resolved)
     }
 
@@ -468,7 +484,7 @@ impl EngineSlot {
                 ..defaults
             }
         })?;
-        refresh_tray(app, self.language(), self.state() == EngineState::Recording);
+        refresh_tray(app, self.language(), self.tray_state());
         if palaclips_engine::paths::isolated_dir().is_some() {
             return Ok(());
         }
@@ -482,7 +498,33 @@ impl EngineSlot {
     fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
         match event {
             EngineEvent::StateChanged { state } => {
-                refresh_tray_state(app, self.language(), *state == EngineState::Recording);
+                let tray = TrayState {
+                    recording: *state == EngineState::Recording,
+                    ..self.tray_state()
+                };
+                refresh_tray_state(app, self.language(), tray);
+            }
+            EngineEvent::PostRoll { ends_in_secs } => {
+                let tray = TrayState {
+                    clip_in_progress: ends_in_secs.is_some(),
+                    ..self.tray_state()
+                };
+                refresh_tray(app, self.language(), tray);
+                if let Some(seconds) = ends_in_secs {
+                    let feedback = self.feedback();
+                    if feedback.sound {
+                        feedback::play_chime();
+                    }
+                    if feedback.toast {
+                        let language = self.language();
+                        feedback::toast(
+                            app,
+                            &i18n::text(language, "toast.clipInProgress"),
+                            &i18n::text(language, "toast.clipInProgressBody")
+                                .replace("{seconds}", &format!("{}", seconds.round() as u64)),
+                        );
+                    }
+                }
             }
             EngineEvent::GameNamed { exe_name, name } => {
                 if let Err(error) = self.update(|settings| {
@@ -670,6 +712,7 @@ pub fn run() {
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
+            commands::replay_finish_clip,
             commands::record_start,
             commands::record_stop,
             commands::list_clips,
@@ -790,19 +833,32 @@ pub fn run() {
 }
 
 const TRAY: &str = "main";
-const TRAY_ITEMS: [&str; 6] = ["open", "save", "record", "arm", "disarm", "quit"];
+const TRAY_ITEMS: [&str; 7] = ["open", "save", "finish", "record", "arm", "disarm", "quit"];
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TrayState {
+    recording: bool,
+    clip_in_progress: bool,
+}
+
+fn unix_millis() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_millis() as u64)
+}
 const RECORDING_DOT: [u8; 4] = [0xe5, 0x2b, 0x2b, 0xff];
 
 fn tray_menu(
     app: &tauri::AppHandle,
     language: Language,
-    recording: bool,
+    state: TrayState,
 ) -> tauri::Result<Menu<tauri::Wry>> {
     let items = TRAY_ITEMS
         .iter()
+        .filter(|id| **id != "finish" || state.clip_in_progress)
         .map(|id| {
             let key = match *id {
-                "record" if recording => "tray.recordStop".to_owned(),
+                "record" if state.recording => "tray.recordStop".to_owned(),
                 "record" => "tray.recordStart".to_owned(),
                 id => format!("tray.{id}"),
             };
@@ -816,19 +872,20 @@ fn tray_menu(
     Menu::with_items(app, &items)
 }
 
-pub fn refresh_tray(app: &tauri::AppHandle, language: Language, recording: bool) {
+pub fn refresh_tray(app: &tauri::AppHandle, language: Language, state: TrayState) {
     let Some(tray) = app.tray_by_id(TRAY) else {
         return;
     };
     if let Err(error) =
-        tray_menu(app, language, recording).and_then(|menu| tray.set_menu(Some(menu)))
+        tray_menu(app, language, state).and_then(|menu| tray.set_menu(Some(menu)))
     {
         tracing::warn!(%error, "menu de la zone de notification non traduit");
     }
 }
 
-fn refresh_tray_state(app: &tauri::AppHandle, language: Language, recording: bool) {
-    refresh_tray(app, language, recording);
+fn refresh_tray_state(app: &tauri::AppHandle, language: Language, state: TrayState) {
+    refresh_tray(app, language, state);
+    let recording = state.recording;
     let (Some(tray), Some(icon)) = (app.tray_by_id(TRAY), app.default_window_icon()) else {
         return;
     };
@@ -861,7 +918,7 @@ fn recording_icon(base: &tauri::image::Image<'_>) -> tauri::image::Image<'static
 }
 
 fn build_tray(app: &tauri::AppHandle, language: Language) -> tauri::Result<()> {
-    let menu = tray_menu(app, language, false)?;
+    let menu = tray_menu(app, language, TrayState::default())?;
     let mut tray = TrayIconBuilder::with_id(TRAY)
         .tooltip("PalaClips")
         .menu(&menu)
@@ -870,10 +927,11 @@ fn build_tray(app: &tauri::AppHandle, language: Language) -> tauri::Result<()> {
             "open" => {
                 open_main_window(app).ok();
             }
-            "save" | "record" | "arm" | "disarm" => {
+            "save" | "finish" | "record" | "arm" | "disarm" => {
                 if let Some(slot) = app.try_state::<EngineSlot>() {
                     let result = match event.id().as_ref() {
                         "save" => slot.handle.save_replay(),
+                        "finish" => slot.handle.finish_clip(),
                         "record" if slot.state() == EngineState::Recording => {
                             slot.handle.stop_recording()
                         }
