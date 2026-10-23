@@ -200,78 +200,80 @@ const JobRow = memo(function JobRow({
           })}
         </p>
       </div>
-      {job.state === "queued" && (
-        <span className="flex items-center gap-3">
-          <span className="text-[13px] text-ink-2">{t("compress.waiting")}</span>
-          <button type="button" onClick={() => compressCancel(job.id).catch(fail)} className={SECONDARY}>
-            {t("compress.cancel")}
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+        {job.state === "queued" && (
+          <span className="flex items-center gap-3">
+            <span className="text-[13px] text-ink-2">{t("compress.waiting")}</span>
+            <button type="button" onClick={() => compressCancel(job.id).catch(fail)} className={SECONDARY}>
+              {t("compress.cancel")}
+            </button>
+          </span>
+        )}
+        {job.state === "running" && (
+          <span className="flex items-center gap-3">
+            {job.attempt > 1 && <span className="text-[13px] text-ink-2">{t("compress.attempt", { attempt: job.attempt })}</span>}
+            <span
+              role="progressbar"
+              aria-label={name}
+              aria-valuetext={t("compress.progress", {
+                percent: t("units.percent", { value: number(job.fraction * 100) }),
+                attempt: job.attempt,
+              })}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(job.fraction * 100)}
+              className="relative h-2 w-40 overflow-hidden rounded-[2px] bg-meter-ground"
+            >
+              <span className="export-fill absolute inset-0 origin-left bg-ink" style={{ transform: `scaleX(${job.fraction})` }} />
+            </span>
+            <span className="score w-12 text-right text-[15px] text-ink-2">
+              {t("units.percent", { value: number(job.fraction * 100) })}
+            </span>
+            <button type="button" onClick={() => compressCancel(job.id).catch(fail)} className={SECONDARY}>
+              {t("compress.cancel")}
+            </button>
+          </span>
+        )}
+        {job.state === "done" && (
+          <span className="flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
+              <Check size={15} strokeWidth={2.4} className="text-ink" aria-hidden />
+              {t("compress.done")}
+            </span>
+            <span className="score text-[17px] font-semibold">{megabytes(job.bytes)}</span>
+            <button
+              type="button"
+              onClick={() => compressCopy(job.id).then(() => onNotice(t("compress.copied")), fail)}
+              className={SECONDARY}
+            >
+              <Copy size={16} aria-hidden />
+              {t("compress.copy")}
+            </button>
+            <button type="button" onClick={() => compressReveal(job.id).catch(fail)} className={SECONDARY}>
+              <FolderOpen size={16} aria-hidden />
+              {t("compress.show")}
+            </button>
+          </span>
+        )}
+        {job.state === "failed" && <p className="max-w-[60ch] text-[13px] text-warn">{message(job.error)}</p>}
+        {job.state === "cancelled" && <span className="text-[13px] text-ink-3">{t("compress.cancelled")}</span>}
+        {(job.state === "failed" || job.state === "cancelled") && (
+          <button type="button" onClick={() => compressRetry(job.id).catch(fail)} className={SECONDARY}>
+            <RotateCcw size={16} aria-hidden />
+            {t("compress.retry")}
           </button>
-        </span>
-      )}
-      {job.state === "running" && (
-        <span className="flex items-center gap-3">
-          {job.attempt > 1 && <span className="text-[13px] text-ink-2">{t("compress.attempt", { attempt: job.attempt })}</span>}
-          <span
-            role="progressbar"
-            aria-label={name}
-            aria-valuetext={t("compress.progress", {
-              percent: t("units.percent", { value: number(job.fraction * 100) }),
-              attempt: job.attempt,
-            })}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(job.fraction * 100)}
-            className="relative h-2 w-40 overflow-hidden rounded-[2px] bg-meter-ground"
-          >
-            <span className="export-fill absolute inset-0 origin-left bg-ink" style={{ transform: `scaleX(${job.fraction})` }} />
-          </span>
-          <span className="score w-12 text-right text-[15px] text-ink-2">
-            {t("units.percent", { value: number(job.fraction * 100) })}
-          </span>
-          <button type="button" onClick={() => compressCancel(job.id).catch(fail)} className={SECONDARY}>
-            {t("compress.cancel")}
-          </button>
-        </span>
-      )}
-      {job.state === "done" && (
-        <span className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
-            <Check size={15} strokeWidth={2.4} className="text-ink" aria-hidden />
-            {t("compress.done")}
-          </span>
-          <span className="score text-[17px] font-semibold">{megabytes(job.bytes)}</span>
+        )}
+        {(job.state === "done" || job.state === "failed" || job.state === "cancelled") && (
           <button
             type="button"
-            onClick={() => compressCopy(job.id).then(() => onNotice(t("compress.copied")), fail)}
-            className={SECONDARY}
+            onClick={() => compressRemove(job.id).then(() => onRemoved(job.id), fail)}
+            aria-label={t("compress.remove", { name })}
+            className={ICON_BUTTON}
           >
-            <Copy size={16} aria-hidden />
-            {t("compress.copy")}
+            <X size={16} aria-hidden />
           </button>
-          <button type="button" onClick={() => compressReveal(job.id).catch(fail)} className={SECONDARY}>
-            <FolderOpen size={16} aria-hidden />
-            {t("compress.show")}
-          </button>
-        </span>
-      )}
-      {job.state === "failed" && <p className="max-w-[60ch] text-[13px] text-warn">{message(job.error)}</p>}
-      {job.state === "cancelled" && <span className="text-[13px] text-ink-3">{t("compress.cancelled")}</span>}
-      {(job.state === "failed" || job.state === "cancelled") && (
-        <button type="button" onClick={() => compressRetry(job.id).catch(fail)} className={SECONDARY}>
-          <RotateCcw size={16} aria-hidden />
-          {t("compress.retry")}
-        </button>
-      )}
-      {(job.state === "done" || job.state === "failed" || job.state === "cancelled") && (
-        <button
-          type="button"
-          onClick={() => compressRemove(job.id).then(() => onRemoved(job.id), fail)}
-          aria-label={t("compress.remove", { name })}
-          className={`${ICON_BUTTON} ml-auto`}
-        >
-          <X size={16} aria-hidden />
-        </button>
-      )}
+        )}
+      </div>
     </li>
   );
 });
