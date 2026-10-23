@@ -60,10 +60,10 @@ export function Alerts({ alerts, onOpen }: { alerts: ActiveAlert[]; onOpen: (des
         return (
           <li
             key={alert.code}
-            className="alert-item flex items-start gap-3 border-b border-line bg-surface-2 px-5 py-3 last:border-b-0"
+            className="alert-item flex flex-wrap items-start gap-3 border-b border-line bg-surface-2 px-5 py-3 last:border-b-0"
           >
             <Icon size={18} className={`mt-0.5 shrink-0 ${TONE[alert.severity]}`} aria-hidden />
-            <p className="max-w-[90ch] flex-1 text-ink">{message(alert)}</p>
+            <p className="max-w-[90ch] min-w-[240px] flex-1 text-ink">{message(alert)}</p>
             {fix && (
               <button
                 type="button"

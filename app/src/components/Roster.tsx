@@ -95,7 +95,7 @@ export function Roster({
         <button
           type="button"
           onClick={onOpenAudio}
-          className="pressable -my-1 h-8 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-hover hover:text-ink"
+          className="pressable -my-1 h-8 rounded-md border border-line-strong px-2.5 text-[13px] font-medium text-ink hover:bg-surface-hover"
         >
           {t("roster.edit")}
         </button>

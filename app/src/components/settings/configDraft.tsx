@@ -133,22 +133,22 @@ export function ConfigFooter({ config, focusAfter }: { config: ConfigDraft; focu
           <button
             type="button"
             onClick={() => {
+              config.cancel();
+              focusAfter.current?.focus();
+            }}
+            className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+          >
+            {t("leave.discard")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               focusAfter.current?.focus();
               void config.apply();
             }}
             className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
           >
             {t("settings.apply")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              config.cancel();
-              focusAfter.current?.focus();
-            }}
-            className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
-          >
-            {t("settings.cancel")}
           </button>
         </div>
       )}
