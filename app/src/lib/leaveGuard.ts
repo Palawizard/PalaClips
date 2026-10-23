@@ -49,9 +49,15 @@ export function createLeaveGuard(): LeaveGuard {
       if (choice === "stay") return show(null);
       if (choice === "apply") {
         choosing = true;
-        const applied = await Promise.all(current.changes.map((change) => change.apply()));
-        choosing = false;
-        if (!applied.every(Boolean)) return show(null);
+        let applied = false;
+        try {
+          applied = (await Promise.all(current.changes.map((change) => change.apply()))).every(Boolean);
+        } catch {
+          applied = false;
+        } finally {
+          choosing = false;
+        }
+        if (!applied) return show(null);
       } else {
         for (const change of current.changes) change.discard();
       }

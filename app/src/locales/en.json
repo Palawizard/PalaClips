@@ -707,8 +707,12 @@
   },
   "leave": {
     "title": "Changes not applied",
-    "pages": "Page: {pages}.",
+    "pages": {
+      "one": "Page: {pages}.",
+      "other": "Pages: {pages}."
+    },
     "stay": "Stay",
-    "discard": "Don't apply"
+    "discard": "Don't apply",
+    "applyRestart": "Apply and restart"
   }
 }

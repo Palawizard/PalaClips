@@ -1,6 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { type ReactNode, createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { type Key, useT } from "../lib/i18n.ts";
+import { type Key, currentLanguage, useT } from "../lib/i18n.ts";
 import { type LeaveGuard, type PendingChange, createLeaveGuard } from "../lib/leaveGuard.ts";
 
 const GuardContext = createContext<LeaveGuard | null>(null);
@@ -63,6 +63,7 @@ function LeaveDialog({ guard }: { guard: LeaveGuard }) {
   const request = useSyncExternalStore(guard.subscribe, guard.request);
   const dialog = useRef<HTMLDialogElement>(null);
   const applyButton = useRef<HTMLButtonElement>(null);
+  const stayButton = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -70,11 +71,12 @@ function LeaveDialog({ guard }: { guard: LeaveGuard }) {
     if (!element) return;
     if (request && !element.open) {
       element.showModal();
-      applyButton.current?.focus();
+      (request.changes.some((change) => change.restarts) ? stayButton : applyButton).current?.focus();
     } else if (!request && element.open) element.close();
   }, [request]);
 
   const choose = (choice: "apply" | "discard" | "stay") => {
+    if (busy) return;
     setBusy(choice === "apply");
     guard.choose(choice).finally(() => setBusy(false));
   };
@@ -87,25 +89,28 @@ function LeaveDialog({ guard }: { guard: LeaveGuard }) {
       ref={dialog}
       aria-labelledby="leave-title"
       aria-describedby="leave-body"
+      aria-busy={busy}
       onCancel={(event) => {
         event.preventDefault();
         choose("stay");
       }}
-      className="leave-dialog m-auto w-[min(440px,calc(100vw-48px))] rounded-md border border-line-strong bg-surface-2 p-0 text-ink"
+      className="leave-dialog m-auto w-[min(440px,calc(100vw-48px))] rounded-md border border-line-strong bg-surface-2 p-0 text-ink shadow-[0_16px_48px_rgb(0_0_0/0.5)]"
     >
       <div className="px-5 pt-5 pb-4">
         <h2 id="leave-title" className="text-[17px] font-semibold">
           {t("leave.title")}
         </h2>
         <div id="leave-body" className="mt-2 text-[14px] text-ink-2">
-          <p>{t("leave.pages", { pages: pages.join(", ") })}</p>
+          <p>{t("leave.pages", { count: pages.length, pages: new Intl.ListFormat(currentLanguage(), { type: "conjunction" }).format(pages) })}</p>
           {restarts && <p className="mt-1">{t("settings.restartWarning")}</p>}
         </div>
       </div>
       <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">
         <button
+          ref={stayButton}
           type="button"
           onClick={() => choose("stay")}
+          disabled={busy}
           className="pressable h-9 rounded-md px-3.5 font-medium text-ink-2 hover:bg-surface-hover hover:text-ink"
         >
           {t("leave.stay")}
@@ -125,7 +130,7 @@ function LeaveDialog({ guard }: { guard: LeaveGuard }) {
           disabled={busy}
           className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90 disabled:cursor-wait disabled:opacity-70"
         >
-          {t("settings.apply")}
+          {restarts ? t("leave.applyRestart") : t("settings.apply")}
         </button>
       </div>
     </dialog>

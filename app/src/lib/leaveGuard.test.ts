@@ -116,4 +116,15 @@ describe("leave guard", () => {
     await guard.choose("stay");
     expect(listener).toHaveBeenCalledTimes(2);
   });
+
+  test("a_rejected_apply_does_not_lock_the_guard", async () => {
+    const guard = createLeaveGuard();
+    guard.set("capture", { ...change(), apply: () => Promise.reject(new Error("io")) });
+    guard.leave(vi.fn());
+    await guard.choose("apply");
+    const action = vi.fn();
+    guard.leave(action);
+    await guard.choose("discard");
+    expect(action).toHaveBeenCalledOnce();
+  });
 });

@@ -393,7 +393,7 @@ body {
 }
 
 .leave-dialog::backdrop {
-  background: rgb(5 8 14 / 0.6);
+  background: rgb(5 8 14 / 0.72);
 }
 
 @media (prefers-reduced-motion: reduce) {
