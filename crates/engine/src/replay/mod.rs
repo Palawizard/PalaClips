@@ -92,9 +92,83 @@ pub fn forget_saved<P: TimedPacket>(
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PostRollCut {
+    until: Hns,
+    newest: Vec<Hns>,
+}
+
+impl PostRollCut {
+    pub fn new(until: Hns, newest: Vec<Hns>) -> Self {
+        Self { until, newest }
+    }
+
+    pub fn until(&self) -> Hns {
+        self.until
+    }
+
+    pub fn extend_to(&mut self, until: Hns) {
+        self.until = self.until.max(until);
+    }
+
+    pub fn finish_at(&mut self, at: Hns) {
+        self.until = self.until.min(at);
+    }
+
+    pub fn admits(&mut self, stream: usize, pts: Hns) -> bool {
+        if let Some(newest) = self.newest.get_mut(stream) {
+            *newest = (*newest).max(pts);
+        }
+        pts < self.until
+    }
+
+    pub fn done(&self) -> bool {
+        self.newest.iter().all(|newest| *newest >= self.until)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn at(millis: i64) -> Hns {
+        Hns::from_millis(millis)
+    }
+
+    #[test]
+    fn the_post_roll_keeps_every_packet_before_its_end_and_none_after() {
+        let mut cut = PostRollCut::new(at(10_000), vec![at(0), at(0)]);
+        assert!(cut.admits(0, at(9_983)));
+        assert!(cut.admits(1, at(9_990)));
+        assert!(!cut.admits(0, at(10_000)));
+        assert!(!cut.done());
+        assert!(!cut.admits(1, at(10_011)));
+        assert!(cut.done());
+    }
+
+    #[test]
+    fn a_new_press_extends_the_same_clip() {
+        let mut cut = PostRollCut::new(at(10_000), vec![at(0), at(0)]);
+        cut.admits(0, at(9_000));
+        cut.extend_to(at(20_000));
+        cut.extend_to(at(15_000));
+        assert_eq!(cut.until(), at(20_000));
+        assert!(cut.admits(0, at(12_000)));
+        assert!(cut.admits(1, at(12_000)));
+        assert!(!cut.done());
+    }
+
+    #[test]
+    fn finishing_now_ends_the_clip_at_the_next_packets() {
+        let mut cut = PostRollCut::new(at(60_000), vec![at(0), at(0)]);
+        cut.admits(0, at(4_000));
+        cut.finish_at(at(4_010));
+        assert!(!cut.admits(0, at(4_017)));
+        assert!(!cut.admits(1, at(4_020)));
+        assert!(cut.done());
+        cut.finish_at(at(90_000));
+        assert_eq!(cut.until(), at(4_010));
+    }
 
     #[derive(Debug)]
     struct Pkt {
