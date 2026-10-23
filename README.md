@@ -58,6 +58,9 @@ Anti-Cheat.
   its program name after a restart.
 - **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume), trim,
   export, or copy the file to paste it into Discord.
+- **Compress to a target size**: 20 MB for Discord, 50 or 500 MB for Nitro, or any size;
+  resolution and frame rate follow the size, and the final size is checked. From the gallery,
+  the player, or by dragging files from File Explorer.
 - **Lightweight**: lives in the notification area; with the window closed, only one small
   process remains.
 - **Private**: no account, no telemetry, no injection into games.
