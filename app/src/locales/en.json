@@ -763,9 +763,15 @@
     "cancelled": "Cancelled",
     "copy": "Copy",
     "show": "Open folder",
-    "copied": "File copied: paste it into Discord.",
+    "copied": "File copied.",
     "clear": "Clear finished",
     "range": "Clip {start} – {end}",
-    "probing": "Reading the file…"
+    "probing": "Reading the file…",
+    "overTarget": "Over {size}",
+    "jobPlan": "Target {size} · {height} · {fps}",
+    "done": "Done",
+    "retry": "Try again",
+    "finished": "{name} compressed: {size}",
+    "progress": "{percent}, attempt {attempt}"
   }
 }

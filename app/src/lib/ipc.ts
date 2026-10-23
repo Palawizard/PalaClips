@@ -434,6 +434,14 @@ export function compressClear(): Promise<void> {
   return invoke("compress_clear");
 }
 
+export function compressRemove(id: number): Promise<void> {
+  return invoke("compress_remove", { id });
+}
+
+export function compressRetry(id: number): Promise<void> {
+  return invoke("compress_retry", { id });
+}
+
 export function compressCopy(id: number): Promise<void> {
   return invoke("compress_copy", { id });
 }

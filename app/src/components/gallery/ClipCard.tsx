@@ -1,5 +1,5 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Copy, Ellipsis, Film, FolderOpen, Pencil, Play, Star, Trash2 } from "lucide-react";
+import { Copy, Ellipsis, Film, FolderOpen, Pencil, Play, Shrink, Star, Trash2 } from "lucide-react";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { bytes, clock } from "../../lib/format.ts";
 import { autoNamed, clipTitle, dayLabel, timeOfDay } from "../../lib/gallery.ts";
@@ -7,7 +7,7 @@ import { useT } from "../../lib/i18n.ts";
 import type { Clip } from "../../lib/ipc.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../../lib/tracks.ts";
 
-export type ClipAction = "open" | "favorite" | "rename" | "copy" | "reveal" | "trash";
+export type ClipAction = "open" | "favorite" | "rename" | "copy" | "compress" | "reveal" | "trash";
 
 export const CARD_SHORTCUTS = "Enter F F2 Delete Control+C Shift+F10";
 const FAVORITE_KEY = "F";
@@ -87,6 +87,7 @@ function ActionMenu({
     },
     { action: "rename", label: t("gallery.rename"), keys: "F2", icon: Pencil },
     { action: "copy", label: t("gallery.copy"), keys: "Ctrl+C", icon: Copy },
+    { action: "compress", label: t("gallery.compress"), keys: null, icon: Shrink },
     { action: "reveal", label: t("gallery.reveal"), keys: null, icon: FolderOpen },
     { action: "trash", label: t("gallery.trash"), keys: t("keys.delete"), icon: Trash2 },
   ];

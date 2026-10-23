@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alerts } from "./components/Alerts.tsx";
+import { CompressPage } from "./components/compress/CompressPage.tsx";
 import { Gallery } from "./components/gallery/Gallery.tsx";
 import { LeaveGuardProvider, useLeaveGuard } from "./components/LeaveDialog.tsx";
 import { Onboarding } from "./components/onboarding/Onboarding.tsx";
@@ -11,6 +12,7 @@ import { AudioSection } from "./components/settings/AudioSection.tsx";
 import { CaptureSection } from "./components/settings/CaptureSection.tsx";
 import { type SectionId, Settings } from "./components/settings/Settings.tsx";
 import { StatusBanner } from "./components/StatusBanner.tsx";
+import { type DraftRequest, addDrafts } from "./lib/compressDrafts.ts";
 import { useT } from "./lib/i18n.ts";
 import { onboardingNeeded } from "./lib/ipc.ts";
 import { useEngine } from "./lib/useEngine.ts";
@@ -99,7 +101,17 @@ function Shell() {
             </div>
           </>
         )}
-        {view === "gallery" && <Gallery config={engine.config} saveKeys={engine.saveKeys} />}
+        {view === "gallery" && (
+          <Gallery
+            config={engine.config}
+            saveKeys={engine.saveKeys}
+            onCompress={(requests: DraftRequest[]) => {
+              addDrafts(requests);
+              open({ view: "compress" });
+            }}
+          />
+        )}
+        {view === "compress" && <CompressPage />}
         {view === "capture" && (
           <>
             <PageTitle>{t("nav.capture")}</PageTitle>

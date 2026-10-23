@@ -260,6 +260,20 @@ pub fn compress_clear(slot: State<'_, EngineSlot>) {
 }
 
 #[tauri::command]
+pub fn compress_remove(slot: State<'_, EngineSlot>, id: u32) {
+    slot.compress_remove(id);
+}
+
+#[tauri::command]
+pub fn compress_retry(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    id: u32,
+) -> Result<(), Localized> {
+    slot.compress_retry(&app, id)
+}
+
+#[tauri::command]
 pub fn compress_copy(slot: State<'_, EngineSlot>, id: u32) -> Result<(), Localized> {
     slot.compress_copy(id)
 }

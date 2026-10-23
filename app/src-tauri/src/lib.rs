@@ -681,6 +681,8 @@ pub fn run() {
             commands::compress_jobs,
             commands::compress_cancel,
             commands::compress_clear,
+            commands::compress_remove,
+            commands::compress_retry,
             commands::compress_copy,
             commands::compress_reveal,
             commands::record_start,
