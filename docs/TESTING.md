@@ -363,3 +363,21 @@ du brouillon de test (`test-v1.1.0`), copié dans la VM.
 5 et 6 ; le nombre de cœurs de la VM (`Gestionnaire des tâches → Performance`) et sa version de
 Windows (`winver`) ; le zip de diagnostic (Réglages → Général) **après** l'étape 7, qui dit si la
 conversion d'image passe par le Video Processor ou par le processeur.
+
+## T12 — Enregistrer après la sauvegarde (v1.2)
+
+Automatique (`pwsh scripts/post-roll.ps1`, ~4 min, écran principal, flashs et bips la dernière
+minute ; `-SkipSync` sans flashs, `-SyncOnly` pour la synchro seule) : clip simple, prolongé,
+terminé avant la fin, enregistrement lancé pendant le « après », sources changées pendant le
+« après », tampon sur disque, arrêt brutal puis récupération, synchro de part et d'autre de la
+jonction contre un clip instantané. Journal dans `target\journals\post-roll-*.txt`.
+
+Mémoire sans surveillance (`pwsh scripts/post-roll-memory.ps1`, ~12 min, lancé par Palawi) :
+avant 60 s, après 600 s, 360p30 ; working set privé toutes les 10 s ; critère : pente < 20 Mo/h,
+écart < 30 Mo, clip continu.
+
+À la main (session de fin de version) : Réglages → Replay & qualité → Après l'appui = 10 s ; en
+jeu, `Alt+F10` → carillon et notification « Clip en cours / +10 s » sans perte de focus ; second
+appui pendant le « après » → toujours un seul clip, plus long ; « Terminer le clip maintenant »
+dans la zone de notification ; à la fin, notification « Clip sauvegardé » et clip dans la
+galerie.

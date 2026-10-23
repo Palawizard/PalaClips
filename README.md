@@ -46,6 +46,8 @@ Anti-Cheat.
 - **Instant replay**: the last 5 seconds to 60 minutes stay in memory or on disk. A hotkey
   (`Alt+F10` by default) saves them without leaving the game; a sound and a notification
   confirm the save.
+- **After the press**: the clip can also keep going for up to 10 min after the hotkey (for
+  example 1 min before + 10 s after); pressing again extends it.
 - **Screen recording** (`Ctrl+Alt+F9`) in a fragmented MP4 that stays readable even if the PC
   crashes mid-way.
 - **Separate audio tracks**: track 1 is the full mix, track 2 the microphone, then one track

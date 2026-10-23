@@ -157,9 +157,8 @@ impl AppStatus {
                     .retain(|alert| alert.text.code != "clip_too_short");
             }
             EngineEvent::PostRoll { ends_in_secs } => {
-                self.clip_ends_at_ms = ends_in_secs.map(|seconds| {
-                    unix_millis().saturating_add((seconds * 1000.0).round() as u64)
-                });
+                self.clip_ends_at_ms = ends_in_secs
+                    .map(|seconds| unix_millis().saturating_add((seconds * 1000.0).round() as u64));
             }
             EngineEvent::Alert {
                 severity,
@@ -876,9 +875,7 @@ pub fn refresh_tray(app: &tauri::AppHandle, language: Language, state: TrayState
     let Some(tray) = app.tray_by_id(TRAY) else {
         return;
     };
-    if let Err(error) =
-        tray_menu(app, language, state).and_then(|menu| tray.set_menu(Some(menu)))
-    {
+    if let Err(error) = tray_menu(app, language, state).and_then(|menu| tray.set_menu(Some(menu))) {
         tracing::warn!(%error, "menu de la zone de notification non traduit");
     }
 }

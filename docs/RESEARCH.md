@@ -691,3 +691,21 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
   sur `releases/latest/download/latest.json` donnait déjà 1.1.0 juste après la publication :
   la bascule de `releases/latest` n'est pas instantanée pour tous les clients. Après une
   publication, attendre ~1 min avant de juger l'updater.
+
+## Enregistrer après la sauvegarde (v1.2, mesuré le 2026-10-23)
+
+- Banc `scripts/post-roll.ps1` (écran principal 720p60, NVENC, piste mix, dossier isolé) et
+  vérificateur `scripts/clip-continuity.py` (écarts de PTS par flux). Avant 10 s + après 10 s :
+  20,2 s ; prolongé à mi-course : 19,5 s pour 4 s d'avant + 15 s ; « terminer » 3 s après :
+  7,8 s ; tampon sur disque : 20,1 s ; processus tué 6 s après l'appui : 16 s récupérés au
+  démarrage suivant. Aucun doublon, aucun trou, pistes de même durée (≤ 20 ms).
+- Synchro (flashs + bips de `probe-av-emitter`, fenêtres de 5 s) : clip « après » +137,3 /
+  +140,6 / +140,6 / +140,6 ms, jonction à 10,3 s ; clip instantané de référence +138,8 /
+  +128,8 ms. Les ~140 ms sont le retard du loopback Voicemeeter, non compensé dans la CLI.
+- MP4 hybride (`hybrid_fragmented`) : le premier échantillon de chaque piste est ramené à 0 ;
+  si l'audio commence avant la vidéo (paquet AAC à cheval), c'est la première image qui dure
+  ~13 ms de plus ; si on retire cet audio, c'est le premier paquet audio qui est avancé. Les
+  temps suivants sont exacts dans les deux cas : comportement gardé (celui des enregistrements
+  depuis la 1.0), le vérificateur ignore ce premier pas.
+- Erreur trouvée au premier essai : comparer la fin (QPC absolu) aux PTS du flux (relatifs à
+  l'origine de la capture) ne coupait rien, le clip finissait au délai de secours de 3 s.
