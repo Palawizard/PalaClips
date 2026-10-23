@@ -632,3 +632,25 @@ phase 8).
     SVT-AV1. Palawi garde H.264 par défaut (2026-10-22) ; l'estimation de RAM de
     Réglages ajoute la mémoire de l'encodeur CPU, et le README la donne. PERF-02 (< 150 Mo hors
     tampon) reste défini pour le chemin matériel.
+
+## ADR-036 — Capture et Audio en pages, alerte de sortie de page (v1.2, APP-14)
+**Statut :** acceptée (2026-10-23, brief validé par Palawi).
+- Contexte : Capture et Audio sont les réglages qu'on ouvre le plus, mais ils étaient rangés dans
+  Réglages ; quitter une section avec un changement en attente (replay armé, changement qui
+  redémarre le tampon) le laissait en suspens sans rien dire.
+- Décision : barre latérale État, Galerie, (Compression), Capture, Audio, Réglages ; Réglages
+  garde Replay & qualité, Enregistrement, Raccourcis, Stockage, Général. Liens directs : bouton
+  « Changer » de la source et « Régler les pistes » sur État, « Ouvrir <page> » sur les alertes
+  dont la solution est sur une page, « Régler moi-même » du premier lancement → Capture.
+- Garde de sortie : `lib/leaveGuard.ts` (logique pure, testée avec vitest), branchée par
+  `LeaveGuardProvider` (`components/LeaveDialog.tsx`). Chaque `useConfigDraft(page)` déclare son
+  brouillon tant qu'il attend « Appliquer » ; changer de page ou de section de Réglages, ou fermer
+  la fenêtre (`onCloseRequested`, puis `destroy` : permission `core:window:allow-destroy`), passe
+  par la garde. Boîte `<dialog>` modale : Rester (Échap), Ne pas appliquer, Appliquer (focus) ;
+  un échec d'application garde la page ouverte avec l'erreur.
+- Écarté : un brouillon global partagé par toutes les pages (un seul `settings.json` mais des
+  pages qui s'appliquent séparément, comme avant) ; `beforeunload` (ne voit pas la croix de Tauri).
+- Outillage : vitest 5.0.3 en dépendance de dev (`npm test` = test i18n + vitest). npm 10.9.4
+  plante sur l'arbre de vitest (`Cannot read properties of null (reading 'edgesOut')`) : ajouter
+  une dépendance avec `npx -y npm@11.6.2 install` ; `npm ci` (npm 10, CI) lit ensuite le verrou sans
+  souci.
