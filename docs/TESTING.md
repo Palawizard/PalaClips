@@ -363,3 +363,15 @@ du brouillon de test (`test-v1.1.0`), copié dans la VM.
 5 et 6 ; le nombre de cœurs de la VM (`Gestionnaire des tâches → Performance`) et sa version de
 Windows (`winver`) ; le zip de diagnostic (Réglages → Général) **après** l'étape 7, qui dit si la
 conversion d'image passe par le Video Processor ou par le processeur.
+
+## T13 — Compression à une taille cible (v1.2)
+
+Automatique : `cargo test -p palaclips-engine compress` (plan, nom, refus d'un fichier sans
+vidéo, compression AV1 réelle sous la cible, annulation sans fichier) ; banc
+`pwsh scripts/compress-check.ps1 -Dir target\compress-tests` sur des sources préparées dans ce
+dossier (clip court et long 1440p60, multipiste, HDR10, MKV, MOV ; voir RESEARCH), journal dans
+`target\journals\compress-check-*.txt`.
+
+À la main (session de fin de version) : glisser un clip de l'Explorateur sur la page Compression ;
+compresser un vrai clip en 20 Mo puis en 500 Mo, « Copier », coller dans Discord, vérifier que la
+vidéo se lit dans Discord (bureau, et téléphone si possible) avec le son de la piste 1.

@@ -12,11 +12,16 @@ use crate::encode::route_ffmpeg_logs;
 use crate::error::{EngineError, Result};
 use crate::paths;
 
+mod compress;
 mod export;
 mod index;
 mod media;
 mod watch;
 
+pub use compress::{
+    CompressCodec, CompressPlan, CompressProgress, CompressRequest, CompressResult, Quality,
+    SourceInfo, compress, compressed_name, plan as plan_compression, probe_source,
+};
 pub use export::{ExportRequest, export_clip, partial_path};
 pub use index::{Clip, ClipKind, ClipQuery, ClipSort, Library, SyncReport};
 pub use media::{

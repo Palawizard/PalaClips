@@ -251,13 +251,13 @@ Critères :
 
 Recherche et décisions de Palawi : `docs/reports/v1.2-research.md`.
 
-- [ ] Barre latérale (`feature/rail-pages`) : État, Galerie, Compression, Capture, Audio,
+- [x] Barre latérale (`feature/rail-pages`, #106) : État, Galerie, Compression, Capture, Audio,
       Réglages ; hook générique de changements non appliqués (navigation, fermeture, zone de
       notification), testé avec vitest ; liens d'État, alertes, premier lancement et calibrage
       vers la bonne page.
 - [ ] Après la sauvegarde (`feature/post-roll`) : moteur (MP4 hybride, prolongation, fin
       anticipée), cas limites testés, app (réglage, État, zone de notification, notifications).
-- [ ] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
+- [x] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
       boutons galerie/lecteur, glisser-déposer, copier.
 - [ ] Session de tests manuels de Palawi (≤ 15 min, en jouant).
 - [ ] Release v1.2.0 (brouillon, puis publication avec l'accord de Palawi).
