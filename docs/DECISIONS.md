@@ -682,3 +682,29 @@ phase 8).
 - Limite connue : le MP4 fragmenté ramène le premier échantillon de chaque piste à 0 (première
   image affichée ~13 ms de plus, déjà vrai pour les enregistrements depuis la 1.0) ; temps
   suivants exacts, synchro inchangée (RESEARCH).
+## ADR-038 — Compression à une taille cible (v1.2, CMP-01 à 05)
+**Statut :** acceptée (2026-10-23, décisions de Palawi dans `docs/reports/v1.2-research.md`).
+- Contexte : Discord refuse un fichier gratuit au-dessus de 20 Mo (Nitro Basic 50, Nitro 500) ;
+  un clip 1440p60 en fait 300 par minute.
+- Décision : module `library::compress` (moteur) et `palaclips-cli compress`. Débit vidéo =
+  (cible × 0,97 − 1 % − 64 Kio − audio) / durée ; audio 128 / 96 / 64 kb/s selon le budget ;
+  plus haute résolution (1440, 1080, 720, 480) dont le débit par pixel atteint 0,10 à la cadence
+  de la source (60 i/s au plus), sinon 720p à 0,07, sinon 30 i/s, sinon 480p30 ; AV1 : seuils
+  × 0,7. Décodage FFmpeg, graphe de filtres (`zscale` + `tonemap=hable` pour le HDR10/HLG,
+  `fps`, `scale`), `SystemFrameEncoder` (matériel d'abord, puis processeur ; `maxrate` = débit,
+  tampon d'1 s), AAC par piste. Taille mesurée après l'écriture : au-dessus de la cible, nouvel
+  essai avec le débit corrigé du dépassement (× 1,1), 3 essais au plus ; jamais de fichier livré
+  au-dessus de la cible (`over_target`). Fichier `.part.mp4` supprimé en cas d'annulation ou
+  d'échec. Fils du décodeur et de l'encodeur en priorité basse (`encode::threads`).
+- Sortie à côté de l'original (`<nom>_20MB.mp4`, `_2` s'il existe), donc dans la galerie et le
+  quota pour un clip de la bibliothèque. Piste 1 seule par défaut, « Garder toutes les pistes »
+  au choix. File de compression dans le shell (un fil, continue fenêtre fermée), page
+  Compression, bouton dans la galerie et le lecteur (découpe comprise), glisser-déposer par
+  `onDragDropEvent` de Tauri (pas de HTML5 dans l'app, `dragDropEnabled` laissé actif).
+- Mesuré : 11 cas sur 11 sous la cible, entre 94,9 et 98,8 % de la cible, un seul second essai
+  (`docs/reports/v1.2/compress-check-*.txt`, images `docs/reports/v1.2/compress/`) ; un replay
+  sauvegardé pendant une compression reste continu.
+- Écarté : vrai double passage (NVENC ne l'a pas sur fichier, le CPU doublerait le temps) ;
+  HEVC (lecture incertaine dans Discord) ; décodage matériel (gain de vitesse, mais une session
+  D3D11 de plus pendant une partie ; à revoir si la lenteur gêne, ~0,8× le temps réel en
+  1440p60 sur la machine de Palawi).

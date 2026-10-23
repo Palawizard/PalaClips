@@ -311,6 +311,10 @@ d'une erreur système.
 | `list_audio_devices { input }` | 5 ✅ | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
 | `list_app_sessions` | 5 ✅ | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
 | `pick_app_exe` | 5 ✅ | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
+| `compress_probe { path }` / `compress_pick_files` | v1.2 ✅ | CMP-01 : source (taille, cadence, durée, HDR, pistes, octets) et miniature ; sélecteur de fichiers vidéo |
+| `compress_plan { input }` / `compress_preview { plan, codec, durationSecs }` | v1.2 ✅ | plan de compression (ADR-038) ou plan modifié → `{ plan, quality, estimated_bytes, duration_secs }` |
+| `compress_add { inputs }` / `compress_jobs` / `compress_cancel { id }` / `compress_clear` | v1.2 ✅ | file de compression dans le shell, un fil en priorité basse, continue fenêtre fermée ; événement `compress-changed` (tâche : `queued`, `running { attempt, fraction }`, `done { path, bytes, attempts }`, `failed { error }`, `cancelled`) |
+| `compress_copy { id }` / `compress_reveal { id }` | v1.2 ✅ | copie du fichier compressé dans le presse-papiers, Explorateur ; seulement pour une tâche terminée |
 | `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = `Localized`) ; avec `replay.after_secs` > 0 (RPL-10, v1.2), `replay_save` écrit le tampon dans un MP4 hybride et y ajoute le direct jusqu'à la fin de la durée après l'appui ; pendant ce temps, un nouvel appui prolonge le même clip |
 | `replay_finish_clip` | v1.2 ✅ | termine tout de suite le clip en cours (aussi dans le menu de la zone de notification, entrée visible seulement pendant le « après ») |
 | `record_start` / `record_stop` | 6 ✅ | enregistrement manuel (REC-01/02) : même capture et mêmes encodeurs que le replay (arme le pipeline si besoin, désarmé à la fin s'il ne l'était pas) ; état `recording` ; MP4 hybride (`hybrid_fragmented`, fragment d'1 s, `flush_packets`) ; option `record.include_replay` (REC-04) et découpage `record.split` par durée ou taille sur image clé (REC-05) ; un changement de sources pendant l'enregistrement redémarre le replay à la fin ; calibrage refusé (`recording_running`) |
@@ -394,6 +398,8 @@ sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_un
 `settings_unreadable_kept` (réglages illisibles, mis de côté en `settings.json.bak`),
 `settings_newer` (version plus récente, fichier laissé intact), `settings_dir_missing`,
 `quota_deleted { count, size_mb }` (clips supprimés définitivement par le quota).
+Erreurs de compression (v1.2) : `not_a_video`, `target_too_small { min_mb }`, `over_target`,
+`compress_cancelled`.
 Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }`,
 `clip_cut_short { reason }` (v1.2 : écriture d'un clip en cours interrompue, disque plein par
 exemple ; le début déjà écrit reste lisible) ;

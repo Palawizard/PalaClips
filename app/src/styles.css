@@ -381,7 +381,8 @@ body {
   will-change: transform;
 }
 
-.clip-progress {
+.clip-progress,
+.compress-row {
   transition:
     opacity 200ms var(--ease-out),
     transform 200ms var(--ease-out);
@@ -390,6 +391,12 @@ body {
     opacity: 0;
     transform: translateY(-4px);
   }
+}
+
+.drop-zone {
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
 }
 
 .leave-dialog[open] {
@@ -421,6 +428,8 @@ body {
   .clip-card,
   .alert-item,
   .clip-progress,
+  .compress-row,
+  .drop-zone,
   .switch-thumb,
   .capture-card,
   .capture-frame,

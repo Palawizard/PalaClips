@@ -8,7 +8,8 @@
     "gallery": "Galerie",
     "capture": "Capture",
     "audio": "Audio",
-    "settings": "Réglages"
+    "settings": "Réglages",
+    "compress": "Compression"
   },
   "gallery": {
     "count": {
@@ -59,7 +60,8 @@
     "copied": "Fichier copié : colle-le dans Discord ou dans l'Explorateur.",
     "openItem": "Ouvrir",
     "trashPending": "« {name} » part à la Corbeille.",
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "compress": "Compresser"
   },
   "units": {
     "kb": "{value} Ko",
@@ -445,7 +447,9 @@
     "clipsDir": "Dossier des clips",
     "pickApp": "Appli à capturer",
     "applications": "Applications",
-    "diagnostic": "Exporter un diagnostic"
+    "diagnostic": "Exporter un diagnostic",
+    "compressFiles": "Vidéos à compresser",
+    "videos": "Vidéos"
   },
   "messages": {
     "diagnostic_failed": "export du diagnostic impossible : {detail}",
@@ -544,7 +548,11 @@
     "update_none": "aucune mise à jour à installer : relance la recherche",
     "exclusive_fullscreen_advice": "Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
     "exclusive_fullscreen_advice_minecraft": "Minecraft Java : quitte le plein écran (F11) et agrandis la fenêtre, ou installe un mod de plein écran sans bordure comme Borderless Fullscreen.",
-    "clip_cut_short": "Clip arrêté avant la fin : {reason}. Le début est gardé."
+    "clip_cut_short": "Clip arrêté avant la fin : {reason}. Le début est gardé.",
+    "compress_cancelled": "Compression annulée.",
+    "not_a_video": "Ce fichier n'a pas de piste vidéo lisible.",
+    "target_too_small": "Cible trop petite pour cette durée : il faut au moins {min_mb} Mo.",
+    "over_target": "Le fichier dépasse encore la cible après trois essais : choisis une résolution plus basse ou une cible plus grande."
   },
   "player": {
     "back": "Retour à la galerie",
@@ -726,5 +734,56 @@
     "stay": "Rester",
     "discard": "Ne pas appliquer",
     "applyRestart": "Appliquer et redémarrer"
+  },
+  "compress": {
+    "target": "Taille cible",
+    "targetFree": "Taille libre, en Mo",
+    "presets": {
+      "discord": "Discord",
+      "nitroBasic": "Nitro Basic",
+      "nitro": "Nitro",
+      "other": "Autre"
+    },
+    "presetLabel": "{size} Mo · {name}",
+    "codec": "Codec",
+    "av1Warning": "AV1 : souvent illisible sur téléphone dans Discord.",
+    "allTracks": "Garder toutes les pistes",
+    "allTracksHelp": "Discord ne lit que la piste 1.",
+    "drop": "Dépose des vidéos ici",
+    "dropActive": "Lâche pour ajouter",
+    "pick": "Choisir des fichiers",
+    "formats": "mp4, mkv, mov, webm, avi",
+    "queue": "File d'attente",
+    "source": "{width}×{height} · {fps} · {duration} · {size}",
+    "hdr": "HDR",
+    "resolution": "Résolution",
+    "fps": "Images par seconde",
+    "bitrate": "Débit vidéo, en kb/s",
+    "kbps": "kb/s",
+    "estimate": "≈ {size}",
+    "quality": {
+      "good": "Bonne",
+      "fair": "Correcte",
+      "low": "Faible"
+    },
+    "qualityLabel": "Qualité estimée : {quality}",
+    "remove": "Retirer {name}",
+    "start": "Compresser ({count})",
+    "waiting": "En attente",
+    "attempt": "Essai {attempt}",
+    "cancel": "Annuler",
+    "cancelled": "Annulé",
+    "copy": "Copier",
+    "show": "Ouvrir le dossier",
+    "copied": "Fichier copié.",
+    "clear": "Effacer les terminés",
+    "range": "Extrait {start} – {end}",
+    "probing": "Lecture du fichier…",
+    "overTarget": "Au-dessus de {size}",
+    "jobPlan": "Cible {size} · {height} · {fps}",
+    "done": "Terminé",
+    "retry": "Réessayer",
+    "finished": "{name} compressé : {size}",
+    "progress": "{percent}, essai {attempt}"
   }
 }
