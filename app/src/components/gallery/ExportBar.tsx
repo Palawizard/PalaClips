@@ -1,5 +1,6 @@
-import { Check, ChevronDown, Copy, FolderOpen } from "lucide-react";
+import { Check, ChevronDown, Copy, FolderOpen, Shrink } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import type { DraftRequest } from "../../lib/compressDrafts.ts";
 import { clock } from "../../lib/format.ts";
 import { preciseTime } from "../../lib/gallery.ts";
 import { errorText, number, useT } from "../../lib/i18n.ts";
@@ -19,6 +20,8 @@ import type { Range } from "./Timeline.tsx";
 
 type Phase = { kind: "idle" } | { kind: "running"; id: number; progress: number } | { kind: "done"; path: string };
 
+const WHOLE_CLIP_SLACK = 0.05;
+
 const SECONDARY =
   "pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover";
 
@@ -31,6 +34,7 @@ export function ExportBar({
   audible,
   volumes,
   range,
+  onCompress,
 }: {
   clip: Clip;
   tracks: TrackFile[] | null;
@@ -40,6 +44,7 @@ export function ExportBar({
   audible: boolean[];
   volumes: number[];
   range: Range;
+  onCompress: (requests: DraftRequest[]) => void;
 }) {
   const t = useT();
   const nameId = useId();
@@ -166,6 +171,18 @@ export function ExportBar({
               </button>
             </>
           ) : (
+            <>
+            <button
+              type="button"
+              onClick={() => {
+                const whole = range.start <= WHOLE_CLIP_SLACK && range.end >= clip.duration_secs - WHOLE_CLIP_SLACK;
+                onCompress([whole ? { path: clip.path } : { path: clip.path, startSecs: range.start, endSecs: range.end }]);
+              }}
+              className={SECONDARY}
+            >
+              <Shrink size={16} aria-hidden />
+              {t("gallery.compress")}
+            </button>
             <button
               type="button"
               disabled={name.trim() === ""}
@@ -174,6 +191,7 @@ export function ExportBar({
             >
               {t("export.start")}
             </button>
+            </>
           )}
         </span>
       </div>

@@ -741,7 +741,7 @@
     "dropActive": "Lâche pour ajouter",
     "pick": "Choisir des fichiers",
     "formats": "mp4, mkv, mov, webm, avi",
-    "queue": "File",
+    "queue": "File d'attente",
     "source": "{width}×{height} · {fps} · {duration} · {size}",
     "hdr": "HDR",
     "resolution": "Résolution",
@@ -763,9 +763,15 @@
     "cancelled": "Annulé",
     "copy": "Copier",
     "show": "Ouvrir le dossier",
-    "copied": "Fichier copié : colle-le dans Discord.",
+    "copied": "Fichier copié.",
     "clear": "Effacer les terminés",
     "range": "Extrait {start} – {end}",
-    "probing": "Lecture du fichier…"
+    "probing": "Lecture du fichier…",
+    "overTarget": "Au-dessus de {size}",
+    "jobPlan": "Cible {size} · {height} · {fps}",
+    "done": "Terminé",
+    "retry": "Réessayer",
+    "finished": "{name} compressé : {size}",
+    "progress": "{percent}, essai {attempt}"
   }
 }

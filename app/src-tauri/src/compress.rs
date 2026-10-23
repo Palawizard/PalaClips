@@ -204,7 +204,6 @@ impl EngineSlot {
             cancel.store(true, Ordering::Relaxed);
             return;
         }
-        queue.requests.remove(&id);
         if let Some(job) = queue
             .jobs
             .iter_mut()
@@ -217,10 +216,50 @@ impl EngineSlot {
 
     pub fn compress_clear(&self) {
         if let Ok(mut queue) = self.compress.lock() {
-            queue
-                .jobs
-                .retain(|job| matches!(job.state, JobState::Queued | JobState::Running { .. }));
+            let CompressQueue { jobs, requests, .. } = &mut *queue;
+            jobs.retain(|job| {
+                let keep = matches!(job.state, JobState::Queued | JobState::Running { .. });
+                if !keep {
+                    requests.remove(&job.id);
+                }
+                keep
+            });
         }
+    }
+
+    pub fn compress_remove(&self, id: u32) {
+        if let Ok(mut queue) = self.compress.lock() {
+            let finished = queue.jobs.iter().any(|job| {
+                job.id == id && !matches!(job.state, JobState::Queued | JobState::Running { .. })
+            });
+            if finished {
+                queue.jobs.retain(|job| job.id != id);
+                queue.requests.remove(&id);
+            }
+        }
+    }
+
+    pub fn compress_retry(&self, app: &tauri::AppHandle, id: u32) -> Result<(), Localized> {
+        let mut queue = self.compress.lock().map_err(|_| internal_error())?;
+        if !queue.requests.contains_key(&id) {
+            return Err(Localized::new("clip_unknown"));
+        }
+        let Some(job) = queue.jobs.iter_mut().find(|job| {
+            job.id == id && matches!(job.state, JobState::Failed { .. } | JobState::Cancelled)
+        }) else {
+            return Ok(());
+        };
+        job.state = JobState::Queued;
+        app.emit(COMPRESS_EVENT, &*job).ok();
+        if !queue.worker {
+            queue.worker = true;
+            let app = app.clone();
+            std::thread::Builder::new()
+                .name("palaclips-compress".into())
+                .spawn(move || run_queue(&app))
+                .map_err(|_| internal_error())?;
+        }
+        Ok(())
     }
 
     fn finished_output(&self, id: u32) -> Result<PathBuf, Localized> {
@@ -265,7 +304,7 @@ impl EngineSlot {
             queue.running = None;
             return None;
         };
-        let Some(request) = queue.requests.remove(&id) else {
+        let Some(request) = queue.requests.get(&id).cloned() else {
             queue.worker = false;
             return None;
         };

@@ -381,6 +381,23 @@ body {
   will-change: transform;
 }
 
+.compress-row {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.drop-zone {
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
 .leave-dialog[open] {
   transition:
     opacity 150ms var(--ease-out),
@@ -409,6 +426,8 @@ body {
   .roster-row,
   .clip-card,
   .alert-item,
+  .compress-row,
+  .drop-zone,
   .switch-thumb,
   .capture-card,
   .capture-frame,
