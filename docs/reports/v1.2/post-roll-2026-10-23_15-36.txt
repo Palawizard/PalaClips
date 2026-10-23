@@ -1,0 +1,54 @@
+2026-10-23T15:36:29 post-roll : avant 10 s, après 10 s, écran principal 720p60 8 Mb/s, piste mix ; dossier isolé C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll
+synchro reference : clip instantané de référence
+C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\reference.mp4, piste audio 0 : 10 flashs, 10 bips, 10 paires (positif = son en retard)
+      0 s :   5 paires, min +138.8 ms, moy +138.8 ms, max +138.8 ms
+      5 s :   5 paires, min +122.2 ms, moy +128.8 ms, max +138.8 ms
+  régression sur 10 bips : pente -7629.40 ± 2032.27 ms/h, décalage à 0 s +144.2 ms, dispersion 5.1 ms
+Bureau_2026-10-23_15-36-46_replay.mp4 [reference] : vidéo 10,217 s, écart entre flux 0,004 s, débuts 0.000000/0.000000 ; video 612 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 478 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+--- reference
+2026-10-23T13:36:29.760650Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU appliquée priority=Game
+2026-10-23T13:36:29.760753Z  INFO palaclips_engine::capture::video: format de capture choisi hdr=false
+2026-10-23T13:36:30.015649Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=1280 height=720 fps=60 tracks=1 duration_s=10 storage=Ram
+replay de 10 s (RAM) : Entrée = sauvegarder, f = terminer le clip en cours, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+2026-10-23T13:36:30.018148Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-23T13:36:46.309634Z  INFO palaclips_engine::engine: clip sauvegardé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Bureau\Bureau_2026-10-23_15-36-46_replay.mp4 duration_s=10.2133333 latency_ms=7
+[    16 s] clip 1 : 10.213 s, prêt en 7 ms ; mémoire privée 127.8 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Bureau\Bureau_2026-10-23_15-36-46_replay.mp4
+2026-10-23T13:36:53.124278Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=1387 captured=413 duplicated=981 late=0 dropped=0 max_lateness_ms=0.9836
+2026-10-23T13:36:53.169935Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=2316 silence_ms=0 dropped_ms=7 drift_corrections=0 device_switches=0 peak=0.5
+2026-10-23T13:36:53.170422Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 7 ms, moy 7 ms, max 7 ms
+Svt[warn]: Instance 48: Force low delay pred structure to be used for rtc.
+Svt[warn]: Maximum bit rate only supported with tpl on. max bit rate 0 is used instead.
+Svt[warn]: Screen-content detection and tools are disabled for RTC mode coding at M9 and above; forcing NSC path
+Svt[warn]: TPL is disabled in low delay applications.
+synchro synchro : jonction vers 10.3 s
+C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\synchro.mp4, piste audio 0 : 20 flashs, 20 bips, 20 paires (positif = son en retard)
+      0 s :   5 paires, min +124.0 ms, moy +137.3 ms, max +140.6 ms
+      5 s :   5 paires, min +140.6 ms, moy +140.6 ms, max +140.6 ms
+     10 s :   5 paires, min +140.6 ms, moy +140.6 ms, max +140.6 ms
+     15 s :   5 paires, min +140.6 ms, moy +140.6 ms, max +140.6 ms
+  régression sur 20 bips : pente +675.52 ± 510.36 ms/h, décalage à 0 s +137.9 ms, dispersion 3.7 ms
+Bureau_2026-10-23_15-37-10_replay.mp4 [synchro] : vidéo 20,272 s, écart entre flux 0,005 s, débuts 0.000000/0.000000 ; video 1215 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 949 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+--- synchro
+2026-10-23T13:36:53.727273Z  INFO palaclips_engine::capture::gpu_priority: priorité GPU appliquée priority=Game
+2026-10-23T13:36:53.727382Z  INFO palaclips_engine::capture::video: format de capture choisi hdr=false
+2026-10-23T13:36:53.975762Z  INFO palaclips_engine::engine: replay armé encoder=h264_nvenc width=1280 height=720 fps=60 tracks=1 duration_s=10 storage=Ram
+replay de 10 s (RAM) : Entrée = sauvegarder, f = terminer le clip en cours, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+2026-10-23T13:36:53.978201Z  INFO palaclips_engine::audio::track: périphérique audio ouvert track=Mix complet device=Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+2026-10-23T13:37:10.225298Z  INFO palaclips_engine::record: enregistrement : nouveau fichier path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Bureau\Bureau_2026-10-23_15-37-10_replay.mp4
+2026-10-23T13:37:10.225351Z  INFO palaclips_engine::engine: clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui after_s=9.9981336
+[    16 s] clip en cours : fin dans 10.0 s
+2026-10-23T13:37:20.311039Z  INFO palaclips_engine::engine: clip en cours terminé
+[    26 s] clip en cours terminé
+2026-10-23T13:37:20.313868Z  INFO palaclips_engine::record: enregistrement terminé path=C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Bureau\Bureau_2026-10-23_15-37-10_replay.mp4 duration_s=20.2666666
+[    26 s] clip 1 : 20.267 s, prêt en 0 ms ; mémoire privée 127.2 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Bureau\Bureau_2026-10-23_15-37-10_replay.mp4
+2026-10-23T13:37:27.317842Z  INFO palaclips_engine::capture::video: capture vidéo arrêtée frames=2001 captured=593 duplicated=1419 late=0 dropped=0 max_lateness_ms=0.9033
+2026-10-23T13:37:27.359957Z  INFO palaclips_engine::audio::track: piste audio arrêtée track=Mix complet packets=3339 silence_ms=0 dropped_ms=7 drift_corrections=0 device_switches=0 peak=0.5
+2026-10-23T13:37:27.360569Z  INFO palaclips_engine::engine: replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 0 ms, moy 0 ms, max 0 ms
+Svt[warn]: Instance 165: Force low delay pred structure to be used for rtc.
+Svt[warn]: Maximum bit rate only supported with tpl on. max bit rate 0 is used instead.
+Svt[warn]: Screen-content detection and tools are disabled for RTC mode coding at M9 and above; forcing NSC path
+Svt[warn]: TPL is disabled in low delay applications.
+RÉSULTAT : 0 clip(s) hors critères (continuité des PTS, pistes de même durée)
+2026-10-23T15:37:27 fin : replays et émetteur arrêtés, dossier isolé supprimé, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\post-roll-2026-10-23_15-36.txt
