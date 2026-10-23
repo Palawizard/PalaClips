@@ -154,11 +154,11 @@ l'encodeur H.264 de Windows manque tant que le Media Feature Pack n'est pas inst
 en AV1 sur le processeur ; installe le pack pour retrouver le H.264.
 
 **Mon micro est aussi dans la piste 1.** C'est le réglage « Aussi dans Mix complet »
-(Réglages → Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
+(page Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
 façon sa propre piste.
 
 **La piste 1 ne contient pas les notifications ni la musique.** Par défaut, la piste 1 est la
-somme des pistes choisies. Active « Audio du bureau » (Réglages → Audio) pour qu'elle contienne
+somme des pistes choisies. Active « Audio du bureau » (page Audio) pour qu'elle contienne
 tout ce que tu entends.
 
 **Mémoire ou disque pour le replay ?** En mémoire, rien n'est écrit sur le disque tant que tu
