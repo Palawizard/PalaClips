@@ -184,6 +184,11 @@ pub fn replay_save(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
 }
 
 #[tauri::command]
+pub fn replay_finish_clip(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
+    Ok(slot.handle.finish_clip()?)
+}
+
+#[tauri::command]
 pub fn record_start(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
     Ok(slot.handle.start_recording()?)
 }

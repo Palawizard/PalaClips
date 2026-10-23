@@ -421,11 +421,14 @@
     "disarm": "Disarm the replay",
     "quit": "Quit",
     "recordStart": "Start recording",
-    "recordStop": "Stop recording"
+    "recordStop": "Stop recording",
+    "finish": "Finish the clip now"
   },
   "toast": {
     "clipSaved": "Clip saved",
-    "clipNotSaved": "Clip not saved"
+    "clipNotSaved": "Clip not saved",
+    "clipInProgress": "Clip in progress",
+    "clipInProgressBody": "+{seconds} s"
   },
   "dialog": {
     "clipsDir": "Clips folder",
@@ -529,7 +532,8 @@
     "update_while_recording": "a recording is in progress: stop it before installing the update",
     "update_none": "no update to install: check again",
     "exclusive_fullscreen_advice": "Switch the game to borderless (windowed fullscreen) in its display settings.",
-    "exclusive_fullscreen_advice_minecraft": "Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen."
+    "exclusive_fullscreen_advice_minecraft": "Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen.",
+    "clip_cut_short": "Clip stopped early: {reason}. The start is kept."
   },
   "player": {
     "back": "Back to the gallery",

@@ -421,11 +421,14 @@
     "disarm": "Désarmer le replay",
     "quit": "Quitter",
     "recordStart": "Démarrer l'enregistrement",
-    "recordStop": "Arrêter l'enregistrement"
+    "recordStop": "Arrêter l'enregistrement",
+    "finish": "Terminer le clip maintenant"
   },
   "toast": {
     "clipSaved": "Clip sauvegardé",
-    "clipNotSaved": "Clip non sauvegardé"
+    "clipNotSaved": "Clip non sauvegardé",
+    "clipInProgress": "Clip en cours",
+    "clipInProgressBody": "+{seconds} s"
   },
   "dialog": {
     "clipsDir": "Dossier des clips",
@@ -529,7 +532,8 @@
     "update_while_recording": "un enregistrement est en cours : arrête-le avant d'installer la mise à jour",
     "update_none": "aucune mise à jour à installer : relance la recherche",
     "exclusive_fullscreen_advice": "Passe le jeu en plein écran fenêtré (ou sans bordure) dans ses options d'affichage.",
-    "exclusive_fullscreen_advice_minecraft": "Minecraft Java : quitte le plein écran (F11) et agrandis la fenêtre, ou installe un mod de plein écran sans bordure comme Borderless Fullscreen."
+    "exclusive_fullscreen_advice_minecraft": "Minecraft Java : quitte le plein écran (F11) et agrandis la fenêtre, ou installe un mod de plein écran sans bordure comme Borderless Fullscreen.",
+    "clip_cut_short": "Clip arrêté avant la fin : {reason}. Le début est gardé."
   },
   "player": {
     "back": "Retour à la galerie",
