@@ -1,0 +1,81 @@
+2026-10-23T16:07:56 compress-check : 11 compressions, sorties dans C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out
+  source : 2560×1440 à 60.00 i/s, 7.6 s, 1 piste(s) audio, 37.9 Mo, HDR non
+  plan : 1920×1080 à 60 i/s, vidéo 20057 kb/s, audio 1 × 128 kb/s, qualité Good, taille estimée 19.39 Mo pour 20 Mo
+  RÉSULTAT : 19260333 octets (19.26 Mo) pour une cible de 20000000 octets, 2 essai(s), 16.8 s, vidéo finale 19014 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\short-1440p60-20MB.mp4
+short-1440p60-20MB : 19 260 333 octets pour 20 000 000 (96,3 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=1920|height=1080|color_transfer=unknown|avg_frame_rate=60/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=7.594000
+  source : 2560×1440 à 60.00 i/s, 7.6 s, 1 piste(s) audio, 37.9 Mo, HDR non
+  plan : 1280×720 à 60 i/s, vidéo 4866 kb/s, audio 1 × 128 kb/s, qualité Fair, taille estimée 4.85 Mo pour 5 Mo
+  RÉSULTAT : 4940773 octets (4.94 Mo) pour une cible de 5000000 octets, 1 essai(s), 7.2 s, vidéo finale 4866 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\short-1440p60-5MB.mp4
+short-1440p60-5MB : 4 940 773 octets pour 5 000 000 (98,8 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=1280|height=720|color_transfer=unknown|avg_frame_rate=60/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=7.594000
+  source : 2560×1440 à 60.00 i/s, 180.0 s, 1 piste(s) audio, 906.5 Mo, HDR non
+  plan : 854×480 à 30 i/s, vidéo 786 kb/s, audio 1 × 64 kb/s, qualité Low, taille estimée 19.38 Mo pour 20 Mo
+  RÉSULTAT : 19291098 octets (19.29 Mo) pour une cible de 20000000 octets, 1 essai(s), 149.1 s, vidéo finale 786 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\long-1440p60-20MB.mp4
+long-1440p60-20MB : 19 291 098 octets pour 20 000 000 (96,5 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=854|height=480|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=180.010000
+  source : 2560×1440 à 60.00 i/s, 180.0 s, 1 piste(s) audio, 906.5 Mo, HDR non
+  plan : 1280×720 à 30 i/s, vidéo 2034 kb/s, audio 1 × 96 kb/s, qualité Fair, taille estimée 48.47 Mo pour 50 Mo
+  RÉSULTAT : 48094809 octets (48.09 Mo) pour une cible de 50000000 octets, 1 essai(s), 148.1 s, vidéo finale 2034 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\long-1440p60-50MB.mp4
+long-1440p60-50MB : 48 094 809 octets pour 50 000 000 (96,2 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=1280|height=720|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=180.010000
+  source : 2560×1440 à 60.00 i/s, 180.0 s, 1 piste(s) audio, 906.5 Mo, HDR non
+  plan : 1920×1080 à 60 i/s, vidéo 21202 kb/s, audio 1 × 128 kb/s, qualité Good, taille estimée 484.79 Mo pour 500 Mo
+  RÉSULTAT : 480580715 octets (480.58 Mo) pour une cible de 500000000 octets, 1 essai(s), 177.9 s, vidéo finale 21202 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\long-1440p60-500MB.mp4
+long-1440p60-500MB : 480 580 715 octets pour 500 000 000 (96,1 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=1920|height=1080|color_transfer=unknown|avg_frame_rate=60/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=180.010000
+  source : 2560×1440 à 60.00 i/s, 180.0 s, 1 piste(s) audio, 906.5 Mo, HDR non
+  plan : 854×480 à 30 i/s, vidéo 786 kb/s, audio 1 × 64 kb/s, qualité Fair, taille estimée 19.38 Mo pour 20 Mo
+  RÉSULTAT : 19365064 octets (19.37 Mo) pour une cible de 20000000 octets, 1 essai(s), 133.8 s, vidéo finale 786 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\long-1440p60-20MBcodecav1.mp4
+long-1440p60-20MBcodecav1 : 19 365 064 octets pour 20 000 000 (96,8 % de la cible) → OK
+    stream|codec_name=av1|codec_type=video|width=854|height=480|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=180.010000
+  source : 2560×1440 à 60.00 i/s, 180.0 s, 3 piste(s) audio, 915.3 Mo, HDR non
+  plan : 854×480 à 30 i/s, vidéo 1842 kb/s, audio 3 × 96 kb/s, qualité Good, taille estimée 48.47 Mo pour 50 Mo
+  RÉSULTAT : 48209221 octets (48.21 Mo) pour une cible de 50000000 octets, 1 essai(s), 142.1 s, vidéo finale 1842 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\long-multi-50MBalltracks.mp4
+long-multi-50MBalltracks : 48 209 221 octets pour 50 000 000 (96,4 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=854|height=480|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=180.010000
+  source : 2560×1440 à 60.00 i/s, 180.0 s, 1 piste(s) audio, 906.5 Mo, HDR non
+  plan : 1280×720 à 30 i/s, vidéo 2446 kb/s, audio 1 × 96 kb/s, qualité Fair, taille estimée 9.69 Mo pour 10 Mo
+  RÉSULTAT : 9659504 octets (9.66 Mo) pour une cible de 10000000 octets, 1 essai(s), 23.0 s, vidéo finale 2446 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\long-1440p60-10MBstart30end60.mp4
+long-1440p60-10MBstart30end60 : 9 659 504 octets pour 10 000 000 (96,6 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=1280|height=720|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=30.010000
+  source : 1920×1080 à 60.00 i/s, 20.0 s, 1 piste(s) audio, 50.7 Mo, HDR oui
+  plan : 1280×720 à 30 i/s, vidéo 3685 kb/s, audio 1 × 128 kb/s, qualité Good, taille estimée 9.69 Mo pour 10 Mo
+  RÉSULTAT : 9575268 octets (9.58 Mo) pour une cible de 10000000 octets, 1 essai(s), 22.6 s, vidéo finale 3685 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\hdr10-10MB.mp4
+hdr10-10MB : 9 575 268 octets pour 10 000 000 (95,8 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=1280|height=720|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=20.015000
+  source : 1280×720 à 30.00 i/s, 15.0 s, 1 piste(s) audio, 5.4 Mo, HDR non
+  plan : 854×480 à 30 i/s, vidéo 1405 kb/s, audio 1 × 96 kb/s, qualité Good, taille estimée 2.91 Mo pour 3 Mo
+  RÉSULTAT : 2848035 octets (2.85 Mo) pour une cible de 3000000 octets, 1 essai(s), 2.5 s, vidéo finale 1405 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\external-3MB.mp4
+external-3MB : 2 848 035 octets pour 3 000 000 (94,9 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=854|height=480|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=15.000000
+  source : 1920×1080 à 30.00 i/s, 12.0 s, 1 piste(s) audio, 17.1 Mo, HDR non
+  plan : 854×480 à 30 i/s, vidéo 1780 kb/s, audio 1 × 96 kb/s, qualité Good, taille estimée 2.91 Mo pour 3 Mo
+  RÉSULTAT : 2866442 octets (2.87 Mo) pour une cible de 3000000 octets, 1 essai(s), 3.1 s, vidéo finale 1780 kb/s → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\compress-tests\out\external-3MB.mp4
+external-3MB : 2 866 442 octets pour 3 000 000 (95,5 % de la cible) → OK
+    stream|codec_name=h264|codec_type=video|width=854|height=480|color_transfer=unknown|avg_frame_rate=30/1
+    stream|codec_name=aac|codec_type=audio|avg_frame_rate=0/0
+    format|duration=12.005000
+RÉSULTAT : 0 compression(s) hors critère (taille ≤ cible)

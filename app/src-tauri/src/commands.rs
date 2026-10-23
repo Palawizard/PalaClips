@@ -189,6 +189,106 @@ pub fn replay_finish_clip(slot: State<'_, EngineSlot>) -> Result<(), Localized> 
 }
 
 #[tauri::command]
+pub async fn compress_probe(path: String) -> Result<crate::compress::ProbeView, Localized> {
+    crate::compress::probe(&path)
+}
+
+#[tauri::command]
+pub async fn compress_pick_files(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+) -> Result<Vec<String>, Localized> {
+    use tauri::Manager;
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app
+        .dialog()
+        .file()
+        .set_title(i18n::text(slot.language(), "dialog.compressFiles"))
+        .add_filter(
+            i18n::text(slot.language(), "dialog.videos"),
+            crate::compress::VIDEO_EXTENSIONS,
+        );
+    if let Ok(root) = slot.clips_root() {
+        dialog = dialog.set_directory(root);
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        dialog = dialog.set_parent(&window);
+    }
+    Ok(dialog
+        .blocking_pick_files()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|picked| picked.into_path().ok())
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect())
+}
+
+#[tauri::command]
+pub async fn compress_plan(
+    input: crate::compress::PlanInput,
+) -> Result<crate::compress::PlanView, Localized> {
+    crate::compress::plan(&input)
+}
+
+#[tauri::command]
+pub fn compress_preview(
+    plan: palaclips_engine::library::CompressPlan,
+    codec: palaclips_engine::library::CompressCodec,
+    duration_secs: f64,
+) -> crate::compress::PlanView {
+    crate::compress::preview(plan, codec, duration_secs)
+}
+
+#[tauri::command]
+pub fn compress_add(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    inputs: Vec<crate::compress::CompressInput>,
+) -> Result<Vec<crate::compress::CompressJob>, Localized> {
+    slot.compress_add(&app, inputs)
+}
+
+#[tauri::command]
+pub fn compress_jobs(slot: State<'_, EngineSlot>) -> Vec<crate::compress::CompressJob> {
+    slot.compress_jobs()
+}
+
+#[tauri::command]
+pub fn compress_cancel(app: tauri::AppHandle, slot: State<'_, EngineSlot>, id: u32) {
+    slot.compress_cancel(&app, id);
+}
+
+#[tauri::command]
+pub fn compress_clear(slot: State<'_, EngineSlot>) {
+    slot.compress_clear();
+}
+
+#[tauri::command]
+pub fn compress_remove(slot: State<'_, EngineSlot>, id: u32) {
+    slot.compress_remove(id);
+}
+
+#[tauri::command]
+pub fn compress_retry(
+    app: tauri::AppHandle,
+    slot: State<'_, EngineSlot>,
+    id: u32,
+) -> Result<(), Localized> {
+    slot.compress_retry(&app, id)
+}
+
+#[tauri::command]
+pub fn compress_copy(slot: State<'_, EngineSlot>, id: u32) -> Result<(), Localized> {
+    slot.compress_copy(id)
+}
+
+#[tauri::command]
+pub fn compress_reveal(slot: State<'_, EngineSlot>, id: u32) -> Result<(), Localized> {
+    slot.compress_reveal(id)
+}
+
+#[tauri::command]
 pub fn record_start(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
     Ok(slot.handle.start_recording()?)
 }

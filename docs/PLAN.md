@@ -257,7 +257,7 @@ Recherche et décisions de Palawi : `docs/reports/v1.2-research.md`.
       vers la bonne page.
 - [x] Après la sauvegarde (`feature/post-roll`) : moteur (MP4 hybride, prolongation, fin
       anticipée), cas limites testés, app (réglage, État, zone de notification, notifications).
-- [ ] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
+- [x] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
       boutons galerie/lecteur, glisser-déposer, copier.
 - [ ] Session de tests manuels de Palawi (≤ 15 min, en jouant).
 - [ ] Release v1.2.0 (brouillon, puis publication avec l'accord de Palawi).
