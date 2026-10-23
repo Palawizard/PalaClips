@@ -89,7 +89,7 @@ function resolutionKey(resolution: OutputResolution): string {
 
 export function ReplaySection() {
   const t = useT();
-  const { config, loadError } = useConfigDraft();
+  const { config, loadError } = useConfigDraft("settings.sections.replay");
   const [encoders, setEncoders] = useState<EncoderInfo[]>([]);
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
   const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
