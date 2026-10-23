@@ -53,9 +53,11 @@ function ClipInProgress({ endsAt }: { endsAt: number }) {
     return () => window.clearInterval(timer);
   }, []);
   return (
-    <p className="clip-progress flex items-center gap-2.5" role="status">
+    <p className="clip-progress flex items-center gap-2.5">
       <span aria-hidden className="inline-block size-2.5 shrink-0 rounded-full bg-rec" />
-      <span className="font-semibold text-ink">{t("status.clipInProgress")}</span>
+      <span role="status" className="font-semibold text-ink">
+        {t("status.clipInProgress")}
+      </span>
       <span className="score text-[20px] leading-none font-semibold text-ink">
         {clock(Math.max(0, Math.ceil((endsAt - now) / 1000)))}
       </span>

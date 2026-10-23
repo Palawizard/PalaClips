@@ -654,3 +654,31 @@ phase 8).
   plante sur l'arbre de vitest (`Cannot read properties of null (reading 'edgesOut')`) : ajouter
   une dépendance avec `npx -y npm@11.6.2 install` ; `npm ci` (npm 10, CI) lit ensuite le verrou sans
   souci.
+
+## ADR-037 — Enregistrer après la sauvegarde par l'écriture hybride (v1.2, RPL-10)
+**Statut :** acceptée (2026-10-23, décisions de Palawi dans `docs/reports/v1.2-research.md`).
+- Contexte : ShadowPlay et OBS ne gardent que l'« avant ». Palawi veut aussi la suite de
+  l'action (exemple : 1 min avant + 10 s après), sans agrandir le tampon en RAM.
+- Décision : réglage global `replay.after_secs` (0 s par défaut, 0 à 600 s), appliqué au raccourci
+  de sauvegarde. Avec une durée « après », la sauvegarde démarre un `Recorder` (celui de
+  l'enregistrement, MP4 hybride, journal de récupération) avec le tampon en tête, comme REC-04,
+  puis le moteur lui passe les paquets en direct dont le PTS est avant la fin (`PostRollCut`,
+  temps du flux = QPC − origine de la capture). Le clip se ferme quand chaque flux a dépassé la
+  fin, ou 3 s après au plus tard. Puis `forget_saved(fin)` (RPL-09).
+- Un nouvel appui pendant le « après » repousse la fin (même fichier) ; « Terminer maintenant »
+  (`replay_finish_clip`, État et zone de notification) la ramène à maintenant. Un changement de
+  sources attend la fin du clip (comme pendant un enregistrement) ; un désarmement, une panne du
+  pipeline (TDR, veille) ou la fermeture de l'app ferment le fichier tel quel ; un arrêt brutal
+  le laisse dans le journal, remuxé au démarrage suivant (REC-06). Écriture impossible (disque
+  plein, règles des 2 Go et 300 Mo de l'enregistrement) : alerte `clip_cut_short`, début gardé.
+- Jonction : il n'y en a pas au sens du fichier ; le tampon et le direct sortent du même
+  encodeur, dans l'ordre, sur le même fil. Mesuré (`scripts/post-roll.ps1`, journaux
+  `docs/reports/v1.2/`) : aucun doublon ni trou de PTS, synchro identique avant et après
+  (+137 à +141 ms contre +129 à +139 ms pour un clip instantané sur le même banc, Voicemeeter
+  non compensé).
+- Écarté : agrandir le tampon de la durée « après » puis écrire d'un bloc (RAM en plus, clip
+  perdu en cas d'arrêt brutal) ; un second raccourci « Sauvegarder + suite » (choix de Palawi) ;
+  un mode « jusqu'au prochain appui » (choix de Palawi).
+- Limite connue : le MP4 fragmenté ramène le premier échantillon de chaque piste à 0 (première
+  image affichée ~13 ms de plus, déjà vrai pour les enregistrements depuis la 1.0) ; temps
+  suivants exacts, synchro inchangée (RESEARCH).
