@@ -94,6 +94,9 @@ try {
         Send $replay "e" 4
         Send $replay "e" ($After + 4)
         $failures += Test-Clips "avec-enregistrement"
+        Send $replay "" 2
+        Send $replay "r" ($After + 6)
+        $failures += Test-Clips "source-changee"
         Stop-Replay $replay "RAM"
 
         $replay = Start-Replay "$common --disk"

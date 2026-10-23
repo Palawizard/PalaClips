@@ -83,7 +83,8 @@
     "minUnit": "min",
     "mbUnit": "Mo",
     "gbUnit": "Go",
-    "percent": "{value} %"
+    "percent": "{value} %",
+    "secUnit": "s"
   },
   "time": {
     "now": "à l'instant",
@@ -137,7 +138,10 @@
     "free": "libres",
     "recordingRunning": "Enregistrement en cours",
     "stop": "Arrêter",
-    "changeSource": "Changer"
+    "changeSource": "Changer",
+    "clipInProgress": "Clip en cours",
+    "extend": "Prolonger",
+    "finishClip": "Terminer maintenant"
   },
   "performance": {
     "title": "Performances",
@@ -326,7 +330,11 @@
       "gpuPriorities": {
         "game": "Priorité au jeu",
         "capture": "Priorité à la capture"
-      }
+      },
+      "after": "Après l'appui",
+      "afterHelp": "Un nouvel appui prolonge le clip.",
+      "afterNone": "Aucun",
+      "afterFree": "Après l'appui, en secondes"
     },
     "capture": {
       "primary": "principal",

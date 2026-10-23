@@ -1,0 +1,120 @@
+2026-10-23T15:43:31 post-roll : avant 10 s, après 10 s, écran principal 720p60 8 Mb/s, piste mix ; dossier isolé C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll
+Rocket League_2026-10-23_15-43-46_replay.mp4 [simple] : vidéo 20,999 s, écart entre flux 0,007 s, débuts 0.000000/0.000000 ; video 1258 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 983 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+Rocket League_2026-10-23_15-44-00_replay.mp4 [prolonge] : vidéo 20,455 s, écart entre flux 0,003 s, débuts 0.000000/0.000000 ; video 1226 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 958 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+Rocket League_2026-10-23_15-44-19_replay.mp4 [termine] : vidéo 7,799 s, écart entre flux 0,013 s, débuts 0.000000/0.000000 ; video 466 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 364 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+Rocket League_2026-10-23_15-44-29.mp4 [avec-enregistrement] : vidéo 4,117 s, écart entre flux 0,085 s, débuts 0.000000/0.000000 ; video 246 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 188 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+Rocket League_2026-10-23_15-44-27_replay.mp4 [avec-enregistrement] : vidéo 15,135 s, écart entre flux 0,010 s, débuts 0.000000/0.000000 ; video 906 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 708 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+Rocket League_2026-10-23_15-44-47_replay.mp4 [source-changee] : vidéo 20,750 s, écart entre flux 0,007 s, débuts 0.000000/0.000000 ; video 1244 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 972 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+--- RAM
+[2m2026-10-23T13:43:32.762188Z[0m [32m INFO[0m [2mpalaclips_engine::capture::gpu_priority[0m[2m:[0m priorité GPU appliquée [3mpriority[0m[2m=[0mGame
+[2m2026-10-23T13:43:32.762354Z[0m [32m INFO[0m [2mpalaclips_engine::capture::video[0m[2m:[0m format de capture choisi [3mhdr[0m[2m=[0mtrue
+[2m2026-10-23T13:43:33.117354Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m jeu en cours [3mgame[0m[2m=[0mSome("RocketLeague.exe")
+[2m2026-10-23T13:43:33.117429Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m replay armé [3mencoder[0m[2m=[0mh264_nvenc [3mwidth[0m[2m=[0m1280 [3mheight[0m[2m=[0m720 [3mfps[0m[2m=[0m60 [3mtracks[0m[2m=[0m1 [3mduration_s[0m[2m=[0m10 [3mstorage[0m[2m=[0mRam
+replay de 10 s (RAM) : Entrée = sauvegarder, f = terminer le clip en cours, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+[2m2026-10-23T13:43:33.123934Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m périphérique audio ouvert [3mtrack[0m[2m=[0mMix complet [3mdevice[0m[2m=[0mVoicemeeter Input (VB-Audio Voicemeeter VAIO)
+[2m2026-10-23T13:43:46.085039Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m nom de jeu choisi [3mexe[0m[2m=[0mRocketLeague.exe [3mname[0m[2m=[0mRocket League
+[2m2026-10-23T13:43:46.087496Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-43-46_replay.mp4
+[2m2026-10-23T13:43:46.087594Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui [3mafter_s[0m[2m=[0m9.9879343
+[    12 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:43:56.153567Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours terminé
+[    23 s] clip en cours terminé
+[2m2026-10-23T13:43:56.164701Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-43-46_replay.mp4 [3mduration_s[0m[2m=[0m20.9833332
+[    23 s] clip 1 : 20.983 s, prêt en 0 ms ; mémoire privée 164.0 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-43-46_replay.mp4
+[2m2026-10-23T13:44:00.547110Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-00_replay.mp4
+[2m2026-10-23T13:44:00.547198Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui [3mafter_s[0m[2m=[0m9.9983267
+[    27 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:44:05.546728Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours prolongé [3mafter_s[0m[2m=[0m10.0
+[    32 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:44:15.633855Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours terminé
+[    42 s] clip en cours terminé
+[2m2026-10-23T13:44:15.642479Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-00_replay.mp4 [3mduration_s[0m[2m=[0m20.4499999
+[    42 s] clip 2 : 20.450 s, prêt en 0 ms ; mémoire privée 162.0 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-00_replay.mp4
+[2m2026-10-23T13:44:19.876167Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-19_replay.mp4
+[2m2026-10-23T13:44:19.876250Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui [3mafter_s[0m[2m=[0m9.9985917
+[    46 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:44:22.952543Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours terminé
+[    49 s] clip en cours terminé
+[2m2026-10-23T13:44:22.961919Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-19_replay.mp4 [3mduration_s[0m[2m=[0m7.7833332
+[    49 s] clip 3 : 7.783 s, prêt en 0 ms ; mémoire privée 162.5 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-19_replay.mp4
+[2m2026-10-23T13:44:27.209143Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-27_replay.mp4
+[2m2026-10-23T13:44:27.209279Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui [3mafter_s[0m[2m=[0m9.998442
+[    54 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:44:29.210843Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-29.mp4
+état : Recording
+enregistrement : 1 s, 1.0 Mo
+enregistrement : 2 s, 2.0 Mo
+enregistrement : 3 s, 3.0 Mo
+enregistrement : 4 s, 4.0 Mo
+état : ReplayArmed
+[2m2026-10-23T13:44:33.220447Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-29.mp4 [3mduration_s[0m[2m=[0m4.1166666
+[    60 s] clip 4 : 4.117 s, prêt en 0 ms ; mémoire privée 177.9 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-29.mp4
+[2m2026-10-23T13:44:37.294478Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours terminé
+[    64 s] clip en cours terminé
+[2m2026-10-23T13:44:37.303197Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-27_replay.mp4 [3mduration_s[0m[2m=[0m15.1166666
+[    64 s] clip 5 : 15.117 s, prêt en 0 ms ; mémoire privée 162.8 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-27_replay.mp4
+[2m2026-10-23T13:44:47.851391Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-47_replay.mp4
+[2m2026-10-23T13:44:47.851502Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui [3mafter_s[0m[2m=[0m9.9977522
+[    74 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:44:49.849636Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m sources changées pendant un enregistrement : redémarrage à la fin
+[2m2026-10-23T13:44:57.934183Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours terminé
+[    84 s] clip en cours terminé
+[2m2026-10-23T13:44:57.939408Z[0m [32m INFO[0m [2mpalaclips_engine::capture::video[0m[2m:[0m capture vidéo arrêtée [3mframes[0m[2m=[0m5090 [3mcaptured[0m[2m=[0m9163 [3mduplicated[0m[2m=[0m1 [3mlate[0m[2m=[0m0 [3mdropped[0m[2m=[0m0 [3mmax_lateness_ms[0m[2m=[0m1.6915
+[2m2026-10-23T13:44:57.945075Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-47_replay.mp4 [3mduration_s[0m[2m=[0m20.7499999
+[    84 s] clip 6 : 20.750 s, prêt en 0 ms ; mémoire privée 157.2 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-44-47_replay.mp4
+[2m2026-10-23T13:44:57.992826Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m piste audio arrêtée [3mtrack[0m[2m=[0mMix complet [3mpackets[0m[2m=[0m8487 [3msilence_ms[0m[2m=[0m5 [3mdropped_ms[0m[2m=[0m0 [3mdrift_corrections[0m[2m=[0m2 [3mdevice_switches[0m[2m=[0m0 [3mpeak[0m[2m=[0m0.3497886657714844
+[2m2026-10-23T13:44:57.993610Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m replay désarmé
+état : Idle
+[2m2026-10-23T13:44:58.603303Z[0m [32m INFO[0m [2mpalaclips_engine::capture::gpu_priority[0m[2m:[0m priorité GPU appliquée [3mpriority[0m[2m=[0mGame
+[2m2026-10-23T13:44:58.603366Z[0m [32m INFO[0m [2mpalaclips_engine::capture::video[0m[2m:[0m format de capture choisi [3mhdr[0m[2m=[0mtrue
+[2m2026-10-23T13:44:58.934474Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m jeu en cours [3mgame[0m[2m=[0mSome("RocketLeague.exe")
+[2m2026-10-23T13:44:58.934536Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m replay armé [3mencoder[0m[2m=[0mh264_nvenc [3mwidth[0m[2m=[0m1280 [3mheight[0m[2m=[0m720 [3mfps[0m[2m=[0m60 [3mtracks[0m[2m=[0m2 [3mduration_s[0m[2m=[0m10 [3mstorage[0m[2m=[0mRam
+état : ReplayArmed
+[2m2026-10-23T13:44:58.935631Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m la piste Jeu suit le nouveau jeu [3mtrack[0m[2m=[0mJeu [3mfrom[0m[2m=[0mNone [3mto[0m[2m=[0mRocketLeague.exe
+[2m2026-10-23T13:44:58.937357Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m périphérique audio ouvert [3mtrack[0m[2m=[0mMix complet [3mdevice[0m[2m=[0mVoicemeeter Input (VB-Audio Voicemeeter VAIO)
+[2m2026-10-23T13:44:58.946025Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m application rattachée [3mtrack[0m[2m=[0mJeu [3mapp[0m[2m=[0mRocketLeague.exe (PID 10516) [3minstances[0m[2m=[0m1
+[2m2026-10-23T13:45:06.189753Z[0m [32m INFO[0m [2mpalaclips_engine::capture::video[0m[2m:[0m capture vidéo arrêtée [3mframes[0m[2m=[0m436 [3mcaptured[0m[2m=[0m793 [3mduplicated[0m[2m=[0m0 [3mlate[0m[2m=[0m0 [3mdropped[0m[2m=[0m0 [3mmax_lateness_ms[0m[2m=[0m0.8143
+[2m2026-10-23T13:45:06.234324Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m piste audio arrêtée [3mtrack[0m[2m=[0mMix complet [3mpackets[0m[2m=[0m731 [3msilence_ms[0m[2m=[0m0 [3mdropped_ms[0m[2m=[0m0 [3mdrift_corrections[0m[2m=[0m55 [3mdevice_switches[0m[2m=[0m0 [3mpeak[0m[2m=[0m0.1418914794921875
+[2m2026-10-23T13:45:06.238335Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m piste audio arrêtée [3mtrack[0m[2m=[0mJeu [3mpackets[0m[2m=[0m728 [3msilence_ms[0m[2m=[0m33 [3mdropped_ms[0m[2m=[0m0 [3mdrift_corrections[0m[2m=[0m0 [3mdevice_switches[0m[2m=[0m0 [3mpeak[0m[2m=[0m0.06951235234737396
+[2m2026-10-23T13:45:06.239175Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m replay désarmé
+RÉSUMÉ : 6 clips sur 6 demandés, latence min 0 ms, moy 0 ms, max 0 ms
+Svt[warn]: Instance 39: Force low delay pred structure to be used for rtc.
+Svt[warn]: Maximum bit rate only supported with tpl on. max bit rate 0 is used instead.
+Svt[warn]: Screen-content detection and tools are disabled for RTC mode coding at M9 and above; forcing NSC path
+Svt[warn]: TPL is disabled in low delay applications.
+Svt[warn]: Instance 13: Force low delay pred structure to be used for rtc.
+Svt[warn]: Maximum bit rate only supported with tpl on. max bit rate 0 is used instead.
+Svt[warn]: Screen-content detection and tools are disabled for RTC mode coding at M9 and above; forcing NSC path
+Svt[warn]: TPL is disabled in low delay applications.
+Rocket League_2026-10-23_15-45-20_replay.mp4 [disque] : vidéo 21,083 s, écart entre flux 0,005 s, débuts 0.000000/0.000000 ; video 1263 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 987 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+--- disque
+[2m2026-10-23T13:45:06.970859Z[0m [32m INFO[0m [2mpalaclips_engine::capture::gpu_priority[0m[2m:[0m priorité GPU appliquée [3mpriority[0m[2m=[0mGame
+[2m2026-10-23T13:45:06.971018Z[0m [32m INFO[0m [2mpalaclips_engine::capture::video[0m[2m:[0m format de capture choisi [3mhdr[0m[2m=[0mtrue
+[2m2026-10-23T13:45:07.296685Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m jeu en cours [3mgame[0m[2m=[0mSome("RocketLeague.exe")
+[2m2026-10-23T13:45:07.296749Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m replay armé [3mencoder[0m[2m=[0mh264_nvenc [3mwidth[0m[2m=[0m1280 [3mheight[0m[2m=[0m720 [3mfps[0m[2m=[0m60 [3mtracks[0m[2m=[0m1 [3mduration_s[0m[2m=[0m10 [3mstorage[0m[2m=[0mDisk
+replay de 10 s (disque) : Entrée = sauvegarder, f = terminer le clip en cours, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+[2m2026-10-23T13:45:07.304882Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m périphérique audio ouvert [3mtrack[0m[2m=[0mMix complet [3mdevice[0m[2m=[0mVoicemeeter Input (VB-Audio Voicemeeter VAIO)
+[2m2026-10-23T13:45:20.345637Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m nom de jeu choisi [3mexe[0m[2m=[0mRocketLeague.exe [3mname[0m[2m=[0mRocket League
+[2m2026-10-23T13:45:20.347581Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement : nouveau fichier [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-45-20_replay.mp4
+[2m2026-10-23T13:45:20.347662Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui [3mafter_s[0m[2m=[0m9.9878532
+[    13 s] clip en cours : fin dans 10.0 s
+[2m2026-10-23T13:45:30.413502Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m clip en cours terminé
+[    23 s] clip en cours terminé
+[2m2026-10-23T13:45:30.421871Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement terminé [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-45-20_replay.mp4 [3mduration_s[0m[2m=[0m21.0666666
+[    23 s] clip 1 : 21.067 s, prêt en 0 ms ; mémoire privée 160.8 Mo → C:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-45-20_replay.mp4
+[2m2026-10-23T13:45:34.705182Z[0m [32m INFO[0m [2mpalaclips_engine::capture::video[0m[2m:[0m capture vidéo arrêtée [3mframes[0m[2m=[0m1646 [3mcaptured[0m[2m=[0m2980 [3mduplicated[0m[2m=[0m0 [3mlate[0m[2m=[0m0 [3mdropped[0m[2m=[0m0 [3mmax_lateness_ms[0m[2m=[0m1.0385
+[2m2026-10-23T13:45:34.754572Z[0m [32m INFO[0m [2mpalaclips_engine::audio::track[0m[2m:[0m piste audio arrêtée [3mtrack[0m[2m=[0mMix complet [3mpackets[0m[2m=[0m2746 [3msilence_ms[0m[2m=[0m5 [3mdropped_ms[0m[2m=[0m0 [3mdrift_corrections[0m[2m=[0m0 [3mdevice_switches[0m[2m=[0m0 [3mpeak[0m[2m=[0m0.241546630859375
+[2m2026-10-23T13:45:34.755266Z[0m [32m INFO[0m [2mpalaclips_engine::engine[0m[2m:[0m replay désarmé
+RÉSUMÉ : 1 clips sur 1 demandés, latence min 0 ms, moy 0 ms, max 0 ms
+Svt[warn]: Instance 96: Force low delay pred structure to be used for rtc.
+Svt[warn]: Maximum bit rate only supported with tpl on. max bit rate 0 is used instead.
+Svt[warn]: Screen-content detection and tools are disabled for RTC mode coding at M9 and above; forcing NSC path
+Svt[warn]: TPL is disabled in low delay applications.
+--- arrêt brutal 6 s après l'appui (après = 60 s) : processus tué
+--- redémarrage (récupération)
+replay de 60 s (RAM) : Entrée = sauvegarder, f = terminer le clip en cours, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter
+[2m2026-10-23T13:45:55.025845Z[0m [32m INFO[0m [2mpalaclips_engine::record[0m[2m:[0m enregistrement interrompu récupéré [3mpath[0m[2m=[0mC:\Projets-NAS-Sync\Code\apps\PalaClips\target\test-post-roll\clips\Rocket League\Rocket League_2026-10-23_15-45-48_replay.mp4
+alerte Info recording_recovered : Enregistrement interrompu récupéré : Rocket League_2026-10-23_15-45-48_replay.mp4.
+
+Rocket League_2026-10-23_15-45-48_replay.mp4 [recupere] : vidéo 16,016 s, écart entre flux 0,005 s, débuts 0.000000/0.000000 ; video 959 paq. doublons 0 trous 0 (max 0 ms à  s) ; audio 750 paq. doublons 0 trous 0 (max 0 ms à  s) → OK
+RÉSULTAT : 0 clip(s) hors critères (continuité des PTS, pistes de même durée)
+2026-10-23T15:46:01 fin : replays et émetteur arrêtés, dossier isolé supprimé, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\post-roll-2026-10-23_15-43.txt
