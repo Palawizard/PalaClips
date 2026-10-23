@@ -381,6 +381,17 @@ body {
   will-change: transform;
 }
 
+.clip-progress {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 .leave-dialog[open] {
   transition:
     opacity 150ms var(--ease-out),
@@ -409,6 +420,7 @@ body {
   .roster-row,
   .clip-card,
   .alert-item,
+  .clip-progress,
   .switch-thumb,
   .capture-card,
   .capture-frame,
