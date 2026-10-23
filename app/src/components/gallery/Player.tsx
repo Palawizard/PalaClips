@@ -16,6 +16,7 @@ import {
 } from "../../lib/ipc.ts";
 import { PlayerAudio, type TrackMix } from "../../lib/playerAudio.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../../lib/tracks.ts";
+import type { DraftRequest } from "../../lib/compressDrafts.ts";
 import { ExportBar } from "./ExportBar.tsx";
 import { type Shortcut, Shortcuts } from "./Shortcuts.tsx";
 import { MIN_RANGE_SECS, type Range, Timeline } from "./Timeline.tsx";
@@ -50,6 +51,7 @@ export function Player({
   onBack,
   onTrash,
   onChange,
+  onCompress,
 }: {
   clip: Clip;
   labels: TrackLabels | null;
@@ -57,6 +59,7 @@ export function Player({
   onBack: () => void;
   onTrash: (clip: Clip) => void;
   onChange: (clip: Clip) => void;
+  onCompress: (requests: DraftRequest[]) => void;
 }) {
   const t = useT();
   const root = useRef<HTMLDivElement>(null);
@@ -347,6 +350,7 @@ export function Player({
         audible={audible}
         volumes={mix.map((track) => track.volume)}
         range={range}
+        onCompress={onCompress}
       />
     </div>
   );

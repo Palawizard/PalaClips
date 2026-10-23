@@ -1,5 +1,6 @@
 mod clips;
 mod commands;
+mod compress;
 mod feedback;
 mod hotkeys;
 mod i18n;
@@ -200,6 +201,7 @@ pub struct EngineSlot {
     extracting: Mutex<()>,
     exports: Mutex<HashMap<u32, Arc<std::sync::atomic::AtomicBool>>>,
     next_export: AtomicU32,
+    compress: Mutex<compress::CompressQueue>,
 }
 
 impl EngineSlot {
@@ -259,6 +261,7 @@ impl EngineSlot {
             extracting: Mutex::new(()),
             exports: Mutex::new(HashMap::new()),
             next_export: AtomicU32::new(1),
+            compress: Mutex::new(compress::CompressQueue::default()),
         })
     }
 
@@ -670,6 +673,18 @@ pub fn run() {
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
+            commands::compress_probe,
+            commands::compress_pick_files,
+            commands::compress_plan,
+            commands::compress_preview,
+            commands::compress_add,
+            commands::compress_jobs,
+            commands::compress_cancel,
+            commands::compress_clear,
+            commands::compress_remove,
+            commands::compress_retry,
+            commands::compress_copy,
+            commands::compress_reveal,
             commands::record_start,
             commands::record_stop,
             commands::list_clips,

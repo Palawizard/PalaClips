@@ -349,6 +349,111 @@ export function onExportFinished(handler: (finished: ExportFinished) => void): P
   return listen<ExportFinished>("export-finished", (message) => handler(message.payload));
 }
 
+export type CompressCodec = "h264" | "av1";
+export type CompressQuality = "good" | "fair" | "low";
+
+export interface CompressSource {
+  duration_secs: number;
+  width: number;
+  height: number;
+  fps: number;
+  hdr: boolean;
+  audio_tracks: string[];
+  size_bytes: number;
+}
+
+export interface CompressPlan {
+  width: number;
+  height: number;
+  fps: number;
+  video_kbps: number;
+  audio_kbps: number;
+  audio_tracks: number;
+}
+
+export interface CompressPlanView {
+  plan: CompressPlan;
+  quality: CompressQuality;
+  estimated_bytes: number;
+  duration_secs: number;
+}
+
+export interface CompressPlanInput {
+  path: string;
+  target_bytes: number;
+  codec: CompressCodec;
+  all_tracks: boolean;
+  start_secs: number;
+  end_secs: number | null;
+}
+
+export type CompressJobState =
+  | { state: "queued" }
+  | { state: "running"; attempt: number; fraction: number }
+  | { state: "done"; path: string; bytes: number; attempts: number }
+  | { state: "failed"; error: Localized }
+  | { state: "cancelled" };
+
+export type CompressJob = {
+  id: number;
+  source: string;
+  target_bytes: number;
+  codec: CompressCodec;
+  plan: CompressPlan;
+} & CompressJobState;
+
+export function compressProbe(path: string): Promise<{ source: CompressSource; thumbnail: string | null }> {
+  return invoke("compress_probe", { path });
+}
+
+export function compressPickFiles(): Promise<string[]> {
+  return invoke("compress_pick_files");
+}
+
+export function compressPlan(input: CompressPlanInput): Promise<CompressPlanView> {
+  return invoke("compress_plan", { input });
+}
+
+export function compressPreview(plan: CompressPlan, codec: CompressCodec, durationSecs: number): Promise<CompressPlanView> {
+  return invoke("compress_preview", { plan, codec, durationSecs });
+}
+
+export function compressAdd(inputs: (CompressPlanInput & { plan: CompressPlan })[]): Promise<CompressJob[]> {
+  return invoke("compress_add", { inputs });
+}
+
+export function compressJobs(): Promise<CompressJob[]> {
+  return invoke("compress_jobs");
+}
+
+export function compressCancel(id: number): Promise<void> {
+  return invoke("compress_cancel", { id });
+}
+
+export function compressClear(): Promise<void> {
+  return invoke("compress_clear");
+}
+
+export function compressRemove(id: number): Promise<void> {
+  return invoke("compress_remove", { id });
+}
+
+export function compressRetry(id: number): Promise<void> {
+  return invoke("compress_retry", { id });
+}
+
+export function compressCopy(id: number): Promise<void> {
+  return invoke("compress_copy", { id });
+}
+
+export function compressReveal(id: number): Promise<void> {
+  return invoke("compress_reveal", { id });
+}
+
+export function onCompressChanged(handler: (job: CompressJob) => void): Promise<UnlistenFn> {
+  return listen<CompressJob>("compress-changed", (message) => handler(message.payload));
+}
+
 export type VideoCodec = "h264" | "hevc" | "av1";
 export type VideoQuality = "quality" | "balanced" | "light" | "custom";
 export type ReplayStorage = "ram" | "disk";
