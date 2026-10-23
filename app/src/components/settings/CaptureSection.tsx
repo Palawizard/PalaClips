@@ -253,7 +253,7 @@ function CaptureCard({
 
 export function CaptureSection({ screensOnly = false }: { screensOnly?: boolean }) {
   const t = useT();
-  const { config, loadError } = useConfigDraft();
+  const { config, loadError } = useConfigDraft("nav.capture");
   const [targets, setTargets] = useState<TargetInfo[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [live, setLive] = useState<string[]>([]);

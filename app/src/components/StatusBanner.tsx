@@ -1,5 +1,6 @@
 import { HardDrive, Monitor, Save } from "lucide-react";
 import type { ReactNode } from "react";
+import type { Destination } from "../App.tsx";
 import type { CaptureTarget } from "../lib/ipc.ts";
 import { bytes, clock } from "../lib/format.ts";
 import { message, t, useT } from "../lib/i18n.ts";
@@ -42,7 +43,7 @@ function ReplayWitness({ phase }: { phase: ReplayPhase }) {
   );
 }
 
-export function StatusBanner({ engine }: { engine: Engine }) {
+export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (destination: Destination) => void }) {
   const t = useT();
   const { status, config, phase, storage } = engine;
   const total = config?.replay.duration_secs ?? 0;
@@ -144,6 +145,13 @@ export function StatusBanner({ engine }: { engine: Engine }) {
           {capture ? `${capture.width}×${capture.height} · ${t("units.fps", { value: capture.fps })}` : t("status.captureStopped")}
         </p>
         {fellBack && <p className="text-[13px] text-warn">{t("status.fellBack")}</p>}
+        <button
+          type="button"
+          onClick={() => onOpen({ view: "capture" })}
+          className="pressable mt-auto inline-flex h-9 items-center self-start rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+        >
+          {t("status.changeSource")}
+        </button>
       </Cell>
 
       <Cell title={t("status.disk")}>
