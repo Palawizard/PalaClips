@@ -5,6 +5,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+### Corrigé
+- Des réglages ne semblaient pris en compte qu'après une relance (ADR-039) : l'écran État
+  affichait encore l'ancienne durée du replay et l'ancien raccourci, et une page ouverte avant
+  un changement fait ailleurs pouvait l'écraser. Le moteur appliquait déjà chaque réglage ; la
+  config affichée suit maintenant chaque changement, et chaque page n'envoie que ce qu'elle
+  modifie.
+
 ## [1.2.0] - 2026-10-24
 
 ### Ajouté

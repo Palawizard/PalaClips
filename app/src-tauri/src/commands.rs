@@ -115,14 +115,17 @@ pub fn set_feedback(slot: State<'_, EngineSlot>, feedback: Feedback) -> Result<(
 pub async fn set_config(
     app: tauri::AppHandle,
     slot: State<'_, EngineSlot>,
-    config: EngineConfig,
-) -> Result<(), Localized> {
+    patch: serde_json::Value,
+) -> Result<EngineConfig, Localized> {
     let current = slot.config();
+    let config = crate::settings::patched(&current, patch)
+        .map_err(|error| palaclips_engine::EngineError::InvalidConfig(error.to_string()))?;
     if current.video != config.video || current.capture != config.capture {
         let encoders = cached_encoders(&slot)?;
         palaclips_engine::engine::try_video_output(&config, &encoders)?;
     }
-    slot.apply(&app, config)
+    slot.apply(&app, config)?;
+    Ok(slot.config())
 }
 
 #[tauri::command]
