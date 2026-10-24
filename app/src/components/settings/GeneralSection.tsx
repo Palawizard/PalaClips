@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { type LanguageSetting, currentLanguage, errorText, setLanguage, t as translate, useT } from "../../lib/i18n.ts";
 import {
-  type EngineConfig,
   type Feedback,
   type Theme,
   type UpdateInfo,
@@ -11,17 +10,16 @@ import {
   exportDiagnostic,
   openDiagnostic,
   getAutostart,
-  getConfig,
   getFeedback,
   getLanguage,
   getTheme,
   resetSettings,
   setAutostart,
-  setConfig,
   setFeedback,
   setLanguageSetting,
   setTheme,
 } from "../../lib/ipc.ts";
+import { saveConfig, useLiveConfig } from "../../lib/useConfig.ts";
 import { applyTheme } from "../../lib/theme.ts";
 import { Segmented, SettingRow, Switch } from "./Settings.tsx";
 
@@ -155,7 +153,7 @@ function UpdateRow({ onError }: { onError: (message: string) => void }) {
 export function GeneralSection() {
   const t = useT();
   const [autostart, setAutostartState] = useState<boolean | null>(null);
-  const [config, setConfigState] = useState<EngineConfig | null>(null);
+  const config = useLiveConfig();
   const [feedback, setFeedbackState] = useState<Feedback | null>(null);
   const [theme, setThemeState] = useState<Theme>("system");
   const [language, setLanguageState] = useState<LanguageSetting>("system");
@@ -176,7 +174,6 @@ export function GeneralSection() {
 
   const load = () => {
     getAutostart().then(setAutostartState, (failure) => setError(errorText(failure)));
-    getConfig().then(setConfigState, (failure) => setError(errorText(failure)));
     getFeedback().then(setFeedbackState, (failure) => setError(errorText(failure)));
     getTheme().then(setThemeState, () => setThemeState("system"));
     getLanguage().then(
@@ -204,11 +201,7 @@ export function GeneralSection() {
   };
 
   const changeArm = (enabled: boolean) => {
-    if (!config) return;
-    const previous = config;
-    const next = { ...config, replay: { ...config.replay, arm_on_startup: enabled } };
-    setConfigState(next);
-    run(setConfig(next), () => setConfigState(previous));
+    run(saveConfig({ replay: { arm_on_startup: enabled } }).then(() => {}), () => {});
   };
 
   const changeFeedback = (next: Feedback) => {

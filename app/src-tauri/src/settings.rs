@@ -163,6 +163,25 @@ fn unreadable(path: &Path, reason: &str) -> Loaded {
     }
 }
 
+fn merge_patch(target: &mut Value, patch: Value) {
+    match (target, patch) {
+        (Value::Object(target), Value::Object(patch))
+            if !target.contains_key("kind") && !patch.contains_key("kind") =>
+        {
+            for (key, value) in patch {
+                merge_patch(target.entry(key).or_insert(Value::Null), value);
+            }
+        }
+        (target, patch) => *target = patch,
+    }
+}
+
+pub fn patched(config: &EngineConfig, patch: Value) -> serde_json::Result<EngineConfig> {
+    let mut value = serde_json::to_value(config)?;
+    merge_patch(&mut value, patch);
+    serde_json::from_value(value)
+}
+
 pub fn save(path: &Path, settings: &Settings) -> std::io::Result<()> {
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir)?;
@@ -184,6 +203,64 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
         std::fs::create_dir_all(&dir).expect("scratch dir");
         dir.join("settings.json")
+    }
+
+    #[test]
+    fn patch_keeps_fields_changed_elsewhere() {
+        let mut current = EngineConfig::default();
+        current.replay = palaclips_engine::config::ReplaySettings {
+            duration_secs: 120,
+            ..current.replay
+        };
+        let config =
+            patched(&current, serde_json::json!({ "video": { "fps": 120 } })).expect("patch");
+        assert_eq!(config.replay.duration_secs, 120);
+        assert_eq!(config.video.fps, 120);
+        assert_eq!(config.video.bitrate_kbps, current.video.bitrate_kbps);
+    }
+
+    #[test]
+    fn patch_replaces_tagged_values_whole() {
+        let current = EngineConfig {
+            capture: palaclips_engine::config::CaptureTarget::Window {
+                exe_name: "game.exe".into(),
+                title_hint: Some("Game".into()),
+            },
+            ..EngineConfig::default()
+        };
+        let config = patched(
+            &current,
+            serde_json::json!({ "capture": { "kind": "primary_monitor" } }),
+        )
+        .expect("patch");
+        assert_eq!(
+            config.capture,
+            palaclips_engine::config::CaptureTarget::PrimaryMonitor
+        );
+        let saved = serde_json::to_value(&config).expect("json");
+        assert!(saved["capture"].get("exe_name").is_none());
+    }
+
+    #[test]
+    fn restart_cases_match_the_engine() {
+        let cases: Value = serde_json::from_str(include_str!("../../src/lib/restart-cases.json"))
+            .expect("restart cases");
+        let defaults = serde_json::to_value(EngineConfig::default()).expect("json");
+        assert_eq!(
+            cases["base"], defaults,
+            "restart-cases.json base must be EngineConfig::default(): {defaults}"
+        );
+        for case in cases["cases"].as_array().expect("cases") {
+            let before = patched(&EngineConfig::default(), case["before"].clone())
+                .unwrap_or_else(|_| EngineConfig::default());
+            let after = patched(&before, case["after"].clone()).expect("after");
+            assert_eq!(
+                palaclips_engine::engine::needs_restart(&before, &after),
+                case["restarts"].as_bool().expect("restarts"),
+                "{}",
+                case["name"]
+            );
+        }
     }
 
     #[test]

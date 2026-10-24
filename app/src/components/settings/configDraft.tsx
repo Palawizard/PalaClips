@@ -1,28 +1,11 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { type Key, errorText, useT } from "../../lib/i18n.ts";
-import { type EngineConfig, getConfig, getState, onEngineEvent, setConfig } from "../../lib/ipc.ts";
+import { type ConfigPatch, configPatch, restartsReplay, withPatch } from "../../lib/config.ts";
+import { type EngineConfig, getState, onEngineEvent } from "../../lib/ipc.ts";
+import { configReady, saveConfig, useLiveConfig } from "../../lib/useConfig.ts";
 import { usePendingChange } from "../LeaveDialog.tsx";
 
 const APPLIED_ON_DISARM: Key = "settings.applied";
-
-function audioSources(audio: EngineConfig["audio"]): string {
-  return JSON.stringify({
-    ...audio,
-    full_mix_label: null,
-    microphone_label: null,
-    game_label: null,
-    app_tracks: audio.app_tracks.map((track) => ({ ...track, label: "" })),
-  });
-}
-
-export function restartsReplay(before: EngineConfig, after: EngineConfig): boolean {
-  return (
-    JSON.stringify(before.capture) !== JSON.stringify(after.capture) ||
-    JSON.stringify(before.video) !== JSON.stringify(after.video) ||
-    audioSources(before.audio) !== audioSources(after.audio) ||
-    before.replay.storage !== after.replay.storage
-  );
-}
 
 export interface ConfigDraft {
   saved: EngineConfig;
@@ -38,37 +21,39 @@ export interface ConfigDraft {
 }
 
 export function useConfigDraft(page?: Key): { config: ConfigDraft | null; loadError: string | null } {
-  const [saved, setSaved] = useState<EngineConfig | null>(null);
-  const [draft, setDraft] = useState<EngineConfig | null>(null);
+  const saved = useLiveConfig();
+  const [patch, setPatch] = useState<ConfigPatch>({});
   const [armed, setArmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Key | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const latest = useRef({ saved, draft });
-  latest.current = { saved, draft };
+  const saving = useRef(0);
+  const latest = useRef({ saved, patch });
+  latest.current = { saved, patch };
 
-  const save = (next: EngineConfig, appliedNotice?: Key): Promise<boolean> => {
+  const save = (next: ConfigPatch, appliedNotice?: Key): Promise<boolean> => {
     setError(null);
-    return setConfig(next).then(
-      () => {
-        setSaved(next);
-        setDraft(next);
-        if (appliedNotice) setNotice(appliedNotice);
-        return true;
-      },
-      (failure) => {
-        setDraft(latest.current.saved);
-        setError(errorText(failure));
-        return false;
-      },
-    );
+    saving.current += 1;
+    return saveConfig(next)
+      .then(
+        (config) => {
+          setPatch((current) => configPatch(config, withPatch(config, current)));
+          if (appliedNotice) setNotice(appliedNotice);
+          return true;
+        },
+        (failure) => {
+          setPatch({});
+          setError(errorText(failure));
+          return false;
+        },
+      )
+      .finally(() => {
+        saving.current -= 1;
+      });
   };
 
   useEffect(() => {
-    getConfig().then((config) => {
-      setSaved(config);
-      setDraft(config);
-    }, (failure) => setLoadError(errorText(failure)));
+    configReady().catch((failure) => setLoadError(errorText(failure)));
     getState().then((status) => setArmed(status.state !== "idle"), () => setArmed(false));
     const unlisten = onEngineEvent((event) => {
       if (event.type === "state_changed") setArmed(event.state !== "idle");
@@ -79,15 +64,17 @@ export function useConfigDraft(page?: Key): { config: ConfigDraft | null; loadEr
   }, []);
 
   useEffect(() => {
-    const { saved: current, draft: pending } = latest.current;
-    if (!armed && current && pending && restartsReplay(current, pending)) save(pending, APPLIED_ON_DISARM);
+    const { saved: current, patch: pending } = latest.current;
+    if (!armed && saving.current === 0 && current && restartsReplay(current, withPatch(current, pending)))
+      save(pending, APPLIED_ON_DISARM);
   }, [armed]);
 
+  const draft = saved ? withPatch(saved, patch) : null;
   const pendingRestart = armed && saved !== null && draft !== null && restartsReplay(saved, draft);
   usePendingChange(
     page ?? "",
-    page && pendingRestart && draft
-      ? { page, restarts: true, apply: () => save(draft), discard: () => setDraft(latest.current.saved) }
+    page && pendingRestart
+      ? { page, restarts: true, apply: () => save(latest.current.patch), discard: () => setPatch({}) }
       : null,
   );
 
@@ -104,16 +91,18 @@ export function useConfigDraft(page?: Key): { config: ConfigDraft | null; loadEr
       notice,
       change: (next) => {
         setNotice(null);
-        setDraft(next);
-        if (!armed || !restartsReplay(saved, next)) save(next);
+        const nextPatch = configPatch(saved, next);
+        setPatch(nextPatch);
+        if (!armed || !restartsReplay(saved, next)) save(nextPatch);
       },
       commit: (next) => {
         setNotice(null);
-        setDraft(next);
-        save(next);
+        const nextPatch = configPatch(saved, next);
+        setPatch(nextPatch);
+        save(nextPatch);
       },
-      apply: () => save(draft),
-      cancel: () => setDraft(saved),
+      apply: () => save(patch),
+      cancel: () => setPatch({}),
     },
   };
 }

@@ -1,5 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { ConfigPatch } from "./config.ts";
 import type { Language, LanguageSetting, Localized } from "./i18n.ts";
 
 export const ENGINE_EVENT = "engine-event";
@@ -16,8 +17,20 @@ export function getConfig(): Promise<EngineConfig> {
   return invoke<EngineConfig>("get_config");
 }
 
-export function setConfig(config: EngineConfig): Promise<void> {
-  return invoke("set_config", { config });
+export function setConfig(patch: ConfigPatch): Promise<EngineConfig> {
+  return invoke<EngineConfig>("set_config", { patch });
+}
+
+export const CONFIG_EVENT = "config-changed";
+
+export function onConfigChanged(handler: (config: EngineConfig) => void): Promise<UnlistenFn> {
+  return listen<EngineConfig>(CONFIG_EVENT, (message) => handler(message.payload));
+}
+
+export const HOTKEYS_EVENT = "hotkeys-changed";
+
+export function onHotkeysChanged(handler: () => void): Promise<UnlistenFn> {
+  return listen(HOTKEYS_EVENT, handler);
 }
 
 export interface EncoderInfo {
