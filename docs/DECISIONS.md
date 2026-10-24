@@ -714,3 +714,23 @@ phase 8).
   Maj+clic, flèches + Espace, Ctrl+A) ; Compression juste avant Réglages dans la barre ; toutes
   les tailles affichées par l'app en unités binaires comme l'Explorateur et Discord (« Mo » =
   1 048 576 octets), les cibles restant des Mo décimaux (≤ 20 000 000 octets pour 20 Mo).
+
+## ADR-039 — Une seule source de vérité pour la config (v1.2.1)
+**Statut :** acceptée (2026-10-24, bug signalé par Palawi : des réglages « marchaient seulement
+après une relance »).
+- Constat (zip de diagnostic + app isolée) : le moteur recevait bien chaque réglage ; c'est le front
+  qui gardait des copies figées. État (`useEngine`) lisait la config et les raccourcis une seule
+  fois à l'ouverture de la fenêtre (durée « / 01:00 » et ancien raccourci affichés jusqu'à la
+  relance) ; chaque page, Stockage et Général envoyaient une config **complète** tirée d'une
+  copie chargée à l'ouverture, qui pouvait écraser un changement fait ailleurs.
+- Décision : le shell émet `config-changed` (config enregistrée) et `hotkeys-changed` depuis
+  `EngineSlot::update`, seul point d'écriture de `settings.json`. Le front garde une seule copie
+  (`createConfigStore`, `lib/config.ts`, lue par `useLiveConfig`). `useConfigDraft` ne garde que
+  le **patch** des champs modifiés ; le brouillon affiché = config en cours + patch. `set_config`
+  reçoit ce patch, le shell le fusionne (`settings::patched`) et renvoie la config obtenue.
+  Règle de fusion, la même des deux côtés : un objet sans `kind` se fusionne champ par champ ; un
+  objet à `kind` (cible de capture, résolution, découpage) et une liste se remplacent entiers.
+- Les critères de redémarrage du front (`restartsReplay`) et du moteur (`needs_restart`) sont
+  vérifiés sur les mêmes cas (`app/src/lib/restart-cases.json`, test vitest et test Rust).
+- Le moteur écrit « réglages reçus » (sections changées, redémarrage, report) à chaque Configure.
+

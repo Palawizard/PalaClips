@@ -299,7 +299,7 @@ d'une erreur système.
 | `default_config` | 0 ✅ | configuration par défaut |
 | `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
 | `get_config` | 5 ✅ | configuration en cours |
-| `set_config { config }` | 5 ✅ | si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `set_config { patch }` → `EngineConfig` | 5 ✅ (patch : ADR-039) | `patch` = seulement les champs changés, fusionné dans la config en cours (objet sans `kind` : champ par champ ; objet à `kind` et liste : remplacés entiers) ; si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
 | `get_autostart` / `set_autostart { enabled }` | 5 ✅ | démarrage avec Windows (APP-04, `tauri-plugin-autostart` 2.7, clé `Run` de l'utilisateur) ; lancé avec `--autostart` : zone de notification seulement, aucune fenêtre ni WebView2, puis « armer au démarrage » comme d'habitude |
 | `get_feedback` / `set_feedback { feedback }` | 5 ✅ | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
 | `reset_settings` | 5 ✅ | tous les réglages par défaut (APP-07) : moteur, confirmation, raccourcis, thème, démarrage avec Windows désactivé |
@@ -363,6 +363,12 @@ Protocole `palaclips` (ADR-007, `register_asynchronous_uri_scheme_protocol`) :
 `http://palaclips.localhost/<chemin encodé>` (`convertFileSrc(path, "palaclips")`), sert un clip
 de la bibliothèque ou une piste du cache, et rien d'autre (403 ; `..` refusé) ; réponses `206`
 par plages, 4 Mo au plus par réponse ; lecture sur un fil bloquant de Tauri.
+
+Événement Tauri `config-changed` (`EngineConfig`) : émis par le shell à chaque changement de la
+config enregistrée (`set_config`, langue, nom de jeu, réinitialisation). Le front n'a qu'une copie
+de la config (`lib/useConfig.ts`), suivie par État, la galerie et chaque page (ADR-039).
+Événement Tauri `hotkeys-changed` (sans contenu) : les raccourcis ont changé ; État relit
+`get_hotkeys`.
 
 Événement Tauri `library-changed` (sans contenu) : la bibliothèque a changé (synchro au
 démarrage, surveillance du dossier, renommage, Corbeille, quota) ; la galerie relit `list_clips`.

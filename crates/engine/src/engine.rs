@@ -395,11 +395,25 @@ fn ring_window(config: &EngineConfig) -> Hns {
     )
 }
 
-fn needs_restart(old: &EngineConfig, new: &EngineConfig) -> bool {
+pub fn needs_restart(old: &EngineConfig, new: &EngineConfig) -> bool {
     old.capture != new.capture
         || old.video != new.video
         || !old.audio.same_sources(&new.audio)
         || old.replay.storage != new.replay.storage
+}
+
+fn changed_sections(old: &EngineConfig, new: &EngineConfig) -> Vec<&'static str> {
+    [
+        ("capture", old.capture != new.capture),
+        ("video", old.video != new.video),
+        ("audio", old.audio != new.audio),
+        ("replay", old.replay != new.replay),
+        ("record", old.record != new.record),
+        ("storage", old.storage != new.storage),
+    ]
+    .into_iter()
+    .filter_map(|(name, changed)| changed.then_some(name))
+    .collect()
 }
 
 fn titled(specs: &[MuxStream], config: &EngineConfig) -> Vec<MuxStream> {
@@ -870,11 +884,14 @@ impl Core {
     fn configure(&mut self, config: EngineConfig) {
         let restart = self.pipeline.is_some() && needs_restart(&self.config, &config);
         let renamed = track_descriptors(&self.config) != track_descriptors(&config);
+        let changed = changed_sections(&self.config, &config);
         if let Some(pipeline) = self.pipeline.as_mut() {
             pipeline.set_window(ring_window(&config));
         }
         self.config = config;
-        if restart && (self.recording.is_some() || self.post_roll_running()) {
+        let deferred = restart && (self.recording.is_some() || self.post_roll_running());
+        tracing::info!(?changed, restart, deferred, "réglages reçus");
+        if deferred {
             tracing::info!("sources changées pendant un enregistrement : redémarrage à la fin");
             self.restart_pending = true;
             return;

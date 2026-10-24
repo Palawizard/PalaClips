@@ -28,6 +28,8 @@ use crate::i18n::Language;
 
 pub const MAIN_WINDOW: &str = "main";
 pub const ENGINE_EVENT: &str = "engine-event";
+pub const CONFIG_EVENT: &str = "config-changed";
+pub const HOTKEYS_EVENT: &str = "hotkeys-changed";
 const MAX_PREVIEWS: usize = 12;
 pub const AUTOSTART_ARG: &str = "--autostart";
 const LOG_FILES: usize = 7;
@@ -188,6 +190,7 @@ impl AppStatus {
 
 #[derive(Debug)]
 pub struct EngineSlot {
+    app: tauri::AppHandle,
     settings_path: Option<std::path::PathBuf>,
     settings_writable: bool,
     settings: Mutex<settings::Settings>,
@@ -230,6 +233,7 @@ impl EngineSlot {
         }));
         let events = engine.events().clone();
         let relay_status = status.clone();
+        let owner = app.clone();
         let app = app.clone();
         std::thread::Builder::new()
             .name("palaclips-events".into())
@@ -248,6 +252,7 @@ impl EngineSlot {
             handle.arm()?;
         }
         Ok(Self {
+            app: owner,
             settings_path,
             settings_writable,
             settings: Mutex::new(settings),
@@ -321,7 +326,17 @@ impl EngineSlot {
                 Localized::new("settings_not_saved").with("detail", error.to_string())
             })?;
         }
+        let engine_changed = current.engine != changed.engine;
+        let hotkeys_changed = current.hotkeys != changed.hotkeys;
         *current = changed;
+        let engine = current.engine.clone();
+        drop(current);
+        if engine_changed {
+            self.app.emit(CONFIG_EVENT, &engine).ok();
+        }
+        if hotkeys_changed {
+            self.app.emit(HOTKEYS_EVENT, ()).ok();
+        }
         Ok(())
     }
 
