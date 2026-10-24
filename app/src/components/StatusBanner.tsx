@@ -1,5 +1,6 @@
 import { HardDrive, Monitor, Save } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import type { Destination } from "../App.tsx";
 import type { CaptureTarget } from "../lib/ipc.ts";
 import { bytes, clock } from "../lib/format.ts";
 import { message, t, useT } from "../lib/i18n.ts";
@@ -42,7 +43,29 @@ function ReplayWitness({ phase }: { phase: ReplayPhase }) {
   );
 }
 
-export function StatusBanner({ engine }: { engine: Engine }) {
+const COUNTDOWN_TICK_MS = 250;
+
+function ClipInProgress({ endsAt }: { endsAt: number }) {
+  const t = useT();
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), COUNTDOWN_TICK_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+  return (
+    <p className="clip-progress flex items-center gap-2.5">
+      <span aria-hidden className="inline-block size-2.5 shrink-0 rounded-full bg-rec" />
+      <span role="status" className="font-semibold text-ink">
+        {t("status.clipInProgress")}
+      </span>
+      <span className="score text-[20px] leading-none font-semibold text-ink">
+        {clock(Math.max(0, Math.ceil((endsAt - now) / 1000)))}
+      </span>
+    </p>
+  );
+}
+
+export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (destination: Destination) => void }) {
   const t = useT();
   const { status, config, phase, storage } = engine;
   const total = config?.replay.duration_secs ?? 0;
@@ -53,6 +76,7 @@ export function StatusBanner({ engine }: { engine: Engine }) {
   const capture = status?.capture;
   const fellBack = status?.alerts.some((alert) => alert.code === "capture_fallback_monitor");
   const source = capture ? message(capture.source) : targetLabel(config?.capture);
+  const clipEndsAt = status?.clip_ends_at_ms ?? null;
 
   return (
     <header className="flex border-b border-line bg-surface max-[1000px]:flex-wrap [&>section+section]:border-l [&>section+section]:border-line max-[1000px]:[&>section:nth-child(2)]:border-l-0 max-[1000px]:[&>section:not(:first-child)]:border-t">
@@ -76,6 +100,7 @@ export function StatusBanner({ engine }: { engine: Engine }) {
             {t("status.inRam")}
           </p>
         </div>
+        {clipEndsAt !== null && <ClipInProgress endsAt={clipEndsAt} />}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -84,11 +109,20 @@ export function StatusBanner({ engine }: { engine: Engine }) {
             className="pressable inline-flex h-9 items-center gap-2 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-3"
           >
             <Save size={16} strokeWidth={2.2} aria-hidden />
-            {t("status.save")}
+            {clipEndsAt !== null ? t("status.extend") : t("status.save")}
             {engine.saveKeys && (
               <span className="score text-[13px] font-medium opacity-70">{engine.saveKeys}</span>
             )}
           </button>
+          {clipEndsAt !== null && (
+            <button
+              type="button"
+              onClick={engine.finishClip}
+              className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+            >
+              {t("status.finishClip")}
+            </button>
+          )}
           <button
             type="button"
             onClick={armed ? engine.disarm : engine.arm}
@@ -144,6 +178,13 @@ export function StatusBanner({ engine }: { engine: Engine }) {
           {capture ? `${capture.width}×${capture.height} · ${t("units.fps", { value: capture.fps })}` : t("status.captureStopped")}
         </p>
         {fellBack && <p className="text-[13px] text-warn">{t("status.fellBack")}</p>}
+        <button
+          type="button"
+          onClick={() => onOpen({ view: "capture" })}
+          className="pressable mt-auto inline-flex h-9 items-center self-start rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+        >
+          {t("status.changeSource")}
+        </button>
       </Cell>
 
       <Cell title={t("status.disk")}>

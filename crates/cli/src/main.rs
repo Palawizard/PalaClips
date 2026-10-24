@@ -1,4 +1,6 @@
 #[cfg(windows)]
+mod compress;
+#[cfg(windows)]
 mod probe;
 #[cfg(windows)]
 mod probe_audio;
@@ -135,6 +137,14 @@ enum Command {
     ListTargets {
         #[arg(long, help = "Sortie JSON")]
         json: bool,
+    },
+    #[cfg(windows)]
+    #[command(
+        about = "Compresse une vidéo sous une taille cible (débit, résolution et fps calculés, taille vérifiée, 3 essais au plus)"
+    )]
+    Compress {
+        #[command(flatten)]
+        compress: compress::CompressArgs,
     },
     #[cfg(windows)]
     #[command(
@@ -473,6 +483,8 @@ fn main() -> Result<()> {
         Command::CaptureVideo { capture } => run_capture(&capture, Vec::new())?,
         #[cfg(windows)]
         Command::Replay { replay } => replay::run_replay(&replay)?,
+        #[cfg(windows)]
+        Command::Compress { compress } => compress::run(&compress)?,
         #[cfg(windows)]
         Command::ProbeMemory { probe } => probe_memory::probe_memory(&probe)?,
         #[cfg(windows)]

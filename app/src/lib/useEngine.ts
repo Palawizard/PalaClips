@@ -13,6 +13,7 @@ import {
   recordStop,
   replayArm,
   replayDisarm,
+  replayFinishClip,
   replaySave,
   storageStatus,
 } from "./ipc.ts";
@@ -39,6 +40,7 @@ export interface Engine {
   arm: () => void;
   disarm: () => void;
   save: () => void;
+  finishClip: () => void;
   record: () => void;
   stopRecording: () => void;
 }
@@ -155,6 +157,7 @@ export function useEngine(): Engine {
     arm: () => run(replayArm, "arming"),
     disarm: () => run(replayDisarm, "disarming"),
     save: () => run(replaySave, null),
+    finishClip: () => run(replayFinishClip, null),
     record: () => {
       setRecordPending(true);
       run(recordStart, null);

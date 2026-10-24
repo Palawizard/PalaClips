@@ -1,6 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { type Key, errorText, useT } from "../../lib/i18n.ts";
 import { type EngineConfig, getConfig, getState, onEngineEvent, setConfig } from "../../lib/ipc.ts";
+import { usePendingChange } from "../LeaveDialog.tsx";
 
 const APPLIED_ON_DISARM: Key = "settings.applied";
 
@@ -32,11 +33,11 @@ export interface ConfigDraft {
   notice: Key | null;
   change: (next: EngineConfig) => void;
   commit: (next: EngineConfig) => void;
-  apply: () => void;
+  apply: () => Promise<boolean>;
   cancel: () => void;
 }
 
-export function useConfigDraft(): { config: ConfigDraft | null; loadError: string | null } {
+export function useConfigDraft(page?: Key): { config: ConfigDraft | null; loadError: string | null } {
   const [saved, setSaved] = useState<EngineConfig | null>(null);
   const [draft, setDraft] = useState<EngineConfig | null>(null);
   const [armed, setArmed] = useState(false);
@@ -46,17 +47,19 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
   const latest = useRef({ saved, draft });
   latest.current = { saved, draft };
 
-  const save = (next: EngineConfig, appliedNotice?: Key) => {
+  const save = (next: EngineConfig, appliedNotice?: Key): Promise<boolean> => {
     setError(null);
-    setConfig(next).then(
+    return setConfig(next).then(
       () => {
         setSaved(next);
         setDraft(next);
         if (appliedNotice) setNotice(appliedNotice);
+        return true;
       },
       (failure) => {
         setDraft(latest.current.saved);
         setError(errorText(failure));
+        return false;
       },
     );
   };
@@ -80,6 +83,14 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
     if (!armed && current && pending && restartsReplay(current, pending)) save(pending, APPLIED_ON_DISARM);
   }, [armed]);
 
+  const pendingRestart = armed && saved !== null && draft !== null && restartsReplay(saved, draft);
+  usePendingChange(
+    page ?? "",
+    page && pendingRestart && draft
+      ? { page, restarts: true, apply: () => save(draft), discard: () => setDraft(latest.current.saved) }
+      : null,
+  );
+
   if (!saved || !draft) return { config: null, loadError };
 
   return {
@@ -88,7 +99,7 @@ export function useConfigDraft(): { config: ConfigDraft | null; loadError: strin
       saved,
       draft,
       armed,
-      pendingRestart: armed && restartsReplay(saved, draft),
+      pendingRestart,
       error,
       notice,
       change: (next) => {
@@ -122,22 +133,22 @@ export function ConfigFooter({ config, focusAfter }: { config: ConfigDraft; focu
           <button
             type="button"
             onClick={() => {
-              focusAfter.current?.focus();
-              config.apply();
-            }}
-            className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
-          >
-            {t("settings.apply")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
               config.cancel();
               focusAfter.current?.focus();
             }}
             className="pressable h-9 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
           >
-            {t("settings.cancel")}
+            {t("leave.discard")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              focusAfter.current?.focus();
+              void config.apply();
+            }}
+            className="pressable h-9 rounded-md bg-ink px-3.5 font-semibold text-ground hover:bg-ink/90"
+          >
+            {t("settings.apply")}
           </button>
         </div>
       )}

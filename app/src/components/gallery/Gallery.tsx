@@ -1,5 +1,6 @@
 import { Search, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { DraftRequest } from "../../lib/compressDrafts.ts";
 import { type Period, clipTitle, sinceOf } from "../../lib/gallery.ts";
 import { errorText, t as translate, useT } from "../../lib/i18n.ts";
 import {
@@ -60,7 +61,15 @@ function gridShortcuts(): Shortcut[] {
   ];
 }
 
-export function Gallery({ config, saveKeys }: { config: EngineConfig | null; saveKeys: string | null }) {
+export function Gallery({
+  config,
+  saveKeys,
+  onCompress,
+}: {
+  config: EngineConfig | null;
+  saveKeys: string | null;
+  onCompress: (requests: DraftRequest[]) => void;
+}) {
   const t = useT();
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [search, setSearch] = useState("");
@@ -201,6 +210,7 @@ export function Gallery({ config, saveKeys }: { config: EngineConfig | null; sav
       setRenameError(null);
       setRenaming(clip.path);
     } else if (action === "copy") copyClip(clip.path).then(() => setNotice(t("gallery.copied")), fail);
+    else if (action === "compress") onCompress([{ path: clip.path }]);
     else if (action === "reveal") revealClip(clip.path).catch(fail);
     else if (action === "trash") {
       scheduleTrash(clip);
@@ -236,6 +246,7 @@ export function Gallery({ config, saveKeys }: { config: EngineConfig | null; sav
           setRestoreFocus((current) => current + 1);
         }}
         onChange={(changed) => setOpen(changed)}
+        onCompress={onCompress}
       />
     );
   }

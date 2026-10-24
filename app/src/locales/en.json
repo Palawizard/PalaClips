@@ -6,7 +6,10 @@
     "label": "Navigation",
     "status": "Status",
     "gallery": "Gallery",
-    "settings": "Settings"
+    "capture": "Capture",
+    "audio": "Audio",
+    "settings": "Settings",
+    "compress": "Compress"
   },
   "gallery": {
     "count": {
@@ -57,7 +60,8 @@
     "copied": "File copied: paste it in Discord or File Explorer.",
     "openItem": "Open",
     "trashPending": "Moving “{name}” to the Recycle Bin…",
-    "undo": "Undo"
+    "undo": "Undo",
+    "compress": "Compress"
   },
   "units": {
     "kb": "{value} KB",
@@ -81,7 +85,8 @@
     "minUnit": "min",
     "mbUnit": "MB",
     "gbUnit": "GB",
-    "percent": "{value}%"
+    "percent": "{value}%",
+    "secUnit": "s"
   },
   "time": {
     "now": "just now",
@@ -107,7 +112,8 @@
   },
   "alerts": {
     "label": "Alerts",
-    "dismiss": "Dismiss this alert"
+    "dismiss": "Dismiss this alert",
+    "open": "Open {page}"
   },
   "status": {
     "title": "PalaClips status",
@@ -133,7 +139,11 @@
     "disk": "Disk",
     "free": "free",
     "recordingRunning": "Recording in progress",
-    "stop": "Stop"
+    "stop": "Stop",
+    "changeSource": "Change",
+    "clipInProgress": "Clip in progress",
+    "extend": "Extend",
+    "finishClip": "Finish now"
   },
   "performance": {
     "title": "Performance",
@@ -161,13 +171,14 @@
     "level": "Level",
     "peak": "Peak",
     "state": "State",
-    "empty": "No audio track: clips will be silent. Turn on the full mix, the mic or an app in Settings → Audio.",
+    "empty": "No audio track: clips will be silent. Turn on the full mix, the mic or an app on the Audio page.",
     "states": {
       "capturing": "Capturing",
       "waiting": "Waiting for the app",
       "silent": "Silent: check the output",
       "unavailable": "Device unavailable"
-    }
+    },
+    "edit": "Set up tracks"
   },
   "clips": {
     "title": "Latest clips",
@@ -189,8 +200,6 @@
     "title": "Settings",
     "nav": "Settings sections",
     "sections": {
-      "capture": "Capture",
-      "audio": "Audio",
       "replay": "Replay & quality",
       "recording": "Recording",
       "hotkeys": "Hotkeys",
@@ -323,7 +332,11 @@
       "gpuPriorities": {
         "game": "Game first",
         "capture": "Capture first"
-      }
+      },
+      "after": "After the press",
+      "afterHelp": "Pressing again extends the clip.",
+      "afterNone": "None",
+      "afterFree": "After the press, in seconds"
     },
     "capture": {
       "primary": "primary",
@@ -421,17 +434,22 @@
     "disarm": "Disarm the replay",
     "quit": "Quit",
     "recordStart": "Start recording",
-    "recordStop": "Stop recording"
+    "recordStop": "Stop recording",
+    "finish": "Finish the clip now"
   },
   "toast": {
     "clipSaved": "Clip saved",
-    "clipNotSaved": "Clip not saved"
+    "clipNotSaved": "Clip not saved",
+    "clipInProgress": "Clip in progress",
+    "clipInProgressBody": "+{seconds} s"
   },
   "dialog": {
     "clipsDir": "Clips folder",
     "pickApp": "App to capture",
     "applications": "Applications",
-    "diagnostic": "Export diagnostics"
+    "diagnostic": "Export diagnostics",
+    "compressFiles": "Videos to compress",
+    "videos": "Videos"
   },
   "messages": {
     "diagnostic_failed": "couldn't export diagnostics: {detail}",
@@ -529,7 +547,12 @@
     "update_while_recording": "a recording is in progress: stop it before installing the update",
     "update_none": "no update to install: check again",
     "exclusive_fullscreen_advice": "Switch the game to borderless (windowed fullscreen) in its display settings.",
-    "exclusive_fullscreen_advice_minecraft": "Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen."
+    "exclusive_fullscreen_advice_minecraft": "Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen.",
+    "clip_cut_short": "Clip stopped early: {reason}. The start is kept.",
+    "compress_cancelled": "Compression cancelled.",
+    "not_a_video": "This file has no readable video track.",
+    "target_too_small": "Target too small for this length: it needs at least {min_mb} MB.",
+    "over_target": "The file is still over the target after three attempts: pick a lower resolution or a larger target."
   },
   "player": {
     "back": "Back to the gallery",
@@ -620,7 +643,7 @@
     },
     "screen": {
       "question": "Which screen should be captured?",
-      "hint": "A specific window can be picked in Settings → Capture."
+      "hint": "A specific window can be picked on the Capture page."
     },
     "mic": {
       "question": "Record your microphone?",
@@ -701,5 +724,77 @@
       "gallery": "Open in gallery",
       "buffered": "{value} / {total} s"
     }
+  },
+  "leave": {
+    "title": "Changes not applied",
+    "pages": {
+      "one": "Page: {pages}.",
+      "other": "Pages: {pages}."
+    },
+    "stay": "Stay",
+    "discard": "Don't apply",
+    "applyRestart": "Apply and restart"
+  },
+  "compress": {
+    "target": "Target size",
+    "targetFree": "Custom size, in MB",
+    "presets": {
+      "discord": "Discord",
+      "nitroBasic": "Nitro Basic",
+      "nitro": "Nitro",
+      "other": "Other"
+    },
+    "presetLabel": "{size} MB · {name}",
+    "codec": "Codec",
+    "av1Warning": "AV1: often won't play on phones in Discord.",
+    "allTracks": "Keep every track",
+    "allTracksHelp": "Discord only plays track 1.",
+    "drop": "Drop videos here",
+    "dropActive": "Release to add",
+    "pick": "Choose files",
+    "formats": "mp4, mkv, mov, webm, avi",
+    "queue": "Queue",
+    "source": "{width}×{height} · {fps} · {duration} · {size}",
+    "hdr": "HDR",
+    "resolution": "Resolution",
+    "fps": "Frame rate",
+    "bitrate": "Video bitrate, in kb/s",
+    "kbps": "kb/s",
+    "estimate": "≈ {size}",
+    "quality": {
+      "good": "Good",
+      "fair": "Fair",
+      "low": "Low"
+    },
+    "qualityLabel": "Estimated quality: {quality}",
+    "remove": "Remove {name}",
+    "start": "Compress ({count})",
+    "waiting": "Waiting",
+    "attempt": "Attempt {attempt}",
+    "cancel": "Cancel",
+    "cancelled": "Cancelled",
+    "copy": "Copy",
+    "show": "Open folder",
+    "copied": "File copied.",
+    "clear": "Clear finished",
+    "range": "Clip {start} – {end}",
+    "probing": "Reading the file…",
+    "overTarget": "Over {size}",
+    "jobPlan": "Target {size} · {height} · {fps}",
+    "done": "Done",
+    "retry": "Try again",
+    "finished": "{name} compressed: {size}",
+    "progress": "{percent}, attempt {attempt}",
+    "copyPlan": "Already under the target: copied without re-encoding",
+    "pickClips": "Choose clips"
+  },
+  "picker": {
+    "title": "Choose clips",
+    "summary": {
+      "one": "{count} clip · {size}",
+      "other": "{count} clips · {size}"
+    },
+    "add": "Add ({count})",
+    "cancel": "Cancel"
   }
 }

@@ -417,14 +417,18 @@ pub enum ReplayStorage {
 pub struct ReplaySettings {
     pub arm_on_startup: bool,
     pub duration_secs: u32,
+    pub after_secs: u32,
     pub storage: ReplayStorage,
 }
+
+pub const MAX_AFTER_SECS: u32 = 600;
 
 impl Default for ReplaySettings {
     fn default() -> Self {
         Self {
             arm_on_startup: true,
             duration_secs: 60,
+            after_secs: 0,
             storage: ReplayStorage::Ram,
         }
     }
@@ -435,6 +439,11 @@ impl ReplaySettings {
         if !(5..=3_600).contains(&self.duration_secs) {
             return Err(EngineError::InvalidConfig(
                 "la durée du replay doit être entre 5 s et 60 min".into(),
+            ));
+        }
+        if self.after_secs > MAX_AFTER_SECS {
+            return Err(EngineError::InvalidConfig(
+                "la durée après l'appui doit être entre 0 s et 10 min".into(),
             ));
         }
         Ok(())

@@ -632,3 +632,85 @@ phase 8).
     SVT-AV1. Palawi garde H.264 par défaut (2026-10-22) ; l'estimation de RAM de
     Réglages ajoute la mémoire de l'encodeur CPU, et le README la donne. PERF-02 (< 150 Mo hors
     tampon) reste défini pour le chemin matériel.
+
+## ADR-036 — Capture et Audio en pages, alerte de sortie de page (v1.2, APP-14)
+**Statut :** acceptée (2026-10-23, brief validé par Palawi).
+- Contexte : Capture et Audio sont les réglages qu'on ouvre le plus, mais ils étaient rangés dans
+  Réglages ; quitter une section avec un changement en attente (replay armé, changement qui
+  redémarre le tampon) le laissait en suspens sans rien dire.
+- Décision : barre latérale État, Galerie, Capture, Audio, Compression, Réglages (Compression juste avant Réglages, demande de Palawi le 2026-10-24) ; Réglages
+  garde Replay & qualité, Enregistrement, Raccourcis, Stockage, Général. Liens directs : bouton
+  « Changer » de la source et « Régler les pistes » sur État, « Ouvrir <page> » sur les alertes
+  dont la solution est sur une page, « Régler moi-même » du premier lancement → Capture.
+- Garde de sortie : `lib/leaveGuard.ts` (logique pure, testée avec vitest), branchée par
+  `LeaveGuardProvider` (`components/LeaveDialog.tsx`). Chaque `useConfigDraft(page)` déclare son
+  brouillon tant qu'il attend « Appliquer » ; changer de page ou de section de Réglages, ou fermer
+  la fenêtre (`onCloseRequested`, puis `destroy` : permission `core:window:allow-destroy`), passe
+  par la garde. Boîte `<dialog>` modale : Rester (Échap), Ne pas appliquer, Appliquer (focus) ;
+  un échec d'application garde la page ouverte avec l'erreur.
+- Écarté : un brouillon global partagé par toutes les pages (un seul `settings.json` mais des
+  pages qui s'appliquent séparément, comme avant) ; `beforeunload` (ne voit pas la croix de Tauri).
+- Outillage : vitest 5.0.3 en dépendance de dev (`npm test` = test i18n + vitest). npm 10.9.4
+  plante sur l'arbre de vitest (`Cannot read properties of null (reading 'edgesOut')`) : ajouter
+  une dépendance avec `npx -y npm@11.6.2 install` ; `npm ci` (npm 10, CI) lit ensuite le verrou sans
+  souci.
+
+## ADR-037 — Enregistrer après la sauvegarde par l'écriture hybride (v1.2, RPL-10)
+**Statut :** acceptée (2026-10-23, décisions de Palawi dans `docs/reports/v1.2-research.md`).
+- Contexte : ShadowPlay et OBS ne gardent que l'« avant ». Palawi veut aussi la suite de
+  l'action (exemple : 1 min avant + 10 s après), sans agrandir le tampon en RAM.
+- Décision : réglage global `replay.after_secs` (0 s par défaut, 0 à 600 s), appliqué au raccourci
+  de sauvegarde. Avec une durée « après », la sauvegarde démarre un `Recorder` (celui de
+  l'enregistrement, MP4 hybride, journal de récupération) avec le tampon en tête, comme REC-04,
+  puis le moteur lui passe les paquets en direct dont le PTS est avant la fin (`PostRollCut`,
+  temps du flux = QPC − origine de la capture). Le clip se ferme quand chaque flux a dépassé la
+  fin, ou 3 s après au plus tard. Puis `forget_saved(fin)` (RPL-09).
+- Un nouvel appui pendant le « après » repousse la fin (même fichier) ; « Terminer maintenant »
+  (`replay_finish_clip`, État et zone de notification) la ramène à maintenant. Un changement de
+  sources attend la fin du clip (comme pendant un enregistrement) ; un désarmement, une panne du
+  pipeline (TDR, veille) ou la fermeture de l'app ferment le fichier tel quel ; un arrêt brutal
+  le laisse dans le journal, remuxé au démarrage suivant (REC-06). Écriture impossible (disque
+  plein, règles des 2 Go et 300 Mo de l'enregistrement) : alerte `clip_cut_short`, début gardé.
+- Jonction : il n'y en a pas au sens du fichier ; le tampon et le direct sortent du même
+  encodeur, dans l'ordre, sur le même fil. Mesuré (`scripts/post-roll.ps1`, journaux
+  `docs/reports/v1.2/`) : aucun doublon ni trou de PTS, synchro identique avant et après
+  (+137 à +141 ms contre +129 à +139 ms pour un clip instantané sur le même banc, Voicemeeter
+  non compensé).
+- Écarté : agrandir le tampon de la durée « après » puis écrire d'un bloc (RAM en plus, clip
+  perdu en cas d'arrêt brutal) ; un second raccourci « Sauvegarder + suite » (choix de Palawi) ;
+  un mode « jusqu'au prochain appui » (choix de Palawi).
+- Limite connue : le MP4 fragmenté ramène le premier échantillon de chaque piste à 0 (première
+  image affichée ~13 ms de plus, déjà vrai pour les enregistrements depuis la 1.0) ; temps
+  suivants exacts, synchro inchangée (RESEARCH).
+## ADR-038 — Compression à une taille cible (v1.2, CMP-01 à 05)
+**Statut :** acceptée (2026-10-23, décisions de Palawi dans `docs/reports/v1.2-research.md`).
+- Contexte : Discord refuse un fichier gratuit au-dessus de 20 Mo (Nitro Basic 50, Nitro 500) ;
+  un clip 1440p60 en fait 300 par minute.
+- Décision : module `library::compress` (moteur) et `palaclips-cli compress`. Débit vidéo =
+  (cible × 0,97 − 1 % − 64 Kio − audio) / durée ; audio 128 / 96 / 64 kb/s selon le budget ;
+  plus haute résolution (1440, 1080, 720, 480) dont le débit par pixel atteint 0,10 à la cadence
+  de la source (60 i/s au plus), sinon 720p à 0,07, sinon 30 i/s, sinon 480p30 ; AV1 : seuils
+  × 0,7. Décodage FFmpeg, graphe de filtres (`zscale` + `tonemap=hable` pour le HDR10/HLG,
+  `fps`, `scale`), `SystemFrameEncoder` (matériel d'abord, puis processeur ; `maxrate` = débit,
+  tampon d'1 s), AAC par piste. Taille mesurée après l'écriture : au-dessus de la cible, nouvel
+  essai avec le débit corrigé du dépassement (× 1,1), 3 essais au plus ; jamais de fichier livré
+  au-dessus de la cible (`over_target`). Fichier `.part.mp4` supprimé en cas d'annulation ou
+  d'échec. Fils du décodeur et de l'encodeur en priorité basse (`encode::threads`).
+- Sortie à côté de l'original (`<nom>_20MB.mp4`, `_2` s'il existe), donc dans la galerie et le
+  quota pour un clip de la bibliothèque. Piste 1 seule par défaut, « Garder toutes les pistes »
+  au choix. File de compression dans le shell (un fil, continue fenêtre fermée), page
+  Compression, bouton dans la galerie et le lecteur (découpe comprise), glisser-déposer par
+  `onDragDropEvent` de Tauri (pas de HTML5 dans l'app, `dragDropEnabled` laissé actif).
+- Mesuré : 11 cas sur 11 sous la cible, entre 94,9 et 98,8 % de la cible, un seul second essai
+  (`docs/reports/v1.2/compress-check-*.txt`, images `docs/reports/v1.2/compress/`) ; un replay
+  sauvegardé pendant une compression reste continu.
+- Écarté : vrai double passage (NVENC ne l'a pas sur fichier, le CPU doublerait le temps) ;
+  HEVC (lecture incertaine dans Discord) ; décodage matériel (gain de vitesse, mais une session
+  D3D11 de plus pendant une partie ; à revoir si la lenteur gêne, ~0,8× le temps réel en
+  1440p60 sur la machine de Palawi).
+- **Complément (2026-10-24, session de Palawi)** : un original entier déjà sous la cible est copié
+  sans réencodage (copie des flux, piste 1 seule si choisie ; repli sur l'encodage si la copie
+  échoue ou dépasse) ; bouton « Choisir des clips » (sélection multiple dans la galerie : clic,
+  Maj+clic, flèches + Espace, Ctrl+A) ; Compression juste avant Réglages dans la barre ; toutes
+  les tailles affichées par l'app en unités binaires comme l'Explorateur et Discord (« Mo » =
+  1 048 576 octets), les cibles restant des Mo décimaux (≤ 20 000 000 octets pour 20 Mo).

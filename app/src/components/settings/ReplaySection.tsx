@@ -22,6 +22,9 @@ import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
 
 const RAM_SHARE_LIMIT = 0.4;
 
+const AFTER_PRESETS = [0, 10, 30, 60, 300, 600];
+const MAX_AFTER_SECS = 600;
+
 export const DURATIONS = [5, 10, 15, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600];
 const FPS = [30, 60, 120, 144, 165, 240];
 const HEIGHTS = [720, 1080, 1440, 2160];
@@ -89,7 +92,7 @@ function resolutionKey(resolution: OutputResolution): string {
 
 export function ReplaySection() {
   const t = useT();
-  const { config, loadError } = useConfigDraft();
+  const { config, loadError } = useConfigDraft("settings.sections.replay");
   const [encoders, setEncoders] = useState<EncoderInfo[]>([]);
   const [memory, setMemory] = useState<MemoryStatus | null>(null);
   const [estimate, setEstimate] = useState<ReplayEstimate | null>(null);
@@ -210,6 +213,28 @@ export function ReplaySection() {
           options={withCurrent(DURATIONS, draft.replay.duration_secs).map((seconds) => ({ value: seconds, label: durationLabel(seconds) }))}
           onChange={(duration_secs) => replay({ duration_secs })}
         />
+      </SettingRow>
+      <SettingRow label={t("settings.replay.after")} help={t("settings.replay.afterHelp")}>
+        <div className="flex items-center gap-2">
+          <Select
+            label={t("settings.replay.after")}
+            value={draft.replay.after_secs}
+            options={withCurrent(AFTER_PRESETS, draft.replay.after_secs).map((seconds) => ({
+              value: seconds,
+              label: seconds === 0 ? t("settings.replay.afterNone") : durationLabel(seconds),
+            }))}
+            onChange={(after_secs) => replay({ after_secs })}
+            className="min-w-28"
+          />
+          <NumberField
+            value={draft.replay.after_secs}
+            min={0}
+            max={MAX_AFTER_SECS}
+            unit={t("units.secUnit")}
+            label={t("settings.replay.afterFree")}
+            onCommit={(after_secs) => replay({ after_secs })}
+          />
+        </div>
       </SettingRow>
       <SettingRow label={t("settings.replay.buffer")} help={t("settings.replay.bufferHelp")}>
         <Segmented<ReplayStorage>

@@ -267,11 +267,18 @@ impl Splitter {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecordKind {
+    Recording,
+    Replay,
+}
+
 #[derive(Debug, Clone)]
 pub struct RecordTarget {
     pub root: PathBuf,
     pub game: String,
     pub split: RecordSplit,
+    pub kind: RecordKind,
 }
 
 #[derive(Debug, Clone)]
@@ -297,7 +304,11 @@ impl Segment {
         journal: &Journal,
         start: Hns,
     ) -> Result<Self> {
-        let path = paths::recording_path(&target.root, &target.game, &paths::local_timestamp());
+        let stamp = paths::local_timestamp();
+        let path = match target.kind {
+            RecordKind::Recording => paths::recording_path(&target.root, &target.game, &stamp),
+            RecordKind::Replay => paths::replay_clip_path(&target.root, &target.game, &stamp),
+        };
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)?;
         }
@@ -494,6 +505,7 @@ impl Recorder {
         events: Sender<EngineEvent>,
     ) -> Result<Self> {
         let journal = Journal::open_default()?;
+        let kind = target.kind;
         let current = Segment::open(&target, &layout, &journal, start)?;
         let bytes = Arc::new(AtomicU64::new(0));
         let writer = Writer {
@@ -513,13 +525,22 @@ impl Recorder {
             .name("palaclips-record".into())
             .spawn(move || {
                 if let Err(error) = write_all(writer, backlog, &live) {
-                    tracing::error!(%error, "enregistrement interrompu");
+                    tracing::error!(%error, ?kind, "écriture interrompue");
+                    let (code, message) = match kind {
+                        RecordKind::Recording => (
+                            "recording_failed",
+                            format!("Enregistrement arrêté : {error}."),
+                        ),
+                        RecordKind::Replay => (
+                            "clip_cut_short",
+                            format!("Clip arrêté avant la fin : {error}. Le début est gardé."),
+                        ),
+                    };
                     events
                         .try_send(EngineEvent::Alert {
                             severity: Severity::Error,
-                            text: Localized::new("recording_failed")
-                                .with("reason", error.localized()),
-                            message: format!("Enregistrement arrêté : {error}."),
+                            text: Localized::new(code).with("reason", error.localized()),
+                            message,
                         })
                         .ok();
                 }
@@ -628,6 +649,7 @@ mod tests {
             root: root.to_path_buf(),
             game: "Test".into(),
             split: RecordSplit::Never,
+            kind: RecordKind::Recording,
         };
         let layout = RecordLayout {
             time_bases: vec![stream.time_base],

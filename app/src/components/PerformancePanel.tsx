@@ -10,6 +10,8 @@ import {
 } from "../lib/ipc.ts";
 import type { ReplayPhase } from "../lib/useEngine.ts";
 
+const MIB = 1024 * 1024;
+
 const OPEN_KEY = "palaclips.performance.open";
 
 function readOpen(): boolean {
@@ -100,7 +102,7 @@ export function PerformancePanel({ phase, alerts }: { phase: ReplayPhase; alerts
   const percent = (value: number | null | undefined, digits = 1) =>
     value === null || value === undefined ? "—" : number(value, digits);
   const megabytes = (value: number | null | undefined) =>
-    value === null || value === undefined ? "—" : number(value / 1e6);
+    value === null || value === undefined ? "—" : number(value / MIB);
   const cpuCodec = capture ? CPU_ENCODER_CODECS[capture.encoder] : undefined;
   const captureTitle = capture
     ? cpuCodec

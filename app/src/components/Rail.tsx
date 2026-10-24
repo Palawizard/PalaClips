@@ -1,12 +1,15 @@
 import type { LucideIcon } from "lucide-react";
-import { Clapperboard, Gauge, SlidersHorizontal } from "lucide-react";
+import { AudioLines, Clapperboard, Gauge, Monitor, Shrink, SlidersHorizontal } from "lucide-react";
 import { useT } from "../lib/i18n.ts";
 
-export type View = "status" | "gallery" | "settings";
+export type View = "status" | "gallery" | "compress" | "capture" | "audio" | "settings";
 
 const ITEMS: { view: View; icon: LucideIcon }[] = [
   { view: "status", icon: Gauge },
   { view: "gallery", icon: Clapperboard },
+  { view: "capture", icon: Monitor },
+  { view: "audio", icon: AudioLines },
+  { view: "compress", icon: Shrink },
   { view: "settings", icon: SlidersHorizontal },
 ];
 
