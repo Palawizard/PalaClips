@@ -393,6 +393,11 @@ body {
   }
 }
 
+.picker-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
 .drop-zone {
   transition:
     border-color 140ms ease,

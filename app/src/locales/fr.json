@@ -785,6 +785,16 @@
     "retry": "Réessayer",
     "finished": "{name} compressé : {size}",
     "progress": "{percent}, essai {attempt}",
-    "copyPlan": "Déjà sous la cible : copie sans réencodage"
+    "copyPlan": "Déjà sous la cible : copie sans réencodage",
+    "pickClips": "Choisir des clips"
+  },
+  "picker": {
+    "title": "Choisir des clips",
+    "summary": {
+      "one": "{count} clip · {size}",
+      "other": "{count} clips · {size}"
+    },
+    "add": "Ajouter ({count})",
+    "cancel": "Annuler"
   }
 }
