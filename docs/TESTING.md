@@ -392,3 +392,23 @@ dossier (clip court et long 1440p60, multipiste, HDR10, MKV, MOV ; voir RESEARCH
 À la main (session de fin de version) : glisser un clip de l'Explorateur sur la page Compression ;
 compresser un vrai clip en 20 Mo puis en 500 Mo, « Copier », coller dans Discord, vérifier que la
 vidéo se lit dans Discord (bureau, et téléphone si possible) avec le son de la piste 1.
+
+## T14 — Session de fin de version v1.2 (≤ 15 min, en jouant)
+
+Préparation (Claude) : PalaClips installé fermé (zone de notification > Quitter) ;
+`pwsh scripts/app-isolated.ps1 -LeftScreen -Settings '{"language":"fr","engine":{"replay":{"duration_secs":120,"after_secs":10}}}'`
+(replay de 2 min, 10 s après l'appui, carillon et notification actifs, fenêtre sur l'écran de
+gauche). À la fin, Claude ferme l'app de test et supprime `target\test-config`.
+
+1. **Après la sauvegarde** (en jeu, ~3 min) : `Alt+F10` → carillon + notification « Clip en cours
+   / +10 s », le jeu garde le focus ; nouvel `Alt+F10` avant la fin → un seul clip, plus long ;
+   attendre « Clip sauvegardé ». Puis `Alt+F10` et, dans la zone de notification, « Terminer le
+   clip maintenant ».
+2. **Compression et Discord** (~6 min) : Galerie → menu du premier clip → Compresser → 20 Mo →
+   Compresser → Copier → coller dans un salon ou un MP Discord : la vidéo se lit dans Discord,
+   avec le son. Même chose en 500 Mo (Nitro).
+3. **Glisser-déposer** (~1 min) : glisser une vidéo depuis l'Explorateur sur la page Compression
+   → elle arrive dans la file d'attente ; un fichier qui n'est pas une vidéo est ignoré.
+4. **Sortie de page** (~1 min) : replay armé, page Capture → basculer « Afficher le curseur » →
+   cliquer État → l'alerte s'ouvre (focus sur Rester) ; Échap = Rester ; recommencer et choisir
+   « Ne pas appliquer » ; recommencer et fermer la fenêtre par la croix → même alerte.

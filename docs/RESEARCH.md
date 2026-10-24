@@ -707,6 +707,12 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
   ~13 ms de plus ; si on retire cet audio, c'est le premier paquet audio qui est avancé. Les
   temps suivants sont exacts dans les deux cas : comportement gardé (celui des enregistrements
   depuis la 1.0), le vérificateur ignore ce premier pas.
+- Mémoire sur un « après » de 10 min (`scripts/post-roll-memory.ps1`, 2026-10-24, Palawi en
+  partie) : working set privé 59 à 69 Mo pendant le clip, pente −17,6 Mo/h, 40,8 Mo après la fin
+  du clip ; un relevé isolé à 37 Mo (mémoire réduite par Windows sous la pression du jeu) ; clip
+  de 660,8 s continu. Critère retenu avec Palawi : pas de croissance (pente < 20 Mo/h, hausse
+  < 10 Mo entre le début et la fin), plutôt qu'un écart min/max que les réductions de Windows
+  faussent.
 - Erreur trouvée au premier essai : comparer la fin (QPC absolu) aux PTS du flux (relatifs à
   l'origine de la capture) ne coupait rien, le clip finissait au délai de secours de 3 s.
 ## Compression à une taille cible (v1.2, mesuré le 2026-10-23)
