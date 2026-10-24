@@ -259,7 +259,7 @@ Recherche et décisions de Palawi : `docs/reports/v1.2-research.md`.
       anticipée), cas limites testés, app (réglage, État, zone de notification, notifications).
 - [x] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
       boutons galerie/lecteur, glisser-déposer, copier.
-- [ ] Session de tests manuels de Palawi (≤ 15 min, en jouant).
+- [x] Session de tests manuels de Palawi (T14, 2026-10-24, en jouant) ; retours appliqués (#109).
 - [ ] Release v1.2.0 (brouillon, puis publication avec l'accord de Palawi).
 
 Critères :
