@@ -104,8 +104,8 @@ FINISH : unreviewed and undocumented is unfinished; this build ends with the fin
 
 ## Barre latérale v1.2 (shape, brief confirmé par Palawi le 2026-10-23)
 
-- Entrées : État, Galerie, Compression (chantier 3), Capture, Audio, Réglages ; icônes Gauge,
-  Clapperboard, Shrink, Monitor, AudioLines, SlidersHorizontal.
+- Entrées : État, Galerie, Capture, Audio, Compression, Réglages (ordre corrigé par Palawi le
+  2026-10-24) ; icônes Gauge, Clapperboard, Monitor, AudioLines, Shrink, SlidersHorizontal.
 - Capture et Audio deviennent des pages (titre de page 22 px + filet, contenu inchangé).
 - État : « Changer » en bas de la cellule Source (même place que les boutons des autres
   cellules), « Régler les pistes » à droite du titre des pistes ; alertes : « Ouvrir <page> »

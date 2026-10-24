@@ -129,7 +129,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | APP-11 | Installeur Windows (NSIS, par utilisateur, sans droits admin) ; la désinstallation conserve les clips. |
 | APP-12 | Panneau de performances : RAM/CPU du moteur, taille du buffer, images perdues, encodeur utilisé. |
 | APP-13 | Accessibilité : navigation clavier complète, contrastes conformes, `prefers-reduced-motion` respecté. |
-| APP-14 | Barre latérale (v1.2) : État, Galerie, Compression, Capture, Audio, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
+| APP-14 | Barre latérale (v1.2) : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
 
 ### 2.8 bis Compression (CMP, v1.2)
 
