@@ -260,7 +260,7 @@ Recherche et décisions de Palawi : `docs/reports/v1.2-research.md`.
 - [x] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
       boutons galerie/lecteur, glisser-déposer, copier.
 - [x] Session de tests manuels de Palawi (T14, 2026-10-24, en jouant) ; retours appliqués (#109).
-- [ ] Release v1.2.0 (brouillon, puis publication avec l'accord de Palawi).
+- [x] Release v1.2.0 (#110, #111, publiée le 2026-10-24 avec l'accord de Palawi).
 
 Critères :
 - 🤖 Hook de sortie de page : tests vitest (navigation, fermeture, sans changement → aucune
