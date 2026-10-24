@@ -78,8 +78,11 @@ try {
     $check = python -I -X utf8 (Join-Path $root "scripts\clip-continuity.py") $file.FullName --json | ConvertFrom-Json
     $detail = ($check.streams | ForEach-Object { "$($_.type) {0:N1} s, doublons $($_.duplicates), trous $($_.gaps)" -f $_.duration_s }) -join " ; "
     Write-Journal "clip : $([math]::Round($file.Length / 1MB)) Mo ; $detail"
-    $ok = $check.continuous -and [math]::Abs($slope * 3600) -lt 20 -and ($range.Maximum - $range.Minimum) -lt 30
-    Write-Journal "RÉSULTAT : $(if ($ok) { 'OK' } else { 'ÉCHEC' }) (critère : pente < 20 Mo/h, écart < 30 Mo, clip continu)"
+    $edge = [math]::Max(1, [math]::Floor($n / 6))
+    $rise = ($steady | Select-Object -Last $edge | Measure-Object Mb -Average).Average - ($steady | Select-Object -First $edge | Measure-Object Mb -Average).Average
+    Write-Journal ("hausse entre le premier et le dernier sixième : {0:+0.0;-0.0} Mo" -f $rise)
+    $ok = $check.continuous -and ($slope * 3600) -lt 20 -and $rise -lt 10
+    Write-Journal "RÉSULTAT : $(if ($ok) { 'OK' } else { 'ÉCHEC' }) (critère : pente < 20 Mo/h, hausse < 10 Mo entre le début et la fin, clip continu)"
 } catch {
     Write-Journal "ÉCHEC : $_"
 } finally {
