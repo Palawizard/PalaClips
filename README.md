@@ -73,9 +73,11 @@ Anti-Cheat.
 
 | Gallery | Audio sources |
 |---|---|
-| ![The gallery, clips grouped by day](docs/screenshots/en/gallery.png) | ![Audio settings: one track per app, with a level meter](docs/screenshots/en/audio-sources.png) |
+| ![The gallery, clips grouped by day](docs/screenshots/en/gallery.png) | ![Audio page: one track per app, with a level meter](docs/screenshots/en/audio-sources.png) |
 
-![First launch, replay length question](docs/screenshots/en/first-launch.png)
+| Compress | First launch |
+|---|---|
+| ![The Compress page: target size, codec, queue with each clip's plan](docs/screenshots/en/compress.png) | ![First launch, replay length question](docs/screenshots/en/first-launch.png) |
 
 ## Requirements
 
