@@ -638,7 +638,7 @@ phase 8).
 - Contexte : Capture et Audio sont les réglages qu'on ouvre le plus, mais ils étaient rangés dans
   Réglages ; quitter une section avec un changement en attente (replay armé, changement qui
   redémarre le tampon) le laissait en suspens sans rien dire.
-- Décision : barre latérale État, Galerie, (Compression), Capture, Audio, Réglages ; Réglages
+- Décision : barre latérale État, Galerie, Capture, Audio, Compression, Réglages (Compression juste avant Réglages, demande de Palawi le 2026-10-24) ; Réglages
   garde Replay & qualité, Enregistrement, Raccourcis, Stockage, Général. Liens directs : bouton
   « Changer » de la source et « Régler les pistes » sur État, « Ouvrir <page> » sur les alertes
   dont la solution est sur une page, « Régler moi-même » du premier lancement → Capture.

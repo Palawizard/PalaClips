@@ -784,6 +784,7 @@
     "done": "Terminé",
     "retry": "Réessayer",
     "finished": "{name} compressé : {size}",
-    "progress": "{percent}, essai {attempt}"
+    "progress": "{percent}, essai {attempt}",
+    "copyPlan": "Déjà sous la cible : copie sans réencodage"
   }
 }

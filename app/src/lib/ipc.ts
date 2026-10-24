@@ -373,6 +373,7 @@ export interface CompressPlan {
   video_kbps: number;
   audio_kbps: number;
   audio_tracks: number;
+  copy_bytes: number | null;
 }
 
 export interface CompressPlanView {
