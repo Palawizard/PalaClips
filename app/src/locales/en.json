@@ -785,6 +785,16 @@
     "retry": "Try again",
     "finished": "{name} compressed: {size}",
     "progress": "{percent}, attempt {attempt}",
-    "copyPlan": "Already under the target: copied without re-encoding"
+    "copyPlan": "Already under the target: copied without re-encoding",
+    "pickClips": "Choose clips"
+  },
+  "picker": {
+    "title": "Choose clips",
+    "summary": {
+      "one": "{count} clip · {size}",
+      "other": "{count} clips · {size}"
+    },
+    "add": "Add ({count})",
+    "cancel": "Cancel"
   }
 }

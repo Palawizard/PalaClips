@@ -34,6 +34,7 @@ import {
   onCompressChanged,
 } from "../../lib/ipc.ts";
 import { NumberField, Segmented, Select, SettingRow, Switch } from "../settings/Settings.tsx";
+import { ClipPicker } from "./ClipPicker.tsx";
 
 const SECONDARY =
   "pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover";
@@ -285,6 +286,7 @@ export function CompressPage() {
   const { options, drafts } = useCompressDrafts();
   const [jobs, setJobs] = useState<CompressJob[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -400,9 +402,14 @@ export function CompressPage() {
           <p className={`text-[15px] font-semibold ${busy ? "flex-1" : ""}`}>
             {dragging ? t("compress.dropActive") : t("compress.drop")}
           </p>
-          <button type="button" onClick={pick} className={SECONDARY}>
-            {t("compress.pick")}
-          </button>
+          <span className="flex flex-wrap items-center justify-center gap-2">
+            <button type="button" onClick={() => setPicking(true)} className={SECONDARY}>
+              {t("compress.pickClips")}
+            </button>
+            <button type="button" onClick={pick} className={SECONDARY}>
+              {t("compress.pick")}
+            </button>
+          </span>
           {!busy && <p className="text-[13px] text-ink-3">{t("compress.formats")}</p>}
         </div>
       </div>
@@ -439,6 +446,14 @@ export function CompressPage() {
         </section>
       )}
 
+      <ClipPicker
+        open={picking}
+        onClose={() => setPicking(false)}
+        onAdd={(paths) => {
+          setPicking(false);
+          addDrafts(paths.map((path) => ({ path })));
+        }}
+      />
       <p role="status" className="sr-only">
         {announce}
       </p>
