@@ -138,6 +138,9 @@ pub enum EngineEvent {
         elapsed_secs: f64,
         bytes: u64,
     },
+    PostRoll {
+        ends_in_secs: Option<f64>,
+    },
     Alert {
         severity: Severity,
         #[serde(flatten)]

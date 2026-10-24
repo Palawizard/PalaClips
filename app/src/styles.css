@@ -381,6 +381,7 @@ body {
   will-change: transform;
 }
 
+.clip-progress,
 .compress-row {
   transition:
     opacity 200ms var(--ease-out),
@@ -426,6 +427,7 @@ body {
   .roster-row,
   .clip-card,
   .alert-item,
+  .clip-progress,
   .compress-row,
   .drop-zone,
   .switch-thumb,

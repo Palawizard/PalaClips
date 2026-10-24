@@ -315,7 +315,8 @@ d'une erreur système.
 | `compress_plan { input }` / `compress_preview { plan, codec, durationSecs }` | v1.2 ✅ | plan de compression (ADR-038) ou plan modifié → `{ plan, quality, estimated_bytes, duration_secs }` |
 | `compress_add { inputs }` / `compress_jobs` / `compress_cancel { id }` / `compress_clear` | v1.2 ✅ | file de compression dans le shell, un fil en priorité basse, continue fenêtre fermée ; événement `compress-changed` (tâche : `queued`, `running { attempt, fraction }`, `done { path, bytes, attempts }`, `failed { error }`, `cancelled`) |
 | `compress_copy { id }` / `compress_reveal { id }` | v1.2 ✅ | copie du fichier compressé dans le presse-papiers, Explorateur ; seulement pour une tâche terminée |
-| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = `Localized`) |
+| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = `Localized`) ; avec `replay.after_secs` > 0 (RPL-10, v1.2), `replay_save` écrit le tampon dans un MP4 hybride et y ajoute le direct jusqu'à la fin de la durée après l'appui ; pendant ce temps, un nouvel appui prolonge le même clip |
+| `replay_finish_clip` | v1.2 ✅ | termine tout de suite le clip en cours (aussi dans le menu de la zone de notification, entrée visible seulement pendant le « après ») |
 | `record_start` / `record_stop` | 6 ✅ | enregistrement manuel (REC-01/02) : même capture et mêmes encodeurs que le replay (arme le pipeline si besoin, désarmé à la fin s'il ne l'était pas) ; état `recording` ; MP4 hybride (`hybrid_fragmented`, fragment d'1 s, `flush_packets`) ; option `record.include_replay` (REC-04) et découpage `record.split` par durée ou taille sur image clé (REC-05) ; un changement de sources pendant l'enregistrement redémarre le replay à la fin ; calibrage refusé (`recording_running`) |
 | `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
 | `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
@@ -375,7 +376,10 @@ des tâches), maximum depuis l'armement ; `engine_bytes` = working set privé �
 10 dernières secondes ; images en retard (encodées plus d'une période après leur instant) depuis
 l'armement et sur la dernière minute ; replay désarmé : CPU et RAM seulement, `capture: null`.
 `replay_stats`, `recording_stats { elapsed_secs, bytes }` (chaque seconde pendant un
-enregistrement ; chaque fichier terminé arrive en `clip_saved`), `alert { severity, code, params, message }` (`code` + `params` pour le texte
+enregistrement ; chaque fichier terminé arrive en `clip_saved`), `post_roll { ends_in_secs }`
+(v1.2 : nombre = clip en cours ou prolongé, secondes restantes ; `null` = clip en cours terminé,
+le fichier arrive en `clip_saved` ; le shell joue le carillon et le toast « Clip en cours » et
+tient `AppStatus.clip_ends_at_ms`, heure de fin en ms Unix), `alert { severity, code, params, message }` (`code` + `params` pour le texte
 affiché, `message` en français pour les journaux et la CLI), `alert_cleared { code }` (la
 condition d'une alerte a disparu : l'app la retire de `AppStatus.alerts`). Alertes de capture
 (`events::CAPTURE_ALERTS` : `capture_source_rate_limited`, `capture_gpu_saturated`,
@@ -396,7 +400,9 @@ sauvegarde demandée pendant un calibrage, rien n'est sauvegardé), `settings_un
 `quota_deleted { count, size_mb }` (clips supprimés définitivement par le quota).
 Erreurs de compression (v1.2) : `not_a_video`, `target_too_small { min_mb }`, `over_target`,
 `compress_cancelled`.
-Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }` ;
+Paramètres : `replay_stopped`, `replay_arm_failed`, `clip_save_failed { reason }`,
+`clip_cut_short { reason }` (v1.2 : écriture d'un clip en cours interrompue, disque plein par
+exemple ; le début déjà écrit reste lisible) ;
 `clip_too_short { seconds }` ; `capture_fallback_monitor { title }` ;
 `encoder_reset { reason }` (avertissement : capture, encodage ou piste en panne, par exemple
 après un redémarrage du pilote graphique ; le moteur désarme puis réarme seul après 1, 2 puis

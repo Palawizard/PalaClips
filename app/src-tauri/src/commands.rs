@@ -184,6 +184,11 @@ pub fn replay_save(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
 }
 
 #[tauri::command]
+pub fn replay_finish_clip(slot: State<'_, EngineSlot>) -> Result<(), Localized> {
+    Ok(slot.handle.finish_clip()?)
+}
+
+#[tauri::command]
 pub async fn compress_probe(path: String) -> Result<crate::compress::ProbeView, Localized> {
     crate::compress::probe(&path)
 }

@@ -255,7 +255,7 @@ Recherche et décisions de Palawi : `docs/reports/v1.2-research.md`.
       Réglages ; hook générique de changements non appliqués (navigation, fermeture, zone de
       notification), testé avec vitest ; liens d'État, alertes, premier lancement et calibrage
       vers la bonne page.
-- [ ] Après la sauvegarde (`feature/post-roll`) : moteur (MP4 hybride, prolongation, fin
+- [x] Après la sauvegarde (`feature/post-roll`) : moteur (MP4 hybride, prolongation, fin
       anticipée), cas limites testés, app (réglage, État, zone de notification, notifications).
 - [x] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
       boutons galerie/lecteur, glisser-déposer, copier.

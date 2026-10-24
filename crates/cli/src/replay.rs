@@ -22,6 +22,12 @@ pub struct ReplayArgs {
     pub video: crate::VideoArgs,
     #[arg(long, default_value_t = 60, help = "Durée du replay en secondes")]
     pub duration: u32,
+    #[arg(
+        long,
+        default_value_t = 0,
+        help = "Durée après l'appui en secondes (0 à 600) : le clip continue en direct"
+    )]
+    pub after: u32,
     #[arg(long, help = "Tampon sur disque au lieu de la RAM")]
     pub disk: bool,
     #[arg(long, help = "Dossier des clips ; absent = Vidéos\\PalaClips")]
@@ -97,6 +103,7 @@ impl ReplayArgs {
             replay: ReplaySettings {
                 arm_on_startup: true,
                 duration_secs: self.duration,
+                after_secs: self.after,
                 storage: if self.disk {
                     ReplayStorage::Disk
                 } else {
@@ -132,7 +139,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     }
     let started = Instant::now();
     println!(
-        "replay de {} s ({}) : Entrée = sauvegarder, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",
+        "replay de {} s ({}) : Entrée = sauvegarder, f = terminer le clip en cours, e = démarrer/arrêter l'enregistrement, r = changer les sources (piste Jeu) et redémarrer le tampon, q = quitter",
         args.duration,
         if args.disk { "disque" } else { "RAM" }
     );
@@ -148,6 +155,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let mut last_levels = Vec::new();
     let mut quitting = false;
     let mut recording = false;
+    let mut post_roll = false;
     loop {
         if quitting && finished >= requested {
             break;
@@ -164,6 +172,9 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     println!("sources changées : piste Jeu {}", if config.audio.auto_game_track { "ajoutée" } else { "retirée" });
                     handle.configure(config.clone())?;
                 }
+                Ok(line) if line.trim() == "f" => {
+                    handle.finish_clip()?;
+                }
                 Ok(line) if line.trim() == "e" => {
                     if recording {
                         requested += 1;
@@ -174,7 +185,10 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     recording = !recording;
                 }
                 Ok(line) if line.trim() != "q" => {
-                    requested += 1;
+                    if !post_roll {
+                        requested += 1;
+                    }
+                    post_roll = args.after > 0;
                     handle.save_replay()?;
                 }
                 _ => quitting = true,
@@ -190,6 +204,13 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                             started.elapsed().as_secs(),
                             private_bytes().unwrap_or_default() as f64 / 1e6
                         );
+                    }
+                    EngineEvent::PostRoll { ends_in_secs } => {
+                        post_roll = ends_in_secs.is_some();
+                        match ends_in_secs {
+                            Some(seconds) => println!("[{:>6} s] clip en cours : fin dans {seconds:.1} s", started.elapsed().as_secs()),
+                            None => println!("[{:>6} s] clip en cours terminé", started.elapsed().as_secs()),
+                        }
                     }
                     EngineEvent::RecordingStats { elapsed_secs, bytes } => {
                         println!("enregistrement : {elapsed_secs:.0} s, {:.1} Mo", bytes as f64 / 1e6);

@@ -156,6 +156,10 @@ export function replaySave(): Promise<void> {
   return invoke("replay_save");
 }
 
+export function replayFinishClip(): Promise<void> {
+  return invoke("replay_finish_clip");
+}
+
 export function recordStart(): Promise<void> {
   return invoke("record_start");
 }
@@ -615,6 +619,7 @@ export interface EngineConfig {
   replay: {
     arm_on_startup: boolean;
     duration_secs: number;
+    after_secs: number;
     storage: ReplayStorage;
   };
   record: {
@@ -681,6 +686,7 @@ export interface AppStatus {
   buffer_bytes: number;
   recording_secs: number;
   recording_bytes: number;
+  clip_ends_at_ms: number | null;
   capture: CaptureInfo | null;
   tracks: TrackInfo[];
   alerts: ActiveAlert[];
@@ -730,5 +736,6 @@ export type EngineEvent =
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
   | ({ type: "performance_stats" } & PerformanceStats)
   | { type: "recording_stats"; elapsed_secs: number; bytes: number }
+  | { type: "post_roll"; ends_in_secs: number | null }
   | ({ type: "alert"; severity: Severity; message: string } & Localized)
   | { type: "alert_cleared"; code: string };
