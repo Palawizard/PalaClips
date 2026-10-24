@@ -2,16 +2,14 @@ import { useEffect, useId, useState } from "react";
 import { bytes } from "../../lib/format.ts";
 import { errorText, localeCompare, useT } from "../../lib/i18n.ts";
 import {
-  type EngineConfig,
   type QuotaPreview,
   type StorageStatus,
-  getConfig,
   openClipsDir,
   pickClipsDir,
   quotaPreview,
-  setConfig,
   storageStatus,
 } from "../../lib/ipc.ts";
+import { configReady, saveConfig, useLiveConfig } from "../../lib/useConfig.ts";
 import { NumberField, SettingRow, Switch } from "./Settings.tsx";
 
 const BUTTON =
@@ -140,7 +138,7 @@ function QuotaRow({ quota, onApply }: { quota: number | null; onApply: (quota: n
 
 export function StorageSection({ folderOnly = false }: { folderOnly?: boolean }) {
   const t = useT();
-  const [config, setConfigState] = useState<EngineConfig | null>(null);
+  const config = useLiveConfig();
   const [status, setStatus] = useState<StorageStatus | null>(null);
   const [folderError, setFolderError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<{ exe: string; message: string } | null>(null);
@@ -148,7 +146,7 @@ export function StorageSection({ folderOnly = false }: { folderOnly?: boolean })
   const refreshStatus = () => storageStatus().then(setStatus, () => setStatus(null));
 
   useEffect(() => {
-    getConfig().then(setConfigState, (failure) => setFolderError(errorText(failure)));
+    configReady().catch((failure) => setFolderError(errorText(failure)));
     refreshStatus();
   }, []);
 
@@ -160,14 +158,13 @@ export function StorageSection({ folderOnly = false }: { folderOnly?: boolean })
     ) : null;
   }
 
-  const save = (next: EngineConfig) => setConfig(next).then(() => setConfigState(next));
 
   const changeFolder = () => {
     setFolderError(null);
     pickClipsDir()
       .then((dir) => {
         if (!dir) return;
-        return save({ ...config, storage: { ...config.storage, clips_dir: dir } }).then(refreshStatus);
+        return saveConfig({ storage: { clips_dir: dir } }).then(refreshStatus);
       })
       .catch((failure) => setFolderError(errorText(failure)));
   };
@@ -179,8 +176,7 @@ export function StorageSection({ folderOnly = false }: { folderOnly?: boolean })
 
   const rename = (exe: string, name: string) => {
     setNameError(null);
-    const game_names = { ...config.storage.game_names, [exe]: name };
-    save({ ...config, storage: { ...config.storage, game_names } }).catch((failure) =>
+    saveConfig({ storage: { game_names: { [exe]: name } } }).catch((failure) =>
       setNameError({ exe, message: errorText(failure) }),
     );
   };
@@ -217,7 +213,7 @@ export function StorageSection({ folderOnly = false }: { folderOnly?: boolean })
         <>
           <QuotaRow
             quota={config.storage.quota_gb}
-            onApply={(quota_gb) => save({ ...config, storage: { ...config.storage, quota_gb } }).then(refreshStatus)}
+            onApply={(quota_gb) => saveConfig({ storage: { quota_gb } }).then(refreshStatus)}
           />
 
           <section aria-labelledby="game-names-title">

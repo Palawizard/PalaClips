@@ -4,8 +4,8 @@ import {
   type ClipSummary,
   type EngineConfig,
   type StorageStatus,
-  getConfig,
   getHotkeys,
+  onHotkeysChanged,
   getState,
   listRecentClips,
   onEngineEvent,
@@ -17,6 +17,7 @@ import {
   replaySave,
   storageStatus,
 } from "./ipc.ts";
+import { useLiveConfig } from "./useConfig.ts";
 import { errorText } from "./i18n.ts";
 import { clearLevels, pushLevels } from "./levels.ts";
 
@@ -57,7 +58,7 @@ function phaseOf(status: AppStatus | null, pending: ReplayPhase | null): ReplayP
 
 export function useEngine(): Engine {
   const [status, setStatus] = useState<AppStatus | null>(null);
-  const [config, setConfig] = useState<EngineConfig | null>(null);
+  const config = useLiveConfig();
   const [clips, setClips] = useState<ClipSummary[]>([]);
   const [freshClip, setFreshClip] = useState<string | null>(null);
   const [storage, setStorage] = useState<StorageStatus | null>(null);
@@ -80,14 +81,16 @@ export function useEngine(): Engine {
   useEffect(() => {
     refreshState();
     refreshLibrary();
-    getConfig().then(setConfig, () => setConfig(null));
-    getHotkeys().then(
-      (view) => {
-        setSaveKeys(view.hotkeys.save_replay);
-        setRecordKeys(view.hotkeys.toggle_recording);
-      },
-      () => setSaveKeys(null),
-    );
+    const refreshHotkeys = () =>
+      getHotkeys().then(
+        (view) => {
+          setSaveKeys(view.hotkeys.save_replay);
+          setRecordKeys(view.hotkeys.toggle_recording);
+        },
+        () => setSaveKeys(null),
+      );
+    refreshHotkeys();
+    const unlistenHotkeys = onHotkeysChanged(refreshHotkeys);
     const unlisten = onEngineEvent((event) => {
       switch (event.type) {
         case "audio_levels":
@@ -128,6 +131,7 @@ export function useEngine(): Engine {
     });
     return () => {
       unlisten.then((stop) => stop());
+      unlistenHotkeys.then((stop) => stop());
     };
   }, [refreshLibrary, refreshState]);
 
