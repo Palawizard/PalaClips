@@ -46,6 +46,8 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 - **Replay instantané** : les 5 dernières secondes à 60 dernières minutes restent en mémoire ou
   sur le disque. Un raccourci (`Alt+F10` par défaut) les sauvegarde sans quitter le jeu ; un
   son et une notification confirment.
+- **Après l'appui** : le clip peut aussi continuer jusqu'à 10 min après le raccourci (par
+  exemple 1 min avant + 10 s après) ; un nouvel appui le prolonge.
 - **Enregistrement d'écran** (`Ctrl+Alt+F9`) en MP4 fragmenté, lisible même si le PC plante en
   cours de route.
 - **Pistes audio séparées** : piste 1 = mix complet, piste 2 = micro, puis une piste par appli

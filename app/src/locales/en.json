@@ -6,10 +6,10 @@
     "label": "Navigation",
     "status": "Status",
     "gallery": "Gallery",
-    "compress": "Compress",
     "capture": "Capture",
     "audio": "Audio",
-    "settings": "Settings"
+    "settings": "Settings",
+    "compress": "Compress"
   },
   "gallery": {
     "count": {
@@ -85,7 +85,8 @@
     "minUnit": "min",
     "mbUnit": "MB",
     "gbUnit": "GB",
-    "percent": "{value}%"
+    "percent": "{value}%",
+    "secUnit": "s"
   },
   "time": {
     "now": "just now",
@@ -139,7 +140,10 @@
     "free": "free",
     "recordingRunning": "Recording in progress",
     "stop": "Stop",
-    "changeSource": "Change"
+    "changeSource": "Change",
+    "clipInProgress": "Clip in progress",
+    "extend": "Extend",
+    "finishClip": "Finish now"
   },
   "performance": {
     "title": "Performance",
@@ -328,7 +332,11 @@
       "gpuPriorities": {
         "game": "Game first",
         "capture": "Capture first"
-      }
+      },
+      "after": "After the press",
+      "afterHelp": "Pressing again extends the clip.",
+      "afterNone": "None",
+      "afterFree": "After the press, in seconds"
     },
     "capture": {
       "primary": "primary",
@@ -426,11 +434,14 @@
     "disarm": "Disarm the replay",
     "quit": "Quit",
     "recordStart": "Start recording",
-    "recordStop": "Stop recording"
+    "recordStop": "Stop recording",
+    "finish": "Finish the clip now"
   },
   "toast": {
     "clipSaved": "Clip saved",
-    "clipNotSaved": "Clip not saved"
+    "clipNotSaved": "Clip not saved",
+    "clipInProgress": "Clip in progress",
+    "clipInProgressBody": "+{seconds} s"
   },
   "dialog": {
     "clipsDir": "Clips folder",
@@ -537,6 +548,7 @@
     "update_none": "no update to install: check again",
     "exclusive_fullscreen_advice": "Switch the game to borderless (windowed fullscreen) in its display settings.",
     "exclusive_fullscreen_advice_minecraft": "Minecraft Java: leave fullscreen (F11) and maximize the window, or install a borderless fullscreen mod such as Borderless Fullscreen.",
+    "clip_cut_short": "Clip stopped early: {reason}. The start is kept.",
     "compress_cancelled": "Compression cancelled.",
     "not_a_video": "This file has no readable video track.",
     "target_too_small": "Target too small for this length: it needs at least {min_mb} MB.",

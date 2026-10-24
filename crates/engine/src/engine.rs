@@ -16,7 +16,7 @@ use crate::calibrate::{
 };
 use crate::capture::{VideoCapture, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
-use crate::config::{AudioSettings, CaptureTarget, EngineConfig, ReplayStorage};
+use crate::config::{AudioSettings, CaptureTarget, EngineConfig, RecordSplit, ReplayStorage};
 use crate::encode::{
     EncoderInfo, Size, output_size, pick_encoder, try_output, video_encoders, write_thumbnail,
 };
@@ -28,11 +28,12 @@ use crate::library::ensure_free_space;
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::perf::{FrameHistory, ProcessUsage};
 use crate::record::{
-    Journal, LivePacket, RecordLayout, RecordTarget, Recorder, recover_interrupted,
+    Journal, LivePacket, RecordKind, RecordLayout, RecordTarget, Recorder, recover_interrupted,
 };
 use crate::replay::{
-    ClipPlan, PacketReader, PacketRing, ReplayPacket, Spool, TimedPacket, buffer_memory_bytes,
-    buffer_window, estimate_buffer_bytes, forget_saved, plan_clip, share_packet,
+    ClipPlan, PacketReader, PacketRing, PostRollCut, ReplayPacket, Spool, TimedPacket,
+    buffer_memory_bytes, buffer_window, estimate_buffer_bytes, forget_saved, plan_clip,
+    share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -64,6 +65,7 @@ impl LevelRate {
 
 const CALIBRATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
 const CALIBRATION_WARMUP: std::time::Duration = std::time::Duration::from_millis(800);
+const POST_ROLL_GRACE: Hns = Hns::from_millis(3_000);
 const RECOVERY_DELAYS: [std::time::Duration; 3] = [
     std::time::Duration::from_secs(1),
     std::time::Duration::from_secs(2),
@@ -77,6 +79,8 @@ enum Command {
     StartRecording,
     StopRecording,
     RecordingEnded,
+    FinishClip,
+    PostRollEnded,
     Configure(Box<EngineConfig>),
     SetLevelRate(LevelRate),
     SetPerformance(bool),
@@ -190,6 +194,10 @@ impl EngineHandle {
 
     pub fn stop_recording(&self) -> Result<()> {
         self.send(Command::StopRecording)
+    }
+
+    pub fn finish_clip(&self) -> Result<()> {
+        self.send(Command::FinishClip)
     }
 
     pub fn set_level_rate(&self, rate: LevelRate) -> Result<()> {
@@ -468,7 +476,10 @@ impl Core {
                         Localized::new("calibration_running"),
                         "Calibrage en cours : rien n'est sauvegardé.".into(),
                     ),
-                    Command::StopRecording | Command::RecordingEnded => {}
+                    Command::StopRecording
+                    | Command::RecordingEnded
+                    | Command::FinishClip
+                    | Command::PostRollEnded => {}
                     Command::SetLevelRate(rate) => self.level_rate = rate,
                     Command::SetPerformance(enabled) => self.set_performance(enabled),
                     Command::Shutdown => {
@@ -485,6 +496,12 @@ impl Core {
                 Command::StartRecording => self.start_recording(),
                 Command::StopRecording => self.stop_recording(),
                 Command::RecordingEnded => self.recording_ended(),
+                Command::FinishClip => {
+                    if let Some(pipeline) = self.pipeline.as_mut() {
+                        pipeline.finish_post_roll_at(Hns::now());
+                    }
+                }
+                Command::PostRollEnded => self.post_roll_ended(),
                 Command::Configure(config) => self.configure(*config),
                 Command::Calibrate(reply) => self.start_calibration(reply),
                 Command::FinishCalibration(_) => {}
@@ -609,6 +626,7 @@ impl Core {
                     root,
                     game,
                     split: self.config.record.split,
+                    kind: RecordKind::Recording,
                 },
                 &self.config,
                 duration,
@@ -648,7 +666,8 @@ impl Core {
             self.disarm();
             return;
         }
-        if std::mem::take(&mut self.restart_pending) {
+        if self.restart_pending && !self.post_roll_running() {
+            self.restart_pending = false;
             self.disarm();
             self.arm();
             return;
@@ -656,6 +675,21 @@ impl Core {
         self.emit(EngineEvent::StateChanged {
             state: EngineState::ReplayArmed,
         });
+    }
+
+    fn post_roll_running(&self) -> bool {
+        self.pipeline
+            .as_ref()
+            .is_some_and(Pipeline::post_roll_running)
+    }
+
+    fn post_roll_ended(&mut self) {
+        self.emit(EngineEvent::PostRoll { ends_in_secs: None });
+        if self.restart_pending && self.recording.is_none() {
+            self.restart_pending = false;
+            self.disarm();
+            self.arm();
+        }
     }
 
     fn start_calibration(&mut self, reply: Sender<Result<Calibration>>) {
@@ -752,7 +786,11 @@ impl Core {
         let Some(pipeline) = self.pipeline.take() else {
             return;
         };
+        let post_roll = pipeline.post_roll_running();
         pipeline.stop();
+        if post_roll {
+            self.emit(EngineEvent::PostRoll { ends_in_secs: None });
+        }
         self.emit(EngineEvent::StateChanged {
             state: EngineState::Idle,
         });
@@ -760,9 +798,28 @@ impl Core {
 
     fn save_replay(&mut self) {
         let requested = Hns::now();
+        let after = Hns(i64::from(self.config.replay.after_secs) * HNS_PER_SECOND);
+        if let Some(pipeline) = self.pipeline.as_mut()
+            && let Some(until) = pipeline.extend_post_roll(requested + after)
+        {
+            tracing::info!(after_s = after.as_secs_f64(), "clip en cours prolongé");
+            self.emit(EngineEvent::PostRoll {
+                ends_in_secs: Some((until - requested).as_secs_f64()),
+            });
+            return;
+        }
         let exe_name = self.pipeline.as_ref().and_then(Pipeline::game_exe);
         let game = self.game_name(exe_name.as_deref());
         let result = match self.pipeline.as_mut() {
+            Some(pipeline) if after > Hns::ZERO => pipeline
+                .start_post_roll(requested + after, &game, &self.config, &self.events)
+                .map(|()| {
+                    self.events
+                        .try_send(EngineEvent::PostRoll {
+                            ends_in_secs: Some(after.as_secs_f64()),
+                        })
+                        .ok();
+                }),
             Some(pipeline) => pipeline.save(requested, &game, &self.config, &self.events),
             None => Err(EngineError::ReplayNotArmed),
         };
@@ -817,8 +874,8 @@ impl Core {
             pipeline.set_window(ring_window(&config));
         }
         self.config = config;
-        if restart && self.recording.is_some() {
-            tracing::info!("sources changées pendant l'enregistrement : redémarrage à la fin");
+        if restart && (self.recording.is_some() || self.post_roll_running()) {
+            tracing::info!("sources changées pendant un enregistrement : redémarrage à la fin");
             self.restart_pending = true;
             return;
         }
@@ -865,8 +922,14 @@ struct Pipeline {
     next_stats: Hns,
     recorder: Option<Recorder>,
     pending_record: Option<PendingRecord>,
+    post_roll: Option<PostRoll>,
     encoder: String,
     performance: Option<(ProcessUsage, FrameHistory)>,
+}
+
+struct PostRoll {
+    recorder: Recorder,
+    cut: PostRollCut,
 }
 
 struct PendingRecord {
@@ -974,6 +1037,7 @@ impl Pipeline {
             next_stats: Hns::now() + STATS_INTERVAL,
             recorder: None,
             pending_record: None,
+            post_roll: None,
             encoder: encoder.name.clone(),
             performance: None,
         })
@@ -988,12 +1052,7 @@ impl Pipeline {
     ) -> Result<()> {
         let pending = PendingRecord {
             target,
-            layout: RecordLayout {
-                specs: titled(&self.specs, config),
-                time_bases: self.time_bases.clone(),
-                frame: Hns(HNS_PER_SECOND / i64::from(self.video.fps)),
-                audio_packet: AAC_PACKET,
-            },
+            layout: self.record_layout(config),
             events: events.clone(),
         };
         match self.recording_start(replay) {
@@ -1016,7 +1075,107 @@ impl Pipeline {
         }
     }
 
+    fn record_layout(&self, config: &EngineConfig) -> RecordLayout {
+        RecordLayout {
+            specs: titled(&self.specs, config),
+            time_bases: self.time_bases.clone(),
+            frame: Hns(HNS_PER_SECOND / i64::from(self.video.fps)),
+            audio_packet: AAC_PACKET,
+        }
+    }
+
     fn begin_recording(&mut self, pending: PendingRecord, video_from: usize) -> Result<()> {
+        self.recorder = Some(self.spawn_recorder(pending, video_from)?);
+        Ok(())
+    }
+
+    fn start_post_roll(
+        &mut self,
+        until: Hns,
+        game: &str,
+        config: &EngineConfig,
+        events: &Sender<EngineEvent>,
+    ) -> Result<()> {
+        let root = match &config.storage.clips_dir {
+            Some(dir) => dir.clone(),
+            None => paths::default_clips_dir()?,
+        };
+        let buffered: u64 = self.rings.iter().map(|ring| ring.bytes() as u64).sum();
+        ensure_free_space(&root, buffered)?;
+        let before = Hns(i64::from(config.replay.duration_secs) * HNS_PER_SECOND);
+        let video_from = self
+            .recording_start(Some(before))
+            .or_else(|| self.recording_start(None))
+            .ok_or(EngineError::ClipTooShort)?;
+        let pending = PendingRecord {
+            target: RecordTarget {
+                root,
+                game: game.to_owned(),
+                split: RecordSplit::Never,
+                kind: RecordKind::Replay,
+            },
+            layout: self.record_layout(config),
+            events: events.clone(),
+        };
+        let recorder = self.spawn_recorder(pending, video_from)?;
+        let newest = self
+            .rings
+            .iter()
+            .map(|ring| ring.newest().unwrap_or(Hns::ZERO))
+            .collect();
+        tracing::info!(
+            after_s = (until - Hns::now()).as_secs_f64(),
+            "clip en cours : le direct est ajouté jusqu'à la fin de la durée après l'appui"
+        );
+        self.post_roll = Some(PostRoll {
+            recorder,
+            cut: PostRollCut::new(until - self.video.origin, newest),
+        });
+        Ok(())
+    }
+
+    fn post_roll_running(&self) -> bool {
+        self.post_roll.is_some()
+    }
+
+    fn extend_post_roll(&mut self, until: Hns) -> Option<Hns> {
+        let post_roll = self.post_roll.as_mut()?;
+        post_roll.cut.extend_to(until - self.video.origin);
+        Some(post_roll.cut.until() + self.video.origin)
+    }
+
+    fn finish_post_roll_at(&mut self, at: Hns) {
+        if let Some(post_roll) = self.post_roll.as_mut() {
+            post_roll.cut.finish_at(at - self.video.origin);
+        }
+    }
+
+    fn post_roll_over(&self, now: Hns) -> bool {
+        self.post_roll.as_ref().is_some_and(|post_roll| {
+            post_roll.cut.done()
+                || now > post_roll.cut.until() + self.video.origin + POST_ROLL_GRACE
+                || !post_roll.recorder.is_running()
+        })
+    }
+
+    fn end_post_roll(&mut self) {
+        let Some(post_roll) = self.post_roll.take() else {
+            return;
+        };
+        let end = post_roll.cut.until();
+        let stopped = std::thread::Builder::new()
+            .name("palaclips-post-roll-stop".into())
+            .spawn(move || post_roll.recorder.stop());
+        if let Err(error) = stopped {
+            tracing::warn!(%error, "fin du clip en cours sur le fil du moteur");
+        }
+        if let Some((video, audio)) = self.rings.split_first_mut() {
+            forget_saved(video, audio, end);
+        }
+        tracing::info!("clip en cours terminé");
+    }
+
+    fn spawn_recorder(&mut self, pending: PendingRecord, video_from: usize) -> Result<Recorder> {
         if let Some(spool) = self.spool.as_mut() {
             spool.flush()?;
         }
@@ -1032,14 +1191,13 @@ impl Pipeline {
             }
         }
         backlog.sort_by_key(|(pts, stream, _)| (*pts, *stream));
-        self.recorder = Some(Recorder::start(
+        Recorder::start(
             pending.target,
             pending.layout,
             start,
             backlog,
             pending.events,
-        )?);
-        Ok(())
+        )
     }
 
     fn stop_recording(&mut self) {
@@ -1081,6 +1239,10 @@ impl Pipeline {
                 return Ok(Some(Command::RecordingEnded));
             }
             let now = Hns::now();
+            if self.post_roll_over(now) {
+                self.end_post_roll();
+                return Ok(Some(Command::PostRollEnded));
+            }
             self.emit_due(now, events);
             let wait = (self.next_deadline() - now).0.max(0) as u64;
             let Ok(operation) = select.select_timeout(Duration::from_nanos(wait * 100)) else {
@@ -1126,11 +1288,28 @@ impl Pipeline {
             Some(_) => Some(share_packet(&packet)?),
             None => None,
         };
+        let admitted = self
+            .post_roll
+            .as_mut()
+            .is_some_and(|post_roll| post_roll.cut.admits(stream, pts));
+        let post = if admitted {
+            Some(share_packet(&packet)?)
+        } else {
+            None
+        };
         let stored = match self.spool.as_mut() {
             Some(spool) => spool.store(packet, pts, keyframe)?,
             None => ReplayPacket::in_ram(packet, pts, keyframe),
         };
         self.rings[stream].push(stored);
+        if let (Some(post_roll), Some(packet)) = (&self.post_roll, post) {
+            post_roll.recorder.send(LivePacket {
+                stream,
+                pts,
+                keyframe,
+                packet,
+            });
+        }
         if let (Some(recorder), Some(packet)) = (&self.recorder, live) {
             recorder.send(LivePacket {
                 stream,
@@ -1168,9 +1347,15 @@ impl Pipeline {
     }
 
     fn next_deadline(&self) -> Hns {
-        match self.level_interval {
+        let deadline = match self.level_interval {
             Some(_) => self.next_stats.min(self.next_levels),
             None => self.next_stats,
+        };
+        match &self.post_roll {
+            Some(post_roll) => {
+                deadline.min(post_roll.cut.until() + self.video.origin + POST_ROLL_GRACE)
+            }
+            None => deadline,
         }
     }
 
@@ -1336,10 +1521,14 @@ impl Pipeline {
             tracks,
             receivers,
             recorder,
+            post_roll,
             ..
         } = self;
         if let Some(recorder) = recorder {
             recorder.stop();
+        }
+        if let Some(post_roll) = post_roll {
+            post_roll.recorder.stop();
         }
         let drain = std::thread::spawn(move || drain_until_closed(&receivers));
         if let Err(error) = capture.stop() {
