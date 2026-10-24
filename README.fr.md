@@ -75,9 +75,11 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 
 | Galerie | Sources audio |
 |---|---|
-| ![La galerie, clips classés par jour](docs/screenshots/fr/gallery.png) | ![Réglages audio : une piste par appli, avec vumètre](docs/screenshots/fr/audio-sources.png) |
+| ![La galerie, clips classés par jour](docs/screenshots/fr/gallery.png) | ![Page Audio : une piste par appli, avec vumètre](docs/screenshots/fr/audio-sources.png) |
 
-![Premier lancement, question de la durée du replay](docs/screenshots/fr/first-launch.png)
+| Compression | Premier lancement |
+|---|---|
+| ![La page Compression : taille cible, codec, file d'attente avec le plan de chaque clip](docs/screenshots/fr/compress.png) | ![Premier lancement, question de la durée du replay](docs/screenshots/fr/first-launch.png) |
 
 ## Configuration requise
 
