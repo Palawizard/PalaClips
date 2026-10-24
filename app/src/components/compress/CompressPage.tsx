@@ -17,7 +17,7 @@ import {
   useCompressDrafts,
 } from "../../lib/compressDrafts.ts";
 import { bytes, clock } from "../../lib/format.ts";
-import { errorText, message, number, t, useT } from "../../lib/i18n.ts";
+import { errorText, message, number, useT } from "../../lib/i18n.ts";
 import {
   type CompressCodec,
   type CompressJob,
@@ -34,6 +34,7 @@ import {
   onCompressChanged,
 } from "../../lib/ipc.ts";
 import { NumberField, Segmented, Select, SettingRow, Switch } from "../settings/Settings.tsx";
+import { ClipPicker } from "./ClipPicker.tsx";
 
 const SECONDARY =
   "pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover";
@@ -45,15 +46,11 @@ const LOW_FPS = 30;
 const MIN_KBPS = 100;
 const MAX_KBPS = 200_000;
 const MIN_FREE_MB = 1;
+const TARGET_MB = 1_000_000;
 const VIDEO_EXTENSIONS = ["mp4", "mkv", "mov", "webm", "avi", "m4v", "wmv", "flv", "ts"];
 const MAX_FREE_MB = 10_000;
 const QUALITY_TONE: Record<CompressQuality, string> = { good: "text-ink", fair: "text-ink-2", low: "text-warn" };
 
-const MB = 1e6;
-
-function megabytes(value: number): string {
-  return t("units.mb", { value: number(value / MB, 2) });
-}
 
 function isVideo(path: string): boolean {
   return VIDEO_EXTENSIONS.includes(path.split(".").pop()?.toLowerCase() ?? "");
@@ -118,7 +115,13 @@ const DraftRow = memo(function DraftRow({ draft, target }: { draft: Draft; targe
         )}
         {draft.error && <p className="text-[13px] text-warn">{draft.error}</p>}
       </div>
-      {source && plan && (
+      {source && plan && plan.copy_bytes !== null && (
+        <p className="score text-right text-[15px]">
+          <span className="mr-2 font-sans text-[13px] text-ink-2">{t("compress.copyPlan")}</span>
+          {t("compress.estimate", { size: bytes(plan.copy_bytes, 2) })}
+        </p>
+      )}
+      {source && plan && plan.copy_bytes === null && (
         <div className="flex flex-wrap items-center gap-2">
           <Select
             label={t("compress.resolution")}
@@ -146,10 +149,10 @@ const DraftRow = memo(function DraftRow({ draft, target }: { draft: Draft; targe
           />
           <p className="score w-40 text-right text-[15px]">
             {view.estimated_bytes > target ? (
-              <span className="text-warn">{t("compress.overTarget", { size: megabytes(target) })}</span>
+              <span className="text-warn">{t("compress.overTarget", { size: t("units.mb", { value: number(target / TARGET_MB) }) })}</span>
             ) : (
               <>
-                {t("compress.estimate", { size: megabytes(view.estimated_bytes) })}
+                {t("compress.estimate", { size: bytes(view.estimated_bytes, 2) })}
                 <span className={`ml-2 text-[13px] font-medium ${QUALITY_TONE[view.quality]}`}>
                   <span className="sr-only">{t("compress.qualityLabel", { quality: "" })}</span>
                   {t(`compress.quality.${view.quality}`)}
@@ -194,7 +197,7 @@ const JobRow = memo(function JobRow({
         </p>
         <p className="text-[13px] text-ink-2">
           {t("compress.jobPlan", {
-            size: megabytes(job.target_bytes),
+            size: t("units.mb", { value: number(job.target_bytes / TARGET_MB) }),
             height: t("units.height", { value: job.plan.height }),
             fps: t("units.fps", { value: job.plan.fps }),
           })}
@@ -240,7 +243,7 @@ const JobRow = memo(function JobRow({
               <Check size={15} strokeWidth={2.4} className="text-ink" aria-hidden />
               {t("compress.done")}
             </span>
-            <span className="score text-[17px] font-semibold">{megabytes(job.bytes)}</span>
+            <span className="score text-[17px] font-semibold">{bytes(job.bytes, 2)}</span>
             <button
               type="button"
               onClick={() => compressCopy(job.id).then(() => onNotice(t("compress.copied")), fail)}
@@ -283,6 +286,7 @@ export function CompressPage() {
   const { options, drafts } = useCompressDrafts();
   const [jobs, setJobs] = useState<CompressJob[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -296,7 +300,7 @@ export function CompressPage() {
       (failure) => setError(errorText(failure)),
     );
     const unlisten = onCompressChanged((job) => {
-      if (job.state === "done") setAnnounce(t("compress.finished", { name: fileName(job.source), size: megabytes(job.bytes) }));
+      if (job.state === "done") setAnnounce(t("compress.finished", { name: fileName(job.source), size: bytes(job.bytes, 2) }));
       setJobs((current) =>
         current.some((item) => item.id === job.id) ? current.map((item) => (item.id === job.id ? job : item)) : [...current, job],
       );
@@ -398,9 +402,14 @@ export function CompressPage() {
           <p className={`text-[15px] font-semibold ${busy ? "flex-1" : ""}`}>
             {dragging ? t("compress.dropActive") : t("compress.drop")}
           </p>
-          <button type="button" onClick={pick} className={SECONDARY}>
-            {t("compress.pick")}
-          </button>
+          <span className="flex flex-wrap items-center justify-center gap-2">
+            <button type="button" onClick={() => setPicking(true)} className={SECONDARY}>
+              {t("compress.pickClips")}
+            </button>
+            <button type="button" onClick={pick} className={SECONDARY}>
+              {t("compress.pick")}
+            </button>
+          </span>
           {!busy && <p className="text-[13px] text-ink-3">{t("compress.formats")}</p>}
         </div>
       </div>
@@ -437,6 +446,14 @@ export function CompressPage() {
         </section>
       )}
 
+      <ClipPicker
+        open={picking}
+        onClose={() => setPicking(false)}
+        onAdd={(paths) => {
+          setPicking(false);
+          addDrafts(paths.map((path) => ({ path })));
+        }}
+      />
       <p role="status" className="sr-only">
         {announce}
       </p>
