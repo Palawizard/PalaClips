@@ -62,7 +62,8 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
   volume), découpe, export, copie du fichier pour le coller dans Discord.
 - **Compression à une taille cible** : 20 Mo pour Discord, 50 ou 500 Mo pour Nitro, ou une taille
   libre ; résolution et images par seconde choisies selon la taille, taille finale vérifiée.
-  Depuis la galerie, le lecteur ou par glisser-déposer depuis l'Explorateur.
+  Depuis la galerie (un ou plusieurs clips), le lecteur ou par glisser-déposer depuis
+  l'Explorateur.
 - **Léger** : vit dans la zone de notification ; fenêtre fermée, il ne reste qu'un petit
   processus.
 - **Respect de la vie privée** : aucun compte, aucune télémétrie, aucune injection dans les
