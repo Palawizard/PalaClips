@@ -39,33 +39,7 @@ pourrait marcher :
 - Les marqueurs affichés sur la barre du lecteur, pour y aller directement.
 - Export vers DaVinci Resolve en EDL de marqueurs, pour les retrouver sur la timeline de montage.
 
-## 4. Compression à une taille cible
-
-- Une page dédiée dans la barre latérale, et un bouton depuis la galerie et le lecteur.
-- Taille en Mo, avec des préréglages (20 Mo pour Discord, 500 Mo pour Nitro) ou une valeur libre.
-- Débit calculé d'après la taille et la durée ; son mixé en une seule piste.
-- Si la cible est trop basse pour une qualité correcte, la résolution et les images par seconde
-  baissent automatiquement.
-- La taille finale est vérifiée, et la vidéo est réencodée si elle dépasse la cible.
-- Accepte aussi une vidéo glissée depuis l'explorateur de fichiers.
-
-## 5. Capture et Audio dans la barre latérale
-
-- Capture et Audio deviennent des pages à part entière : État, Galerie, Capture, Audio, Réglages.
-- Un avertissement quand on quitte une page avec un changement pas encore appliqué.
-- Sur l'écran État, la source et les pistes audio ouvrent ces pages au clic.
-
-## 6. Enregistrer aussi après la sauvegarde
-
-- Un réglage « après le clic » (0 s par défaut, jusqu'à 60 s) en plus de la durée « avant ».
-  Exemple : 1 min avant + 10 s après. Le clip s'écrit une fois le temps « après » écoulé.
-- Confirmation au moment de l'appui (carillon et notification « clip en cours, encore 10 s »),
-  puis à l'écriture du clip.
-- Un nouvel appui pendant le temps « après » prolonge le même clip au lieu d'en créer un second.
-- Pas de doublon entre deux clips : le clip suivant commence là où celui-ci s'arrête.
-- Réglage dans Réglages → Replay & qualité ; l'estimation de la RAM ne change pas.
-
-## 7. Autres pistes, à décider
+## 4. Autres pistes, à décider
 
 - Signer l'installeur (Authenticode) pour que Windows SmartScreen n'avertisse plus.
 - D'autres langues que le français et l'anglais.
@@ -74,6 +48,11 @@ pourrait marcher :
 
 ## Fait
 
+- **Version 1.2.0** : Capture et Audio sont des pages à part entière dans la barre latérale, avec
+  un avertissement quand on quitte une page avec un changement pas encore appliqué ; le clip peut
+  continuer jusqu'à 10 min après le raccourci (un nouvel appui le prolonge) ; les vidéos se
+  compressent à une taille cible (20 Mo Discord, 50 / 500 Mo Nitro ou une taille libre) depuis la
+  page Compression, la galerie, le lecteur ou par glisser-déposer depuis l'Explorateur.
 - **Encodage par le processeur (1.1.0)** : sans encodeur matériel qui marche, PalaClips encode
   sur le processeur, en H.264 par l'encodeur intégré à Windows ou en AV1 par SVT-AV1, avec un
   avertissement sur la charge en jeu. Le choix se fait dans Réglages → Replay & qualité →

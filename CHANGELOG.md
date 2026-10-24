@@ -5,6 +5,31 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.2.0] - 2026-10-24
+
+### Ajouté
+- Enregistrer après la sauvegarde (RPL-10, ADR-037) : réglage « Après l'appui » (0 s par défaut,
+  jusqu'à 10 min) dans Réglages → Replay & qualité. Le tampon est écrit tout de suite dans un MP4
+  hybride, puis le direct y est ajouté jusqu'à la fin ; un nouvel appui prolonge le même clip ;
+  « Terminer maintenant » sur État et dans la zone de notification ; carillon et notification
+  « Clip en cours » à l'appui. Clip récupéré au démarrage après un arrêt brutal.
+- Compression à une taille cible (CMP-01 à 05, ADR-038) : page Compression (20 Mo Discord,
+  50 Mo Nitro Basic, 500 Mo Nitro ou taille libre ; H.264 ou AV1 ; piste 1 seule ou toutes les
+  pistes), résolution et images par seconde choisies selon la taille, taille vérifiée et
+  nouvel essai si besoin, jamais au-dessus de la cible ; HDR converti en SDR ; original déjà
+  sous la cible copié sans réencodage. Depuis la galerie (un ou plusieurs clips), le lecteur
+  (découpe comprise) ou par glisser-déposer depuis l'Explorateur ; file d'attente qui continue
+  fenêtre fermée ; Copier, Ouvrir le dossier, Réessayer.
+- CLI : `replay --after`, `compress` ; bancs `post-roll.ps1`, `post-roll-memory.ps1`,
+  `compress-check.ps1`, `clip-continuity.py`.
+
+### Changé
+- Barre latérale : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio
+  sortent de Réglages (APP-14, ADR-036). Quitter une page, une section de Réglages ou fermer la
+  fenêtre avec un changement non appliqué demande « Appliquer et redémarrer », « Ne pas
+  appliquer » ou « Rester ». Liens directs depuis État et les alertes.
+- Tailles affichées en unités binaires, comme l'Explorateur et Discord.
+
 ## [1.1.1] - 2026-10-22
 
 ### Corrigé

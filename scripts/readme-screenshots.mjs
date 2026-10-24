@@ -4,8 +4,8 @@ import { connect } from "./cdp.mjs";
 
 const [port, outDir, mode, language = "fr", playerQuery = ""] = process.argv.slice(2);
 const LABELS = {
-  fr: { next: "Continuer", yes: "Oui", chosen: "Les pistes enregistrées", gallery: "Galerie", audio: "Audio", search: "Rechercher" },
-  en: { next: "Continue", yes: "Yes", chosen: "Recorded tracks", gallery: "Gallery", audio: "Audio", search: "Search" },
+  fr: { next: "Continuer", yes: "Oui", chosen: "Les pistes enregistrées", gallery: "Galerie", audio: "Audio", search: "Rechercher", compress: "Compresser", compressPage: "Compression" },
+  en: { next: "Continue", yes: "Yes", chosen: "Recorded tracks", gallery: "Gallery", audio: "Audio", search: "Search", compress: "Compress", compressPage: "Compress" },
 }[language];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const cdp = await connect(port);
@@ -80,5 +80,13 @@ if (mode === "onboarding") {
   await click(LABELS.audio, "nav button");
   await sleep(3000);
   await shot("audio-sources");
+  await click(LABELS.gallery, "nav button");
+  await waitFor("document.querySelectorAll('[data-clip]').length > 0", "galerie");
+  await cdp.evaluate("document.querySelector('[aria-haspopup=menu]').click(), true");
+  await sleep(400);
+  await click(LABELS.compress, "[role=menuitem]");
+  await waitFor("document.querySelector('.compress-row select, .compress-row .score') !== null", "plan de compression");
+  await sleep(1500);
+  await shot("compress");
 }
 cdp.close();
