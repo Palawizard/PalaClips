@@ -174,7 +174,7 @@ Tout est arrêté et les clips supprimés à la fin.
   rattaché.
 
 - Calibrage (AUD-11) : `palaclips-cli calibrate --settings %APPDATA%\com.palawi.palaclips\settings.json`
-  (lecture seule) ou Réglages > Audio > Calibrer… ; écran principal libre, pas de jeu lancé ;
+  (lecture seule) ou page Audio > Calibrer… ; écran principal libre, pas de jeu lancé ;
   attendu : Mix et Jeu mesurés (≥ 5 paires, dispersion ≤ 20 ms), Jeu = référence → 0 ms,
   Mix proposé = −(mesure Mix − mesure Jeu) (ADR-027), micro mesuré si un écouteur est collé
   contre lui, sinon « non mesuré » avec la consigne ; total < 30 s, replay réarmé s'il
@@ -363,3 +363,52 @@ du brouillon de test (`test-v1.1.0`), copié dans la VM.
 5 et 6 ; le nombre de cœurs de la VM (`Gestionnaire des tâches → Performance`) et sa version de
 Windows (`winver`) ; le zip de diagnostic (Réglages → Général) **après** l'étape 7, qui dit si la
 conversion d'image passe par le Video Processor ou par le processeur.
+
+## T12 — Enregistrer après la sauvegarde (v1.2)
+
+Automatique (`pwsh scripts/post-roll.ps1`, ~4 min, écran principal, flashs et bips la dernière
+minute ; `-SkipSync` sans flashs, `-SyncOnly` pour la synchro seule) : clip simple, prolongé,
+terminé avant la fin, enregistrement lancé pendant le « après », sources changées pendant le
+« après », tampon sur disque, arrêt brutal puis récupération, synchro de part et d'autre de la
+jonction contre un clip instantané. Journal dans `target\journals\post-roll-*.txt`.
+
+Mémoire sans surveillance (`pwsh scripts/post-roll-memory.ps1`, ~12 min, lancé par Palawi) :
+avant 60 s, après 600 s, 360p30 ; working set privé toutes les 10 s ; critère : pente < 20 Mo/h,
+écart < 30 Mo, clip continu.
+
+À la main (session de fin de version) : Réglages → Replay & qualité → Après l'appui = 10 s ; en
+jeu, `Alt+F10` → carillon et notification « Clip en cours / +10 s » sans perte de focus ; second
+appui pendant le « après » → toujours un seul clip, plus long ; « Terminer le clip maintenant »
+dans la zone de notification ; à la fin, notification « Clip sauvegardé » et clip dans la
+galerie.
+## T13 — Compression à une taille cible (v1.2)
+
+Automatique : `cargo test -p palaclips-engine compress` (plan, nom, refus d'un fichier sans
+vidéo, compression AV1 réelle sous la cible, annulation sans fichier) ; banc
+`pwsh scripts/compress-check.ps1 -Dir target\compress-tests` sur des sources préparées dans ce
+dossier (clip court et long 1440p60, multipiste, HDR10, MKV, MOV ; voir RESEARCH), journal dans
+`target\journals\compress-check-*.txt`.
+
+À la main (session de fin de version) : glisser un clip de l'Explorateur sur la page Compression ;
+compresser un vrai clip en 20 Mo puis en 500 Mo, « Copier », coller dans Discord, vérifier que la
+vidéo se lit dans Discord (bureau, et téléphone si possible) avec le son de la piste 1.
+
+## T14 — Session de fin de version v1.2 (≤ 15 min, en jouant)
+
+Préparation (Claude) : PalaClips installé fermé (zone de notification > Quitter) ;
+`pwsh scripts/app-isolated.ps1 -LeftScreen -Settings '{"language":"fr","engine":{"replay":{"duration_secs":120,"after_secs":10}}}'`
+(replay de 2 min, 10 s après l'appui, carillon et notification actifs, fenêtre sur l'écran de
+gauche). À la fin, Claude ferme l'app de test et supprime `target\test-config`.
+
+1. **Après la sauvegarde** (en jeu, ~3 min) : `Alt+F10` → carillon + notification « Clip en cours
+   / +10 s », le jeu garde le focus ; nouvel `Alt+F10` avant la fin → un seul clip, plus long ;
+   attendre « Clip sauvegardé ». Puis `Alt+F10` et, dans la zone de notification, « Terminer le
+   clip maintenant ».
+2. **Compression et Discord** (~6 min) : Galerie → menu du premier clip → Compresser → 20 Mo →
+   Compresser → Copier → coller dans un salon ou un MP Discord : la vidéo se lit dans Discord,
+   avec le son. Même chose en 500 Mo (Nitro).
+3. **Glisser-déposer** (~1 min) : glisser une vidéo depuis l'Explorateur sur la page Compression
+   → elle arrive dans la file d'attente ; un fichier qui n'est pas une vidéo est ignoré.
+4. **Sortie de page** (~1 min) : replay armé, page Capture → basculer « Afficher le curseur » →
+   cliquer État → l'alerte s'ouvre (focus sur Rester) ; Échap = Rester ; recommencer et choisir
+   « Ne pas appliquer » ; recommencer et fermer la fenêtre par la croix → même alerte.

@@ -114,6 +114,18 @@ pub enum EngineError {
     #[error("export annulé")]
     ExportCancelled,
 
+    #[error("compression annulée")]
+    CompressCancelled,
+
+    #[error("ce fichier n'a pas de piste vidéo lisible")]
+    NotAVideo,
+
+    #[error("cible trop petite pour cette durée : il faut au moins {min_mb} Mo")]
+    TargetTooSmall { min_mb: u64 },
+
+    #[error("le fichier compressé dépasse encore la cible après trois essais")]
+    OverTarget,
+
     #[error("le calibrage s'est arrêté")]
     CalibrationStopped,
 
@@ -206,6 +218,12 @@ impl EngineError {
             Self::DiskFull => Localized::new("disk_full"),
             Self::ExportTooShort => Localized::new("export_too_short"),
             Self::ExportCancelled => Localized::new("export_cancelled"),
+            Self::CompressCancelled => Localized::new("compress_cancelled"),
+            Self::NotAVideo => Localized::new("not_a_video"),
+            Self::TargetTooSmall { min_mb } => {
+                Localized::new("target_too_small").with("min_mb", *min_mb)
+            }
+            Self::OverTarget => Localized::new("over_target"),
             Self::CalibrationStopped => Localized::new("calibration_stopped"),
             Self::Stopped => Localized::new("engine_stopped"),
             Self::ReplayNotArmed => Localized::new("replay_not_armed"),

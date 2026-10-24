@@ -17,8 +17,8 @@ use crate::encode::{AacEncoder, EncoderInfo, Size, SystemFrameEncoder, codec_of_
 use crate::error::{EngineError, Result};
 use crate::mux::{Mp4Writer, MuxStream};
 
-const MIX_RATE: u32 = 48_000;
-const MIX_CHANNELS: usize = 2;
+pub(super) const MIX_RATE: u32 = 48_000;
+pub(super) const MIX_CHANNELS: usize = 2;
 const AUDIO_LEAD_SECS: f64 = 0.03;
 const MIN_EXPORT_SECS: f64 = 0.5;
 
@@ -63,19 +63,22 @@ pub fn export_clip(
     }
 }
 
-fn ffmpeg_error(error: RsmpegError) -> EngineError {
+pub(super) fn ffmpeg_error(error: RsmpegError) -> EngineError {
     EngineError::Mux(error.to_string())
 }
 
-fn seconds(ts: i64, base: AVRational) -> f64 {
+pub(super) fn seconds(ts: i64, base: AVRational) -> f64 {
     ts as f64 * f64::from(base.num) / f64::from(base.den.max(1))
 }
 
-fn timestamp(seconds: f64, base: AVRational) -> i64 {
+pub(super) fn timestamp(seconds: f64, base: AVRational) -> i64 {
     (seconds * f64::from(base.den) / f64::from(base.num.max(1))).round() as i64
 }
 
-fn decoder(parameters: &AVCodecParameters, time_base: AVRational) -> Result<AVCodecContext> {
+pub(super) fn decoder(
+    parameters: &AVCodecParameters,
+    time_base: AVRational,
+) -> Result<AVCodecContext> {
     let codec = AVCodec::find_decoder(parameters.codec_id)
         .ok_or_else(|| EngineError::Mux("décodeur absent".into()))?;
     let mut context = AVCodecContext::new(&codec);
@@ -85,7 +88,10 @@ fn decoder(parameters: &AVCodecParameters, time_base: AVRational) -> Result<AVCo
     Ok(context)
 }
 
-fn frames(context: &mut AVCodecContext, packet: Option<&AVPacket>) -> Result<Vec<AVFrame>> {
+pub(super) fn frames(
+    context: &mut AVCodecContext,
+    packet: Option<&AVPacket>,
+) -> Result<Vec<AVFrame>> {
     context.send_packet(packet).map_err(ffmpeg_error)?;
     let mut decoded = Vec::new();
     loop {
@@ -100,14 +106,14 @@ fn frames(context: &mut AVCodecContext, packet: Option<&AVPacket>) -> Result<Vec
 }
 
 #[derive(Debug, Default)]
-struct Mixer {
+pub(super) struct Mixer {
     mixed: Vec<f32>,
     origin: i64,
     reached: Vec<i64>,
 }
 
 impl Mixer {
-    fn new(tracks: usize) -> Self {
+    pub(super) fn new(tracks: usize) -> Self {
         Self {
             mixed: Vec::new(),
             origin: 0,
@@ -115,7 +121,7 @@ impl Mixer {
         }
     }
 
-    fn add(&mut self, track: usize, first: i64, samples: &[f32], gain: f32) {
+    pub(super) fn add(&mut self, track: usize, first: i64, samples: &[f32], gain: f32) {
         let (first, samples) = if first < self.origin {
             let skip = ((self.origin - first) as usize * MIX_CHANNELS).min(samples.len());
             (self.origin, &samples[skip..])
@@ -135,7 +141,7 @@ impl Mixer {
         }
     }
 
-    fn take(&mut self, all: bool) -> Vec<f32> {
+    pub(super) fn take(&mut self, all: bool) -> Vec<f32> {
         let ready = if all {
             self.mixed.len() / MIX_CHANNELS
         } else {
@@ -484,7 +490,7 @@ fn to_encoder_format(frame: &AVFrame, video: &mut PreciseVideo) -> Result<AVFram
     Ok(converted)
 }
 
-fn interleaved(frame: &AVFrame, resampler: &mut Option<SwrContext>) -> Result<Vec<f32>> {
+pub(super) fn interleaved(frame: &AVFrame, resampler: &mut Option<SwrContext>) -> Result<Vec<f32>> {
     let stereo = AVChannelLayout::from_nb_channels(MIX_CHANNELS as i32);
     if resampler.is_none() {
         let mut context = SwrContext::new(
@@ -543,7 +549,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod file_tests {
+pub(super) mod file_tests {
     use super::*;
     use crate::library::probe_clip;
 
@@ -602,7 +608,7 @@ mod file_tests {
         (stream, packets)
     }
 
-    fn write_source(path: &Path, seconds: i32) {
+    pub(in crate::library) fn write_source(path: &Path, seconds: i32) {
         let (video, video_packets) = video_packets(seconds);
         let mut streams = vec![video];
         let mut packets: Vec<(f64, usize, AVPacket)> = video_packets

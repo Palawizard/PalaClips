@@ -46,6 +46,8 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 - **Replay instantané** : les 5 dernières secondes à 60 dernières minutes restent en mémoire ou
   sur le disque. Un raccourci (`Alt+F10` par défaut) les sauvegarde sans quitter le jeu ; un
   son et une notification confirment.
+- **Après l'appui** : le clip peut aussi continuer jusqu'à 10 min après le raccourci (par
+  exemple 1 min avant + 10 s après) ; un nouvel appui le prolonge.
 - **Enregistrement d'écran** (`Ctrl+Alt+F9`) en MP4 fragmenté, lisible même si le PC plante en
   cours de route.
 - **Pistes audio séparées** : piste 1 = mix complet, piste 2 = micro, puis une piste par appli
@@ -58,6 +60,10 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
   retrouvée par le nom de son programme après un redémarrage.
 - **Galerie de clips** avec un lecteur multipiste : écoute piste par piste (muet, solo,
   volume), découpe, export, copie du fichier pour le coller dans Discord.
+- **Compression à une taille cible** : 20 Mo pour Discord, 50 ou 500 Mo pour Nitro, ou une taille
+  libre ; résolution et images par seconde choisies selon la taille, taille finale vérifiée.
+  Depuis la galerie (un ou plusieurs clips), le lecteur ou par glisser-déposer depuis
+  l'Explorateur.
 - **Léger** : vit dans la zone de notification ; fenêtre fermée, il ne reste qu'un petit
   processus.
 - **Respect de la vie privée** : aucun compte, aucune télémétrie, aucune injection dans les
@@ -69,9 +75,11 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 
 | Galerie | Sources audio |
 |---|---|
-| ![La galerie, clips classés par jour](docs/screenshots/fr/gallery.png) | ![Réglages audio : une piste par appli, avec vumètre](docs/screenshots/fr/audio-sources.png) |
+| ![La galerie, clips classés par jour](docs/screenshots/fr/gallery.png) | ![Page Audio : une piste par appli, avec vumètre](docs/screenshots/fr/audio-sources.png) |
 
-![Premier lancement, question de la durée du replay](docs/screenshots/fr/first-launch.png)
+| Compression | Premier lancement |
+|---|---|
+| ![La page Compression : taille cible, codec, file d'attente avec le plan de chaque clip](docs/screenshots/fr/compress.png) | ![Premier lancement, question de la durée du replay](docs/screenshots/fr/first-launch.png) |
 
 ## Configuration requise
 
@@ -154,11 +162,11 @@ l'encodeur H.264 de Windows manque tant que le Media Feature Pack n'est pas inst
 en AV1 sur le processeur ; installe le pack pour retrouver le H.264.
 
 **Mon micro est aussi dans la piste 1.** C'est le réglage « Aussi dans Mix complet »
-(Réglages → Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
+(page Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
 façon sa propre piste.
 
 **La piste 1 ne contient pas les notifications ni la musique.** Par défaut, la piste 1 est la
-somme des pistes choisies. Active « Audio du bureau » (Réglages → Audio) pour qu'elle contienne
+somme des pistes choisies. Active « Audio du bureau » (page Audio) pour qu'elle contienne
 tout ce que tu entends.
 
 **Mémoire ou disque pour le replay ?** En mémoire, rien n'est écrit sur le disque tant que tu

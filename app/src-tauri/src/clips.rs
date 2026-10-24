@@ -349,7 +349,7 @@ fn unique_path(wanted: &Path) -> PathBuf {
     path
 }
 
-fn reveal(path: &Path) -> Result<(), Localized> {
+pub(crate) fn reveal(path: &Path) -> Result<(), Localized> {
     let mut select = std::ffi::OsString::from("/select,");
     select.push(path.as_os_str());
     std::process::Command::new("explorer")

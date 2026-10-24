@@ -9,11 +9,16 @@ export function clock(totalSeconds: number): string {
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${pad(minutes)}:${pad(rest)}`;
 }
 
-export function bytes(value: number): string {
-  if (value >= 1e12) return t("units.tb", { value: number(value / 1e12, 1) });
-  if (value >= 1e9) return t("units.gb", { value: number(value / 1e9, 1) });
-  if (value >= 1e6) return t("units.mb", { value: number(value / 1e6) });
-  return t("units.kb", { value: number(value / 1e3) });
+const KIB = 1024;
+const MIB = KIB * 1024;
+const GIB = MIB * 1024;
+const TIB = GIB * 1024;
+
+export function bytes(value: number, megabyteDigits = 0): string {
+  if (value >= TIB) return t("units.tb", { value: number(value / TIB, 1) });
+  if (value >= GIB) return t("units.gb", { value: number(value / GIB, 1) });
+  if (value >= MIB) return t("units.mb", { value: number(value / MIB, megabyteDigits) });
+  return t("units.kb", { value: number(value / KIB) });
 }
 
 export function decibels(linear: number): number {

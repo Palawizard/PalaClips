@@ -691,3 +691,54 @@ PSNR est le plus bas. Journal : `docs/reports/cpu-encoder/cpu-encoders-2026-10-2
   sur `releases/latest/download/latest.json` donnait déjà 1.1.0 juste après la publication :
   la bascule de `releases/latest` n'est pas instantanée pour tous les clients. Après une
   publication, attendre ~1 min avant de juger l'updater.
+
+## Enregistrer après la sauvegarde (v1.2, mesuré le 2026-10-23)
+
+- Banc `scripts/post-roll.ps1` (écran principal 720p60, NVENC, piste mix, dossier isolé) et
+  vérificateur `scripts/clip-continuity.py` (écarts de PTS par flux). Avant 10 s + après 10 s :
+  20,2 s ; prolongé à mi-course : 19,5 s pour 4 s d'avant + 15 s ; « terminer » 3 s après :
+  7,8 s ; tampon sur disque : 20,1 s ; processus tué 6 s après l'appui : 16 s récupérés au
+  démarrage suivant. Aucun doublon, aucun trou, pistes de même durée (≤ 20 ms).
+- Synchro (flashs + bips de `probe-av-emitter`, fenêtres de 5 s) : clip « après » +137,3 /
+  +140,6 / +140,6 / +140,6 ms, jonction à 10,3 s ; clip instantané de référence +138,8 /
+  +128,8 ms. Les ~140 ms sont le retard du loopback Voicemeeter, non compensé dans la CLI.
+- MP4 hybride (`hybrid_fragmented`) : le premier échantillon de chaque piste est ramené à 0 ;
+  si l'audio commence avant la vidéo (paquet AAC à cheval), c'est la première image qui dure
+  ~13 ms de plus ; si on retire cet audio, c'est le premier paquet audio qui est avancé. Les
+  temps suivants sont exacts dans les deux cas : comportement gardé (celui des enregistrements
+  depuis la 1.0), le vérificateur ignore ce premier pas.
+- Mémoire sur un « après » de 10 min (`scripts/post-roll-memory.ps1`, 2026-10-24, Palawi en
+  partie) : working set privé 59 à 69 Mo pendant le clip, pente −17,6 Mo/h, 40,8 Mo après la fin
+  du clip ; un relevé isolé à 37 Mo (mémoire réduite par Windows sous la pression du jeu) ; clip
+  de 660,8 s continu. Critère retenu avec Palawi : pas de croissance (pente < 20 Mo/h, hausse
+  < 10 Mo entre le début et la fin), plutôt qu'un écart min/max que les réductions de Windows
+  faussent.
+- Erreur trouvée au premier essai : comparer la fin (QPC absolu) aux PTS du flux (relatifs à
+  l'origine de la capture) ne coupait rien, le clip finissait au délai de secours de 3 s.
+## Compression à une taille cible (v1.2, mesuré le 2026-10-23)
+
+- Recherche (limite Discord, codecs lus, précision d'un seul passage, glisser-déposer) :
+  `docs/reports/v1.2-research.md`.
+- Banc `scripts/compress-check.ps1` (RTX 4070 Super, `h264_nvenc` sauf AV1 = `av1_nvenc`) :
+
+| Source | Cible | Plan | Résultat | Essais | Temps |
+|---|---|---|---|---|---|
+| 7,6 s 1440p60 | 20 Mo | 1080p60 20 Mb/s | 19,26 Mo | 2 | 16,8 s |
+| 7,6 s 1440p60 | 5 Mo | 720p60 4,9 Mb/s | 4,94 Mo | 1 | 7,2 s |
+| 3 min 1440p60 | 20 Mo | 480p30 786 kb/s | 19,29 Mo | 1 | 149 s |
+| 3 min 1440p60 | 50 Mo | 720p30 2,0 Mb/s | 48,09 Mo | 1 | 148 s |
+| 3 min 1440p60 | 500 Mo | 1080p60 21,2 Mb/s | 480,6 Mo | 1 | 178 s |
+| 3 min 1440p60, AV1 | 20 Mo | 480p30 786 kb/s | 19,37 Mo | 1 | 134 s |
+| 3 min, 3 pistes, toutes gardées | 50 Mo | 480p30 1,8 Mb/s | 48,21 Mo | 1 | 142 s |
+| extrait 30–60 s | 10 Mo | 720p30 2,4 Mb/s | 9,66 Mo | 1 | 23 s |
+| HDR10 (HEVC 10 bits PQ) 20 s | 10 Mo | 720p30 3,7 Mb/s | 9,58 Mo | 1 | 23 s |
+| MKV VP9 + FLAC 15 s | 3 Mo | 480p30 | 2,85 Mo | 1 | 2,5 s |
+| MOV H.264 + AAC 12 s | 3 Mo | 480p30 | 2,87 Mo | 1 | 3,1 s |
+
+- Précision d'un seul passage NVENC avec `maxrate` = débit et tampon d'1 s : 94,9 à 98,8 % de la
+  cible ; seul le clip le plus court (7,6 s) a dépassé au premier essai (le tampon d'1 s pèse sur
+  8 s), corrigé au second.
+- Le temps est dominé par le décodage H.264 1440p60 sur le processeur (~0,8× le temps réel).
+- À l'œil (`docs/reports/v1.2/compress/`) : 500 Mo indiscernable de l'original ; 50 Mo correct ;
+  20 Mo pour 3 min nettement dégradé (480p30), annoncé « Faible » par l'aperçu ; HDR10 → SDR aux
+  couleurs franches (`zscale` + `tonemap=hable`).

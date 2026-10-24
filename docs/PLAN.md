@@ -246,3 +246,29 @@ Critères :
   mesuré ; `fps-impact.ps1` en CPU forcé dans Fortnite, perte écrite dans le README.
 - 👤 VM Windows 11 sans GPU : installation, premier lancement qui propose le processeur, clip
   capturé et sauvegardé.
+
+## v1.2 — Pages Capture et Audio, après la sauvegarde, compression (APP-14, RPL-10, CMP-01–05)
+
+Recherche et décisions de Palawi : `docs/reports/v1.2-research.md`.
+
+- [x] Barre latérale (`feature/rail-pages`, #106) : État, Galerie, Compression, Capture, Audio,
+      Réglages ; hook générique de changements non appliqués (navigation, fermeture, zone de
+      notification), testé avec vitest ; liens d'État, alertes, premier lancement et calibrage
+      vers la bonne page.
+- [x] Après la sauvegarde (`feature/post-roll`) : moteur (MP4 hybride, prolongation, fin
+      anticipée), cas limites testés, app (réglage, État, zone de notification, notifications).
+- [x] Compression (`feature/compress`) : module moteur + `palaclips-cli compress`, page,
+      boutons galerie/lecteur, glisser-déposer, copier.
+- [x] Session de tests manuels de Palawi (T14, 2026-10-24, en jouant) ; retours appliqués (#109).
+- [ ] Release v1.2.0 (brouillon, puis publication avec l'accord de Palawi).
+
+Critères :
+- 🤖 Hook de sortie de page : tests vitest (navigation, fermeture, sans changement → aucune
+  alerte) ; clavier : focus dans la boîte, Échap = Rester.
+- 🤖 Après la sauvegarde : pas de trou ni d'image en double à la jonction (PTS lus par ffprobe),
+  synchro A/V à la jonction au niveau des clips actuels (`t2-av-sync.ps1`), mémoire stable sur
+  un « après » de 10 min (essai en arrière-plan, accord de Palawi), arrêt brutal → clip récupéré.
+- 🤖 Compression : taille ≤ cible sur clips courts et longs, 60 i/s, HDR → SDR, plusieurs pistes,
+  fichier externe ; annulation sans fichier partiel ; replay intact pendant une compression.
+- 👤 « Après » en jeu, clip compressé envoyé dans Discord en 20 Mo et 500 Mo, glisser-déposer,
+  alerte de sortie de page ; images extraites jugées correctes.

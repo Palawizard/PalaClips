@@ -24,9 +24,19 @@
   de mise à jour), #97 (`dev` → `main`, accord de Palawi), tag `v1.1.0` sur `main`,
   **publiée le 2026-10-22** (https://github.com/Palawizard/PalaClips/releases/tag/v1.1.0) avec
   l'accord de Palawi. Vérifié sans connexion : `latest.json` 1.1.0, installeur, `.sig`,
-  CHANGELOG et page en 200 ; la 1.0.0 installée de Palawi propose la 1.1.0. Reste : test VM T11.
+  CHANGELOG et page en 200 ; la 1.0.0 installée de Palawi propose la 1.1.0.
+- **v1.1.1 publiée le 2026-10-22** à la demande de Palawi, **sans le test VM** : #99 (mémoire de
+  l'encodeur H.264 de Windows ~170 Mo en 1080p au lieu de ~720, bascule AV1 sans Media
+  Foundation), #101 (version), #102 (`dev` → `main`), tag `v1.1.1`. Vérifié sans connexion après
+  1 min : `latest.json` 1.1.1, installeur, `.sig`, CHANGELOG et page en 200. Reste : test VM T11.
   Branche : `dev` (PR de handoff `docs/handoff-v1.1`).
-- **Dernière mise à jour :** 2026-10-22
+- **v1.2.0 en préparation (2026-10-23/24)** : recherche et décisions de Palawi (#105,
+  `docs/reports/v1.2-research.md`), pages Capture et Audio + alerte de sortie (#106, ADR-036),
+  enregistrer après la sauvegarde (#107, ADR-037), compression à une taille cible (#108,
+  ADR-038), retours de la session T14 (#109 : Compression avant Réglages, tailles en unités
+  binaires, copie sans réencodage, « Choisir des clips »). Session T14 de Palawi validée le
+  2026-10-24. Branche : `release/v1.2.0` (version, CHANGELOG, notes, feuille de route).
+- **Dernière mise à jour :** 2026-10-24
 
 ## Ce qui existe
 
@@ -222,18 +232,39 @@
   `probe-gpu-priority [--window]`, `gpu-load` (caché), `probe-fullscreen`, `--capture-priority`.
   Scripts : `app-crash.ps1`, `fps-impact.ps1 -CapturePriority`.
 
+- **v1.2 (2026-10-23/24)** :
+  - Front : barre État, Galerie, Capture, Audio, Compression, Réglages (`Rail.tsx`) ; garde de
+    sortie `lib/leaveGuard.ts` (vitest) + `components/LeaveDialog.tsx`, `useConfigDraft(page)`
+    déclare son brouillon ; `npm test` = test i18n + vitest. Page `components/compress/`
+    (`CompressPage`, `ClipPicker`), store `lib/compressDrafts.ts` (révision par brouillon contre
+    les réponses périmées) ; « Compresser » dans le menu de la galerie et la barre d'export du
+    lecteur ; « Clip en cours » + « Prolonger » / « Terminer maintenant » sur État ; ligne
+    « Après l'appui » dans Replay & qualité ; `format::bytes` en unités binaires.
+  - Moteur : `replay.after_secs`, `PostRollCut` (`replay`), `Pipeline::start_post_roll` réutilise
+    le `Recorder` (`RecordKind::Replay`) ; `EngineEvent::PostRoll`, `EngineHandle::finish_clip`,
+    alerte `clip_cut_short`. `library::compress` (sonde, plan, graphe de filtres, essais, copie
+    sans réencodage), `AacEncoder::open_with_bitrate`, erreurs `not_a_video`,
+    `target_too_small`, `over_target`, `compress_cancelled`.
+  - Shell : `compress.rs` (file d'attente sur un fil, `compress_*`), `replay_finish_clip`,
+    `AppStatus.clip_ends_at_ms`, entrée « Terminer le clip maintenant » dans la zone de
+    notification, permission `core:window:allow-destroy`.
+  - CLI : `replay --after N` (touche `f`), `compress`. Scripts : `post-roll.ps1`,
+    `post-roll-memory.ps1`, `compress-check.ps1`, `clip-continuity.py`. Preuves :
+    `docs/reports/v1.2/`.
+
 ## Prochaines actions (dans l'ordre)
 
-0. **Clore la v1.1** : quand Palawi rapporte le test VM T11 (`docs/TESTING.md`, installeur de
-   la release publiée copié dans `target\vm\PalaClips_1.1.0_x64-setup.exe`) : remplir la ligne
+0. **Publier la v1.2.0** (accord de Palawi à chaque étape) : PR `release/v1.2.0` → `dev`,
+   captures du README refaites (`readme-screenshots.ps1`, nouvelle barre ; écran principal,
+   demander), PR `dev` → `main`, tag `v1.2.0` (brouillon), relecture du brouillon, publication,
+   vérification sans connexion de `latest.json`.
+1. **Clore la v1.1** : quand Palawi rapporte le test VM T11 (`docs/TESTING.md`, installeur de
+   la release 1.1.1 dans `target\vm\PalaClips_1.1.1_x64-setup.exe` ; s'il a testé la 1.1.0,
+   noter laquelle) : remplir la ligne
    VM de `docs/reports/cpu-encoder.md`, cocher les cases restantes de PLAN v1.1. Un défaut trouvé
    → branche `fix/…` depuis `dev`, puis 1.1.1 avec son accord (même chemin de release).
-1. **1.1.1 à proposer** : #99 (sur `dev`, pas publié) limite la mémoire de l'encodeur H.264 de
-   Windows (~170 Mo au lieu de ~720 en 1080p) et bascule sur AV1 sans Media Foundation
-   (éditions N/KN). Publier seulement avec l'accord de Palawi, idéalement avec les correctifs du
-   test VM T11 (la VM teste la 1.1.0, sans ces correctifs).
 
-1. **Prochaine version** (seulement avec l'accord explicite de Palawi). Pistes : `ROADMAP.md`.
+2. **Prochaine version** (seulement avec l'accord explicite de Palawi). Pistes : `ROADMAP.md`.
    1. Notes : `pwsh scripts/release-notes.ps1 -Tag dev` liste les PR visibles par l'utilisateur
       depuis le dernier tag (`feat`/`fix`/`perf`, sans scripts, tests, outils, docs, maintenance).
       En tirer `docs/release-notes/X.Y.Z.md` : `## Français` puis `## English`, quelques puces
@@ -272,6 +303,17 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV1, ADR-035.)
 
 ## Points d'attention
+
+- Glisser-déposer : il ne marche pas dans l'app de test placée par `PALACLIPS_TEST_WINDOW`
+  (fenêtre créée cachée puis montrée sans focus, `show_without_focus`) ; il marche dans une
+  fenêtre ouverte normalement (vérifié par Palawi le 2026-10-24). Pour un essai de dépôt, lancer
+  l'exe avec `PALACLIPS_CONFIG_DIR` mais sans `PALACLIPS_TEST_WINDOW`.
+- npm 10.9.4 plante en ajoutant vitest (`edgesOut`) : ajouter une dépendance avec
+  `npx -y npm@11.6.2 install` ; `npm ci` (npm 10, CI) lit le verrou sans souci.
+- MP4 hybride : le premier échantillon de chaque piste est ramené à 0 (première image ~13 ms de
+  plus) ; `clip-continuity.py` ignore ce premier pas (RESEARCH § Enregistrer après la sauvegarde).
+- Compression : ~0,8× le temps réel pour du 1440p60 (décodage H.264 sur le processeur) ; un
+  replay sauvegardé pendant une compression reste continu.
 
 - Encodage CPU (v1.1) : la mémoire de `h264_mf` dépend de son nombre de fils (16 par défaut →
   ~720 Mo en 1080p). Limité à 2/4 fils par `encode::mf::limit_mf_workers` (ICodecAPI lu dans
@@ -412,8 +454,12 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 | 2026-10-17 | 5 | PR #21 réglages persistants ; PR #22 noms de jeux (Fortnite sans métadonnées → nom d'exe nettoyé, décision de Palawi, ADR-024) ; PR #23 carillon + toast, test Fortnite ✅ (carillon en jeu, toast bloqué en jeu puis dans le centre de notifications, toast + carillon au bureau, dossier « Fortnite ») ; PR #24 clips sans doublon (RPL-09, ADR-025, 20,2 s puis 10,2 s) | Raccourcis, démarrage avec Windows, écrans Réglages |
 | 2026-10-17 | 5 | PR #25 clip < 3 s ignoré ; PR #26 démarrage avec Windows (0 WebView2) ; raccourcis personnalisables (conflit réel détecté : Alt+Shift+F10 pris par NVIDIA → défaut Ctrl+Alt+F10) ; écran Réglages (Raccourcis, Général, thème) testé par Palawi au clavier ; revue impeccable 2 tours | Sections Réglages restantes |
 | 2026-10-17 | 5 | Socle i18n avant la phase 6 (ADR-028) : fr/en complets, langue de Windows par défaut, codes + paramètres côté Rust, menu de la zone de notification et toasts traduits, test anti-chaînes en dur | Revue de Palawi (anglais + sélecteurs), phase 6 |
+| 2026-10-18 | 6 | Noms de pistes par défaut hors du fichier de réglages (#39) ; enregistrement manuel sur la capture du replay en MP4 hybride (#40), récupération au démarrage et arrêt propre disque plein (#41) ; bibliothèque SQLite, surveillance du dossier, quota (#42) ; protocole `palaclips://` par plages et pistes extraites (#43) ; découpe rapide ou précise, export pistes choisies ou mixées (#44) ; galerie et lecteur multipiste (#45) | Mesures de la phase 6 |
+| 2026-10-19 | 6→7 | Mesures de la phase 6 et fuite du lecteur corrigée (#46) ; micro dans la piste 1 (#47, ADR-029), Mix complet = somme des pistes (#48, ADR-030), pistes en retard attendues (#50) ; phase 6 validée (#49) ; alerte de cadence DWM (#51), reprise après panne du pipeline (#52, ADR-031), GOP fixe des vidéos de test (#53), secondes sans image ignorées (#54) ; panneau de performances (#55) ; WebView et données isolées (#56, #58), données sous l'identifiant de l'app (#57, ADR-032), FFmpeg et licences dans l'installeur (#59), preuves de non-migration et désinstallation (#60–#62) ; séance T7 (#63) | Défauts de la séance T7 |
+| 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
 | 2026-10-20/21 | 8 | Journaux + diagnostic anonymisé (#71) ; premier lancement en 6 étapes, 27,5 s jusqu'au clip (#72) ; relecture de l'anglais (#73) ; README EN/FR + captures (#74) ; bug Vesktop trouvé par Palawi : applis en plusieurs instances additionnées (#76) ; Windows 11 requis (#77) ; `NotImplemented` supprimé (#78) ; updater + workflow de release, essai 1.0.0 → 1.0.1 et fausse signature automatisés (#75) ; écran par chemin stable (#79) ; REC-02 et `dumpbin` prouvés ; session Windows propre abandonnée ; revue finale | T10 (VM), Minecraft, release avec l'accord de Palawi |
 | 2026-10-21 | 8 | Release v1.0.0 : notes de release automatiques (PR par type), README EN/FR à la structure classique et SEO (description, 20 topics, page d'accueil du dépôt), version 1.0.0 (#87), `dev` → `main` (#88), tag, installeur signé + `latest.json` vérifiés, release publiée ; URL de l'updater corrigée à la main puis automatisée | Suivre les issues ; prochaine version avec l'accord de Palawi |
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
 | 2026-10-22 | v1.1 | Encodage par le processeur : recherche (encodeurs du FFmpeg BtbN, licences, lecture, banc VMAF NEG), choix D de Palawi ; moteur (`h264_mf` + SVT-AV1, Video Processor → NV12 → staging ou swscale, fils en priorité basse, file bornée, découpe précise CPU) ; app (réglage Encodeur, premier lancement, panneau), critique/audit impeccable ; validé : clip CPU, A/V 3,7 ms d'écart avec NVENC, Fortnite 0 % (1 % bas −3 à −5 %), mise à jour 1.0.0 → 1.1.0 ; mémoire de `h264_mf` (~720 Mo en 1080p) gardée par Palawi ; release v1.1.0 publiée (accord de Palawi), vérifiée sans connexion, sa 1.0.0 propose la 1.1.0 | Test VM T11 par Palawi |
-| 2026-10-20 | 7 | Défaut 1 : famine GPU reproduite seulement avec une charge au premier plan, seule la classe REALTIME aide (sans admin avec HAGS), file bornée (11 s → 57 ms), alerte GPU saturé (#64) ; défaut 3 : `alert_cleared` (#64) ; défaut 2 : alerte plein écran exclusif, Kombustor (#65) ; PERF-03 : 7,5 % en temps réel contre 0,7 % en normal → réglage, « jeu » par défaut (#66, ADR-033) ; T7 appli qui crashe (script), résolution, HDR basculé (#67) ; phase 7 validée | Minecraft quand Palawi le dit, phase 8 |
+| 2026-10-22 | v1.1.1 | Mémoire de `h264_mf` : nombre de fils (16 images en vol), pas une file ; faible latence et B-frames sans effet ; limité à 2/4 fils par ICodecAPI (+244 Mo au lieu de +773 en 1080p30, moins de CPU, même VMAF) ; bascule AV1 sans Media Foundation (N/KN), FAQ ; v1.1.1 publiée sans le test VM (demande de Palawi) | Test VM T11 |
+| 2026-10-23/24 | v1.2 | Recherche (Discord 20 Mo, codecs, NVENC un passage, glisser-déposer Tauri) et décisions de Palawi (#105) ; pages Capture et Audio + alerte de sortie, vitest (#106) ; enregistrer après la sauvegarde, jonction continue, synchro identique, mémoire sans croissance sur 10 min (#107) ; compression à une taille cible, 11 cas sous la cible, HDR → SDR (#108) ; session T14 de Palawi en jeu validée, retours appliqués (#109) ; release 1.2.0 préparée | Captures du README, release avec l'accord de Palawi |

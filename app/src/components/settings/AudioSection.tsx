@@ -231,7 +231,7 @@ function TrackRow({
 
 export function AudioSection({ status }: { status: AppStatus | null }) {
   const t = useT();
-  const { config, loadError } = useConfigDraft();
+  const { config, loadError } = useConfigDraft("nav.audio");
   const [outputs, setOutputs] = useState<AudioDevice[]>([]);
   const [inputs, setInputs] = useState<AudioDevice[]>([]);
   const [sessions, setSessions] = useState<AppSession[]>([]);

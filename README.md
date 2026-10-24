@@ -46,6 +46,8 @@ Anti-Cheat.
 - **Instant replay**: the last 5 seconds to 60 minutes stay in memory or on disk. A hotkey
   (`Alt+F10` by default) saves them without leaving the game; a sound and a notification
   confirm the save.
+- **After the press**: the clip can also keep going for up to 10 min after the hotkey (for
+  example 1 min before + 10 s after); pressing again extends it.
 - **Screen recording** (`Ctrl+Alt+F9`) in a fragmented MP4 that stays readable even if the PC
   crashes mid-way.
 - **Separate audio tracks**: track 1 is the full mix, track 2 the microphone, then one track
@@ -58,6 +60,9 @@ Anti-Cheat.
   its program name after a restart.
 - **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume), trim,
   export, or copy the file to paste it into Discord.
+- **Compress to a target size**: 20 MB for Discord, 50 or 500 MB for Nitro, or any size;
+  resolution and frame rate follow the size, and the final size is checked. From the gallery (one
+  or several clips), the player, or by dragging files from File Explorer.
 - **Lightweight**: lives in the notification area; with the window closed, only one small
   process remains.
 - **Private**: no account, no telemetry, no injection into games.
@@ -68,9 +73,11 @@ Anti-Cheat.
 
 | Gallery | Audio sources |
 |---|---|
-| ![The gallery, clips grouped by day](docs/screenshots/en/gallery.png) | ![Audio settings: one track per app, with a level meter](docs/screenshots/en/audio-sources.png) |
+| ![The gallery, clips grouped by day](docs/screenshots/en/gallery.png) | ![Audio page: one track per app, with a level meter](docs/screenshots/en/audio-sources.png) |
 
-![First launch, replay length question](docs/screenshots/en/first-launch.png)
+| Compress | First launch |
+|---|---|
+| ![The Compress page: target size, codec, queue with each clip's plan](docs/screenshots/en/compress.png) | ![First launch, replay length question](docs/screenshots/en/first-launch.png) |
 
 ## Requirements
 
@@ -145,11 +152,11 @@ so the Windows H.264 encoder is missing until you install the Media Feature Pack
 Apps → Optional features). Without it, PalaClips switches to AV1 on the processor on its own;
 install the pack to get H.264 back.
 
-**My mic is also in track 1.** That's the "Also in Full mix" setting (Settings → Audio), so a
+**My mic is also in track 1.** That's the "Also in Full mix" setting (Audio page), so a
 clip is ready to share as is. Your voice keeps its own track either way.
 
 **Track 1 doesn't contain notifications or music.** By default, track 1 is the sum of the
-tracks you picked. Turn on "Desktop audio" (Settings → Audio) to have it contain everything
+tracks you picked. Turn on "Desktop audio" (Audio page) to have it contain everything
 you hear.
 
 **Memory or disk for the replay?** In memory, nothing is written to the disk until you save,

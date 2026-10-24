@@ -101,3 +101,15 @@ FINISH : unreviewed and undocumented is unfinished; this build ends with the fin
 - Mouvement : contenu en opacité + translateY(−4 px) 200 ms à l'ouverture (@starting-style),
   fermeture instantanée, chevron 160 ms ; chiffres sans animation ; tout à 0 ms en
   mouvement réduit.
+
+## Barre latérale v1.2 (shape, brief confirmé par Palawi le 2026-10-23)
+
+- Entrées : État, Galerie, Capture, Audio, Compression, Réglages (ordre corrigé par Palawi le
+  2026-10-24) ; icônes Gauge, Clapperboard, Monitor, AudioLines, Shrink, SlidersHorizontal.
+- Capture et Audio deviennent des pages (titre de page 22 px + filet, contenu inchangé).
+- État : « Changer » en bas de la cellule Source (même place que les boutons des autres
+  cellules), « Régler les pistes » à droite du titre des pistes ; alertes : « Ouvrir <page> »
+  quand la solution est sur une page.
+- Alerte de sortie : `<dialog>` modale, titre « Changements non appliqués », page concernée,
+  avertissement de redémarrage ; Rester / Ne pas appliquer / Appliquer ; focus sur Appliquer,
+  Échap = Rester ; apparition 150 ms (fondu + échelle 0,97 → 1), fondu seul en mouvement réduit.

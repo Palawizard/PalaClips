@@ -27,6 +27,10 @@ impl std::fmt::Debug for AacEncoder {
 
 impl AacEncoder {
     pub fn open(sample_rate: u32, channels: usize) -> Result<Self> {
+        Self::open_with_bitrate(sample_rate, channels, AAC_BITRATE)
+    }
+
+    pub fn open_with_bitrate(sample_rate: u32, channels: usize, bit_rate: i64) -> Result<Self> {
         route_ffmpeg_logs();
         let codec = AVCodec::find_encoder(ffi::AV_CODEC_ID_AAC)
             .ok_or_else(|| EngineError::Encoder("encodeur AAC absent de FFmpeg".into()))?;
@@ -34,7 +38,7 @@ impl AacEncoder {
         context.set_sample_fmt(ffi::AV_SAMPLE_FMT_FLTP);
         context.set_sample_rate(sample_rate as i32);
         context.set_ch_layout(AVChannelLayout::from_nb_channels(channels as i32).into_inner());
-        context.set_bit_rate(AAC_BITRATE);
+        context.set_bit_rate(bit_rate);
         context.set_time_base(ra(1, sample_rate as i32));
         context.set_flags(context.flags | ffi::AV_CODEC_FLAG_GLOBAL_HEADER as i32);
         context

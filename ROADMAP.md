@@ -35,22 +35,7 @@ PalaClips needs Windows 11 today. Windows 10 version 2004 (build 19041) and late
 - Markers shown on the player's timeline, to jump straight to them.
 - Export to DaVinci Resolve as a marker EDL, so they land on the editing timeline.
 
-## 4. Compress to a target size
-
-- A dedicated page in the sidebar, plus a button from the gallery and the player.
-- Size in MB, with presets (20 MB for Discord, 500 MB for Nitro) or a free value.
-- Bitrate computed from the size and the length; sound mixed into a single track.
-- If the target is too low for good quality, resolution and frame rate go down automatically.
-- The final size is checked, and the video is encoded again if it is over the target.
-- Also accepts a video dragged in from File Explorer.
-
-## 5. Capture and Audio in the sidebar
-
-- Capture and Audio become pages of their own: Status, Gallery, Capture, Audio, Settings.
-- A warning when leaving a page with a change that is not applied yet.
-- On the Status screen, the source and the audio tracks open these pages when clicked.
-
-## 6. Other leads, to be decided
+## 4. Other leads, to be decided
 
 - Signing the installer (Authenticode) so Windows SmartScreen no longer warns.
 - More interface languages than French and English.
@@ -58,6 +43,11 @@ PalaClips needs Windows 11 today. Windows 10 version 2004 (build 19041) and late
 
 ## Done
 
+- **Version 1.2.0**: Capture and Audio are pages of their own in the sidebar, with a warning
+  when leaving a page with a change not applied yet; the clip can keep recording up to 10 min
+  after the hotkey (another press extends it); videos are compressed to a target size (20 MB
+  Discord, 50 / 500 MB Nitro or any size) from the Compress page, the gallery, the player or by
+  dragging files from File Explorer.
 - **Encoding on the processor (1.1.0)**: when no hardware encoder works, PalaClips encodes on
   the processor, in H.264 with the encoder built into Windows or in AV1 with SVT-AV1, with a
   warning about the load in game. Choose it in Settings → Replay & quality → Encoder.
