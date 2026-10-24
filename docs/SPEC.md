@@ -129,17 +129,17 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | APP-11 | Installeur Windows (NSIS, par utilisateur, sans droits admin) ; la désinstallation conserve les clips. |
 | APP-12 | Panneau de performances : RAM/CPU du moteur, taille du buffer, images perdues, encodeur utilisé. |
 | APP-13 | Accessibilité : navigation clavier complète, contrastes conformes, `prefers-reduced-motion` respecté. |
-| APP-14 | Barre latérale (v1.2) : État, Galerie, Compression, Capture, Audio, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
+| APP-14 | Barre latérale (v1.2) : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
 
 ### 2.8 bis Compression (CMP, v1.2)
 
 | ID | Exigence |
 |---|---|
-| CMP-01 | Page **Compression** dans la barre latérale, bouton « Compresser » dans la galerie et le lecteur (sélection découpée comprise), glisser-déposer depuis l'Explorateur (mp4, mkv, mov…) avec un message clair si un fichier n'est pas lisible ; file de plusieurs fichiers. |
+| CMP-01 | Page **Compression** dans la barre latérale, bouton « Compresser » dans la galerie et le lecteur (sélection découpée comprise), glisser-déposer depuis l'Explorateur (mp4, mkv, mov…) avec un message clair si un fichier n'est pas lisible ; « Choisir des clips » (un ou plusieurs clips de la galerie) ; file de plusieurs fichiers. |
 | CMP-02 | Cible : 20 Mo (Discord), 50 Mo (Nitro Basic), 500 Mo (Nitro) ou valeur libre en Mo (1 Mo = 1 000 000 octets) ; le fichier livré n'est **jamais** au-dessus de la cible (taille mesurée, jusqu'à 3 essais). |
 | CMP-03 | Débit vidéo = (cible × marge − audio − surcoût du conteneur) / durée ; résolution (1440 → 1080 → 720 → 480) et fps (60 → 30) baissés quand le débit par pixel est trop bas ; aperçu modifiable (résolution, fps, débit, qualité estimée) avant de lancer. |
 | CMP-04 | H.264 par défaut, AV1 en option avec mise en garde (lecture mobile) ; encodeur matériel d'abord, repli sur le processeur ; HDR → SDR ; piste 1 seule par défaut, « Garder toutes les pistes » au choix. |
-| CMP-05 | Priorité basse, sans gêner le replay ni la partie ; progression, annulation propre sans fichier partiel. Fichier à côté de l'original (`…_20MB.mp4`), dans la galerie et le quota ; à la fin : taille finale, « Copier » (presse-papiers) et « Ouvrir le dossier ». |
+| CMP-05 | Priorité basse, sans gêner le replay ni la partie ; progression, annulation propre sans fichier partiel. Fichier à côté de l'original (`…_20MB.mp4`), dans la galerie et le quota ; original entier déjà sous la cible : copie sans réencodage ; à la fin : taille finale, « Copier » (presse-papiers) et « Ouvrir le dossier ». |
 
 ### 2.9 Performances (PERF) — mesurées sur la version installée, en release
 

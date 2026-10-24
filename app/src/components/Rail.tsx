@@ -7,9 +7,9 @@ export type View = "status" | "gallery" | "compress" | "capture" | "audio" | "se
 const ITEMS: { view: View; icon: LucideIcon }[] = [
   { view: "status", icon: Gauge },
   { view: "gallery", icon: Clapperboard },
-  { view: "compress", icon: Shrink },
   { view: "capture", icon: Monitor },
   { view: "audio", icon: AudioLines },
+  { view: "compress", icon: Shrink },
   { view: "settings", icon: SlidersHorizontal },
 ];
 

@@ -36,6 +36,7 @@ const FAIR_BPP: f64 = 0.07;
 const AV1_BPP_SCALE: f64 = 0.7;
 const AUDIO_TIERS: [(f64, u32); 2] = [(3_000.0, 128), (1_000.0, 96)];
 const AUDIO_FLOOR_KBPS: u32 = 64;
+const WHOLE_FILE_SLACK_SECS: f64 = 0.05;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -87,10 +88,15 @@ pub struct CompressPlan {
     pub video_kbps: u32,
     pub audio_kbps: u32,
     pub audio_tracks: usize,
+    #[serde(default)]
+    pub copy_bytes: Option<u64>,
 }
 
 impl CompressPlan {
     pub fn quality(&self, codec: CompressCodec) -> Quality {
+        if self.copy_bytes.is_some() {
+            return Quality::Good;
+        }
         let pixels = f64::from(self.width) * f64::from(self.height) * f64::from(self.fps.max(1));
         let bpp = f64::from(self.video_kbps) * 1_000.0 / pixels / codec.bpp_scale();
         if bpp >= GOOD_BPP {
@@ -103,6 +109,9 @@ impl CompressPlan {
     }
 
     pub fn estimated_bytes(&self, duration_secs: f64) -> u64 {
+        if let Some(bytes) = self.copy_bytes {
+            return bytes;
+        }
         let kbps =
             f64::from(self.video_kbps) + f64::from(self.audio_kbps) * self.audio_tracks as f64;
         let payload = kbps * 1_000.0 / 8.0 * duration_secs;
@@ -225,6 +234,18 @@ pub fn plan(
     }
     let source_kbps = source.size_bytes as f64 * 8.0 / source.duration_secs.max(0.1) / 1_000.0;
     let video_kbps = video.min(source_kbps.max(f64::from(MIN_VIDEO_KBPS))) as u32;
+    let whole = duration_secs >= source.duration_secs - WHOLE_FILE_SLACK_SECS;
+    if whole && source.size_bytes <= target_bytes {
+        return Ok(CompressPlan {
+            width: source.width,
+            height: source.height,
+            fps: (source.fps.round() as u32).max(1),
+            video_kbps: source_kbps as u32,
+            audio_kbps: 0,
+            audio_tracks: tracks,
+            copy_bytes: Some(source.size_bytes),
+        });
+    }
     let (height, fps) = size_and_fps(source, video_kbps, codec);
     Ok(CompressPlan {
         width: width_for(source, height),
@@ -233,6 +254,7 @@ pub fn plan(
         video_kbps,
         audio_kbps,
         audio_tracks: tracks,
+        copy_bytes: None,
     })
 }
 
@@ -343,6 +365,55 @@ pub fn compress(
         std::fs::create_dir_all(dir)?;
     }
     let mut plan = request.plan.clone();
+    if plan.copy_bytes.is_some() {
+        let copied = remux(
+            request,
+            &source,
+            &partial,
+            &mut |fraction| {
+                progress(CompressProgress {
+                    attempt: 1,
+                    fraction,
+                })
+            },
+            cancel,
+        );
+        match copied {
+            Err(EngineError::CompressCancelled) => {
+                std::fs::remove_file(&partial).ok();
+                return Err(EngineError::CompressCancelled);
+            }
+            Ok(()) if std::fs::metadata(&partial)?.len() <= request.target_bytes => {
+                let written = std::fs::metadata(&partial)?.len();
+                std::fs::rename(&partial, &request.output)?;
+                tracing::info!(written, "compression : copie sans réencodage");
+                return Ok(CompressResult {
+                    path: request.output.to_string_lossy().into_owned(),
+                    bytes: written,
+                    attempts: 0,
+                    plan,
+                });
+            }
+            result => {
+                if let Err(error) = result {
+                    tracing::warn!(%error, "copie sans réencodage impossible, réencodage");
+                }
+                std::fs::remove_file(&partial).ok();
+                let encoded_size = source.size_bytes.saturating_add(1);
+                let reencoded = SourceInfo {
+                    size_bytes: encoded_size,
+                    ..source.clone()
+                };
+                plan = self::plan(
+                    &reencoded,
+                    request.target_bytes,
+                    request.codec,
+                    request.all_tracks,
+                    duration,
+                )?;
+            }
+        }
+    }
     for attempt in 1..=MAX_ATTEMPTS {
         let encoded = Encode::open(request, &source, &plan, encoders, start, end, &partial)
             .and_then(|encode| {
@@ -382,6 +453,66 @@ pub fn compress(
         }
     }
     Err(EngineError::OverTarget)
+}
+
+fn remux(
+    request: &CompressRequest,
+    source: &SourceInfo,
+    partial: &Path,
+    progress: &mut dyn FnMut(f64),
+    cancel: &AtomicBool,
+) -> Result<()> {
+    let mut input = open_input(&request.source)?;
+    let mut specs = Vec::new();
+    let mut outputs = std::collections::HashMap::new();
+    let mut bases = Vec::new();
+    let mut audio = 0;
+    for (index, stream) in input.streams().iter().enumerate() {
+        let kind = stream.codecpar().codec_type;
+        let keep = if kind == ffi::AVMEDIA_TYPE_VIDEO {
+            !specs
+                .iter()
+                .any(|spec: &MuxStream| spec.frame_rate.is_some())
+        } else if kind == ffi::AVMEDIA_TYPE_AUDIO {
+            audio += 1;
+            request.all_tracks || audio == 1
+        } else {
+            false
+        };
+        if !keep {
+            continue;
+        }
+        let rate = stream.avg_frame_rate;
+        outputs.insert(index, specs.len());
+        bases.push(stream.time_base);
+        specs.push(MuxStream {
+            codec_parameters: stream.codecpar().clone(),
+            time_base: stream.time_base,
+            frame_rate: (kind == ffi::AVMEDIA_TYPE_VIDEO).then(|| {
+                if rate.num > 0 && rate.den > 0 {
+                    (rate.num / rate.den).max(1) as u32
+                } else {
+                    (source.fps.round() as u32).max(1)
+                }
+            }),
+            title: stream_title(stream),
+        });
+    }
+    let mut writer = Mp4Writer::create(partial, &specs)?;
+    while let Some(packet) = input.read_packet().map_err(ffmpeg_error)? {
+        if cancel.load(Ordering::Relaxed) {
+            return Err(EngineError::CompressCancelled);
+        }
+        let Some(output) = outputs.get(&(packet.stream_index as usize)).copied() else {
+            continue;
+        };
+        progress(
+            (seconds(packet.dts, bases[output]) / source.duration_secs.max(0.1)).clamp(0.0, 1.0),
+        );
+        writer.write(output, packet)?;
+    }
+    progress(1.0);
+    writer.finish()
 }
 
 fn lower_thread_priority() {
@@ -813,10 +944,52 @@ mod tests {
     }
 
     #[test]
-    fn a_source_already_small_is_not_inflated() -> Result<()> {
+    fn a_source_already_under_the_target_is_copied() -> Result<()> {
         let clip = source(1280, 720, 30.0, 10.0, 5);
-        let plan = plan(&clip, 500_000_000, CompressCodec::H264, false, 10.0)?;
-        assert!(plan.video_kbps <= 4_000, "{plan:?}");
+        let whole = plan(&clip, 500_000_000, CompressCodec::H264, false, 10.0)?;
+        assert_eq!(whole.copy_bytes, Some(5_000_000));
+        assert_eq!(whole.estimated_bytes(10.0), 5_000_000);
+        let part = plan(&clip, 500_000_000, CompressCodec::H264, false, 5.0)?;
+        assert_eq!(part.copy_bytes, None);
+        assert!(part.video_kbps <= 4_000, "{part:?}");
+        Ok(())
+    }
+
+    #[test]
+    fn a_copy_keeps_the_first_track_and_stays_under_the_target() -> Result<()> {
+        let dir =
+            std::env::temp_dir().join(format!("palaclips-compress-copy-{}", std::process::id()));
+        std::fs::remove_dir_all(&dir).ok();
+        std::fs::create_dir_all(&dir)?;
+        let input = dir.join("source.mp4");
+        super::super::export::file_tests::write_source(&input, 3);
+        let info = probe_source(&input)?;
+        let target = info.size_bytes + 1_000_000;
+        let plan = plan(
+            &info,
+            target,
+            CompressCodec::H264,
+            false,
+            info.duration_secs,
+        )?;
+        assert!(plan.copy_bytes.is_some());
+        let request = CompressRequest {
+            output: compressed_name(&input, target),
+            source: input,
+            target_bytes: target,
+            codec: CompressCodec::H264,
+            all_tracks: false,
+            start_secs: 0.0,
+            end_secs: None,
+            plan,
+        };
+        let result = compress(&request, &[], &mut |_| {}, &AtomicBool::new(false))?;
+        assert_eq!(result.attempts, 0);
+        assert!(result.bytes <= target);
+        let out = probe_source(&request.output)?;
+        assert_eq!(out.audio_tracks.len(), 1);
+        assert!((out.duration_secs - info.duration_secs).abs() < 0.1);
+        std::fs::remove_dir_all(&dir).ok();
         Ok(())
     }
 
@@ -829,6 +1002,7 @@ mod tests {
             video_kbps: 2_500,
             audio_kbps: 128,
             audio_tracks: 1,
+            copy_bytes: None,
         };
         let lower = retried_kbps(&plan, 21_000_000, 20_000_000, 60.0);
         assert!(lower < 2_500 && lower > 2_000, "{lower}");
@@ -867,6 +1041,7 @@ mod tests {
             video_kbps: kbps,
             audio_kbps: 128,
             audio_tracks: 1,
+            copy_bytes: None,
         };
         assert_eq!(plan(6_000).quality(CompressCodec::H264), Quality::Good);
         assert_eq!(plan(4_000).quality(CompressCodec::H264), Quality::Fair);
