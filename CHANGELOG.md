@@ -5,6 +5,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+### Ajouté
+- Lecteur : un clic ou un glisser sur n'importe quelle piste audio déplace la tête de lecture ;
+  elle se cale sur l'entrée et la sortie quand elle passe tout près, et suit l'entrée quand on
+  la déplace (GAL-03).
+
 ### Corrigé
 - Les sons de PalaClips (carillon de sauvegarde, début et fin d'enregistrement) n'entrent plus
   dans la piste 1 en mode « Audio du bureau » : sa source est « Tous les sons sauf PalaClips »
