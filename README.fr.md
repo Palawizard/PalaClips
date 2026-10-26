@@ -84,6 +84,10 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 |---|---|
 | ![La page Compression : taille cible, codec, file d'attente avec le plan de chaque clip](docs/screenshots/fr/compress.png) | ![Premier lancement, question de la durée du replay](docs/screenshots/fr/first-launch.png) |
 
+| Replay & qualité |
+|---|
+| ![Replay & qualité : taille d'un clip et Mo par minute, puis les réglages du replay, de l'enregistrement et communs](docs/screenshots/fr/replay-quality.png) |
+
 ## Configuration requise
 
 - Windows 11. Windows 10 n'est pas pris en charge : la capture du son par appli demande le

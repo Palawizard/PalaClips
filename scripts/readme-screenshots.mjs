@@ -4,8 +4,8 @@ import { connect } from "./cdp.mjs";
 
 const [port, outDir, mode, language = "fr", playerQuery = ""] = process.argv.slice(2);
 const LABELS = {
-  fr: { next: "Continuer", yes: "Oui", chosen: "Les pistes enregistrées", gallery: "Galerie", audio: "Audio", search: "Rechercher", compress: "Compresser", compressPage: "Compression" },
-  en: { next: "Continue", yes: "Yes", chosen: "Recorded tracks", gallery: "Gallery", audio: "Audio", search: "Search", compress: "Compress", compressPage: "Compress" },
+  fr: { next: "Continuer", yes: "Oui", chosen: "Les pistes enregistrées", gallery: "Galerie", audio: "Audio", search: "Rechercher", compress: "Compresser", compressPage: "Compression", settings: "Réglages" },
+  en: { next: "Continue", yes: "Yes", chosen: "Recorded tracks", gallery: "Gallery", audio: "Audio", search: "Search", compress: "Compress", compressPage: "Compress", settings: "Settings" },
 }[language];
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const cdp = await connect(port);
@@ -80,6 +80,9 @@ if (mode === "onboarding") {
   await click(LABELS.audio, "nav button");
   await sleep(3000);
   await shot("audio-sources");
+  await click(LABELS.settings, "nav button");
+  await sleep(2500);
+  await shot("replay-quality");
   await click(LABELS.gallery, "nav button");
   await waitFor("document.querySelectorAll('[data-clip]').length > 0", "galerie");
   await cdp.evaluate("document.querySelector('[aria-haspopup=menu]').click(), true");

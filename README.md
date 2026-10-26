@@ -82,6 +82,10 @@ Anti-Cheat.
 |---|---|
 | ![The Compress page: target size, codec, queue with each clip's plan](docs/screenshots/en/compress.png) | ![First launch, replay length question](docs/screenshots/en/first-launch.png) |
 
+| Replay & quality |
+|---|
+| ![Replay & quality: clip size and MB per minute, then the replay, recording and shared settings](docs/screenshots/en/replay-quality.png) |
+
 ## Requirements
 
 - Windows 11. Windows 10 isn't supported: per-app audio capture needs build 20348 or later.
