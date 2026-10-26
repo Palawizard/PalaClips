@@ -291,7 +291,7 @@ Recherche, mesures et décisions de Palawi : `docs/reports/v1.3-research.md`.
 - [x] Session de tests manuels de Palawi (T15, 2026-10-26, en jouant) : tout validé ; retours
       appliqués (résumé cliquable sur État au lieu d'un bouton à part, son au début et à la fin
       d'un enregistrement).
-- [ ] Release v1.3.0 (brouillon, puis accord de Palawi).
+- [x] Release v1.3.0 (#115, #116, publiée le 2026-10-26 avec l'accord de Palawi).
 
 Critères :
 - 🤖 Migration : un `settings.json` v1.2 garde le même comportement (`record.video` vide = qualité du
