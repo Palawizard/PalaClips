@@ -175,6 +175,10 @@ clip is ready to share as is. Your voice keeps its own track either way.
 tracks you picked. Turn on "Desktop audio" (Audio page) to have it contain everything
 you hear.
 
+**Do PalaClips sounds end up in my clips?** No. With "Desktop audio", the "All sounds except
+PalaClips" source (the default) leaves out the chime and the recording sounds. If you pick a
+specific output, track 1 records everything played on it, PalaClips sounds included.
+
 **Memory or disk for the replay?** In memory, nothing is written to the disk until you save,
 but the replay takes RAM (about 320 MB for one minute at 1440p; the estimate shows in
 Settings → Replay & quality). On disk, RAM stays free but the replay is written continuously;

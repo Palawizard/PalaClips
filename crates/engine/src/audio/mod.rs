@@ -20,6 +20,7 @@ pub enum AudioSource {
     SystemMix {
         device_id: Option<String>,
     },
+    DesktopExceptPalaClips,
     Microphone {
         device_id: Option<String>,
         gain_db: f32,
@@ -34,7 +35,9 @@ pub enum AudioSource {
 impl AudioSource {
     pub fn label(&self) -> String {
         match self {
-            Self::SystemMix { .. } | Self::TracksMix => "Mix complet".into(),
+            Self::SystemMix { .. } | Self::DesktopExceptPalaClips | Self::TracksMix => {
+                "Mix complet".into()
+            }
             Self::Microphone { .. } => "Micro".into(),
             Self::Application { exe_name } => exe_name
                 .strip_suffix(".exe")
@@ -47,7 +50,9 @@ impl AudioSource {
 
     pub fn kind(&self) -> TrackKind {
         match self {
-            Self::SystemMix { .. } | Self::TracksMix => TrackKind::Mix,
+            Self::SystemMix { .. } | Self::DesktopExceptPalaClips | Self::TracksMix => {
+                TrackKind::Mix
+            }
             Self::Microphone { .. } => TrackKind::Microphone,
             Self::Application { .. } => TrackKind::Application,
             Self::Game(_) => TrackKind::Game,

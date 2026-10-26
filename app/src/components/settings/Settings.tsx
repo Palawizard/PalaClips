@@ -131,16 +131,19 @@ export function Select<T extends string | number>({
   label,
   onChange,
   className = "min-w-40",
+  describedBy,
 }: {
   value: T;
   options: { value: T; label: string }[];
   label: string;
   onChange: (value: T) => void;
   className?: string;
+  describedBy?: string;
 }) {
   return (
     <select
       aria-label={label}
+      aria-describedby={describedBy}
       value={String(value)}
       onChange={(event) => {
         const picked = options.find((option) => String(option.value) === event.target.value);

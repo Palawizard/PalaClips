@@ -236,8 +236,12 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
     let mut sources = Vec::new();
     if audio.record_full_mix && audio.desktop_in_full_mix {
         sources.push((
-            AudioSource::SystemMix {
-                device_id: audio.output_device_id.clone(),
+            if audio.desktop_excludes_palaclips {
+                AudioSource::DesktopExceptPalaClips
+            } else {
+                AudioSource::SystemMix {
+                    device_id: audio.output_device_id.clone(),
+                }
             },
             audio.full_mix_title().to_owned(),
             audio.full_mix_sync_offset_ms,
@@ -275,9 +279,12 @@ pub fn audio_sources(config: &EngineConfig) -> Vec<(AudioSource, String, i32)> {
 }
 
 pub fn mixdowns(audio: &AudioSettings, sources: &[(AudioSource, String, i32)]) -> Vec<Mixdown> {
-    let desktop = sources
-        .iter()
-        .any(|(source, ..)| matches!(source, AudioSource::SystemMix { .. }));
+    let desktop = sources.iter().any(|(source, ..)| {
+        matches!(
+            source,
+            AudioSource::SystemMix { .. } | AudioSource::DesktopExceptPalaClips
+        )
+    });
     let feeds = |source: &AudioSource| match source.kind() {
         TrackKind::Microphone => audio.microphone_in_full_mix,
         TrackKind::Application | TrackKind::Game => !desktop,
@@ -1938,6 +1945,12 @@ mod tests {
             ["somme de 2", "dans la piste 1", "dans la piste 1"]
         );
         config.audio.desktop_in_full_mix = true;
+        assert!(matches!(
+            audio_sources(&config)[0].0,
+            AudioSource::DesktopExceptPalaClips
+        ));
+        assert_eq!(plan(&config), ["somme", "dans la piste 1", "seule"]);
+        config.audio.desktop_excludes_palaclips = false;
         assert!(matches!(
             audio_sources(&config)[0].0,
             AudioSource::SystemMix { .. }
