@@ -120,6 +120,9 @@ pub enum EngineError {
     #[error("ce fichier n'a pas de piste vidéo lisible")]
     NotAVideo,
 
+    #[error("ce fichier n'existe plus : il a été supprimé ou déplacé")]
+    FileMissing,
+
     #[error("cible trop petite pour cette durée : il faut au moins {min_mb} Mo")]
     TargetTooSmall { min_mb: u64 },
 
@@ -220,6 +223,7 @@ impl EngineError {
             Self::ExportCancelled => Localized::new("export_cancelled"),
             Self::CompressCancelled => Localized::new("compress_cancelled"),
             Self::NotAVideo => Localized::new("not_a_video"),
+            Self::FileMissing => Localized::new("file_missing"),
             Self::TargetTooSmall { min_mb } => {
                 Localized::new("target_too_small").with("min_mb", *min_mb)
             }

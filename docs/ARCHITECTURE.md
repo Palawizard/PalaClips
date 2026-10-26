@@ -375,8 +375,15 @@ de la config (`lib/useConfig.ts`), suivie par État, la galerie et chaque page (
 Événement Tauri `hotkeys-changed` (sans contenu) : les raccourcis ont changé ; État relit
 `get_hotkeys`.
 
-Événement Tauri `library-changed` (sans contenu) : la bibliothèque a changé (synchro au
-démarrage, surveillance du dossier, renommage, Corbeille, quota) ; la galerie relit `list_clips`.
+Événement Tauri `library-changed` (`{ removed: string[] }`) : la bibliothèque a changé (synchro
+au démarrage, surveillance du dossier, renommage, Corbeille, quota, changement de dossier) ;
+`removed` liste les clips disparus quand on les connaît (Corbeille, quota, fichiers absents d'un
+lot de la surveillance). Le front s'y abonne par `lib/library.ts` (`useLibraryChanges`, lots
+regroupés en 200 ms) : État relit `list_recent_clips` et `storage_status`, la galerie
+`list_clips` et ferme le lecteur si son clip est parti, le choix des clips à compresser se
+recharge et les brouillons de compression d'un fichier disparu passent en erreur. Toute action sur
+un clip connu dont le fichier n'existe plus (`known_clip`) répond `file_missing` et retire le clip
+de la bibliothèque, ce qui relance l'événement.
 
 `performance_stats { cpu_percent, cpu_max_percent, engine_bytes, buffer_bytes, buffered_secs,
 capture: { encoder, width, height, fps, repeated_percent, late_total, late_last_minute,
