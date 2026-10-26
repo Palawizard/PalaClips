@@ -68,9 +68,48 @@ pub struct ReplayArgs {
     pub record_split_minutes: Option<u32>,
     #[arg(long, help = "Enregistrement : nouveau fichier tous les N Mo")]
     pub record_split_mb: Option<u32>,
+    #[arg(
+        long,
+        help = "Enregistrement dans sa propre qualité : hauteur (0 = native)"
+    )]
+    pub record_height: Option<u32>,
+    #[arg(
+        long,
+        help = "Enregistrement dans sa propre qualité : images par seconde"
+    )]
+    pub record_fps: Option<u32>,
+    #[arg(long, value_parser = crate::parse_codec, help = "Enregistrement dans sa propre qualité : codec")]
+    pub record_codec: Option<palaclips_engine::config::VideoCodec>,
+    #[arg(long, help = "Enregistrement dans sa propre qualité : débit en Mb/s")]
+    pub record_bitrate_mbps: Option<u32>,
 }
 
 impl ReplayArgs {
+    fn record_video(&self) -> Option<palaclips_engine::config::RecordVideo> {
+        use palaclips_engine::config::{OutputResolution, RecordVideo, VideoQuality};
+        if self.record_height.is_none()
+            && self.record_fps.is_none()
+            && self.record_codec.is_none()
+            && self.record_bitrate_mbps.is_none()
+        {
+            return None;
+        }
+        let mut record = RecordVideo::from_video(&self.video.video_settings());
+        if let Some(height) = self.record_height {
+            record.resolution = match height {
+                0 => OutputResolution::Native,
+                height => OutputResolution::Height { height },
+            };
+        }
+        record.fps = self.record_fps.unwrap_or(record.fps);
+        record.codec = self.record_codec.unwrap_or(record.codec);
+        if let Some(mbps) = self.record_bitrate_mbps {
+            record.quality = VideoQuality::Custom;
+            record.bitrate_kbps = mbps * 1_000;
+        }
+        Some(record)
+    }
+
     fn config(&self) -> Result<EngineConfig> {
         let output_device_id = self
             .mix_device
@@ -117,11 +156,11 @@ impl ReplayArgs {
                     (None, Some(megabytes)) => RecordSplit::Size { megabytes },
                     (None, None) => RecordSplit::Never,
                 },
+                video: self.record_video(),
             },
             ..EngineConfig::default()
         };
         config.storage.clips_dir = self.clips_dir.clone();
-        config.audio.max_app_tracks = config.audio.max_app_tracks.max(self.apps.len());
         Ok(config)
     }
 }

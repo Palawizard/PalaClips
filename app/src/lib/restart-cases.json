@@ -9,7 +9,6 @@
       "game_exe": null,
       "game_label": null,
       "game_sync_offset_ms": 0,
-      "max_app_tracks": 6,
       "microphone_device_id": null,
       "microphone_gain_db": 0.0,
       "microphone_in_full_mix": true,
@@ -26,7 +25,8 @@
       "include_replay": false,
       "split": {
         "kind": "never"
-      }
+      },
+      "video": null
     },
     "replay": {
       "after_secs": 0,
@@ -246,6 +246,24 @@
         "storage": {
           "game_names": {
             "game.exe": "Game"
+          }
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "record_quality",
+      "after": {
+        "record": {
+          "video": {
+            "fps": 30,
+            "resolution": {
+              "kind": "height",
+              "height": 1080
+            },
+            "codec": "hevc",
+            "quality": "custom",
+            "bitrate_kbps": 20000
           }
         }
       },

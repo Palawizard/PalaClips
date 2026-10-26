@@ -1,4 +1,4 @@
-param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [string[]]$Copy = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$Tray)
+param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [string[]]$Copy = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$RightScreen, [switch]$Tray)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $running = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @('palaclips-app', 'PalaClips') }
@@ -26,11 +26,11 @@ foreach ($file in $Copy) {
     New-Item -ItemType Directory -Force $game | Out-Null
     Copy-Item -LiteralPath $item.FullName -Destination $game
 }
-if ($LeftScreen -or $MainScreen) {
+if ($LeftScreen -or $MainScreen -or $RightScreen) {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -Namespace Isolated -Name Dpi -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetProcessDPIAware();'
     [Isolated.Dpi]::SetProcessDPIAware() | Out-Null
-    $screen = if ($MainScreen) { [System.Windows.Forms.Screen]::PrimaryScreen } else { [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.X } | Select-Object -First 1 }
+    $screen = if ($MainScreen) { [System.Windows.Forms.Screen]::PrimaryScreen } elseif ($RightScreen) { [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.X } | Select-Object -Last 1 } else { [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.X } | Select-Object -First 1 }
     $env:PALACLIPS_TEST_WINDOW = "$($screen.WorkingArea.X + 40),$($screen.WorkingArea.Y + 40)"
 }
 $env:PALACLIPS_CONFIG_DIR = $dir

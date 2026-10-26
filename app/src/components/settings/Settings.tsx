@@ -198,7 +198,15 @@ export function NumberField({
   );
 }
 
-export function Settings({ section, onSection }: { section: SectionId; onSection: (section: SectionId) => void }) {
+export function Settings({
+  section,
+  focusKey,
+  onSection,
+}: {
+  section: SectionId;
+  focusKey: number;
+  onSection: (section: SectionId) => void;
+}) {
   const t = useT();
 
   return (
@@ -233,7 +241,7 @@ export function Settings({ section, onSection }: { section: SectionId; onSection
         </h2>
         {section === "hotkeys" && <HotkeysSection />}
         {section === "general" && <GeneralSection />}
-        {section === "replay" && <ReplaySection />}
+        {section === "replay" && <ReplaySection focusKey={focusKey} />}
         {section === "recording" && <RecordingSection />}
         {section === "storage" && <StorageSection />}
       </section>

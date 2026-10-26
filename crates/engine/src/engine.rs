@@ -14,9 +14,12 @@ use crate::calibrate::{
     Calibration, EMIT_SECONDS, TrackMeasurement, calibration_config, emit_flashes, measure_tracks,
     proposals, read_signals,
 };
-use crate::capture::{VideoCapture, VideoStream, target_size};
+use crate::capture::{VideoCapture, VideoOutput, VideoStream, target_size};
 use crate::clock::{HNS_PER_SECOND, Hns};
-use crate::config::{AudioSettings, CaptureTarget, EngineConfig, RecordSplit, ReplayStorage};
+use crate::config::{
+    AudioSettings, CaptureTarget, EncoderChoice, EngineConfig, RecordSplit, ReplayStorage,
+    VideoSettings,
+};
 use crate::encode::{
     EncoderInfo, Size, output_size, pick_encoder, try_output, video_encoders, write_thumbnail,
 };
@@ -32,8 +35,8 @@ use crate::record::{
 };
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, PostRollCut, ReplayPacket, Spool, TimedPacket,
-    buffer_memory_bytes, buffer_window, estimate_buffer_bytes, forget_saved, plan_clip,
-    share_packet,
+    buffer_memory_bytes, buffer_window, estimate_buffer_bytes, estimate_file_bytes, forget_saved,
+    plan_clip, share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -354,6 +357,7 @@ pub struct ReplayEstimate {
     pub video_kbps: u32,
     pub audio_tracks: usize,
     pub bytes: u64,
+    pub file_bytes_per_minute: u64,
 }
 
 pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
@@ -369,6 +373,7 @@ pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
         video_kbps,
         audio_tracks,
         bytes: estimate_buffer_bytes(video_kbps, audio_tracks, ring_window(config)),
+        file_bytes_per_minute: estimate_file_bytes(video_kbps, audio_tracks, 60.0),
     })
 }
 
@@ -535,7 +540,11 @@ impl Core {
     }
 
     fn arm(&mut self) {
-        if let Err(error) = self.try_arm() {
+        self.arm_as(false);
+    }
+
+    fn arm_as(&mut self, recording_only: bool) {
+        if let Err(error) = self.try_arm_as(recording_only) {
             tracing::error!(%error, "armement du replay impossible");
             self.alert(
                 Severity::Error,
@@ -546,10 +555,22 @@ impl Core {
     }
 
     fn try_arm(&mut self) -> Result<()> {
+        self.try_arm_as(false)
+    }
+
+    fn try_arm_as(&mut self, recording_only: bool) -> Result<()> {
         if self.pipeline.is_some() {
             return Ok(());
         }
-        let mut pipeline = Pipeline::start(&self.config, &self.events)?;
+        let mut pipeline = if recording_only {
+            let config = EngineConfig {
+                video: self.config.record_video(),
+                ..self.config.clone()
+            };
+            Pipeline::start(&config, &self.events)?
+        } else {
+            Pipeline::start(&self.config, &self.events)?
+        };
         pipeline.set_level_interval(self.level_rate.interval());
         pipeline.set_performance(self.performance.is_some());
         self.pipeline = Some(pipeline);
@@ -622,7 +643,8 @@ impl Core {
             return;
         }
         let replay_was_armed = self.pipeline.is_some();
-        self.arm();
+        self.arm_as(true);
+        let separate = replay_was_armed && self.config.records_separately();
         let exe_name = self.pipeline.as_ref().and_then(Pipeline::game_exe);
         let game = self.game_name(exe_name.as_deref());
         let root = match &self.config.storage.clips_dir {
@@ -630,22 +652,31 @@ impl Core {
             None => paths::default_clips_dir(),
         }
         .and_then(|root| ensure_free_space(&root, 0).map(|_| root));
-        let duration = (self.config.record.include_replay && replay_was_armed)
+        let include_replay = self.config.record.include_replay && replay_was_armed;
+        let duration = (include_replay && !separate)
             .then(|| Hns(i64::from(self.config.replay.duration_secs) * HNS_PER_SECOND));
         let result = match (self.pipeline.as_mut(), root) {
             (None, _) => return,
             (Some(_), Err(error)) => Err(error),
-            (Some(pipeline), Ok(root)) => pipeline.request_recording(
-                RecordTarget {
+            (Some(pipeline), Ok(root)) => {
+                let target = RecordTarget {
                     root,
-                    game,
+                    game: game.clone(),
                     split: self.config.record.split,
                     kind: RecordKind::Recording,
-                },
-                &self.config,
-                duration,
-                &self.events,
-            ),
+                };
+                if separate {
+                    if include_replay
+                        && let Err(error) =
+                            pipeline.save(Hns::now(), &game, &self.config, &self.events)
+                    {
+                        tracing::info!(%error, "replay en cours non sauvegardé avant l'enregistrement");
+                    }
+                    pipeline.request_separate_recording(target, &self.config, &self.events)
+                } else {
+                    pipeline.request_recording(target, &self.config, duration, &self.events)
+                }
+            }
         };
         if let Err(error) = result {
             tracing::error!(%error, "enregistrement impossible");
@@ -939,9 +970,17 @@ struct Pipeline {
     next_stats: Hns,
     recorder: Option<Recorder>,
     pending_record: Option<PendingRecord>,
+    record_output: Option<RecordOutput>,
     post_roll: Option<PostRoll>,
     encoder: String,
+    encoders: Vec<EncoderInfo>,
     performance: Option<(ProcessUsage, FrameHistory)>,
+}
+
+struct RecordOutput {
+    output: VideoOutput,
+    time_base: AVRational,
+    pending: Option<PendingRecord>,
 }
 
 struct PostRoll {
@@ -1054,10 +1093,121 @@ impl Pipeline {
             next_stats: Hns::now() + STATS_INTERVAL,
             recorder: None,
             pending_record: None,
+            record_output: None,
             post_roll: None,
             encoder: encoder.name.clone(),
+            encoders: encoders.clone(),
             performance: None,
         })
+    }
+
+    fn request_separate_recording(
+        &mut self,
+        target: RecordTarget,
+        config: &EngineConfig,
+        events: &Sender<EngineEvent>,
+    ) -> Result<()> {
+        let settings = config.record_video();
+        let opened = pick_encoder(&self.encoders, settings.codec, settings.encoder)
+            .and_then(|encoder| self.capture.add_output(&settings, &encoder.name));
+        let output = match opened {
+            Ok(output) => output,
+            Err(error) if settings.encoder != EncoderChoice::Cpu => {
+                tracing::warn!(%error, "2e encodage refusé par la carte graphique : enregistrement sur le processeur");
+                let cpu = VideoSettings {
+                    encoder: EncoderChoice::Cpu,
+                    ..settings
+                };
+                let encoder = pick_encoder(&self.encoders, cpu.codec, cpu.encoder)?;
+                let output = self.capture.add_output(&cpu, &encoder.name)?;
+                events
+                    .try_send(EngineEvent::Alert {
+                        severity: Severity::Warning,
+                        text: Localized::new("record_encoder_cpu").with("reason", error.localized()),
+                        message: format!(
+                            "La carte graphique a refusé un 2e encodage ({error}) : l'enregistrement est encodé par le processeur."
+                        ),
+                    })
+                    .ok();
+                output
+            }
+            Err(error) => return Err(error),
+        };
+        let stream = output.stream().clone();
+        let mut layout = self.record_layout(config);
+        layout.specs[0] = MuxStream {
+            codec_parameters: stream.codec_parameters.clone(),
+            time_base: stream.time_base,
+            frame_rate: Some(stream.fps),
+            title: None,
+        };
+        layout.time_bases[0] = stream.time_base;
+        layout.frame = Hns(HNS_PER_SECOND / i64::from(stream.fps));
+        tracing::info!(
+            width = stream.size.width,
+            height = stream.size.height,
+            fps = stream.fps,
+            "enregistrement dans sa propre qualité : 2e encodage"
+        );
+        self.record_output = Some(RecordOutput {
+            output,
+            time_base: stream.time_base,
+            pending: Some(PendingRecord {
+                target,
+                layout,
+                events: events.clone(),
+            }),
+        });
+        Ok(())
+    }
+
+    fn store_record(&mut self, packet: AVPacket) -> Result<()> {
+        let Some(record) = self.record_output.as_mut() else {
+            return Ok(());
+        };
+        let pts = Hns((i128::from(packet.pts)
+            * i128::from(HNS_PER_SECOND)
+            * i128::from(record.time_base.num)
+            / i128::from(record.time_base.den)) as i64);
+        let keyframe = packet.flags & AV_PKT_FLAG_KEY as i32 != 0;
+        if let Some(recorder) = &self.recorder {
+            recorder.send(LivePacket {
+                stream: 0,
+                pts,
+                keyframe,
+                packet,
+            });
+            return Ok(());
+        }
+        if keyframe && let Some(pending) = record.pending.take() {
+            self.recorder = Some(self.spawn_separate_recorder(pending, pts, packet)?);
+        }
+        Ok(())
+    }
+
+    fn spawn_separate_recorder(
+        &mut self,
+        pending: PendingRecord,
+        start: Hns,
+        first: AVPacket,
+    ) -> Result<Recorder> {
+        if let Some(spool) = self.spool.as_mut() {
+            spool.flush()?;
+        }
+        let mut backlog = vec![(start, 0, ReplayPacket::in_ram(first, start, true))];
+        for (index, ring) in self.rings.iter().enumerate().skip(1) {
+            for packet in ring.iter_from(ring.index_at_or_before(start)) {
+                backlog.push((packet.pts(), index, packet.share()?));
+            }
+        }
+        backlog.sort_by_key(|(pts, stream, _)| (*pts, *stream));
+        Recorder::start(
+            pending.target,
+            pending.layout,
+            start,
+            backlog,
+            pending.events,
+        )
     }
 
     fn request_recording(
@@ -1219,13 +1369,21 @@ impl Pipeline {
 
     fn stop_recording(&mut self) {
         self.pending_record = None;
-        if let Some(recorder) = self.recorder.take() {
-            let stopped = std::thread::Builder::new()
-                .name("palaclips-record-stop".into())
-                .spawn(move || recorder.stop());
-            if let Err(error) = stopped {
-                tracing::warn!(%error, "fin de l'enregistrement sur le fil du moteur");
-            }
+        let record_output = self.record_output.take();
+        let recorder = self.recorder.take();
+        if recorder.is_none() && record_output.is_none() {
+            return;
+        }
+        let stopped = std::thread::Builder::new()
+            .name("palaclips-record-stop".into())
+            .spawn(move || {
+                drop(record_output);
+                if let Some(recorder) = recorder {
+                    recorder.stop();
+                }
+            });
+        if let Err(error) = stopped {
+            tracing::warn!(%error, "fin de l'enregistrement sur le fil du moteur");
         }
     }
 
@@ -1244,6 +1402,17 @@ impl Pipeline {
         for alert in &alerts {
             select.recv(alert);
         }
+        let record = self.record_output.as_ref().map(|record| {
+            (
+                record.output.packets().clone(),
+                record.output.alerts().clone(),
+            )
+        });
+        let record_index = 1 + receivers.len() + alerts.len();
+        if let Some((packets, record_alerts)) = &record {
+            select.recv(packets);
+            select.recv(record_alerts);
+        }
         loop {
             if self
                 .recorder
@@ -1253,6 +1422,7 @@ impl Pipeline {
                 if let Some(recorder) = self.recorder.take() {
                     recorder.stop();
                 }
+                self.record_output = None;
                 return Ok(Some(Command::RecordingEnded));
             }
             let now = Hns::now();
@@ -1268,6 +1438,38 @@ impl Pipeline {
             let index = operation.index();
             if index == 0 {
                 return Ok(operation.recv(commands).ok());
+            }
+            if let Some((packets, record_alerts)) = &record
+                && index >= record_index
+            {
+                if index == record_index {
+                    match operation.recv(packets) {
+                        Ok(packet) => self.store_record(packet)?,
+                        Err(_) => {
+                            tracing::error!(
+                                "le 2e encodage s'est arrêté : fin de l'enregistrement"
+                            );
+                            events
+                                .try_send(EngineEvent::Alert {
+                                    severity: Severity::Error,
+                                    text: Localized::new("recording_failed").with(
+                                        "reason",
+                                        EngineError::VideoCaptureStopped.localized(),
+                                    ),
+                                    message: "Enregistrement arrêté : le 2e encodage s'est arrêté."
+                                        .into(),
+                                })
+                                .ok();
+                            self.stop_recording();
+                            return Ok(Some(Command::RecordingEnded));
+                        }
+                    }
+                } else if let Ok(alert) = operation.recv(record_alerts) {
+                    events.try_send(alert).ok();
+                } else {
+                    select.remove(index);
+                }
+                continue;
             }
             let stream = index - 1;
             if let Some(receiver) = receivers.get(stream) {
@@ -1302,8 +1504,8 @@ impl Pipeline {
             / i128::from(time_base.den)) as i64);
         let keyframe = stream > 0 || packet.flags & AV_PKT_FLAG_KEY as i32 != 0;
         let live = match &self.recorder {
-            Some(_) => Some(share_packet(&packet)?),
-            None => None,
+            Some(_) if stream > 0 || self.record_output.is_none() => Some(share_packet(&packet)?),
+            _ => None,
         };
         let admitted = self
             .post_roll
