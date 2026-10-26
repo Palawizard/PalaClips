@@ -5,6 +5,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.3.1] - 2026-10-26
+
 ### Ajouté
 - Lecteur : un clic ou un glisser sur n'importe quelle piste audio déplace la tête de lecture ;
   elle se cale sur l'entrée et la sortie quand elle passe tout près, et suit l'entrée quand on

@@ -3012,7 +3012,7 @@ dependencies = [
 
 [[package]]
 name = "palaclips-app"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "palaclips-engine",
  "serde",
@@ -3033,7 +3033,7 @@ dependencies = [
 
 [[package]]
 name = "palaclips-cli"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -3049,7 +3049,7 @@ dependencies = [
 
 [[package]]
 name = "palaclips-engine"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "crossbeam-channel",
  "notify",
