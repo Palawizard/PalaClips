@@ -3,6 +3,8 @@ pub mod audio;
 pub mod calibrate;
 #[cfg(windows)]
 pub mod capture;
+#[cfg(windows)]
+pub mod chime;
 pub mod clock;
 pub mod config;
 #[cfg(windows)]
