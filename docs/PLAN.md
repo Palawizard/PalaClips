@@ -273,6 +273,27 @@ Critères :
 - 👤 « Après » en jeu, clip compressé envoyé dans Discord en 20 Mo et 500 Mo, glisser-déposer,
   alerte de sortie de page ; images extraites jugées correctes.
 
+## v1.3.1 — Sons de PalaClips hors des clips, listes de clips à jour, déplacement dans le lecteur (AUD-01, GAL-03)
+
+- [x] Sons de PalaClips dans la piste 1 en mode « Audio du bureau » : vérifiés par la CLI,
+      recherche et mesures de l'exclusion, choix de Palawi (source au choix, « Tous les sons sauf
+      PalaClips » par défaut), correctif (#118, ADR-041, `docs/reports/v1.3.1-feedback-sounds.md`).
+- [x] « Derniers clips » et autres listes suivent la bibliothèque, fichier disparu → message et
+      carte retirée (#119).
+- [x] Lecteur : clic et glisser sur les pistes, calage sur l'entrée et la sortie, tête qui suit
+      l'entrée (#120, demande de Palawi pendant sa session).
+- [x] Session de Palawi (2026-10-26) : suppression depuis la galerie et l'Explorateur → État à
+      jour ; clip avec « après » et enregistrement → aucun son de PalaClips dans Mix complet.
+- [ ] Release v1.3.1 : brouillon vérifié, publication seulement avec l'accord de Palawi.
+
+Critères :
+- 🤖 Aucun son de PalaClips dans aucune piste avec « Tous les sons sauf PalaClips », témoin d'un
+  autre processus présent (`scripts/feedback-sounds.ps1`) ; synchro A/V mesurée
+  (`scripts/record-quality.ps1 -AvSync`).
+- 🤖 Listes à jour dans les 8 cas (`scripts/library-refresh.ps1`), vitest et test moteur.
+- 🤖 Interface en sombre et en clair, 100 % et 150 %, clavier, glisser (`scripts/ui-check.ps1`).
+- 👤 Session courte de Palawi (ci-dessus).
+
 ## v1.3 — Correctif des réglages, qualité de l'enregistrement, taille des clips, pistes sans maximum (APP-15, AUD-03, REC-02, REC-04, REC-07, RPL-11)
 
 Recherche, mesures et décisions de Palawi : `docs/reports/v1.3-research.md`.
