@@ -417,6 +417,10 @@ fn main() -> Result<()> {
             );
             let bytes = estimate_buffer_bytes(video_kbps, audio_tracks, window);
             println!("≈ {:.0} Mo", bytes as f64 / 1_000_000.0);
+            println!(
+                "fichier : {} octets par minute",
+                palaclips_engine::replay::estimate_file_bytes(video_kbps, audio_tracks, 60.0)
+            );
         }
         #[cfg(windows)]
         Command::RecentClips { clips_dir, limit } => {
@@ -924,6 +928,48 @@ struct CaptureArgs {
     seconds: u64,
     #[arg(long)]
     out: std::path::PathBuf,
+    #[arg(
+        long,
+        help = "2e encodage de la même capture, vidéo seule, dans ce fichier"
+    )]
+    also_out: Option<std::path::PathBuf>,
+    #[arg(long, help = "Hauteur du 2e encodage ; absente = native")]
+    also_height: Option<u32>,
+    #[arg(
+        long,
+        help = "Images par seconde du 2e encodage ; absent = comme le 1er"
+    )]
+    also_fps: Option<u32>,
+    #[arg(long, help = "Débit du 2e encodage en Mb/s ; absent = préréglage")]
+    also_bitrate_mbps: Option<u32>,
+    #[arg(long, value_parser = parse_codec, help = "Codec du 2e encodage ; absent = comme le 1er")]
+    also_codec: Option<VideoCodec>,
+    #[arg(long, value_parser = parse_encoder, help = "Encodeur du 2e encodage : auto, materiel ou cpu")]
+    also_encoder: Option<EncoderChoice>,
+}
+
+#[cfg(windows)]
+impl CaptureArgs {
+    fn also_settings(&self) -> VideoSettings {
+        let first = self.video.video_settings();
+        VideoSettings {
+            fps: self.also_fps.unwrap_or(first.fps),
+            resolution: self.also_height.map_or(OutputResolution::Native, |height| {
+                OutputResolution::Height { height }
+            }),
+            codec: self.also_codec.unwrap_or(first.codec),
+            encoder: self.also_encoder.unwrap_or(first.encoder),
+            quality: if self.also_bitrate_mbps.is_some() {
+                VideoQuality::Custom
+            } else {
+                first.quality
+            },
+            bitrate_kbps: self
+                .also_bitrate_mbps
+                .map_or(first.bitrate_kbps, |mbps| mbps * 1_000),
+            ..first
+        }
+    }
 }
 
 #[cfg(windows)]
@@ -1008,6 +1054,41 @@ fn run_capture(
         println!("{message}");
     }
     let stream = capture.stream().clone();
+    let also = match &args.also_out {
+        Some(path) => {
+            let settings = args.also_settings();
+            let name = pick_encoder(&encoders, settings.codec, settings.encoder)?
+                .name
+                .clone();
+            let output = capture.add_output(&settings, &name)?;
+            let second = output.stream().clone();
+            println!(
+                "2e encodage : {name} → {}x{} @ {} i/s → {}",
+                second.size.width,
+                second.size.height,
+                second.fps,
+                path.display()
+            );
+            let mut writer = Mp4Writer::create(
+                path,
+                &[MuxStream {
+                    codec_parameters: second.codec_parameters.clone(),
+                    time_base: second.time_base,
+                    frame_rate: Some(second.fps),
+                    title: None,
+                }],
+            )?;
+            let packets = output.packets().clone();
+            let thread = std::thread::spawn(move || -> Result<Mp4Writer> {
+                for packet in packets {
+                    writer.write(0, packet)?;
+                }
+                Ok(writer)
+            });
+            Some((output, thread))
+        }
+        None => None,
+    };
     let tracks = audio
         .into_iter()
         .enumerate()
@@ -1089,6 +1170,20 @@ fn run_capture(
     }
     let remaining = (end - half_frame - Hns::now()).0.max(0) as u64;
     std::thread::sleep(std::time::Duration::from_nanos(remaining * 100));
+    if let Some((output, thread)) = also {
+        let stats = output.stop()?;
+        thread
+            .join()
+            .map_err(|_| anyhow::anyhow!("le fil d'écriture du 2e encodage a paniqué"))??
+            .finish()?;
+        println!(
+            "2e encodage : {} images ({} dupliquées, {} en retard, retard max {:.2} ms)",
+            stats.frames,
+            stats.duplicated,
+            stats.late,
+            stats.max_lateness.0 as f64 / 10_000.0
+        );
+    }
     let stats = capture.stop()?;
     let mut track_reports = Vec::new();
     for track in tracks {

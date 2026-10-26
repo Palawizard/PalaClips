@@ -6,7 +6,8 @@ param(
     [string]$PresentMon = "C:\Program Files (x86)\CapFrameX\PresentMon\PresentMon-2.4.1-x64.exe",
     [string]$Name = "fps-impact",
     [switch]$CapturePriority,
-    [switch]$Cpu
+    [switch]$Cpu,
+    [switch]$Dual
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,6 +23,10 @@ function Write-Journal([string]$Line) {
     $Line | Tee-Object -FilePath $journal -Append | Write-Host
 }
 
+function Get-PrivateBytes([int]$ProcessId) {
+    [double](Get-CimInstance Win32_PerfFormattedData_PerfProc_Process -Filter "IDProcess=$ProcessId" -ErrorAction SilentlyContinue).WorkingSetPrivate
+}
+
 function Measure-Fps([string]$Label, [string[]]$CliArguments) {
     $csv = Join-Path $work "$($Label -replace '\W', '_').csv"
     $capture = $null
@@ -30,11 +35,18 @@ function Measure-Fps([string]$Label, [string[]]$CliArguments) {
         Start-Sleep -Seconds 3
     }
     $gpuLog = "$csv.gpu"
-    $gpu = Start-Process nvidia-smi -ArgumentList "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits", "-lms", "500" -PassThru -WindowStyle Hidden -RedirectStandardOutput $gpuLog -ErrorAction SilentlyContinue
+    $gpu = Start-Process nvidia-smi -ArgumentList "--query-gpu=utilization.gpu,utilization.encoder,memory.used", "--format=csv,noheader,nounits", "-lms", "500" -PassThru -WindowStyle Hidden -RedirectStandardOutput $gpuLog -ErrorAction SilentlyContinue
+    $memory = @()
+    if ($capture) { $memory += Get-PrivateBytes $capture.Id }
     & $PresentMon --process_name $Game --timed $Seconds --terminate_after_timed --output_file $csv --no_console_stats --stop_existing_session --v1_metrics | Out-Null
     if ($gpu) { Stop-Process -Id $gpu.Id -Force -ErrorAction SilentlyContinue }
-    $gpuSamples = @(Get-Content $gpuLog -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*\d+\s*$' } | ForEach-Object { [double]$_ })
-    $gpuBusy = if ($gpuSamples) { "GPU {0:N0} %" -f ($gpuSamples | Measure-Object -Average).Average } else { "GPU ?" }
+    if ($capture -and -not $capture.HasExited) { $memory += Get-PrivateBytes $capture.Id }
+    $gpuRows = @(Get-Content $gpuLog -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\s*\d+\s*,\s*\d+\s*,\s*\d+\s*$' } | ForEach-Object { , ($_ -split ',' | ForEach-Object { [double]$_.Trim() }) })
+    $gpuBusy = if ($gpuRows) {
+        "GPU {0:N0} %, NVENC {1:N0} %, VRAM {2:N0} Mio" -f ($gpuRows | ForEach-Object { $_[0] } | Measure-Object -Average).Average, ($gpuRows | ForEach-Object { $_[1] } | Measure-Object -Average).Average, ($gpuRows | ForEach-Object { $_[2] } | Measure-Object -Average).Average
+    } else { "GPU ?" }
+    $memory = @($memory | Where-Object { $_ })
+    if ($memory) { $gpuBusy += ", mémoire privée {0:N0} Mo" -f (($memory | Measure-Object -Average).Average / 1MB) }
     if ($capture) {
         if (-not $capture.WaitForExit(($Seconds + 30) * 1000)) { Stop-Process -Id $capture.Id -Force }
     }
@@ -64,7 +76,7 @@ $video = @("--bitrate-mbps", "$BitrateMbps", "--seconds", "$($Seconds + 6)", "--
 if ($CapturePriority) { $video += "--capture-priority" }
 $cpuVideo = @("--encoder", "cpu", "--fps", "30", "--seconds", "$($Seconds + 6)", "--out", $out)
 try {
-    Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents), priorité GPU $(if ($CapturePriority) { 'capture (temps réel)' } else { 'jeu (normale)' }), encodeur $(if ($Cpu) { 'processeur (débit Équilibré)' } else { 'matériel' }) ; ne pas bouger"
+    Write-Journal "$(Get-Date -Format s) $Name : $Game, $Seconds s par essai, PresentMon (MsBetweenPresents), priorité GPU $(if ($CapturePriority) { 'capture (temps réel)' } else { 'jeu (normale)' }), encodeur $(if ($Cpu) { 'processeur (débit Équilibré)' } elseif ($Dual) { 'matériel, un puis deux encodages' } else { 'matériel' }) ; ne pas bouger"
     $null = Measure-Fps "mise en route (non comptée)" @()
     $runs = @(
         @{ Label = "fenêtre 60 i/s"; Arguments = (@("capture-video", "--target", $target, "--fps", "60") + $video) }
@@ -79,6 +91,16 @@ try {
             @{ Label = "CPU AV1 1080p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "1080", "--codec", "av1", "--mic", "--game", "--app", $App) + $cpuVideo) }
             @{ Label = "CPU H.264 720p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "720", "--codec", "h264", "--mic", "--game", "--app", $App) + $cpuVideo) }
             @{ Label = "GPU NVENC 1080p30 + 4 pistes"; Arguments = (@("capture-apps", "--target", "primary", "--height", "1080", "--fps", "30", "--encoder", "materiel", "--mic", "--game", "--app", $App, "--seconds", "$($Seconds + 6)", "--out", $out)) }
+        )
+    }
+    if ($Dual) {
+        $also = Join-Path $work "also.mp4"
+        $single = @("capture-video", "--target", "primary", "--fps", "60") + $video
+        $runs = @(
+            @{ Label = "1440p60 seul"; Arguments = $single }
+            @{ Label = "1440p60 + 2e 1080p30 20 Mb/s"; Arguments = ($single + @("--also-out", $also, "--also-height", "1080", "--also-fps", "30", "--also-bitrate-mbps", "20")) }
+            @{ Label = "1440p60 + 2e 1440p60 60 Mb/s"; Arguments = ($single + @("--also-out", $also, "--also-bitrate-mbps", "60")) }
+            @{ Label = "1440p60 + 2e 1080p60 HEVC"; Arguments = ($single + @("--also-out", $also, "--also-height", "1080", "--also-codec", "hevc", "--also-bitrate-mbps", "20")) }
         )
     }
     $before = Measure-Fps "sans capture 1" @()

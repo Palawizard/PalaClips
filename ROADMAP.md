@@ -43,6 +43,9 @@ PalaClips needs Windows 11 today. Windows 10 version 2004 (build 19041) and late
 
 ## Done
 
+- **Version 1.3.0**: the recording can have its own quality while the replay keeps running;
+  Replay & quality estimates the size of clips and recordings; no more maximum of app tracks;
+  settings changes show at once everywhere in the app.
 - **Version 1.2.0**: Capture and Audio are pages of their own in the sidebar, with a warning
   when leaving a page with a change not applied yet; the clip can keep recording up to 10 min
   after the hotkey (another press extends it); videos are compressed to a target size (20 MB

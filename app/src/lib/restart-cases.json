@@ -1,0 +1,273 @@
+{
+  "base": {
+    "audio": {
+      "app_tracks": [],
+      "auto_game_track": true,
+      "desktop_in_full_mix": false,
+      "full_mix_label": null,
+      "full_mix_sync_offset_ms": 0,
+      "game_exe": null,
+      "game_label": null,
+      "game_sync_offset_ms": 0,
+      "microphone_device_id": null,
+      "microphone_gain_db": 0.0,
+      "microphone_in_full_mix": true,
+      "microphone_label": null,
+      "microphone_sync_offset_ms": 0,
+      "output_device_id": null,
+      "record_full_mix": true,
+      "record_microphone": true
+    },
+    "capture": {
+      "kind": "primary_monitor"
+    },
+    "record": {
+      "include_replay": false,
+      "split": {
+        "kind": "never"
+      },
+      "video": null
+    },
+    "replay": {
+      "after_secs": 0,
+      "arm_on_startup": true,
+      "duration_secs": 60,
+      "storage": "ram"
+    },
+    "schema_version": 1,
+    "storage": {
+      "clips_dir": null,
+      "game_names": {},
+      "quota_gb": null
+    },
+    "video": {
+      "bitrate_kbps": 40000,
+      "capture_cursor": true,
+      "codec": "h264",
+      "draw_border": false,
+      "encoder": "auto",
+      "fps": 60,
+      "gpu_priority": "game",
+      "keyframe_interval_secs": 1.0,
+      "quality": "balanced",
+      "resolution": {
+        "kind": "native"
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "replay_duration",
+      "after": {
+        "replay": {
+          "duration_secs": 120
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "after_press",
+      "after": {
+        "replay": {
+          "after_secs": 30
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "arm_on_startup",
+      "after": {
+        "replay": {
+          "arm_on_startup": false
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "buffer_on_disk",
+      "after": {
+        "replay": {
+          "storage": "disk"
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "fps",
+      "after": {
+        "video": {
+          "fps": 120
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "quality",
+      "after": {
+        "video": {
+          "quality": "light"
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "resolution",
+      "after": {
+        "video": {
+          "resolution": {
+            "kind": "height",
+            "height": 1080
+          }
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "gpu_priority",
+      "after": {
+        "video": {
+          "gpu_priority": "capture"
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "encoder",
+      "after": {
+        "video": {
+          "encoder": "cpu"
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "capture_window",
+      "after": {
+        "capture": {
+          "kind": "window",
+          "exe_name": "game.exe",
+          "title_hint": null
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "mix_renamed",
+      "after": {
+        "audio": {
+          "full_mix_label": "Tout"
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "mic_gain",
+      "after": {
+        "audio": {
+          "microphone_gain_db": 3.0
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "mix_offset",
+      "after": {
+        "audio": {
+          "full_mix_sync_offset_ms": -100
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "app_track_added",
+      "after": {
+        "audio": {
+          "app_tracks": [
+            {
+              "exe_name": "discord.exe",
+              "label": "Discord",
+              "enabled": true,
+              "sync_offset_ms": 0
+            }
+          ]
+        }
+      },
+      "restarts": true
+    },
+    {
+      "name": "app_track_renamed",
+      "before": {
+        "audio": {
+          "app_tracks": [
+            {
+              "exe_name": "discord.exe",
+              "label": "Discord",
+              "enabled": true,
+              "sync_offset_ms": 0
+            }
+          ]
+        }
+      },
+      "after": {
+        "audio": {
+          "app_tracks": [
+            {
+              "exe_name": "discord.exe",
+              "label": "Amis",
+              "enabled": true,
+              "sync_offset_ms": 0
+            }
+          ]
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "record_include_replay",
+      "after": {
+        "record": {
+          "include_replay": true
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "quota",
+      "after": {
+        "storage": {
+          "quota_gb": 50
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "game_named",
+      "after": {
+        "storage": {
+          "game_names": {
+            "game.exe": "Game"
+          }
+        }
+      },
+      "restarts": false
+    },
+    {
+      "name": "record_quality",
+      "after": {
+        "record": {
+          "video": {
+            "fps": 30,
+            "resolution": {
+              "kind": "height",
+              "height": 1080
+            },
+            "codec": "hevc",
+            "quality": "custom",
+            "bitrate_kbps": 20000
+          }
+        }
+      },
+      "restarts": false
+    }
+  ]
+}

@@ -299,7 +299,7 @@ d'une erreur système.
 | `default_config` | 0 ✅ | configuration par défaut |
 | `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
 | `get_config` | 5 ✅ | configuration en cours |
-| `set_config { config }` | 5 ✅ | si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `set_config { patch }` → `EngineConfig` | 5 ✅ (patch : ADR-039) | `patch` = seulement les champs changés, fusionné dans la config en cours (objet sans `kind` : champ par champ ; objet à `kind` et liste : remplacés entiers) ; si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
 | `get_autostart` / `set_autostart { enabled }` | 5 ✅ | démarrage avec Windows (APP-04, `tauri-plugin-autostart` 2.7, clé `Run` de l'utilisateur) ; lancé avec `--autostart` : zone de notification seulement, aucune fenêtre ni WebView2, puis « armer au démarrage » comme d'habitude |
 | `get_feedback` / `set_feedback { feedback }` | 5 ✅ | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
 | `reset_settings` | 5 ✅ | tous les réglages par défaut (APP-07) : moteur, confirmation, raccourcis, thème, démarrage avec Windows désactivé |
@@ -332,7 +332,7 @@ d'une erreur système.
 | `open_clips_dir` | 5 ✅ | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
 | `list_encoders` | 5 ✅ | encodeurs matériels et CPU (`{ name, description, codec, hardware, failure }`) détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur pour le choix courant est grisé dans Réglages |
 | `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
-| `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
+| `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %), `file_bytes_per_minute` (taille d'un fichier par minute, RPL-11 : débit vidéo + 192 kb/s par piste + 1 % de conteneur). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
 | `list_clips { query }` | 6 ✅ | clips de la bibliothèque (index SQLite) : filtres `game`, `kind` (`replay` / `recording`, d'après le nom), `favorites`, `since_ms`, `search` (nom ou jeu), tri `newest` / `oldest` / `largest` / `longest` / `name`, `limit` ; seuls les clips du dossier courant (racine + un niveau). Chaque clip : `path`, `name`, `game`, `kind`, `modified_ms`, `size_bytes`, `duration_secs`, `fps` (cadence vidéo moyenne, pas d'image du lecteur), `tracks` (titres), `thumbnail`, `favorite` |
 | `clip_games` | 6 ✅ | jeux (sous-dossiers) présents dans la bibliothèque |
 | `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 ✅ | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
@@ -364,6 +364,12 @@ Protocole `palaclips` (ADR-007, `register_asynchronous_uri_scheme_protocol`) :
 de la bibliothèque ou une piste du cache, et rien d'autre (403 ; `..` refusé) ; réponses `206`
 par plages, 4 Mo au plus par réponse ; lecture sur un fil bloquant de Tauri.
 
+Événement Tauri `config-changed` (`EngineConfig`) : émis par le shell à chaque changement de la
+config enregistrée (`set_config`, langue, nom de jeu, réinitialisation). Le front n'a qu'une copie
+de la config (`lib/useConfig.ts`), suivie par État, la galerie et chaque page (ADR-039).
+Événement Tauri `hotkeys-changed` (sans contenu) : les raccourcis ont changé ; État relit
+`get_hotkeys`.
+
 Événement Tauri `library-changed` (sans contenu) : la bibliothèque a changé (synchro au
 démarrage, surveillance du dossier, renommage, Corbeille, quota) ; la galerie relit `list_clips`.
 
@@ -388,7 +394,7 @@ et à chaque démarrage ou arrêt de capture.
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `capture_gpu_saturated`, `cpu_encoder_overloaded`, `capture_exclusive_fullscreen`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`, `no_video_encoder`,
-`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `recording_failed { reason }`
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `record_encoder_cpu { reason }` (2e encodage de l'enregistrement refusé par la carte graphique : il passe sur le processeur, ADR-040), `recording_failed { reason }`
 (écriture impossible ou disque plein : l'enregistrement s'arrête, les fichiers déjà écrits
 restent lisibles), `disk_almost_full { free_mb }` (moins de 2 Go libres pendant un
 enregistrement, une fois), `recording_recovered { name }` (enregistrement interrompu remuxé au

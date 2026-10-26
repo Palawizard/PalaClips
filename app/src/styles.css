@@ -166,6 +166,15 @@ body {
   transition-duration: 80ms;
 }
 
+.quality-estimate {
+  transition: background-color 600ms var(--ease-out);
+}
+
+.quality-estimate[data-arrived="true"] {
+  background-color: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  transition-duration: 80ms;
+}
+
 .clip-card {
   transition:
     opacity 240ms var(--ease-out),
@@ -430,6 +439,7 @@ body {
 
   .pressable,
   .roster-row,
+  .quality-estimate,
   .clip-card,
   .alert-item,
   .clip-progress,

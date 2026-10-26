@@ -13,6 +13,7 @@ use crate::clock::{HNS_PER_SECOND, Hns};
 const AUDIO_KBPS_PER_TRACK: u64 = 192;
 const AUDIO_LAG_MARGIN: Hns = Hns::from_millis(2_000);
 const BUFFER_OVERHEAD_PERCENT: u64 = 7;
+const FILE_OVERHEAD_PERMILLE: u64 = 10;
 
 pub fn buffer_window(duration_secs: u32, keyframe_interval_secs: f32) -> Hns {
     Hns(i64::from(duration_secs) * HNS_PER_SECOND)
@@ -28,6 +29,12 @@ pub fn estimate_buffer_bytes(video_kbps: u32, audio_tracks: usize, window: Hns) 
     let total_kbps = video_kbps as u64 + AUDIO_KBPS_PER_TRACK * audio_tracks as u64;
     let bytes = total_kbps * 1_000 / 8 * window.0.max(0) as u64 / HNS_PER_SECOND as u64;
     buffer_memory_bytes(bytes)
+}
+
+pub fn estimate_file_bytes(video_kbps: u32, audio_tracks: usize, seconds: f64) -> u64 {
+    let total_kbps = video_kbps as u64 + AUDIO_KBPS_PER_TRACK * audio_tracks as u64;
+    let bytes = (total_kbps * 1_000 / 8) as f64 * seconds.max(0.0);
+    (bytes * (1_000 + FILE_OVERHEAD_PERMILLE) as f64 / 1_000.0) as u64
 }
 
 pub const MIN_CLIP: Hns = Hns::from_millis(3_000);

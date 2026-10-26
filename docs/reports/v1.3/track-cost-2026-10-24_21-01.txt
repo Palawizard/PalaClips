@@ -1,0 +1,6 @@
+2026-10-24T21:01:48 track-cost : 24 sons de test vers « Realtek », capture écran 480p30 1 Mb/s, 45 s par essai, 20 processeurs logiques
+ 0 pistes : 0 flux audio, CPU 0,24 % de la machine, mémoire privée 39,9 Mo, audio 0,00 Mo/min
+ 6 pistes : 6 flux audio, CPU 1,73 % de la machine, mémoire privée 48,2 Mo, audio 5,89 Mo/min | par piste : CPU 0,248 %, mémoire 1,4 Mo, 0,98 Mo/min
+12 pistes : 12 flux audio, CPU 3,33 % de la machine, mémoire privée 56,9 Mo, audio 11,83 Mo/min | par piste : CPU 0,257 %, mémoire 1,4 Mo, 0,99 Mo/min
+24 pistes : 24 flux audio, CPU 6,96 % de la machine, mémoire privée 71,5 Mo, audio 23,84 Mo/min | par piste : CPU 0,280 %, mémoire 1,3 Mo, 0,99 Mo/min
+2026-10-24T21:04:56 fin : sons de test arrêtés, fichiers supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\track-cost-2026-10-24_21-01.txt
