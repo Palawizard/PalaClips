@@ -145,8 +145,9 @@
     "extend": "Prolonger",
     "finishClip": "Terminer maintenant",
     "quality": "Replay et qualité",
-    "qualitySummary": "{resolution} · {codec} · ≈ {size}/min",
-    "resolutionFps": "{height}p{fps}"
+    "qualitySummary": "{resolution} · {codec} · ≈ {size}/min",
+    "resolutionFps": "{height}p{fps}",
+    "qualityLink": "Replay et qualité : {summary}"
   },
   "performance": {
     "title": "Performances",

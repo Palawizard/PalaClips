@@ -1,4 +1,4 @@
-import { Gauge, HardDrive, Monitor, Save } from "lucide-react";
+import { ChevronRight, Gauge, HardDrive, Monitor, Save } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { Destination } from "../App.tsx";
 import { recordingConfig } from "../lib/config.ts";
@@ -61,12 +61,33 @@ export function QualityButton({ onOpen }: { onOpen: (destination: Destination) =
   );
 }
 
+function QualityLink({ summary, onOpen }: { summary: string; onOpen: (destination: Destination) => void }) {
+  const t = useT();
+  const cut = summary.lastIndexOf(" ") + 1;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(QUALITY)}
+      aria-label={t("status.qualityLink", { summary })}
+      className="pressable group -mx-1.5 self-start rounded-md px-1.5 py-0.5 text-left text-ink-2 hover:bg-surface-hover hover:text-ink"
+    >
+      <span className="score text-[15px]">
+        {summary.slice(0, cut)}
+        <span className="whitespace-nowrap">
+          {summary.slice(cut)}
+          <ChevronRight size={16} aria-hidden className="ml-1 inline align-[-3px] text-ink-3 group-hover:text-ink" />
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function qualitySummary(estimate: ReplayEstimate | null, fps: number, codec: string): string | null {
   if (!estimate) return null;
   return t("status.qualitySummary", {
     resolution: t("status.resolutionFps", { height: estimate.height, fps }),
     codec,
-    size: bytes(estimate.file_bytes_per_minute),
+    size: bytes(estimate.file_bytes_per_minute).replace(" ", " "),
   });
 }
 
@@ -137,7 +158,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             {t("status.inRam")}
           </p>
         </div>
-        {replaySummary && <p className="score text-[15px] text-ink-2">{replaySummary}</p>}
+        {replaySummary && <QualityLink summary={replaySummary} onOpen={onOpen} />}
         {clipEndsAt !== null && <ClipInProgress endsAt={clipEndsAt} />}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <button
@@ -169,7 +190,6 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
           >
             {armed || phase === "disarming" ? t("status.disarm") : t("status.arm")}
           </button>
-          <QualityButton onOpen={onOpen} />
         </div>
       </Cell>
 
@@ -193,7 +213,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             <span className="score text-[15px] font-medium text-ink-2">{bytes(status?.recording_bytes ?? 0)}</span>
           )}
         </p>
-        {recordSummary && <p className="score text-[15px] text-ink-2">{recordSummary}</p>}
+        {recordSummary && <QualityLink summary={recordSummary} onOpen={onOpen} />}
         <button
           type="button"
           onClick={recording ? engine.stopRecording : engine.record}
