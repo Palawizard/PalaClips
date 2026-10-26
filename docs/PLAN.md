@@ -284,7 +284,7 @@ Critères :
       l'entrée (#120, demande de Palawi pendant sa session).
 - [x] Session de Palawi (2026-10-26) : suppression depuis la galerie et l'Explorateur → État à
       jour ; clip avec « après » et enregistrement → aucun son de PalaClips dans Mix complet.
-- [ ] Release v1.3.1 : brouillon vérifié, publication seulement avec l'accord de Palawi.
+- [x] Release v1.3.1 (#121, #122, publiée le 2026-10-26 avec l'accord de Palawi).
 
 Critères :
 - 🤖 Aucun son de PalaClips dans aucune piste avec « Tous les sons sauf PalaClips », témoin d'un

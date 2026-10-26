@@ -54,8 +54,11 @@
   captées et 61 ms d'avance sur le loopback Voicemeeter ; choix de Palawi : source au choix,
   « Tous les sons sauf PalaClips » par défaut, #118, ADR-041) ; listes de clips à jour partout
   (#119) ; déplacement dans le lecteur depuis les pistes et calage (#120) ; session de Palawi
-  validée ; préparation (#121). **Release : brouillon, publication en attente de l'accord de
-  Palawi.** Branche : `dev`.
+  validée ; préparation (#121), `dev` → `main` (#122, accord de Palawi), tag `v1.3.1`,
+  **publiée le 2026-10-26** (https://github.com/Palawizard/PalaClips/releases/tag/v1.3.1) avec
+  l'accord de Palawi. Brouillon relu connecté (version, signature = `.sig`, liens publics) ;
+  vérifié sans connexion après publication : `latest.json` 1.3.1, installeur, `.sig`, page et
+  CHANGELOG en 200. Branche : `dev`.
 - **Dernière mise à jour :** 2026-10-26
 
 ## Ce qui existe
@@ -298,10 +301,6 @@
 
 ## Prochaines actions (dans l'ordre)
 
-0. **Publier la v1.3.1** seulement avec l'accord de Palawi : brouillon relu (version, `.sig`,
-   liens publics), puis `gh release edit v1.3.1 --draft=false --latest`, vérification sans
-   connexion (`latest.json` 1.3.1, installeur, `.sig`, page, CHANGELOG en 200), puis cocher la
-   case « Release v1.3.1 » du PLAN.
 
 1. **Clore la v1.1** : quand Palawi rapporte le test VM T11 (`docs/TESTING.md`, installeur de
    la release 1.1.1 dans `target\vm\PalaClips_1.1.1_x64-setup.exe` ; s'il a testé la 1.1.0,
@@ -524,6 +523,6 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
 | 2026-10-22 | v1.1 | Encodage par le processeur : recherche (encodeurs du FFmpeg BtbN, licences, lecture, banc VMAF NEG), choix D de Palawi ; moteur (`h264_mf` + SVT-AV1, Video Processor → NV12 → staging ou swscale, fils en priorité basse, file bornée, découpe précise CPU) ; app (réglage Encodeur, premier lancement, panneau), critique/audit impeccable ; validé : clip CPU, A/V 3,7 ms d'écart avec NVENC, Fortnite 0 % (1 % bas −3 à −5 %), mise à jour 1.0.0 → 1.1.0 ; mémoire de `h264_mf` (~720 Mo en 1080p) gardée par Palawi ; release v1.1.0 publiée (accord de Palawi), vérifiée sans connexion, sa 1.0.0 propose la 1.1.0 | Test VM T11 par Palawi |
 | 2026-10-22 | v1.1.1 | Mémoire de `h264_mf` : nombre de fils (16 images en vol), pas une file ; faible latence et B-frames sans effet ; limité à 2/4 fils par ICodecAPI (+244 Mo au lieu de +773 en 1080p30, moins de CPU, même VMAF) ; bascule AV1 sans Media Foundation (N/KN), FAQ ; v1.1.1 publiée sans le test VM (demande de Palawi) | Test VM T11 |
-| 2026-10-26 | v1.3.1 | Sons de PalaClips dans la piste 1 confirmés en mode bureau seulement ; exclusion du PID mesurée (sons retirés, toutes les sorties, retard de la piste Jeu) ; soustraction écartée (−3 dB) ; choix de Palawi → source au choix (#118, ADR-041) ; listes de clips suivant `library-changed { removed }` (#119) ; lecteur : pistes cliquables, calage (#120) ; session de Palawi validée ; version 1.3.1 | Publier la v1.3.1 avec l'accord de Palawi |
+| 2026-10-26 | v1.3.1 | Sons de PalaClips dans la piste 1 confirmés en mode bureau seulement ; exclusion du PID mesurée (sons retirés, toutes les sorties, retard de la piste Jeu) ; soustraction écartée (−3 dB) ; choix de Palawi → source au choix (#118, ADR-041) ; listes de clips suivant `library-changed { removed }` (#119) ; lecteur : pistes cliquables, calage (#120) ; session de Palawi validée ; version 1.3.1 | Release v1.3.1 publiée (accord de Palawi), vérifiée sans connexion |
 | 2026-10-24/26 | v1.3 | Zip de Palawi : moteur correct, copies figées côté front → source unique de config (#113) ; recherche et mesures (2e NVENC : invisible si plus léger, ~5 % pour deux 1440p60 ; piste ≈ 5 % d'un cœur après partage du relevé des processus) ; décisions de Palawi ; 2e encodage pour l'enregistrement, horloge alignée, A/V 8 ms ; estimation −1,4 à −5,4 % ; 26 pistes de bout en bout (compression corrigée) ; Replay & qualité en trois parties, accès direct, sons d'enregistrement (#114) ; T15 validée ; captures du README ; version 1.3.0 (#115, #116), tag, publication | Release v1.3.0 publiée (accord de Palawi), vérifiée sans connexion |
 | 2026-10-23/24 | v1.2 | Recherche (Discord 20 Mo, codecs, NVENC un passage, glisser-déposer Tauri) et décisions de Palawi (#105) ; pages Capture et Audio + alerte de sortie, vitest (#106) ; enregistrer après la sauvegarde, jonction continue, synchro identique, mémoire sans croissance sur 10 min (#107) ; compression à une taille cible, 11 cas sous la cible, HDR → SDR (#108) ; session T14 de Palawi en jeu validée, retours appliqués (#109) ; release 1.2.0 préparée | Release v1.2.0 publiée (accord de Palawi), vérifiée sans connexion |
