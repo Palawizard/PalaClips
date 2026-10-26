@@ -48,6 +48,9 @@ pourrait marcher :
 
 ## Fait
 
+- **Version 1.3.0** : l'enregistrement peut avoir sa propre qualité pendant que le replay
+  continue ; Replay & qualité estime la taille des clips et des enregistrements ; plus de
+  maximum de pistes d'applis ; les changements de réglages se voient tout de suite partout.
 - **Version 1.2.0** : Capture et Audio sont des pages à part entière dans la barre latérale, avec
   un avertissement quand on quitte une page avec un changement pas encore appliqué ; le clip peut
   continuer jusqu'à 10 min après le raccourci (un nouvel appui le prolonge) ; les vidéos se

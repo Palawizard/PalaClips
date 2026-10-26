@@ -49,10 +49,13 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 - **Après l'appui** : le clip peut aussi continuer jusqu'à 10 min après le raccourci (par
   exemple 1 min avant + 10 s après) ; un nouvel appui le prolonge.
 - **Enregistrement d'écran** (`Ctrl+Alt+F9`) en MP4 fragmenté, lisible même si le PC plante en
-  cours de route.
+  cours de route, dans la qualité du replay ou dans la sienne (codec, qualité, images par
+  seconde, résolution) ; le replay continue et reste sauvegardable pendant l'enregistrement.
+- **Estimation de la taille** pendant le réglage : Mo par minute, taille d'un clip, et Mo par
+  minute et par heure d'enregistrement.
 - **Pistes audio séparées** : piste 1 = mix complet, piste 2 = micro, puis une piste par appli
-  choisie (Discord, Spotify, navigateur...) et une piste « Jeu » qui suit le jeu au premier
-  plan. Chaque piste porte son nom dans le fichier.
+  choisie (Discord, Spotify, navigateur...), sans maximum, et une piste « Jeu » qui suit le jeu
+  au premier plan. Chaque piste porte son nom dans le fichier.
 - **Encodage matériel** par la carte graphique (NVIDIA NVENC, AMD AMF, Intel Quick Sync) en
   H.264, HEVC ou AV1, à fps constant jusqu'à 240 i/s, écrans HDR pris en charge. Sans
   encodeur matériel, **encodage par le processeur** en H.264 ou AV1.
@@ -143,6 +146,17 @@ si le GPU est saturé, c'est la vidéo qui peut saccader, et une alerte le signa
 Réglages → Replay & qualité, « Quand le GPU est à fond » → *Priorité à la capture* rend la
 vidéo fluide, mais le jeu perd environ 7 % de fps. Limiter les fps du jeu laisse aussi de la
 marge.
+
+**Enregistrer dans une autre qualité que le replay.** Pendant un tel enregistrement, un 2e
+encodage tourne sur la carte graphique. Mesuré sur une RTX 4070 Super dans Fortnite : aucune
+perte mesurable quand le 2e flux est plus léger (par exemple replay en 1440p60 et
+enregistrement en 1080p30) ; environ 5 % de fps avec deux flux 1440p60 complets. Avec *Comme le
+replay*, rien de plus ne tourne.
+
+**Combien de pistes d'applis puis-je ajouter ?** Autant que tu veux. Chacune coûte environ 5 %
+d'un cœur du processeur, 1,4 Mo de mémoire et jusqu'à 1,4 Mo par minute de clip ; la page Audio
+le dit au-delà de 12. Un clip de 26 pistes se lit, se découpe, s'exporte et se compresse
+normalement.
 
 **Mon PC n'a pas d'encodeur vidéo sur la carte graphique.** PalaClips encode alors sur le
 processeur : en H.264 par l'encodeur intégré à Windows, ou en AV1 par SVT-AV1. Le premier

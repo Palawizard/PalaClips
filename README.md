@@ -49,10 +49,13 @@ Anti-Cheat.
 - **After the press**: the clip can also keep going for up to 10 min after the hotkey (for
   example 1 min before + 10 s after); pressing again extends it.
 - **Screen recording** (`Ctrl+Alt+F9`) in a fragmented MP4 that stays readable even if the PC
-  crashes mid-way.
+  crashes mid-way, in the replay's quality or in its own (codec, quality, frame rate,
+  resolution); the replay keeps running and can still be saved during a recording.
+- **Size estimate** while you change the settings: MB per minute, size of a clip, and MB per
+  minute and per hour of recording.
 - **Separate audio tracks**: track 1 is the full mix, track 2 the microphone, then one track
-  per app you pick (Discord, Spotify, browser...) and a "Game" track that follows the game in
-  the foreground. Each track carries its name in the file.
+  per app you pick (Discord, Spotify, browser...), with no maximum, and a "Game" track that
+  follows the game in the foreground. Each track carries its name in the file.
 - **Hardware encoding** on the graphics card (NVIDIA NVENC, AMD AMF, Intel Quick Sync) in
   H.264, HEVC or AV1, at a constant frame rate up to 240 fps, with HDR screens supported.
   Without a hardware encoder, **encoding on the processor** in H.264 or AV1.
@@ -135,6 +138,15 @@ tested with Fortnite (Easy Anti-Cheat).
 if the GPU is saturated, the video may stutter, and an alert says so. In Settings → Replay &
 quality, "When the GPU is maxed out" → *Capture first* makes the video smooth, but the game
 loses about 7% fps. Capping the game's fps also leaves headroom.
+
+**Recording in another quality than the replay.** During such a recording a second encode
+runs on the graphics card. Measured on an RTX 4070 Super in Fortnite: no measurable loss when
+the second stream is lighter (for example replay 1440p60 and recording 1080p30); about 5% fps
+with two full 1440p60 streams. With *Same as replay*, nothing more runs.
+
+**How many app tracks can I add?** As many as you want. Each one costs about 5% of a
+processor core, 1.4 MB of memory and up to 1.4 MB per minute of clip; the Audio page says so
+past 12. A clip with 26 tracks plays, trims, exports and compresses normally.
 
 **My PC has no video encoder on the graphics card.** PalaClips then encodes on the processor:
 in H.264 with the encoder built into Windows, or in AV1 with SVT-AV1. The first launch says so
