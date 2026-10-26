@@ -376,7 +376,7 @@
       "offsetOf": "Décalage de {name} en millisecondes",
       "defaultDevice": "Par défaut",
       "defaultDeviceNamed": "Par défaut ({name})",
-      "desktopSource": "Source",
+      "desktopSource": "Source de l'audio du bureau dans {name}",
       "exceptPalaClips": "Tous les sons sauf PalaClips",
       "palaclipsSoundsIncluded": "Les sons de PalaClips y sont enregistrés.",
       "microphone": "Micro",

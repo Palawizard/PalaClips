@@ -364,7 +364,8 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
           </span>
           {audio.desktop_in_full_mix && (
             <Select
-              label={t("settings.audio.desktopSource")}
+              label={t("settings.audio.desktopSource", { name: row.label })}
+              describedBy={audio.desktop_excludes_palaclips ? undefined : "desktop-source-note"}
               className="w-full max-w-80 min-w-0"
               value={audio.desktop_excludes_palaclips ? EXCEPT_PALACLIPS : (audio.output_device_id ?? "")}
               options={[{ value: EXCEPT_PALACLIPS, label: t("settings.audio.exceptPalaClips") }, ...deviceOptions(outputs)]}
@@ -378,7 +379,9 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
             />
           )}
           {audio.desktop_in_full_mix && !audio.desktop_excludes_palaclips && (
-            <span className="text-ink-3">{t("settings.audio.palaclipsSoundsIncluded")}</span>
+            <span id="desktop-source-note" className="text-ink-3">
+              {t("settings.audio.palaclipsSoundsIncluded")}
+            </span>
           )}
         </>
       );
