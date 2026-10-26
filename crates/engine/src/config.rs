@@ -244,7 +244,6 @@ pub struct AudioSettings {
     pub microphone_sync_offset_ms: i32,
     pub microphone_in_full_mix: bool,
     pub app_tracks: Vec<AppTrack>,
-    pub max_app_tracks: usize,
     pub auto_game_track: bool,
     pub game_label: Option<String>,
     pub game_sync_offset_ms: i32,
@@ -268,7 +267,6 @@ impl Default for AudioSettings {
             microphone_sync_offset_ms: 0,
             microphone_in_full_mix: true,
             app_tracks: Vec::new(),
-            max_app_tracks: 6,
             auto_game_track: true,
             game_label: None,
             game_sync_offset_ms: 0,
@@ -320,17 +318,6 @@ impl AudioSettings {
     }
 
     fn validate(&self) -> Result<()> {
-        if !(1..=12).contains(&self.max_app_tracks) {
-            return Err(EngineError::InvalidConfig(
-                "le nombre maximal de pistes d'application doit être entre 1 et 12".into(),
-            ));
-        }
-        if self.app_tracks.len() > self.max_app_tracks {
-            return Err(EngineError::InvalidConfig(format!(
-                "trop de pistes d'application ({} au maximum)",
-                self.max_app_tracks
-            )));
-        }
         let mut seen = std::collections::HashSet::new();
         for track in &self.app_tracks {
             if !seen.insert(track.exe_name.to_ascii_lowercase()) {
@@ -699,7 +686,20 @@ mod tests {
         assert_eq!(audio.full_mix_label, None);
         assert_eq!(audio.full_mix_title(), "Mix complet");
         assert_eq!(audio.game_title(), "Jeu");
-        assert_eq!(audio.max_app_tracks, 4);
+    }
+
+    #[test]
+    fn many_app_tracks_are_accepted() {
+        let mut cfg = EngineConfig::default();
+        cfg.audio.app_tracks = (0..32)
+            .map(|index| AppTrack {
+                exe_name: format!("app-{index}.exe"),
+                label: format!("App {index}"),
+                enabled: true,
+                sync_offset_ms: 0,
+            })
+            .collect();
+        assert!(cfg.validate().is_ok());
     }
 
     #[test]

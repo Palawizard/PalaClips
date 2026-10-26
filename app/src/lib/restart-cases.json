@@ -9,7 +9,6 @@
       "game_exe": null,
       "game_label": null,
       "game_sync_offset_ms": 0,
-      "max_app_tracks": 6,
       "microphone_device_id": null,
       "microphone_gain_db": 0.0,
       "microphone_in_full_mix": true,

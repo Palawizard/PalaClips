@@ -161,7 +161,6 @@ impl ReplayArgs {
             ..EngineConfig::default()
         };
         config.storage.clips_dir = self.clips_dir.clone();
-        config.audio.max_app_tracks = config.audio.max_app_tracks.max(self.apps.len());
         Ok(config)
     }
 }
