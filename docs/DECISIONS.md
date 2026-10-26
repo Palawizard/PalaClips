@@ -763,3 +763,29 @@ après une relance »).
   pistes » : le débit audio par piste baisse (128 → 96 → 64 kb/s) avant de refuser une cible.
 - Écarté : (b) un seul encodeur qui change de qualité (replay vidé) ; (c) ne changer que le débit
   (résolution, fps et codec impossibles).
+
+## ADR-041 — « Tous les sons sauf PalaClips » pour l'audio du bureau (v1.3.1, AUD-01)
+**Statut :** acceptée (2026-10-26, choix de Palawi ; preuves dans
+`docs/reports/v1.3.1-feedback-sounds.md`).
+- Contexte : en mode « Audio du bureau », la piste 1 était le loopback de la sortie ; le carillon
+  de l'appui (avec une durée après), celui de la sauvegarde (au début du clip suivant) et le son
+  de début d'enregistrement y étaient enregistrés. Le mode par défaut (somme des pistes) n'est
+  pas touché.
+- Mesures : le process loopback en mode exclusion sur notre PID retire nos sons et garde les
+  autres une seule fois, avec le retard de la piste Jeu ; mais il prend **toutes** les sorties (la
+  soundboard de Palawi sur un câble virtuel y apparaît) et arrive 61 ms avant le loopback
+  Voicemeeter, dont le calibrage ne vaut donc plus. Soustraire notre son de la sortie ne le
+  réduit que de ~3 dB (copie déformée par la sortie virtuelle) ; masquer la piste couperait le jeu
+  au moment de l'action.
+- Décision : la source devient un choix, `desktop_excludes_palaclips` (défaut `true`) :
+  « Tous les sons sauf PalaClips » (`AudioSource::DesktopExceptPalaClips`) ou une sortie précise
+  (loopback, avec la ligne « Les sons de PalaClips y sont enregistrés »). Schéma des réglages 3 :
+  une config antérieure qui avait le mode bureau garde sa sortie et son calibrage ; les autres
+  prennent l'exclusion si elles activent ce mode. Calibrage avec l'exclusion : le bip de
+  l'émetteur vient de PalaClips et en est exclu ; la piste 1 reprend la proposition de la piste
+  Jeu (même capture, médiane −3 ms mesurée). Changer de source redémarre le replay.
+- Les sons sont générés dans le moteur (`palaclips_engine::chime`) pour que la CLI
+  (`replay --chime`, `play-chime`, `probe-exclusion`) reproduise exactement l'app.
+- Écarté : exclusion imposée à tous (perte du choix de sortie et des réglages calibrés) ; son de
+  confirmation sur une autre sortie (sans effet avec une seule sortie) ; soustraction et masquage
+  (ci-dessus).
