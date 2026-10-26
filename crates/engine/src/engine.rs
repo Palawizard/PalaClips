@@ -35,8 +35,8 @@ use crate::record::{
 };
 use crate::replay::{
     ClipPlan, PacketReader, PacketRing, PostRollCut, ReplayPacket, Spool, TimedPacket,
-    buffer_memory_bytes, buffer_window, estimate_buffer_bytes, forget_saved, plan_clip,
-    share_packet,
+    buffer_memory_bytes, buffer_window, estimate_buffer_bytes, estimate_file_bytes, forget_saved,
+    plan_clip, share_packet,
 };
 use crate::sources::{CurrentGame, ForegroundWatch};
 use crate::{games, paths};
@@ -357,6 +357,7 @@ pub struct ReplayEstimate {
     pub video_kbps: u32,
     pub audio_tracks: usize,
     pub bytes: u64,
+    pub file_bytes_per_minute: u64,
 }
 
 pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
@@ -372,6 +373,7 @@ pub fn estimate_replay(config: &EngineConfig) -> Result<ReplayEstimate> {
         video_kbps,
         audio_tracks,
         bytes: estimate_buffer_bytes(video_kbps, audio_tracks, ring_window(config)),
+        file_bytes_per_minute: estimate_file_bytes(video_kbps, audio_tracks, 60.0),
     })
 }
 

@@ -1,0 +1,8 @@
+2026-10-26T14:23:00 size-estimate : contenu « desktop », qualité Équilibré, 30 s par essai, écran principal
+1920x1080 30 i/s, 2 pistes (11197 kb/s vidéo) : estimé 87,7 Mo/min, mesuré 84,1 Mo/min, écart -4,1 %
+1920x1080 30 i/s, 6 pistes (11197 kb/s vidéo) : estimé 93,5 Mo/min, mesuré 88,5 Mo/min, écart -5,4 %
+1920x1080 60 i/s, 2 pistes (22395 kb/s vidéo) : estimé 172,6 Mo/min, mesuré 169,5 Mo/min, écart -1,8 %
+1920x1080 60 i/s, 6 pistes (22395 kb/s vidéo) : estimé 178,4 Mo/min, mesuré 173,4 Mo/min, écart -2,8 %
+2560x1440 60 i/s, 2 pistes (39813 kb/s vidéo) : estimé 304,5 Mo/min, mesuré 300,2 Mo/min, écart -1,4 %
+2560x1440 60 i/s, 6 pistes (39813 kb/s vidéo) : estimé 310,3 Mo/min, mesuré 304,2 Mo/min, écart -2,0 %
+2026-10-26T14:26:10 fin : sons et fenêtres arrêtés, fichiers supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\size-estimate-desktop-2026-10-26_14-22.txt

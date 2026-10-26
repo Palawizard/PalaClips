@@ -417,6 +417,10 @@ fn main() -> Result<()> {
             );
             let bytes = estimate_buffer_bytes(video_kbps, audio_tracks, window);
             println!("≈ {:.0} Mo", bytes as f64 / 1_000_000.0);
+            println!(
+                "fichier : {} octets par minute",
+                palaclips_engine::replay::estimate_file_bytes(video_kbps, audio_tracks, 60.0)
+            );
         }
         #[cfg(windows)]
         Command::RecentClips { clips_dir, limit } => {
