@@ -5,6 +5,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.3.0] - 2026-10-26
+
 ### Ajouté
 - Qualité propre de l'enregistrement (REC-07, ADR-040) : dans Réglages → Replay & qualité,
   l'enregistrement suit le replay ou prend son codec, sa qualité, ses images par seconde et sa
