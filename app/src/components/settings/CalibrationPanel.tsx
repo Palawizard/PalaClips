@@ -36,7 +36,9 @@ function resultRows(calibration: Calibration, audio: EngineConfig["audio"]): Res
     rows.push({
       key: "mix",
       title: trackTitle(audio, "mix"),
-      measured: measuredOf("mix") ?? t("settings.calibration.notMeasured"),
+      measured:
+        measuredOf("mix") ??
+        (audio.desktop_excludes_palaclips ? t("settings.calibration.sameCapture") : t("settings.calibration.notMeasured")),
       proposed: calibration.mix_ms,
     });
   if (audio.record_microphone)

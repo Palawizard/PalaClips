@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use anyhow::Result;
 use crossbeam_channel::{Receiver, select};
 use palaclips_engine::EngineConfig;
+use palaclips_engine::chime::{self, Sound};
 use palaclips_engine::config::{
     AppTrack, AudioSettings, RecordSettings, RecordSplit, ReplaySettings, ReplayStorage,
 };
@@ -50,6 +51,11 @@ pub struct ReplayArgs {
         help = "Sortie à enregistrer en loopback pour la piste mix (partie du nom) ; absente = sortie par défaut"
     )]
     pub mix_device: Option<String>,
+    #[arg(
+        long,
+        help = "Piste mix = loopback de la sortie (sons de PalaClips compris) au lieu de tout sauf PalaClips"
+    )]
+    pub mix_output: bool,
     #[arg(long, help = "Démarre le moteur sans armer le replay (mesure mémoire)")]
     pub no_arm: bool,
     #[arg(
@@ -62,6 +68,11 @@ pub struct ReplayArgs {
         help = "Demande les niveaux audio (20 i/s) et affiche leur cadence"
     )]
     pub levels: bool,
+    #[arg(
+        long,
+        help = "Joue les sons de PalaClips comme l'app : appui avec durée après, clip sauvegardé, début et fin d'enregistrement"
+    )]
+    pub chime: bool,
     #[arg(long, help = "Enregistrement : commence par le replay en mémoire")]
     pub record_include_replay: bool,
     #[arg(long, help = "Enregistrement : nouveau fichier toutes les N minutes")]
@@ -124,6 +135,7 @@ impl ReplayArgs {
             audio: AudioSettings {
                 record_full_mix: !self.no_mix,
                 desktop_in_full_mix: !self.tracks_mix,
+                desktop_excludes_palaclips: !self.mix_output && self.mix_device.is_none(),
                 output_device_id,
                 record_microphone: !self.no_mic,
                 app_tracks: self
@@ -195,6 +207,12 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
     let mut quitting = false;
     let mut recording = false;
     let mut post_roll = false;
+    let mut state_recording = false;
+    let chime_on = |sound: Sound| {
+        if args.chime {
+            chime::play(sound);
+        }
+    };
     loop {
         if quitting && finished >= requested {
             break;
@@ -238,6 +256,7 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     EngineEvent::ClipSaved { path, duration_secs, save_latency_ms, .. } => {
                         finished += 1;
                         latencies.push(save_latency_ms);
+                        chime_on(Sound::Saved);
                         println!(
                             "[{:>6} s] clip {finished} : {duration_secs:.3} s, prêt en {save_latency_ms} ms ; mémoire privée {:.1} Mo → {path}",
                             started.elapsed().as_secs(),
@@ -246,6 +265,9 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                     }
                     EngineEvent::PostRoll { ends_in_secs } => {
                         post_roll = ends_in_secs.is_some();
+                        if post_roll {
+                            chime_on(Sound::Saved);
+                        }
                         match ends_in_secs {
                             Some(seconds) => println!("[{:>6} s] clip en cours : fin dans {seconds:.1} s", started.elapsed().as_secs()),
                             None => println!("[{:>6} s] clip en cours terminé", started.elapsed().as_secs()),
@@ -287,7 +309,14 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         println!("alerte {severity:?} {} : {message}", text.code);
                     }
                     EngineEvent::AlertCleared { code } => println!("alerte retirée : {code}"),
-                    EngineEvent::StateChanged { state } => println!("état : {state:?}"),
+                    EngineEvent::StateChanged { state } => {
+                        let now_recording = state == EngineState::Recording;
+                        if now_recording != state_recording {
+                            chime_on(if now_recording { Sound::RecordingStarted } else { Sound::RecordingStopped });
+                            state_recording = now_recording;
+                        }
+                        println!("état : {state:?}");
+                    }
                     EngineEvent::GameNamed { exe_name, name } => {
                         println!("nom de jeu : {exe_name} → {name}");
                         config.storage.game_names.insert(exe_name, name);

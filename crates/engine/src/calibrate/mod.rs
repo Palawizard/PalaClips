@@ -96,8 +96,13 @@ pub fn proposals(audio: &AudioSettings, tracks: Vec<TrackMeasurement>) -> Calibr
         })
     };
     let game_ms = propose(TrackKind::Game, audio.game_sync_offset_ms);
+    let mix_ms = if audio.desktop_excludes_palaclips {
+        game_ms
+    } else {
+        propose(TrackKind::Mix, audio.full_mix_sync_offset_ms)
+    };
     Calibration {
-        mix_ms: propose(TrackKind::Mix, audio.full_mix_sync_offset_ms),
+        mix_ms,
         microphone_ms: propose(TrackKind::Microphone, audio.microphone_sync_offset_ms),
         game_ms,
         apps: game_ms
@@ -211,6 +216,7 @@ mod tests {
                 enabled: true,
                 sync_offset_ms: 0,
             }],
+            desktop_excludes_palaclips: false,
             ..AudioSettings::default()
         };
         let calibration = proposals(
@@ -230,6 +236,7 @@ mod tests {
         let audio = AudioSettings {
             full_mix_sync_offset_ms: -138,
             game_sync_offset_ms: -33,
+            desktop_excludes_palaclips: false,
             ..AudioSettings::default()
         };
         let calibration = proposals(
@@ -241,6 +248,28 @@ mod tests {
         );
         assert_eq!(calibration.mix_ms, Some(-105));
         assert_eq!(calibration.game_ms, Some(0));
+    }
+
+    #[test]
+    fn the_desktop_without_palaclips_follows_the_game_track_it_shares_a_capture_with() {
+        let audio = AudioSettings {
+            full_mix_sync_offset_ms: -103,
+            game_sync_offset_ms: 10,
+            ..AudioSettings::default()
+        };
+        let calibration = proposals(
+            &audio,
+            vec![
+                TrackMeasurement {
+                    kind: TrackKind::Mix,
+                    title: String::new(),
+                    measurement: None,
+                },
+                measured(TrackKind::Game, 40.0),
+            ],
+        );
+        assert_eq!(calibration.mix_ms, calibration.game_ms);
+        assert_eq!(calibration.mix_ms, Some(0));
     }
 
     #[test]
@@ -265,6 +294,7 @@ mod tests {
         let mut audio = AudioSettings {
             full_mix_sync_offset_ms: -50,
             game_sync_offset_ms: 10,
+            desktop_excludes_palaclips: false,
             ..AudioSettings::default()
         };
         audio.app_tracks.push(crate::config::AppTrack {

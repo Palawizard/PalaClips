@@ -9,6 +9,9 @@ $dir = Join-Path $root 'target\test-config'
 if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
 New-Item -ItemType Directory -Force (Join-Path $dir 'clips') | Out-Null
 $json = $Settings | ConvertFrom-Json -AsHashtable
+if (-not $json.schema_version) {
+    $json.schema_version = [int]([regex]::Match((Get-Content (Join-Path $root 'app\src-tauri\src\settings.rs') -Raw), 'SETTINGS_VERSION: u32 = (\d+)').Groups[1].Value)
+}
 if (-not $json.engine) { $json.engine = @{} }
 if (-not $json.engine.storage) { $json.engine.storage = @{} }
 $json.engine.storage.clips_dir = Join-Path $dir 'clips'
