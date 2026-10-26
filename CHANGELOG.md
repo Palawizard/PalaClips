@@ -11,7 +11,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   résolution. Le replay continue pendant l'enregistrement et reste sauvegardable.
 - Estimation de la taille des clips (RPL-11) : Mo par minute, taille d'un clip, avec l'« après »,
   et Mo par minute et par heure pour l'enregistrement.
-- Bouton « Replay et qualité » sur État et sur Capture, et résumé de la qualité sur État.
+- Accès direct à Replay & qualité : résumé de la qualité cliquable sur État, bouton sur Capture.
+- Son au début et à la fin d'un enregistrement (désactivable avec le son de confirmation).
 
 ### Modifié
 - Plus de maximum de pistes d'applis : au-delà de 12, une note dit ce qu'elles coûtent.
