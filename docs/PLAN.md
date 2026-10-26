@@ -272,3 +272,34 @@ Critères :
   fichier externe ; annulation sans fichier partiel ; replay intact pendant une compression.
 - 👤 « Après » en jeu, clip compressé envoyé dans Discord en 20 Mo et 500 Mo, glisser-déposer,
   alerte de sortie de page ; images extraites jugées correctes.
+
+## v1.3 — Correctif des réglages, qualité de l'enregistrement, taille des clips, pistes sans maximum (APP-15, AUD-03, REC-02, REC-04, REC-07, RPL-11)
+
+Recherche, mesures et décisions de Palawi : `docs/reports/v1.3-research.md`.
+
+- [x] Correctif : réglages visibles seulement après une relance (#113, ADR-039) : une seule copie
+      de la config côté front, brouillons en patch fusionnés par le shell, critères de
+      redémarrage front/moteur vérifiés sur les mêmes cas.
+- [x] Recherche et mesures (2e encodeur NVENC au bureau et dans Fortnite, coût par piste à 6, 12
+      et 24 pistes) ; décisions de Palawi : deux encodages, quatre réglages séparés, note dès la
+      13e piste, REC-04 en clip à part.
+- [x] Moteur : 2e sortie vidéo d'une capture en cours (horloge alignée), enregistrement dans sa
+      qualité, repli processeur, relevé des processus partagé entre les pistes, `max_app_tracks`
+      retiré, estimation de la taille.
+- [x] App : Replay & qualité en trois parties (Replay, Enregistrement, Commun) avec estimations,
+      boutons « Replay et qualité » sur État et Capture, note des pistes, textes FR/EN.
+- [ ] Session de tests manuels de Palawi (T15, 15 min, en jouant).
+- [ ] Release v1.3.0 (brouillon, puis accord de Palawi).
+
+Critères :
+- 🤖 Migration : un `settings.json` v1.2 garde le même comportement (`record.video` vide = qualité du
+  replay), `max_app_tracks` ignoré puis retiré (tests Rust).
+- 🤖 Enregistrement séparé : pas de trou ni de doublon dans les deux fichiers, sauvegarde de replay
+  pendant l'enregistrement, synchro A/V identique au replay à moins d'une image
+  (`scripts/record-quality.ps1 -AvSync`).
+- 🤖 Estimation de la taille à ±10 % (1080p30, 1080p60, 1440p60, 2 et 6 pistes,
+  `scripts/size-estimate.ps1`).
+- 🤖 26 pistes : Mix complet, continuité, compression « toutes les pistes », découpe et export,
+  lecteur (muet, solo, lecture) (`scripts/many-tracks.ps1`, app isolée).
+- 👤 Session T15 : bug corrigé, estimation face à un vrai clip, enregistrement en autre qualité en
+  jeu, beaucoup de pistes, boutons d'accès direct.

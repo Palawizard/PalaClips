@@ -53,7 +53,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 |---|---|
 | AUD-01 | Piste **Mix complet**, toujours en piste 1 si activée : somme des pistes enregistrées et choisies (micro si « Aussi dans Mix complet », Jeu, applis), ou, avec le réglage « Audio du bureau » (désactivé par défaut), toute la sortie audio plus le micro. Les pistes suivantes restent séparées pour le montage. |
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
-| AUD-03 | Une **piste par logiciel** choisi (jusqu'à 6 par défaut, réglable jusqu'à 12), capture par arbre de processus (PID parent + enfants). |
+| AUD-03 | Une **piste par logiciel** choisi, sans maximum (v1.3 : au-delà de 12 pistes d'applis, une note dit ce qu'elles coûtent en processeur, mémoire et Mo par minute), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
 | AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (lu par VLC, ffprobe… ; DaVinci Resolve ne l'affiche pas, ADR-021). |
 | AUD-06 | Option « Piste Jeu automatique » : une piste dédiée suit **le jeu**, pas le premier plan. Capture d'une fenêtre → l'appli de cette fenêtre. Capture d'un écran → la dernière appli passée au premier plan en plein écran ou en fenêtre sans bordure couvrant un écran ; un Alt+Tab vers une appli fenêtrée (Discord, navigateur, terminal…), le bureau ou PalaClips ne la change pas. L'utilisateur peut aussi la fixer sur un processus choisi dans le sélecteur AUD-04. |
@@ -70,6 +70,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | RPL-01 | Replay armé au démarrage (option), armé/désarmé par raccourci et par le menu de la zone de notification. |
 | RPL-02 | Durée réglable de 5 s à 60 min. |
 | RPL-03 | **Estimation de la RAM** affichée en direct pendant le réglage ((débit vidéo + audio) × fenêtre du tampon, + 7 % de surcharge mesurée). |
+| RPL-11 | **Estimation de la taille** (v1.3), à jour pendant le réglage : Mo par minute, taille d'un clip à la durée du replay et avec l'« après » ; pour l'enregistrement, Mo par minute et par heure. Débit vidéo effectif (résolution et fps réels de la source) + AAC × pistes enregistrées + conteneur ; encodage en CBR, donc un seul chiffre « ≈ », à ±10 % des vrais clips ; unités binaires comme la galerie. |
 | RPL-04 | Stockage du buffer en **RAM** (défaut) ou sur **disque** (longues durées). |
 | RPL-05 | Sauvegarde par raccourci : fichier prêt en **< 500 ms** pour 60 s à 40 Mb/s, début sur image clé, pistes alignées. |
 | RPL-06 | La sauvegarde ne vole **jamais** le focus du jeu ; confirmation par toast Windows + son (désactivable). |
@@ -83,11 +84,12 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | ID | Exigence |
 |---|---|
 | REC-01 | Démarrer/arrêter par raccourci et par la zone de notification ; icône de notification différente pendant l'enregistrement. |
-| REC-02 | Partage la capture et l'encodeur du replay (pas de double coût). |
+| REC-02 | Partage la capture du replay ; partage aussi son encodeur quand les deux qualités sont identiques (pas de double coût). |
 | REC-03 | Fichier lisible jusqu'au dernier fragment après un crash ou une coupure de courant (MP4 hybride). |
-| REC-04 | Option « inclure le replay en cours au début de l'enregistrement ». |
+| REC-04 | Option « inclure le replay en cours au début de l'enregistrement » ; si la qualité de l'enregistrement diffère de celle du replay (v1.3), le replay en mémoire est sauvegardé en clip à part juste avant. |
 | REC-05 | Découpage automatique optionnel par durée ou par taille. |
 | REC-06 | Récupération au démarrage d'un enregistrement interrompu : il apparaît dans la galerie, finalisé. |
+| REC-07 | **Qualité propre de l'enregistrement** (v1.3, ADR-040) : « Comme le replay » par défaut, ou codec, qualité/débit, images par seconde et résolution propres ; source, audio, encodeur, images clés et priorité GPU communs. Un 2e encodage tourne seulement pendant l'enregistrement, sans coupure du replay ; les sauvegardes de replay restent possibles pendant l'enregistrement ; 2e encodage matériel refusé → processeur, avec une alerte. |
 
 ### 2.6 Fichiers et stockage (STO)
 
@@ -129,6 +131,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | APP-11 | Installeur Windows (NSIS, par utilisateur, sans droits admin) ; la désinstallation conserve les clips. |
 | APP-12 | Panneau de performances : RAM/CPU du moteur, taille du buffer, images perdues, encodeur utilisé. |
 | APP-13 | Accessibilité : navigation clavier complète, contrastes conformes, `prefers-reduced-motion` respecté. |
+| APP-15 | Accès direct (v1.3) : bouton « Replay et qualité » sur État et sur Capture, qui ouvre Réglages → Replay & qualité (défilement et focus, via la garde de sortie) ; État résume la qualité (« 1440p60 · H.264 · ≈ X Mo/min »), et celle de l'enregistrement si elle diffère. |
 | APP-14 | Barre latérale (v1.2) : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
 
 ### 2.8 bis Compression (CMP, v1.2)
