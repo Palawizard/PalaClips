@@ -31,6 +31,7 @@ const SESSION_POLL_MS = 100;
 const SESSION_POLL_BACKGROUND_MS = 500;
 const RECENT_SOUND_MS = 15_000;
 const SOUND_FLOOR = 0.003;
+const EXCEPT_PALACLIPS = "except-palaclips";
 const BUTTON =
   "pressable h-9 rounded-md border border-line-strong px-3 font-medium text-ink hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -363,12 +364,24 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
           </span>
           {audio.desktop_in_full_mix && (
             <Select
-              label={t("settings.audio.output")}
+              label={t("settings.audio.desktopSource", { name: row.label })}
+              describedBy={audio.desktop_excludes_palaclips ? undefined : "desktop-source-note"}
               className="w-full max-w-80 min-w-0"
-              value={audio.output_device_id ?? ""}
-              options={deviceOptions(outputs)}
-              onChange={(id) => setAudio({ output_device_id: id || null })}
+              value={audio.desktop_excludes_palaclips ? EXCEPT_PALACLIPS : (audio.output_device_id ?? "")}
+              options={[{ value: EXCEPT_PALACLIPS, label: t("settings.audio.exceptPalaClips") }, ...deviceOptions(outputs)]}
+              onChange={(id) =>
+                setAudio(
+                  id === EXCEPT_PALACLIPS
+                    ? { desktop_excludes_palaclips: true }
+                    : { desktop_excludes_palaclips: false, output_device_id: id || null },
+                )
+              }
             />
+          )}
+          {audio.desktop_in_full_mix && !audio.desktop_excludes_palaclips && (
+            <span id="desktop-source-note" className="text-ink-3">
+              {t("settings.audio.palaclipsSoundsIncluded")}
+            </span>
           )}
         </>
       );

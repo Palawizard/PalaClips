@@ -51,7 +51,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 
 | ID | Exigence |
 |---|---|
-| AUD-01 | Piste **Mix complet**, toujours en piste 1 si activée : somme des pistes enregistrées et choisies (micro si « Aussi dans Mix complet », Jeu, applis), ou, avec le réglage « Audio du bureau » (désactivé par défaut), toute la sortie audio plus le micro. Les pistes suivantes restent séparées pour le montage. |
+| AUD-01 | Piste **Mix complet**, toujours en piste 1 si activée : somme des pistes enregistrées et choisies (micro si « Aussi dans Mix complet », Jeu, applis), ou, avec le réglage « Audio du bureau » (désactivé par défaut), tout le son du PC plus le micro. Source au choix (v1.3.1) : « Tous les sons sauf PalaClips » (par défaut, sons de PalaClips exclus, toutes les sorties) ou une sortie précise (ses sons de PalaClips compris). Les pistes suivantes restent séparées pour le montage. |
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
 | AUD-03 | Une **piste par logiciel** choisi, sans maximum (v1.3 : au-delà de 12 pistes d'applis, une note dit ce qu'elles coûtent en processeur, mémoire et Mo par minute), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
