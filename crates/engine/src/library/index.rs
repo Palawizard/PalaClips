@@ -852,7 +852,7 @@ mod tests {
             batches.send(paths).ok();
         })
         .expect("watch");
-        let mut next_batch = || {
+        let next_batch = || {
             received
                 .recv_timeout(std::time::Duration::from_secs(10))
                 .expect("batch")
