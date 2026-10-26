@@ -6,6 +6,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ## [Non publié]
 
 ### Corrigé
+- Les sons de PalaClips (carillon de sauvegarde, début et fin d'enregistrement) n'entrent plus
+  dans la piste 1 en mode « Audio du bureau » : sa source est « Tous les sons sauf PalaClips »
+  par défaut, ou une sortie précise au choix (ADR-041). Une config qui avait déjà ce mode garde
+  sa sortie et son calibrage.
 - Un clip supprimé ou renommé (galerie, Explorateur, quota), un fichier ajouté ou un changement
   de dossier met à jour tout de suite « Derniers clips » et l'espace disque sur État, sans
   relancer ni changer de page. Ouvrir un clip dont le fichier a disparu affiche « Ce fichier

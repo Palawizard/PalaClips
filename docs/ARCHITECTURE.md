@@ -80,7 +80,8 @@ charges :
 - Suivre changement de résolution, fermeture de la fenêtre, perte du périphérique D3D.
 
 **`audio`**
-- Pistes dans l'ordre : mix complet (loopback de la sortie par défaut, suivie à chaud), micro
+- Pistes dans l'ordre : mix complet (somme des pistes, « tout sauf PalaClips » en process loopback
+  exclusif, ou loopback d'une sortie suivie à chaud), micro
   (gain appliqué), une par appli (`new_application_loopback_client(pid_parent, true)`).
 - Horodatage uniquement par `pu64QPCPosition`.
 - Combler les trous par du silence d'après les écarts QPC ; `AUDCLNT_BUFFERFLAGS_SILENT` =
@@ -257,8 +258,12 @@ est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyé
 - Par défaut (`desktop_in_full_mix: false`), la piste 1 ne capture rien elle-même
   (`AudioSource::TracksMix`) : elle additionne le micro (si `microphone_in_full_mix`), la piste
   Jeu et les pistes d'applis.
-- Avec « Audio du bureau » (`desktop_in_full_mix: true`), elle capture toute la sortie
-  (`SystemMix`) et n'ajoute que le micro : la sortie contient déjà le jeu et les applis.
+- Avec « Audio du bureau » (`desktop_in_full_mix: true`), elle capture tout le son et n'ajoute
+  que le micro : ce son contient déjà le jeu et les applis. Source (ADR-041) :
+  `desktop_excludes_palaclips: true` (défaut) → `AudioSource::DesktopExceptPalaClips`,
+  `new_application_loopback_client(notre PID, false)` = mode `EXCLUDE_TARGET_PROCESS_TREE` :
+  toutes les sorties sauf PalaClips et ses enfants (sons, WebView) ; `false` → `SystemMix`,
+  loopback de `output_device_id` (ou de la sortie par défaut), sons de PalaClips compris.
 - Mixage (`engine::mixdowns`) : chaque piste ajoutée publie ses échantillons déjà recalés
   (même origine QPC, même index d'échantillon) sur son `MixBus` ; la piste 1 les additionne
   avant l'encodage AAC, puis par un limiteur doux (anticipation 3 ms, plafond −1 dBFS, retour
