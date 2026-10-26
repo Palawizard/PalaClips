@@ -5,6 +5,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+### Corrigé
+- Un clip supprimé ou renommé (galerie, Explorateur, quota), un fichier ajouté ou un changement
+  de dossier met à jour tout de suite « Derniers clips » et l'espace disque sur État, sans
+  relancer ni changer de page. Ouvrir un clip dont le fichier a disparu affiche « Ce fichier
+  n'existe plus » et retire la carte ; le lecteur se ferme si son clip est supprimé ; le choix
+  des clips à compresser et les brouillons de compression suivent aussi.
+
 ## [1.3.0] - 2026-10-26
 
 ### Ajouté
