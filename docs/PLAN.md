@@ -288,7 +288,9 @@ Recherche, mesures et décisions de Palawi : `docs/reports/v1.3-research.md`.
       retiré, estimation de la taille.
 - [x] App : Replay & qualité en trois parties (Replay, Enregistrement, Commun) avec estimations,
       boutons « Replay et qualité » sur État et Capture, note des pistes, textes FR/EN.
-- [ ] Session de tests manuels de Palawi (T15, 15 min, en jouant).
+- [x] Session de tests manuels de Palawi (T15, 2026-10-26, en jouant) : tout validé ; retours
+      appliqués (résumé cliquable sur État au lieu d'un bouton à part, son au début et à la fin
+      d'un enregistrement).
 - [ ] Release v1.3.0 (brouillon, puis accord de Palawi).
 
 Critères :

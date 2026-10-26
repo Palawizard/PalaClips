@@ -83,7 +83,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 
 | ID | Exigence |
 |---|---|
-| REC-01 | Démarrer/arrêter par raccourci et par la zone de notification ; icône de notification différente pendant l'enregistrement. |
+| REC-01 | Démarrer/arrêter par raccourci et par la zone de notification ; icône de notification différente pendant l'enregistrement ; son au début et à la fin (v1.3, distinct du carillon de sauvegarde, avec le réglage « Son de confirmation »). |
 | REC-02 | Partage la capture du replay ; partage aussi son encodeur quand les deux qualités sont identiques (pas de double coût). |
 | REC-03 | Fichier lisible jusqu'au dernier fragment après un crash ou une coupure de courant (MP4 hybride). |
 | REC-04 | Option « inclure le replay en cours au début de l'enregistrement » ; si la qualité de l'enregistrement diffère de celle du replay (v1.3), le replay en mémoire est sauvegardé en clip à part juste avant. |
@@ -131,7 +131,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | APP-11 | Installeur Windows (NSIS, par utilisateur, sans droits admin) ; la désinstallation conserve les clips. |
 | APP-12 | Panneau de performances : RAM/CPU du moteur, taille du buffer, images perdues, encodeur utilisé. |
 | APP-13 | Accessibilité : navigation clavier complète, contrastes conformes, `prefers-reduced-motion` respecté. |
-| APP-15 | Accès direct (v1.3) : bouton « Replay et qualité » sur État et sur Capture, qui ouvre Réglages → Replay & qualité (défilement et focus, via la garde de sortie) ; État résume la qualité (« 1440p60 · H.264 · ≈ X Mo/min »), et celle de l'enregistrement si elle diffère. |
+| APP-15 | Accès direct (v1.3) : sur État, le résumé de la qualité (« 1440p60 · H.264 · ≈ X Mo/min », et celui de l'enregistrement s'il diffère) est un lien ; sur Capture, un bouton « Replay et qualité ». Les deux ouvrent Réglages → Replay & qualité (défilement et focus, via la garde de sortie). |
 | APP-14 | Barre latérale (v1.2) : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
 
 ### 2.8 bis Compression (CMP, v1.2)
