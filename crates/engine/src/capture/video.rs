@@ -65,6 +65,7 @@ pub struct VideoCapture {
     alert: Option<EngineEvent>,
     alerts: Receiver<EngineEvent>,
     shared: Arc<Shared>,
+    hdr_white: Option<f32>,
     encoder_thread: Option<JoinHandle<Result<VideoCaptureStats>>>,
     session: Option<CaptureControl<FrameSink, EngineError>>,
 }
@@ -152,7 +153,7 @@ impl VideoCapture {
                         alerts: alert_tx,
                         hdr_watch,
                     };
-                    run_encoder(shared, device, hdr, encoder, fps, outputs)
+                    run_encoder(shared, device, hdr, encoder, fps, outputs, Role::Primary)
                 }
             })?;
         let mut capture = Self {
@@ -161,6 +162,7 @@ impl VideoCapture {
             alert,
             alerts,
             shared,
+            hdr_white,
             encoder_thread: Some(encoder_thread),
             session: Some(session),
         };
@@ -193,6 +195,84 @@ impl VideoCapture {
 
     pub fn counters(&self) -> CaptureCounters {
         *self.shared.counters.lock()
+    }
+
+    pub fn add_output(&self, settings: &VideoSettings, encoder: &str) -> Result<VideoOutput> {
+        settings.validate()?;
+        let latest = self.shared.latest().ok_or_else(|| {
+            EngineError::Capture("aucune image reçue de Windows Graphics Capture".into())
+        })?;
+        // SAFETY: GetDevice has no preconditions on a live texture.
+        let device = unsafe { latest.texture.0.GetDevice() }
+            .map_err(|error| EngineError::Capture(error.message()))?;
+        let size = output_size(latest.size, settings.resolution);
+        check_output_size(settings.codec, size)?;
+        let encoder = VideoEncoder::open(
+            &device,
+            &VideoEncoderSettings {
+                encoder: encoder.to_owned(),
+                size,
+                fps: settings.fps,
+                bitrate_kbps: settings.bitrate_kbps_for(size.width, size.height),
+                keyframe_interval_secs: settings.keyframe_interval_secs,
+            },
+        )?;
+        let stream = VideoStream {
+            codec_parameters: encoder.codec_parameters(),
+            time_base: encoder.time_base(),
+            fps: settings.fps,
+            size,
+            origin: Hns::ZERO,
+        };
+        let (packet_tx, packets) = bounded(settings.fps as usize * 2);
+        let (origin_tx, origin_rx) = bounded(1);
+        let (alert_tx, alerts) = bounded(ALERT_QUEUE);
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread = std::thread::Builder::new()
+            .name("palaclips-video-2".into())
+            .spawn({
+                let shared = self.shared.clone();
+                let device = SendCom(device);
+                let hdr_white = self.hdr_white;
+                let fps = settings.fps;
+                let stop = stop.clone();
+                move || {
+                    let hdr = hdr_white
+                        .map(|white| HdrToSdr::new(&device.0, white))
+                        .transpose()?;
+                    let outputs = EncoderOutputs {
+                        origin: origin_tx,
+                        packets: packet_tx,
+                        alerts: alert_tx,
+                        hdr_watch: None,
+                    };
+                    run_encoder(
+                        shared,
+                        device,
+                        hdr,
+                        encoder,
+                        fps,
+                        outputs,
+                        Role::Extra(stop),
+                    )
+                }
+            })?;
+        let mut output = VideoOutput {
+            stream,
+            packets,
+            alerts,
+            stop,
+            thread: Some(thread),
+        };
+        match origin_rx.recv() {
+            Ok(origin) => {
+                output.stream.origin = origin;
+                Ok(output)
+            }
+            Err(_) => Err(output.shutdown().err().unwrap_or_else(|| {
+                EngineError::Encoder("le 2e fil d'encodage s'est arrêté au démarrage".into())
+            })),
+        }
     }
 
     pub fn stop(mut self) -> Result<VideoCaptureStats> {
@@ -232,6 +312,72 @@ impl Drop for VideoCapture {
         {
             tracing::warn!(%error, "arrêt de la capture vidéo");
         }
+    }
+}
+
+pub struct VideoOutput {
+    stream: VideoStream,
+    packets: Receiver<AVPacket>,
+    alerts: Receiver<EngineEvent>,
+    stop: Arc<AtomicBool>,
+    thread: Option<JoinHandle<Result<VideoCaptureStats>>>,
+}
+
+impl VideoOutput {
+    pub fn stream(&self) -> &VideoStream {
+        &self.stream
+    }
+
+    pub fn packets(&self) -> &Receiver<AVPacket> {
+        &self.packets
+    }
+
+    pub fn alerts(&self) -> &Receiver<EngineEvent> {
+        &self.alerts
+    }
+
+    pub fn stop(mut self) -> Result<VideoCaptureStats> {
+        self.shutdown()
+    }
+
+    fn shutdown(&mut self) -> Result<VideoCaptureStats> {
+        self.stop.store(true, Ordering::Relaxed);
+        match self.thread.take() {
+            Some(thread) => thread
+                .join()
+                .map_err(|_| EngineError::Encoder("le 2e fil d'encodage a paniqué".into()))?,
+            None => Ok(VideoCaptureStats::default()),
+        }
+    }
+}
+
+impl std::fmt::Debug for VideoOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("VideoOutput")
+            .field("stream", &self.stream)
+            .finish_non_exhaustive()
+    }
+}
+
+impl Drop for VideoOutput {
+    fn drop(&mut self) {
+        if self.thread.is_some()
+            && let Err(error) = self.shutdown()
+        {
+            tracing::warn!(%error, "arrêt de la 2e sortie vidéo");
+        }
+    }
+}
+
+enum Role {
+    Primary,
+    Extra(Arc<AtomicBool>),
+}
+
+impl Role {
+    fn stopped(&self, shared: &Shared) -> bool {
+        shared.stop.load(Ordering::Relaxed)
+            || matches!(self, Self::Extra(stop) if stop.load(Ordering::Relaxed))
     }
 }
 
@@ -403,7 +549,9 @@ fn run_encoder(
     mut encoder: VideoEncoder,
     fps: u32,
     outputs: EncoderOutputs,
+    role: Role,
 ) -> Result<VideoCaptureStats> {
+    let primary = matches!(role, Role::Primary);
     let EncoderOutputs {
         origin,
         packets,
@@ -419,7 +567,7 @@ fn run_encoder(
     let mut send = |mut packet: AVPacket| loop {
         match packets.send_timeout(packet, SEND_RETRY) {
             Ok(()) => return Ok(()),
-            Err(SendTimeoutError::Timeout(_)) if shared.stop.load(Ordering::Relaxed) => {
+            Err(SendTimeoutError::Timeout(_)) if role.stopped(&shared) => {
                 return Ok(());
             }
             Err(SendTimeoutError::Timeout(unsent)) => packet = unsent,
@@ -448,7 +596,7 @@ fn run_encoder(
     let mut next_rate_check = Hns::now() + RATE_CHECK;
     let mut frames_at_check = 0;
     let mut emitted_at_check = (0, 0);
-    while !shared.stop.load(Ordering::Relaxed) {
+    while !role.stopped(&shared) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
             return Err(EngineError::CapturedWindowClosed);
@@ -456,7 +604,7 @@ fn run_encoder(
         let wait = clock.next_deadline() - Hns::now();
         if wait > Hns::ZERO {
             std::thread::sleep(Duration::from_nanos(wait.0 as u64 * 100));
-            if shared.stop.load(Ordering::Relaxed) {
+            if role.stopped(&shared) {
                 break;
             }
         }
@@ -481,13 +629,15 @@ fn run_encoder(
                 .map_or(frames_at_check, |latest| latest.count);
             let new_frames = delivered.saturating_sub(frames_at_check);
             frames_at_check = delivered;
-            if let Some(alert) =
-                composition_rate().and_then(|rate| rate_watch.observe(now, rate, new_frames))
-            {
-                alerts.try_send(alert).ok();
-            }
-            if let Some(alert) = freeze_watch.observe(now, new_frames, exclusive_fullscreen) {
-                alerts.try_send(alert).ok();
+            if primary {
+                if let Some(alert) =
+                    composition_rate().and_then(|rate| rate_watch.observe(now, rate, new_frames))
+                {
+                    alerts.try_send(alert).ok();
+                }
+                if let Some(alert) = freeze_watch.observe(now, new_frames, exclusive_fullscreen) {
+                    alerts.try_send(alert).ok();
+                }
             }
             let (emitted, late) = emitted_at_check;
             if let Some(alert) =
@@ -561,7 +711,7 @@ fn run_encoder(
         })?;
         last_count = latest.count;
         stats.captured = latest.count;
-        {
+        if primary {
             let mut counters = shared.counters.lock();
             counters.frames = stats.frames;
             counters.repeated = stats.duplicated;
