@@ -376,7 +376,7 @@
       "offsetOf": "{name} offset in milliseconds",
       "defaultDevice": "Default",
       "defaultDeviceNamed": "Default ({name})",
-      "desktopSource": "Source",
+      "desktopSource": "Desktop audio source for {name}",
       "exceptPalaClips": "All sounds except PalaClips",
       "palaclipsSoundsIncluded": "PalaClips sounds are recorded in it.",
       "microphone": "Microphone",
