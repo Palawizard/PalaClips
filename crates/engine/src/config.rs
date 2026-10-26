@@ -33,11 +33,32 @@ impl Default for EngineConfig {
 impl EngineConfig {
     pub fn validate(&self) -> Result<()> {
         self.video.validate()?;
+        self.record_video().validate()?;
         self.audio.validate()?;
         self.replay.validate()?;
         self.record.validate()?;
         self.storage.validate()?;
         Ok(())
+    }
+}
+
+impl EngineConfig {
+    pub fn record_video(&self) -> VideoSettings {
+        match self.record.video {
+            Some(record) => VideoSettings {
+                fps: record.fps,
+                resolution: record.resolution,
+                codec: record.codec,
+                quality: record.quality,
+                bitrate_kbps: record.bitrate_kbps,
+                ..self.video.clone()
+            },
+            None => self.video.clone(),
+        }
+    }
+
+    pub fn records_separately(&self) -> bool {
+        self.record_video() != self.video
     }
 }
 
@@ -385,6 +406,28 @@ pub const SPLIT_MEGABYTES: std::ops::RangeInclusive<u32> = 100..=1_000_000;
 pub struct RecordSettings {
     pub include_replay: bool,
     pub split: RecordSplit,
+    pub video: Option<RecordVideo>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecordVideo {
+    pub fps: u32,
+    pub resolution: OutputResolution,
+    pub codec: VideoCodec,
+    pub quality: VideoQuality,
+    pub bitrate_kbps: u32,
+}
+
+impl RecordVideo {
+    pub fn from_video(video: &VideoSettings) -> Self {
+        Self {
+            fps: video.fps,
+            resolution: video.resolution,
+            codec: video.codec,
+            quality: video.quality,
+            bitrate_kbps: video.bitrate_kbps,
+        }
+    }
 }
 
 impl RecordSettings {

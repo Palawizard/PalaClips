@@ -1,0 +1,7 @@
+2026-10-26T14:14:19 record-quality-av : replay [--height 480 --fps 60 --bitrate-mbps 4], enregistrement [--record-height 720 --record-fps 30 --record-codec hevc --record-bitrate-mbps 6] 
+  2026-10-26T13:14:27.960048Z  INFO palaclips_engine::engine: enregistrement dans sa propre qualité : 2e encodage width=1280 height=720 fps=30
+Bureau_2026-10-26_14-14-27.mp4 : hevc,1280,720,30/1,2626560/87593, 17,11 s | flux 0 video : 512 paquets, 17.108 s, doublons 0, trous 0 (max 0.0 ms, à [] s), pas courts 0, premier pas 41.34 ms ; flux 1 audio : 797 paquets, 17.024 s, doublons 0, trous 0 (max 0.0 ms, à [] s), pas courts 0, premier pas 21.33 ms ; CONTINU
+  synchro A/V (piste 1) : 11 paires, décalage moyen 98,2 ms, dispersion 0 ms
+Bureau_2026-10-26_14-14-43_replay.mp4 : h264,854,480,60/1,60/1, 22,15 s | flux 0 video : 1328 paquets, 22.150 s, doublons 0, trous 0 (max 0.0 ms, à [] s), pas courts 0, premier pas 16.67 ms ; flux 1 audio : 1037 paquets, 22.144 s, doublons 0, trous 0 (max 0.0 ms, à [] s), pas courts 0, premier pas 21.33 ms ; CONTINU
+  synchro A/V (piste 1) : 9 paires, décalage moyen 90,2 ms, dispersion 0 ms
+2026-10-26T14:14:50 fin : CLI arrêtée, clips supprimés, journal C:\Projets-NAS-Sync\Code\apps\PalaClips\target\journals\record-quality-av-2026-10-26_14-14.txt

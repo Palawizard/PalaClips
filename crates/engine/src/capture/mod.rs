@@ -19,4 +19,4 @@ pub use rate::{RateWatch, composition_rate, exclusive_fullscreen, exclusive_full
 pub use targets::{
     ResolvedTarget, TargetInfo, app_icon, list_targets, resolve_target, target_size,
 };
-pub use video::{VideoCapture, VideoCaptureStats, VideoStream};
+pub use video::{VideoCapture, VideoCaptureStats, VideoOutput, VideoStream};
