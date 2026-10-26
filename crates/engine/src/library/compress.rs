@@ -299,6 +299,9 @@ fn is_hdr(transfer: ffi::AVColorTransferCharacteristic) -> bool {
 }
 
 pub fn probe_source(path: &Path) -> Result<SourceInfo> {
+    if !path.is_file() {
+        return Err(EngineError::FileMissing);
+    }
     let input = open_input(path).map_err(|_| EngineError::NotAVideo)?;
     let video = input
         .streams()

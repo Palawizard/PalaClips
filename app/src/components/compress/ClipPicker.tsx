@@ -5,6 +5,7 @@ import { bytes, clock } from "../../lib/format.ts";
 import { autoNamed, clipTitle, dayLabel, timeOfDay } from "../../lib/gallery.ts";
 import { errorText, useT } from "../../lib/i18n.ts";
 import { type Clip, clipGames, listClips } from "../../lib/ipc.ts";
+import { useLibraryChanges } from "../../lib/library.ts";
 import { Select } from "../settings/Settings.tsx";
 
 const SEARCH_DELAY_MS = 150;
@@ -27,7 +28,10 @@ export function ClipPicker({ open, onClose, onAdd }: { open: boolean; onClose: (
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [focus, setFocus] = useState(0);
+  const [version, setVersion] = useState(0);
   const anchor = useRef(0);
+
+  useLibraryChanges(() => setVersion((current) => current + 1));
 
   useEffect(() => {
     const element = dialog.current;
@@ -53,7 +57,7 @@ export function ClipPicker({ open, onClose, onAdd }: { open: boolean; onClose: (
       );
     }, SEARCH_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [open, search, game, favorites]);
+  }, [open, search, game, favorites, version]);
 
   const list = clips ?? [];
   const chosen = list.filter((clip) => selected.includes(clip.path));

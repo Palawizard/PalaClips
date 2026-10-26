@@ -413,6 +413,17 @@ gauche). À la fin, Claude ferme l'app de test et supprime `target\test-config`.
    cliquer État → l'alerte s'ouvre (focus sur Rester) ; Échap = Rester ; recommencer et choisir
    « Ne pas appliquer » ; recommencer et fermer la fenêtre par la croix → même alerte.
 
+## T16 — Listes de clips à jour (v1.3.1)
+
+Automatique (🤖, après `npx tauri build --no-bundle` dans `app`, PalaClips installé fermé) :
+`pwsh scripts/library-refresh.ps1 -MainScreen` lance l'app isolée (replay désarmé, 8 clips
+factices) et vérifie par CDP : suppression et renommage depuis l'Explorateur, fichier ajouté,
+suppression depuis la galerie, clic sur une carte dont le fichier a disparu, lecteur ouvert sur
+un clip supprimé, changement de dossier, purge par le quota (fichier fragmenté de 1,2 Go, sans
+place sur le disque). Le clip supprimé depuis la galerie part dans la Corbeille de Windows.
+Moteur : `a_clip_deleted_or_renamed_on_disk_leaves_the_library_through_the_watcher`. Front :
+`lib/library.test.ts`.
+
 ## T15 — Session de fin de version v1.3 (≤ 15 min, en jouant)
 
 Préparation (Claude) : PalaClips installé fermé (zone de notification > Quitter) ; app isolée

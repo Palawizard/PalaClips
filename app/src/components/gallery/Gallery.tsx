@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DraftRequest } from "../../lib/compressDrafts.ts";
 import { type Period, clipTitle, sinceOf } from "../../lib/gallery.ts";
 import { errorText, t as translate, useT } from "../../lib/i18n.ts";
+import { useLibraryChanges } from "../../lib/library.ts";
 import {
   type Clip,
   type ClipKind,
@@ -11,7 +12,6 @@ import {
   clipGames,
   copyClip,
   listClips,
-  onLibraryChanged,
   renameClip,
   revealClip,
   setClipFavorite,
@@ -24,7 +24,6 @@ import { Player } from "./Player.tsx";
 import { type Shortcut, Shortcuts } from "./Shortcuts.tsx";
 
 const SEARCH_DELAY_MS = 150;
-const REFRESH_DELAY_MS = 200;
 const NOTICE_MS = 6_000;
 const TRASH_DELAY_MS = 6_000;
 const SKELETON_CARDS = 8;
@@ -126,17 +125,14 @@ export function Gallery({
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    let timer = 0;
-    const unlisten = onLibraryChanged(() => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(load, REFRESH_DELAY_MS);
-    });
-    return () => {
-      window.clearTimeout(timer);
-      unlisten.then((stop) => stop());
-    };
-  }, [load]);
+  useLibraryChanges(({ removed }) => {
+    load();
+    if (open && removed.includes(open.path)) {
+      setOpen(null);
+      setNotice(t("gallery.clipGone", { name: clipTitle(open) }));
+      setRestoreFocus((current) => current + 1);
+    }
+  });
 
   useEffect(() => {
     if (!notice || pendingTrash) return;

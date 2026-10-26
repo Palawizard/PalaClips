@@ -838,6 +838,39 @@ mod tests {
     }
 
     #[test]
+    fn a_clip_deleted_or_renamed_on_disk_leaves_the_library_through_the_watcher() {
+        let dir = scratch("watched");
+        let clips = dir.join("clips");
+        let first = clips.join("Jeu").join("Jeu_a_replay.mp4");
+        let second = clips.join("Jeu").join("Jeu_b_replay.mp4");
+        write_clip(&first, 1, 2);
+        write_clip(&second, 1, 1);
+        let mut library = library(&dir);
+        library.sync().expect("sync");
+        let (batches, received) = crossbeam_channel::unbounded();
+        let _watch = crate::library::watch(&clips, move |paths| {
+            batches.send(paths).ok();
+        })
+        .expect("watch");
+        let next_batch = || {
+            received
+                .recv_timeout(std::time::Duration::from_secs(10))
+                .expect("batch")
+        };
+        std::fs::remove_file(&first).expect("delete");
+        let report = library.apply_changes(&next_batch()).expect("deleted");
+        assert_eq!(report.removed, 1);
+        let renamed = clips.join("Jeu").join("Moment.mp4");
+        std::fs::rename(&second, &renamed).expect("rename");
+        library.apply_changes(&next_batch()).expect("renamed");
+        let all = library.query(&ClipQuery::default()).expect("query");
+        assert_eq!(names(&all), ["Moment"]);
+        assert!(!library.contains(&first).expect("contains"));
+        assert!(!library.contains(&second).expect("contains"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn a_change_outside_the_clips_folder_is_ignored_and_a_folder_change_rescans() {
         let dir = scratch("changes");
         let clips = dir.join("clips");
