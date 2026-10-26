@@ -62,6 +62,14 @@ export function memoryStatus(): Promise<MemoryStatus> {
   return invoke<MemoryStatus>("memory_status");
 }
 
+export interface RecordVideo {
+  fps: number;
+  resolution: OutputResolution;
+  codec: VideoCodec;
+  quality: VideoQuality;
+  bitrate_kbps: number;
+}
+
 export interface ReplayEstimate {
   source_width: number;
   source_height: number;
@@ -70,6 +78,7 @@ export interface ReplayEstimate {
   video_kbps: number;
   audio_tracks: number;
   bytes: number;
+  file_bytes_per_minute: number;
 }
 
 export function estimateReplay(config: EngineConfig): Promise<ReplayEstimate> {
@@ -624,7 +633,6 @@ export interface EngineConfig {
     microphone_sync_offset_ms: number;
     microphone_in_full_mix: boolean;
     app_tracks: AppTrack[];
-    max_app_tracks: number;
     auto_game_track: boolean;
     game_label: string | null;
     game_sync_offset_ms: number;
@@ -639,6 +647,7 @@ export interface EngineConfig {
   record: {
     include_replay: boolean;
     split: RecordSplit;
+    video: RecordVideo | null;
   };
   storage: {
     clips_dir: string | null;

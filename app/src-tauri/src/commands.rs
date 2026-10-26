@@ -124,6 +124,14 @@ pub async fn set_config(
         let encoders = cached_encoders(&slot)?;
         palaclips_engine::engine::try_video_output(&config, &encoders)?;
     }
+    if config.records_separately() && current.record_video() != config.record_video() {
+        let encoders = cached_encoders(&slot)?;
+        let recording = EngineConfig {
+            video: config.record_video(),
+            ..config.clone()
+        };
+        palaclips_engine::engine::try_video_output(&recording, &encoders)?;
+    }
     slot.apply(&app, config)?;
     Ok(slot.config())
 }

@@ -100,3 +100,24 @@ plaques `kbd`) ; l'état « Appuie sur la combinaison… » est le seul moment a
   1080p30 appliqué. Blocage seulement si rien ne marche (`no_video_encoder`).
 - Panneau de performances : « Processeur · H.264 » / « Processeur · AV1 » au lieu du nom
   FFmpeg de l'encodeur.
+
+## Replay & qualité v1.3, brief confirmé (shape, 2026-10-26)
+
+- Bandeau d'estimation en tête (figures en Barlow Condensed) : taille d'un clip à la durée du
+  replay, Mo par minute, taille avec l'« après » quand il est réglé, RAM du tampon ; ligne
+  technique (définition · i/s · débit · pistes). Unités binaires de `format::bytes`. Encodage en
+  CBR : un seul chiffre « ≈ » (écart mesuré −1,4 à −5,4 %).
+- Une partie par usage (choix de Palawi) : « Replay » (durée, après l'appui, tampon, codec,
+  qualité, images/s, résolution), « Enregistrement » (Mo/min et Go/h, interrupteur « Comme le
+  replay » activé par défaut ; désactivé → codec, qualité, images/s, résolution propres),
+  « Commun » (encodeur, images clés, priorité GPU). Titres de partie = lignes `title` sur filet,
+  pas de libellé en capitales.
+- Les réglages de l'enregistrement ne redémarrent pas le replay (appliqués tout de suite).
+- Ancre `#replay-quality` : « Replay et qualité » sur État et Capture ouvre Réglages > Replay &
+  qualité, fait défiler et met le focus sur le bandeau d'estimation, en passant par la garde de
+  sortie.
+- État : sous l'état du replay, « 1440p60 · H.264 · ≈ 103 Mo/min » + bouton secondaire
+  « Replay et qualité » ; résumé propre dans la cellule Enregistrement si la qualité diffère.
+- Audio : plus de « Pistes d'applis au maximum », plus de compteur « X / max » ni de message
+  « plein » ; dès la 13e piste d'appli, note en caption (ink-muted) sous la liste : coût des
+  pistes au-delà de 12 (processeur, mémoire, Mo/min), sans couleur d'alerte.

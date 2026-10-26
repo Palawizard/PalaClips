@@ -143,7 +143,10 @@
     "changeSource": "Change",
     "clipInProgress": "Clip in progress",
     "extend": "Extend",
-    "finishClip": "Finish now"
+    "finishClip": "Finish now",
+    "quality": "Replay & quality",
+    "qualitySummary": "{resolution} · {codec} · ≈ {size}/min",
+    "resolutionFps": "{height}p{fps}"
   },
   "performance": {
     "title": "Performance",
@@ -282,7 +285,7 @@
       "quotaApply": "Delete and apply"
     },
     "replay": {
-      "estimate": "Buffer estimate",
+      "estimate": "Size estimate",
       "approx": "≈ {size}",
       "inRam": "in RAM",
       "onDisk": "on disk",
@@ -336,7 +339,17 @@
       "after": "After the press",
       "afterHelp": "Pressing again extends the clip.",
       "afterNone": "None",
-      "afterFree": "After the press, in seconds"
+      "afterFree": "After the press, in seconds",
+      "perClip": "per {duration} clip",
+      "perMinute": "per minute",
+      "perHour": "per hour",
+      "withAfter": "With {after} after:",
+      "replayPart": "Replay",
+      "recordingPart": "Recording",
+      "commonPart": "Shared",
+      "sameAsReplay": "Same as replay",
+      "forRecording": "{setting} (recording)",
+      "bufferSize": "Buffer:"
     },
     "capture": {
       "primary": "primary",
@@ -380,17 +393,18 @@
       "add": "Add",
       "addNamed": "Add {name}",
       "tracks": "Tracks",
-      "appCount": "{count}/{max} apps",
       "offset": "Offset",
-      "maxApps": "Maximum app tracks",
       "addApp": "Add an app",
       "search": "Search",
       "searchLabel": "Search for an app",
       "browse": "Browse for an .exe…",
-      "full": "{max}/{max}: remove a track or raise the maximum to add another.",
       "noMatch": "No app matches.",
       "noOther": "No other open app.",
-      "pendingApply": "Added: recorded after “Apply”"
+      "pendingApply": "Added: recorded after “Apply”",
+      "manyTracks": {
+        "one": "{count} app track beyond {calm} adds about {cpu}% of a CPU core, {memory} of RAM and up to {size} per clip minute.",
+        "other": "{count} app tracks beyond {calm} add about {cpu}% of a CPU core, {memory} of RAM and up to {size} per clip minute."
+      }
     },
     "calibration": {
       "title": "Sync calibration",
@@ -424,7 +438,8 @@
         "size": "By size"
       },
       "splitMinutes": "Length of each file in minutes",
-      "splitMegabytes": "Size of each file in megabytes"
+      "splitMegabytes": "Size of each file in megabytes",
+      "includeReplaySeparate": "Quality differs from the replay: the replay in memory is saved as a separate clip, just before the recording."
     }
   },
   "tray": {
@@ -552,7 +567,8 @@
     "compress_cancelled": "Compression cancelled.",
     "not_a_video": "This file has no readable video track.",
     "target_too_small": "Target too small for this length: it needs at least {min_mb} MB.",
-    "over_target": "The file is still over the target after three attempts: pick a lower resolution or a larger target."
+    "over_target": "The file is still over the target after three attempts: pick a lower resolution or a larger target.",
+    "record_encoder_cpu": "The graphics card refused a second encode ({reason}): the recording is encoded by the processor."
   },
   "player": {
     "back": "Back to the gallery",
