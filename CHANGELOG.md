@@ -5,6 +5,31 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.3.0] - 2026-10-26
+
+### Ajouté
+- Qualité propre de l'enregistrement (REC-07, ADR-040) : dans Réglages → Replay & qualité,
+  l'enregistrement suit le replay ou prend son codec, sa qualité, ses images par seconde et sa
+  résolution. Le replay continue pendant l'enregistrement et reste sauvegardable.
+- Estimation de la taille des clips (RPL-11) : Mo par minute, taille d'un clip, avec l'« après »,
+  et Mo par minute et par heure pour l'enregistrement.
+- Accès direct à Replay & qualité : résumé de la qualité cliquable sur État, bouton sur Capture.
+- Son au début et à la fin d'un enregistrement (désactivable avec le son de confirmation).
+
+### Modifié
+- Plus de maximum de pistes d'applis : au-delà de 12, une note dit ce qu'elles coûtent.
+- Moins de processeur avec beaucoup de pistes d'applis (un seul relevé des processus pour
+  toutes les pistes : 11,5 % → 7 % de la machine à 24 pistes).
+
+### Corrigé
+- Compression « Garder toutes les pistes » avec beaucoup de pistes : le débit audio baisse au
+  lieu de refuser une cible pourtant suffisante.
+- Des réglages ne semblaient pris en compte qu'après une relance (ADR-039) : l'écran État
+  affichait encore l'ancienne durée du replay et l'ancien raccourci, et une page ouverte avant
+  un changement fait ailleurs pouvait l'écraser. Le moteur appliquait déjà chaque réglage ; la
+  config affichée suit maintenant chaque changement, et chaque page n'envoie que ce qu'elle
+  modifie.
+
 ## [1.2.0] - 2026-10-24
 
 ### Ajouté

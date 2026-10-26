@@ -10,7 +10,6 @@ import {
   type TargetInfo,
   estimateReplay,
   finishOnboarding,
-  getConfig,
   encodesOnGpu,
   getHotkeys,
   listAudioDevices,
@@ -555,12 +554,7 @@ export function Onboarding({ engine, onDone }: { engine: Engine; onDone: (view: 
       footer = (
         <button
           type="button"
-          onClick={() =>
-            getConfig().then(
-              (fresh) => advance(commit({ ...draft, capture: fresh.capture })),
-              (failure) => setError(errorText(failure)),
-            )
-          }
+          onClick={() => advance()}
           className={PRIMARY}
         >
           {t("onboarding.next")}

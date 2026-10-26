@@ -1,7 +1,10 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
+use parking_lot::Mutex;
 use serde::Serialize;
 use wasapi::{DeviceEnumerator, Direction, SessionState};
 use windows::Win32::Foundation::{CloseHandle, FILETIME, HWND, LPARAM, RECT, WPARAM};
@@ -27,6 +30,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::config::CaptureTarget;
 use crate::error::{EngineError, Result};
+
+const SNAPSHOT_MAX_AGE: Duration = Duration::from_millis(500);
 
 const SHELL_EXES: [&str; 7] = [
     "explorer.exe",
@@ -85,6 +90,19 @@ pub fn processes() -> Result<Vec<Process>> {
         drop_reused_parents(&mut list);
         Ok(list)
     }
+}
+
+pub fn recent_processes() -> Result<Arc<Vec<Process>>> {
+    static LATEST: Mutex<Option<(Instant, Arc<Vec<Process>>)>> = Mutex::new(None);
+    let mut latest = LATEST.lock();
+    if let Some((taken, list)) = latest.as_ref()
+        && taken.elapsed() < SNAPSHOT_MAX_AGE
+    {
+        return Ok(list.clone());
+    }
+    let list = Arc::new(processes()?);
+    *latest = Some((Instant::now(), list.clone()));
+    Ok(list)
 }
 
 fn creation_time(pid: u32) -> Option<u64> {

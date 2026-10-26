@@ -4,10 +4,35 @@ use tauri_plugin_notification::NotificationExt;
 
 const SAMPLE_RATE: u32 = 48_000;
 const VOLUME: f32 = 0.22;
-const NOTES: [(f32, f32, f32); 2] = [(880.0, 0.0, 0.11), (1318.5, 0.075, 0.2)];
+type Note = (f32, f32, f32);
 
-fn chime_samples() -> Vec<i16> {
-    let length = NOTES
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Sound {
+    Saved,
+    RecordingStarted,
+    RecordingStopped,
+}
+
+impl Sound {
+    fn notes(self) -> &'static [Note] {
+        match self {
+            Self::Saved => &[(880.0, 0.0, 0.11), (1318.5, 0.075, 0.2)],
+            Self::RecordingStarted => &[(523.25, 0.0, 0.1), (783.99, 0.075, 0.2)],
+            Self::RecordingStopped => &[(783.99, 0.0, 0.1), (523.25, 0.075, 0.2)],
+        }
+    }
+
+    fn index(self) -> usize {
+        match self {
+            Self::Saved => 0,
+            Self::RecordingStarted => 1,
+            Self::RecordingStopped => 2,
+        }
+    }
+}
+
+fn sound_samples(notes: &[Note]) -> Vec<i16> {
+    let length = notes
         .iter()
         .map(|(_, start, duration)| start + duration)
         .fold(0.0, f32::max);
@@ -15,7 +40,7 @@ fn chime_samples() -> Vec<i16> {
     (0..count)
         .map(|index| {
             let time = index as f32 / SAMPLE_RATE as f32;
-            let value: f32 = NOTES
+            let value: f32 = notes
                 .iter()
                 .filter(|(_, start, duration)| time >= *start && time < start + duration)
                 .map(|(frequency, start, duration)| {
@@ -53,12 +78,12 @@ fn wav(samples: &[i16]) -> Vec<u8> {
 }
 
 #[cfg(windows)]
-pub fn play_chime() {
+pub fn play(sound: Sound) {
     use windows::Win32::Media::Audio::{PlaySoundW, SND_ASYNC, SND_MEMORY, SND_NODEFAULT};
     use windows::core::PCWSTR;
 
-    static CHIME: OnceLock<Vec<u8>> = OnceLock::new();
-    let chime = CHIME.get_or_init(|| wav(&chime_samples()));
+    static SOUNDS: [OnceLock<Vec<u8>>; 3] = [OnceLock::new(), OnceLock::new(), OnceLock::new()];
+    let chime = SOUNDS[sound.index()].get_or_init(|| wav(&sound_samples(sound.notes())));
     // SAFETY: SND_MEMORY reads the WAV from `chime`, a static buffer that outlives the
     // asynchronous playback.
     let played = unsafe {
@@ -84,8 +109,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn recording_sounds_differ_from_the_save_chime() {
+        let saved = sound_samples(Sound::Saved.notes());
+        let started = sound_samples(Sound::RecordingStarted.notes());
+        let stopped = sound_samples(Sound::RecordingStopped.notes());
+        assert_ne!(saved, started);
+        assert_ne!(started, stopped);
+    }
+
+    #[test]
     fn chime_is_a_short_mono_wav_below_full_scale() {
-        let samples = chime_samples();
+        let samples = sound_samples(Sound::Saved.notes());
         let seconds = samples.len() as f32 / SAMPLE_RATE as f32;
         assert!((0.2..0.35).contains(&seconds), "{seconds}");
         let peak = samples

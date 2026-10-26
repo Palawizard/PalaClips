@@ -224,7 +224,14 @@ pub fn plan(
     let audio_kbps = if tracks == 0 {
         0
     } else {
-        audio_kbps_for(total)
+        let best = audio_kbps_for(total);
+        AUDIO_TIERS
+            .iter()
+            .map(|(_, kbps)| *kbps)
+            .chain([AUDIO_FLOOR_KBPS])
+            .filter(|kbps| *kbps <= best)
+            .find(|kbps| total - f64::from(*kbps) * tracks as f64 >= f64::from(MIN_VIDEO_KBPS))
+            .unwrap_or(AUDIO_FLOOR_KBPS)
     };
     let video = total - f64::from(audio_kbps) * tracks as f64;
     if video < f64::from(MIN_VIDEO_KBPS) {
@@ -930,6 +937,17 @@ mod tests {
         let all = plan(&clip, 50_000_000, CompressCodec::H264, true, 60.0)?;
         assert_eq!(all.audio_tracks, 3);
         assert!(all.video_kbps < one.video_kbps);
+        Ok(())
+    }
+
+    #[test]
+    fn many_tracks_lower_the_audio_bitrate_before_refusing() -> Result<()> {
+        let mut clip = source(1280, 720, 30.0, 19.0, 15);
+        clip.audio_tracks = (0..26).map(|index| format!("Piste {index}")).collect();
+        let plan = plan(&clip, 8_000_000, CompressCodec::H264, true, 19.0)?;
+        assert_eq!(plan.audio_tracks, 26);
+        assert!(plan.audio_kbps < audio_kbps_for(budget_kbps(8_000_000, 19.0)));
+        assert!(plan.estimated_bytes(19.0) <= 8_000_000, "{plan:?}");
         Ok(())
     }
 

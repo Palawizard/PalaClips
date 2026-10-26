@@ -412,3 +412,28 @@ gauche). À la fin, Claude ferme l'app de test et supprime `target\test-config`.
 4. **Sortie de page** (~1 min) : replay armé, page Capture → basculer « Afficher le curseur » →
    cliquer État → l'alerte s'ouvre (focus sur Rester) ; Échap = Rester ; recommencer et choisir
    « Ne pas appliquer » ; recommencer et fermer la fenêtre par la croix → même alerte.
+
+## T15 — Session de fin de version v1.3 (≤ 15 min, en jouant)
+
+Préparation (Claude) : PalaClips installé fermé (zone de notification > Quitter) ; app isolée
+(`scripts/app-isolated.ps1`, écran demandé par Palawi) avec un replay de 2 min, 14 pistes
+d'applis (applis de Palawi + exe non lancés) et le clip de 26 pistes de `scripts/many-tracks.ps1
+-Keep` copié dans la galerie. À la fin, Claude ferme l'app de test et supprime
+`target\test-config`.
+
+1. **Réglages pris tout de suite** (~2 min, scénario du zip du 24/10) : replay armé, Réglages →
+   Replay & qualité : durée 2 min → 1 min, images par seconde 60 → 120 → Appliquer ; Raccourcis :
+   « Sauvegarder le replay » → `Ctrl+F11`. Aller sur État **sans relancer** : « / 01:00 », la
+   nouvelle cadence dans le résumé et `Ctrl+F11` sur le bouton Sauvegarder.
+2. **Accès direct** (~1 min) : État → « Replay et qualité » → Réglages s'ouvre sur l'estimation
+   (focus visible au clavier) ; Capture → basculer « Afficher le curseur » → « Replay et
+   qualité » → l'alerte de sortie s'ouvre.
+3. **Estimation contre un vrai clip** (~3 min, en jeu) : noter l'estimation « par clip de
+   1 min » ; jouer plus d'1 min puis `Ctrl+F11` ; Claude compare la taille du clip à l'estimation.
+4. **Enregistrement dans une autre qualité** (~4 min, en jeu) : Enregistrement → décocher « Comme le
+   replay », 1080p, 30 i/s ; en jeu `Ctrl+Alt+F9`, après 30 s `Ctrl+F11` (replay pendant
+   l'enregistrement), après 1 min `Ctrl+Alt+F9`. Claude vérifie les deux fichiers (1080p30 et
+   qualité du replay), sans trou ni doublon.
+5. **Beaucoup de pistes** (~3 min) : page Audio (note au-delà de 12, pas de maximum) ; État (toutes
+   les pistes) ; Galerie → clip de 26 pistes : muet et solo sur une piste du bas ; glisser ce clip
+   dans le Media Pool de DaVinci Resolve → Clip Attributes → Audio : 26 pistes.
