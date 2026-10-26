@@ -7,6 +7,8 @@ mod probe_audio;
 #[cfg(windows)]
 mod probe_av;
 #[cfg(windows)]
+mod probe_exclusion;
+#[cfg(windows)]
 mod probe_gpu;
 #[cfg(windows)]
 mod probe_memory;
@@ -359,6 +361,42 @@ enum Command {
         new_local: std::path::PathBuf,
     },
     #[cfg(windows)]
+    #[command(
+        about = "Capture en même temps le loopback d'une sortie et « tout sauf ce processus » (process loopback exclusif) pendant que ce processus joue le son de PalaClips"
+    )]
+    ProbeExclusion {
+        #[arg(long, default_value_t = 12)]
+        seconds: u64,
+        #[arg(
+            long,
+            help = "Sortie du loopback classique (partie du nom) ; absente = sortie par défaut"
+        )]
+        device: Option<String>,
+        #[arg(
+            long = "chime-at",
+            help = "Instant du son joué par ce processus, en secondes (répétable)"
+        )]
+        chimes_at: Vec<f64>,
+        #[arg(
+            long,
+            help = "Capture aussi ce seul processus (process loopback inclusif)"
+        )]
+        include_pid: Option<u32>,
+        #[arg(long, help = "Dossier des captures (f32 mono 48 kHz)")]
+        out: std::path::PathBuf,
+    },
+    #[cfg(windows)]
+    #[command(about = "Joue un son de PalaClips depuis un autre processus")]
+    PlayChime {
+        #[arg(long, default_value_t = 1, help = "Nombre de sons, un par seconde")]
+        count: u32,
+        #[arg(
+            long,
+            help = "Son de fin d'enregistrement au lieu du son de sauvegarde"
+        )]
+        stopped: bool,
+    },
+    #[cfg(windows)]
     #[command(about = "Joue une sinusoïde sur une sortie (source de test), avec ou sans fenêtre")]
     PlayTone {
         #[arg(long, default_value_t = 440.0)]
@@ -634,6 +672,33 @@ fn main() -> Result<()> {
                 migration.moved.len(),
                 migration.kept.len()
             );
+        }
+        #[cfg(windows)]
+        Command::ProbeExclusion {
+            seconds,
+            device,
+            chimes_at,
+            include_pid,
+            out,
+        } => probe_exclusion::probe_exclusion(
+            seconds,
+            device.as_deref(),
+            &chimes_at,
+            include_pid,
+            &out,
+        )?,
+        #[cfg(windows)]
+        Command::PlayChime { count, stopped } => {
+            use palaclips_engine::chime::Sound;
+            println!("PID {}", std::process::id());
+            for _ in 0..count {
+                palaclips_engine::chime::play(if stopped {
+                    Sound::RecordingStopped
+                } else {
+                    Sound::Saved
+                });
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
         }
         #[cfg(windows)]
         Command::PlayTone {
