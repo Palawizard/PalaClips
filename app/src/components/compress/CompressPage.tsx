@@ -9,6 +9,7 @@ import {
   addDrafts,
   clearDrafts,
   editPlan,
+  markMissing,
   planInput,
   removeDraft,
   setOptions,
@@ -35,6 +36,7 @@ import {
 } from "../../lib/ipc.ts";
 import { NumberField, Segmented, Select, SettingRow, Switch } from "../settings/Settings.tsx";
 import { ClipPicker } from "./ClipPicker.tsx";
+import { useLibraryChanges } from "../../lib/library.ts";
 
 const SECONDARY =
   "pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover";
@@ -292,6 +294,8 @@ export function CompressPage() {
 
   const queueTitle = useRef<HTMLHeadingElement>(null);
   const [announce, setAnnounce] = useState("");
+
+  useLibraryChanges(({ removed }) => markMissing(removed));
 
   useEffect(() => {
     compressJobs().then(
