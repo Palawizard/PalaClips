@@ -293,7 +293,9 @@ impl Worker {
         let default_changed = Arc::new(Waitable::event()?);
         let devices_changed = Arc::new(Waitable::event()?);
         let direction = self.direction();
-        let follows_default = !self.source.is_application() && self.device_id().is_none();
+        let follows_default = !self.source.is_application()
+            && self.source != AudioSource::DesktopExceptPalaClips
+            && self.device_id().is_none();
         let mut callbacks = DeviceEventCallbacks::new();
         callbacks.set_default_device_callback({
             let default_changed = default_changed.clone();
@@ -851,12 +853,18 @@ fn open_stream(
     enumerator: &DeviceEnumerator,
     source: &AudioSource,
 ) -> std::result::Result<CaptureStream, WasapiError> {
+    if *source == AudioSource::DesktopExceptPalaClips {
+        let pid = std::process::id();
+        let client = AudioClient::new_application_loopback_client(pid, false)?;
+        return start_capture(client, format!("tout sauf PalaClips (PID {pid})"), None);
+    }
     let (direction, device_id) = match source {
         AudioSource::Microphone { device_id, .. } => (Direction::Capture, device_id),
         AudioSource::SystemMix { device_id } => (Direction::Render, device_id),
-        AudioSource::Application { .. } | AudioSource::Game(_) | AudioSource::TracksMix => {
-            (Direction::Render, &None)
-        }
+        AudioSource::DesktopExceptPalaClips
+        | AudioSource::Application { .. }
+        | AudioSource::Game(_)
+        | AudioSource::TracksMix => (Direction::Render, &None),
     };
     let device = match device_id {
         Some(id) => enumerator.get_device(id)?,
