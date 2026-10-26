@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { number, useT } from "../../lib/i18n.ts";
 import { trackPeaks } from "../../lib/ipc.ts";
 import type { TrackMix } from "../../lib/playerAudio.ts";
+import { scrubHandlers } from "../../lib/scrub.ts";
 import type { Range } from "./Timeline.tsx";
 
 function cssColor(element: HTMLElement, color: string): string {
@@ -13,7 +14,19 @@ function cssColor(element: HTMLElement, color: string): string {
   return resolved;
 }
 
-function Waveform({ path, color, duration, range }: { path: string; color: string; duration: number; range: Range }) {
+function Waveform({
+  path,
+  color,
+  duration,
+  range,
+  onSeek,
+}: {
+  path: string;
+  color: string;
+  duration: number;
+  range: Range;
+  onSeek: (seconds: number) => void;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const peaks = useRef<Uint8Array | null>(null);
 
@@ -64,7 +77,10 @@ function Waveform({ path, color, duration, range }: { path: string; color: strin
 
   const span = Math.max(duration, 0.001);
   return (
-    <div className="relative h-9 min-w-0 flex-1 overflow-hidden rounded-[2px] bg-meter-ground">
+    <div
+      {...scrubHandlers(span, [range.start, range.end], onSeek)}
+      className="relative h-9 min-w-0 flex-1 cursor-pointer touch-none overflow-hidden rounded-[2px] bg-meter-ground select-none"
+    >
       <canvas ref={canvas} aria-hidden className="waveform absolute inset-0 size-full" />
       <div aria-hidden className="absolute inset-y-0 left-0 bg-ground/55" style={{ width: `${(range.start / span) * 100}%` }} />
       <div aria-hidden className="absolute inset-y-0 right-0 bg-ground/55" style={{ width: `${(1 - range.end / span) * 100}%` }} />
@@ -87,6 +103,7 @@ export function TrackLane({
   mix,
   audible,
   onMix,
+  onSeek,
 }: {
   index: number;
   title: string;
@@ -97,6 +114,7 @@ export function TrackLane({
   mix: TrackMix;
   audible: boolean;
   onMix: (mix: TrackMix) => void;
+  onSeek: (seconds: number) => void;
 }) {
   const t = useT();
   const idle = "border-line-strong text-ink-2 hover:bg-surface-hover hover:text-ink";
@@ -117,7 +135,7 @@ export function TrackLane({
       <span className={`truncate text-[15px] font-semibold ${audible ? "text-ink" : "text-ink-2"}`} title={title}>
         {title}
       </span>
-      <Waveform path={path} color={color} duration={duration} range={range} />
+      <Waveform path={path} color={color} duration={duration} range={range} onSeek={onSeek} />
       <span className="flex gap-1.5">
         <button
           type="button"
