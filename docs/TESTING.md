@@ -413,6 +413,15 @@ gauche). À la fin, Claude ferme l'app de test et supprime `target\test-config`.
    cliquer État → l'alerte s'ouvre (focus sur Rester) ; Échap = Rester ; recommencer et choisir
    « Ne pas appliquer » ; recommencer et fermer la fenêtre par la croix → même alerte.
 
+## T17 — Interface de la v1.3.1 (captures et lecteur)
+
+Automatique (🤖, app isolée, replay désarmé) : `pwsh scripts/ui-check.ps1 -MainScreen` capture
+Réglages → Audio (source « Tous les sons sauf PalaClips », puis une sortie précise avec la ligne
+reliée par `aria-describedby`) et le lecteur, en sombre et en clair, à 100 % et 150 %
+(`Emulation.setDeviceMetricsOverride`), atteint la liste Source au clavier (Tab), et vérifie dans
+le lecteur : clic à 50 % d'une piste, glisser calé sur l'entrée à 5 px, entrée avancée d'1 s au
+clavier → tête de lecture suivie. Captures dans `target/journals/ui-check-*`. Calage :
+`lib/scrub.test.ts`.
 ## T16 — Listes de clips à jour (v1.3.1)
 
 Automatique (🤖, après `npx tauri build --no-bundle` dans `app`, PalaClips installé fermé) :
