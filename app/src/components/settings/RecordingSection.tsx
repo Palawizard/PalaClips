@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { recordVideo } from "../../lib/config.ts";
 import { useT } from "../../lib/i18n.ts";
 import type { RecordSplit } from "../../lib/ipc.ts";
 import { NumberField, Segmented, SettingRow, Switch } from "./Settings.tsx";
@@ -28,7 +29,14 @@ export function RecordingSection() {
 
   return (
     <div ref={footerFocus} tabIndex={-1} className="outline-none">
-      <SettingRow label={t("settings.recording.includeReplay")}>
+      <SettingRow
+        label={t("settings.recording.includeReplay")}
+        help={
+          record.include_replay && JSON.stringify(recordVideo(draft)) !== JSON.stringify(draft.video)
+            ? t("settings.recording.includeReplaySeparate")
+            : undefined
+        }
+      >
         <Switch
           checked={record.include_replay}
           label={t("settings.recording.includeReplay")}

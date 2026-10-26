@@ -1,7 +1,9 @@
-import { HardDrive, Monitor, Save } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { Gauge, HardDrive, Monitor, Save } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { Destination } from "../App.tsx";
-import type { CaptureTarget } from "../lib/ipc.ts";
+import { recordingConfig } from "../lib/config.ts";
+import type { CaptureTarget, ReplayEstimate } from "../lib/ipc.ts";
+import { useEstimate } from "../lib/useEstimate.ts";
 import { bytes, clock } from "../lib/format.ts";
 import { message, t, useT } from "../lib/i18n.ts";
 import type { Engine, ReplayPhase } from "../lib/useEngine.ts";
@@ -43,6 +45,31 @@ function ReplayWitness({ phase }: { phase: ReplayPhase }) {
   );
 }
 
+const QUALITY: Destination = { view: "settings", section: "replay", focus: true };
+
+export function QualityButton({ onOpen }: { onOpen: (destination: Destination) => void }) {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(QUALITY)}
+      className="pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong px-3.5 font-medium text-ink hover:bg-surface-hover"
+    >
+      <Gauge size={16} aria-hidden />
+      {t("status.quality")}
+    </button>
+  );
+}
+
+function qualitySummary(estimate: ReplayEstimate | null, fps: number, codec: string): string | null {
+  if (!estimate) return null;
+  return t("status.qualitySummary", {
+    resolution: t("status.resolutionFps", { height: estimate.height, fps }),
+    codec,
+    size: bytes(estimate.file_bytes_per_minute),
+  });
+}
+
 const COUNTDOWN_TICK_MS = 250;
 
 function ClipInProgress({ endsAt }: { endsAt: number }) {
@@ -77,6 +104,16 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
   const fellBack = status?.alerts.some((alert) => alert.code === "capture_fallback_monitor");
   const source = capture ? message(capture.source) : targetLabel(config?.capture);
   const clipEndsAt = status?.clip_ends_at_ms ?? null;
+  const recordConfig = useMemo(() => {
+    const recording = config ? recordingConfig(config) : null;
+    return recording && JSON.stringify(recording.video) !== JSON.stringify(config?.video) ? recording : null;
+  }, [config]);
+  const replaySummary = qualitySummary(useEstimate(config), config?.video.fps ?? 0, t(`codecs.${config?.video.codec ?? "h264"}`));
+  const recordSummary = qualitySummary(
+    useEstimate(recordConfig),
+    recordConfig?.video.fps ?? 0,
+    t(`codecs.${recordConfig?.video.codec ?? "h264"}`),
+  );
 
   return (
     <header className="flex border-b border-line bg-surface max-[1000px]:flex-wrap [&>section+section]:border-l [&>section+section]:border-line max-[1000px]:[&>section:nth-child(2)]:border-l-0 max-[1000px]:[&>section:not(:first-child)]:border-t">
@@ -100,6 +137,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             {t("status.inRam")}
           </p>
         </div>
+        {replaySummary && <p className="score text-[15px] text-ink-2">{replaySummary}</p>}
         {clipEndsAt !== null && <ClipInProgress endsAt={clipEndsAt} />}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <button
@@ -131,6 +169,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
           >
             {armed || phase === "disarming" ? t("status.disarm") : t("status.arm")}
           </button>
+          <QualityButton onOpen={onOpen} />
         </div>
       </Cell>
 
@@ -154,6 +193,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             <span className="score text-[15px] font-medium text-ink-2">{bytes(status?.recording_bytes ?? 0)}</span>
           )}
         </p>
+        {recordSummary && <p className="score text-[15px] text-ink-2">{recordSummary}</p>}
         <button
           type="button"
           onClick={recording ? engine.stopRecording : engine.record}
