@@ -271,6 +271,62 @@ mod tests {
         assert!(loaded.problem.is_none());
     }
 
+    const SETTINGS_1_2: &str = r#"{
+  "engine": {
+    "audio": {
+      "app_tracks": [{ "enabled": true, "exe_name": "vesktop.exe", "label": "Discord", "sync_offset_ms": 0 }],
+      "auto_game_track": true, "desktop_in_full_mix": false, "full_mix_label": null,
+      "full_mix_sync_offset_ms": -103, "game_exe": null, "game_label": null, "game_sync_offset_ms": 0,
+      "max_app_tracks": 6, "microphone_device_id": null, "microphone_gain_db": 0.0,
+      "microphone_in_full_mix": true, "microphone_label": null, "microphone_sync_offset_ms": -448,
+      "output_device_id": null, "record_full_mix": true, "record_microphone": true
+    },
+    "capture": { "kind": "primary_monitor" },
+    "record": { "include_replay": false, "split": { "kind": "never" } },
+    "replay": { "after_secs": 10, "arm_on_startup": true, "duration_secs": 120, "storage": "ram" },
+    "schema_version": 1,
+    "storage": { "clips_dir": null, "game_names": { "rocketleague.exe": "Rocket League" }, "quota_gb": null },
+    "video": {
+      "bitrate_kbps": 20000, "capture_cursor": true, "codec": "h264", "draw_border": false,
+      "encoder": "auto", "fps": 120, "gpu_priority": "capture", "keyframe_interval_secs": 1.0,
+      "quality": "light", "resolution": { "height": 1080, "kind": "height" }
+    }
+  },
+  "feedback": { "sound": true, "toast": true },
+  "hotkeys": { "save_replay": "Ctrl+F10", "toggle_recording": "Ctrl+Alt+F9", "toggle_replay": "Ctrl+Alt+F10" },
+  "language": "system", "onboarded": true, "schema_version": 2, "theme": "system"
+}"#;
+
+    #[test]
+    fn settings_from_1_2_record_in_the_replay_quality() {
+        let path = scratch("from-1-2");
+        std::fs::write(&path, SETTINGS_1_2).expect("write");
+        let loaded = load(&path);
+        assert!(loaded.problem.is_none());
+        let engine = &loaded.settings.engine;
+        assert_eq!(engine.record.video, None);
+        assert!(!engine.records_separately());
+        assert_eq!(engine.record_video(), engine.video);
+        assert_eq!(engine.video.fps, 120);
+        assert_eq!(engine.replay.after_secs, 10);
+        assert_eq!(engine.audio.app_tracks.len(), 1);
+        assert_eq!(
+            loaded.settings.hotkeys.save_replay.as_deref(),
+            Some("Ctrl+F10")
+        );
+    }
+
+    #[test]
+    fn max_app_tracks_is_ignored_and_dropped_on_save() {
+        let path = scratch("max-app-tracks");
+        std::fs::write(&path, SETTINGS_1_2).expect("write");
+        let loaded = load(&path);
+        assert!(loaded.problem.is_none());
+        save(&path, &loaded.settings).expect("save");
+        let text = std::fs::read_to_string(&path).expect("read");
+        assert!(!text.contains("max_app_tracks"));
+    }
+
     #[test]
     fn saved_settings_round_trip() {
         let path = scratch("round-trip");

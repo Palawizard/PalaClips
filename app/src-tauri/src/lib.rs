@@ -515,6 +515,15 @@ impl EngineSlot {
     fn react(&self, app: &tauri::AppHandle, event: &EngineEvent) {
         match event {
             EngineEvent::StateChanged { state } => {
+                let was_recording = self.state() == EngineState::Recording;
+                let recording = *state == EngineState::Recording;
+                if was_recording != recording && self.feedback().sound {
+                    feedback::play(if recording {
+                        feedback::Sound::RecordingStarted
+                    } else {
+                        feedback::Sound::RecordingStopped
+                    });
+                }
                 let tray = TrayState {
                     recording: *state == EngineState::Recording,
                     ..self.tray_state()
@@ -530,7 +539,7 @@ impl EngineSlot {
                 if let Some(seconds) = ends_in_secs {
                     let feedback = self.feedback();
                     if feedback.sound {
-                        feedback::play_chime();
+                        feedback::play(feedback::Sound::Saved);
                     }
                     if feedback.toast {
                         let language = self.language();
@@ -562,7 +571,7 @@ impl EngineSlot {
                 self.library_changed(app, &[std::path::PathBuf::from(path)]);
                 let feedback = self.feedback();
                 if feedback.sound {
-                    feedback::play_chime();
+                    feedback::play(feedback::Sound::Saved);
                 }
                 if feedback.toast {
                     let game = std::path::Path::new(path)

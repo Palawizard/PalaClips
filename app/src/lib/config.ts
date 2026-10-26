@@ -1,4 +1,4 @@
-import type { EngineConfig } from "./ipc.ts";
+import type { EngineConfig, RecordVideo } from "./ipc.ts";
 
 export type ConfigPatch = { [key: string]: unknown };
 
@@ -89,4 +89,18 @@ export function restartsReplay(before: EngineConfig, after: EngineConfig): boole
     audioSources(before.audio) !== audioSources(after.audio) ||
     before.replay.storage !== after.replay.storage
   );
+}
+
+export function recordVideo(config: EngineConfig): EngineConfig["video"] {
+  const record = config.record.video;
+  return record ? { ...config.video, ...record } : config.video;
+}
+
+export function recordingConfig(config: EngineConfig): EngineConfig {
+  return { ...config, video: recordVideo(config) };
+}
+
+export function recordVideoOf(video: EngineConfig["video"]): RecordVideo {
+  const { fps, resolution, codec, quality, bitrate_kbps } = video;
+  return { fps, resolution, codec, quality, bitrate_kbps };
 }

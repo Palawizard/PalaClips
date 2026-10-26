@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Alerts } from "./components/Alerts.tsx";
 import { CompressPage } from "./components/compress/CompressPage.tsx";
 import { Gallery } from "./components/gallery/Gallery.tsx";
@@ -11,13 +11,13 @@ import { Roster } from "./components/Roster.tsx";
 import { AudioSection } from "./components/settings/AudioSection.tsx";
 import { CaptureSection } from "./components/settings/CaptureSection.tsx";
 import { type SectionId, Settings } from "./components/settings/Settings.tsx";
-import { StatusBanner } from "./components/StatusBanner.tsx";
+import { QualityButton, StatusBanner } from "./components/StatusBanner.tsx";
 import { type DraftRequest, addDrafts } from "./lib/compressDrafts.ts";
 import { useT } from "./lib/i18n.ts";
 import { onboardingNeeded } from "./lib/ipc.ts";
 import { useEngine } from "./lib/useEngine.ts";
 
-export type Destination = { view: View; section?: SectionId };
+export type Destination = { view: View; section?: SectionId; focus?: boolean };
 
 export default function App() {
   return (
@@ -27,8 +27,13 @@ export default function App() {
   );
 }
 
-function PageTitle({ children }: { children: string }) {
-  return <h1 className="border-b border-line px-5 pt-6 pb-4 text-[22px] font-semibold">{children}</h1>;
+function PageTitle({ children, action }: { children: string; action?: ReactNode }) {
+  return (
+    <div className="flex items-end justify-between gap-4 border-b border-line px-5 pt-6 pb-4">
+      <h1 className="text-[22px] font-semibold">{children}</h1>
+      {action}
+    </div>
+  );
 }
 
 function Shell() {
@@ -36,6 +41,7 @@ function Shell() {
   const guard = useLeaveGuard();
   const [view, setView] = useState<View>("status");
   const [section, setSection] = useState<SectionId>("replay");
+  const [qualityFocus, setQualityFocus] = useState(0);
   const engine = useEngine();
   const [onboarding, setOnboarding] = useState<boolean | null>(null);
 
@@ -47,11 +53,16 @@ function Shell() {
     [engine.config],
   );
 
-  const open = ({ view: nextView, section: nextSection }: Destination) => {
-    if (nextView === view && (!nextSection || nextSection === section)) return;
+  const open = ({ view: nextView, section: nextSection, focus }: Destination) => {
+    const focusQuality = () => focus && setQualityFocus((count) => count + 1);
+    if (nextView === view && (!nextSection || nextSection === section)) {
+      focusQuality();
+      return;
+    }
     guard.leave(() => {
       setView(nextView);
       if (nextSection) setSection(nextSection);
+      focusQuality();
     });
   };
 
@@ -114,7 +125,7 @@ function Shell() {
         {view === "compress" && <CompressPage />}
         {view === "capture" && (
           <>
-            <PageTitle>{t("nav.capture")}</PageTitle>
+            <PageTitle action={<QualityButton onOpen={open} />}>{t("nav.capture")}</PageTitle>
             <CaptureSection />
           </>
         )}
@@ -124,7 +135,9 @@ function Shell() {
             <AudioSection status={engine.status} />
           </>
         )}
-        {view === "settings" && <Settings section={section} onSection={(next) => open({ view: "settings", section: next })} />}
+        {view === "settings" && (
+          <Settings section={section} focusKey={qualityFocus} onSection={(next) => open({ view: "settings", section: next })} />
+        )}
       </main>
     </div>
   );

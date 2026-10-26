@@ -1,7 +1,7 @@
 import { FolderOpen, Search, X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { iconUrl } from "../../lib/appIcons.ts";
-import { decibels } from "../../lib/format.ts";
+import { bytes, decibels } from "../../lib/format.ts";
 import { errorText, localeCompare, useT } from "../../lib/i18n.ts";
 import {
   type AppSession,
@@ -19,8 +19,13 @@ import {
 import { chosenName, trackColor, trackIcon, trackTitle } from "../../lib/tracks.ts";
 import { MeterBar, useTrackMeter } from "../MeterBar.tsx";
 import { CalibrationPanel } from "./CalibrationPanel.tsx";
-import { NumberField, Select, SettingRow, Switch } from "./Settings.tsx";
+import { NumberField, Select, Switch } from "./Settings.tsx";
 import { ConfigFooter, LoadError, useConfigDraft } from "./configDraft.tsx";
+
+const CALM_APP_TRACKS = 12;
+const TRACK_CPU_PERCENT_OF_CORE = 5;
+const TRACK_MEMORY_BYTES = 1.4 * 1024 * 1024;
+const TRACK_BYTES_PER_MINUTE = (192_000 / 8) * 60;
 
 const SESSION_POLL_MS = 100;
 const SESSION_POLL_BACKGROUND_MS = 500;
@@ -464,7 +469,7 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
   };
 
   const tracked = new Set(audio.app_tracks.map((track) => track.exe_name.toLowerCase()));
-  const full = audio.app_tracks.length >= audio.max_app_tracks;
+  const extraTracks = Math.max(0, audio.app_tracks.length - CALM_APP_TRACKS);
   const candidates = new Map<string, Candidate>();
   for (const session of sessions) {
     candidates.set(session.exe_name.toLowerCase(), {
@@ -537,7 +542,6 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       </span>
       <button
         type="button"
-        disabled={full}
         onClick={() => add(candidate.exe, candidate.name)}
         aria-label={t("settings.audio.addNamed", { name: candidate.name })}
         className={BUTTON}
@@ -552,14 +556,9 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
       <CalibrationPanel config={config} onRunning={setCalibrating} />
       <section aria-labelledby="tracks-title">
         <div className={`${ROW_COLUMNS} px-5 pt-5 pb-3`}>
-          <div className="col-span-3 flex items-baseline gap-3">
-            <h3 id="tracks-title" className="text-[15px] font-semibold">
-              {t("settings.audio.tracks")}
-            </h3>
-            <span className="score text-[15px] text-ink-2">
-              {t("settings.audio.appCount", { count: audio.app_tracks.length, max: audio.max_app_tracks })}
-            </span>
-          </div>
+          <h3 id="tracks-title" className="col-span-3 text-[15px] font-semibold">
+            {t("settings.audio.tracks")}
+          </h3>
           <span className="pr-[3.75rem] text-right text-[13px] text-ink-2">{t("settings.audio.offset")}</span>
         </div>
         <ul ref={listRef} tabIndex={-1} className="border-t border-line outline-none">
@@ -580,18 +579,18 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
             />
           ))}
         </ul>
+        {extraTracks > 0 && (
+          <p className="border-b border-line px-5 py-3 text-[13px] text-ink-2">
+            {t("settings.audio.manyTracks", {
+              count: extraTracks,
+              calm: CALM_APP_TRACKS,
+              cpu: extraTracks * TRACK_CPU_PERCENT_OF_CORE,
+              memory: bytes(extraTracks * TRACK_MEMORY_BYTES),
+              size: bytes(extraTracks * TRACK_BYTES_PER_MINUTE),
+            })}
+          </p>
+        )}
       </section>
-
-      <SettingRow label={t("settings.audio.maxApps")}>
-        <Select
-          label={t("settings.audio.maxApps")}
-          value={audio.max_app_tracks}
-          options={Array.from({ length: 12 }, (_, slot) => slot + 1)
-            .filter((count) => count >= audio.app_tracks.length)
-            .map((count) => ({ value: count, label: String(count) }))}
-          onChange={(max_app_tracks) => setAudio({ max_app_tracks })}
-        />
-      </SettingRow>
 
       <section aria-labelledby="add-app-title" className="pb-5">
         <div className="flex flex-wrap items-center gap-3 px-5 pt-5 pb-3">
@@ -609,16 +608,11 @@ export function AudioSection({ status }: { status: AppStatus | null }) {
               className="h-9 w-52 rounded-md border border-ink-3 bg-surface pr-2.5 pl-8 text-[14px] text-ink placeholder:text-ink-3 hover:border-ink-2"
             />
           </label>
-          <button type="button" onClick={browse} disabled={full} className={`${BUTTON} flex items-center gap-2`}>
+          <button type="button" onClick={browse} className={`${BUTTON} flex items-center gap-2`}>
             <FolderOpen size={16} aria-hidden />
             {t("settings.audio.browse")}
           </button>
         </div>
-        {full && (
-          <p className="border-t border-line px-5 py-3 text-[13px] text-ink-2">
-            {t("settings.audio.full", { max: audio.max_app_tracks })}
-          </p>
-        )}
         {pickError && (
           <p role="alert" className="border-t border-line px-5 py-3 text-[13px] text-warn">
             {pickError}

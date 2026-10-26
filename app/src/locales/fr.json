@@ -143,7 +143,11 @@
     "changeSource": "Changer",
     "clipInProgress": "Clip en cours",
     "extend": "Prolonger",
-    "finishClip": "Terminer maintenant"
+    "finishClip": "Terminer maintenant",
+    "quality": "Replay et qualité",
+    "qualitySummary": "{resolution} · {codec} · ≈ {size}/min",
+    "resolutionFps": "{height}p{fps}",
+    "qualityLink": "Replay et qualité : {summary}"
   },
   "performance": {
     "title": "Performances",
@@ -282,7 +286,7 @@
       "quotaApply": "Supprimer et appliquer"
     },
     "replay": {
-      "estimate": "Estimation du tampon",
+      "estimate": "Estimation de la taille",
       "approx": "≈ {size}",
       "inRam": "en RAM",
       "onDisk": "sur le disque",
@@ -336,7 +340,17 @@
       "after": "Après l'appui",
       "afterHelp": "Un nouvel appui prolonge le clip.",
       "afterNone": "Aucun",
-      "afterFree": "Après l'appui, en secondes"
+      "afterFree": "Après l'appui, en secondes",
+      "perClip": "par clip de {duration}",
+      "perMinute": "par minute",
+      "perHour": "par heure",
+      "withAfter": "Avec {after} après :",
+      "replayPart": "Replay",
+      "recordingPart": "Enregistrement",
+      "commonPart": "Commun",
+      "sameAsReplay": "Comme le replay",
+      "forRecording": "{setting} (enregistrement)",
+      "bufferSize": "Tampon :"
     },
     "capture": {
       "primary": "principal",
@@ -380,17 +394,18 @@
       "add": "Ajouter",
       "addNamed": "Ajouter {name}",
       "tracks": "Pistes",
-      "appCount": "{count}/{max} applis",
       "offset": "Décalage",
-      "maxApps": "Pistes d'applis au maximum",
       "addApp": "Ajouter une appli",
       "search": "Rechercher",
       "searchLabel": "Rechercher une appli",
       "browse": "Parcourir un .exe…",
-      "full": "{max}/{max} : retire une piste ou augmente le maximum pour en ajouter.",
       "noMatch": "Aucune appli ne correspond.",
       "noOther": "Aucune autre appli ouverte.",
-      "pendingApply": "Ajoutée : enregistrée après « Appliquer »"
+      "pendingApply": "Ajoutée : enregistrée après « Appliquer »",
+      "manyTracks": {
+        "one": "{count} piste d'appli au-delà de {calm} ajoute environ {cpu} % d'un cœur du processeur, {memory} de RAM et jusqu'à {size} par minute de clip.",
+        "other": "{count} pistes d'applis au-delà de {calm} ajoutent environ {cpu} % d'un cœur du processeur, {memory} de RAM et jusqu'à {size} par minute de clip."
+      }
     },
     "calibration": {
       "title": "Calibrage de la synchro",
@@ -424,7 +439,8 @@
         "size": "Par taille"
       },
       "splitMinutes": "Durée de chaque fichier en minutes",
-      "splitMegabytes": "Taille de chaque fichier en mégaoctets"
+      "splitMegabytes": "Taille de chaque fichier en mégaoctets",
+      "includeReplaySeparate": "Qualité différente du replay : le replay en mémoire est sauvegardé en clip à part, juste avant l'enregistrement."
     }
   },
   "tray": {
@@ -552,7 +568,8 @@
     "compress_cancelled": "Compression annulée.",
     "not_a_video": "Ce fichier n'a pas de piste vidéo lisible.",
     "target_too_small": "Cible trop petite pour cette durée : il faut au moins {min_mb} Mo.",
-    "over_target": "Le fichier dépasse encore la cible après trois essais : choisis une résolution plus basse ou une cible plus grande."
+    "over_target": "Le fichier dépasse encore la cible après trois essais : choisis une résolution plus basse ou une cible plus grande.",
+    "record_encoder_cpu": "La carte graphique a refusé un 2e encodage ({reason}) : l'enregistrement est encodé par le processeur."
   },
   "player": {
     "back": "Retour à la galerie",

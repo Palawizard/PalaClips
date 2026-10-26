@@ -517,7 +517,7 @@ impl Worker {
         let Some(app) = &self.app else {
             return false;
         };
-        sources::processes()
+        sources::recent_processes()
             .is_ok_and(|processes| sources::root_pids(&processes, &app.exe_name) != app.pids)
     }
 
@@ -585,7 +585,7 @@ impl Worker {
             AudioSource::Game(game) => game.exe_name()?.to_owned(),
             _ => return None,
         };
-        let pids = sources::root_pids(&sources::processes().ok()?, &exe_name);
+        let pids = sources::root_pids(&sources::recent_processes().ok()?, &exe_name);
         if pids.is_empty() {
             return None;
         }

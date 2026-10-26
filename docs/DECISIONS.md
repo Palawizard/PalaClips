@@ -734,3 +734,32 @@ après une relance »).
   vérifiés sur les mêmes cas (`app/src/lib/restart-cases.json`, test vitest et test Rust).
 - Le moteur écrit « réglages reçus » (sections changées, redémarrage, report) à chaque Configure.
 
+## ADR-040 — Qualité propre de l'enregistrement par un 2e encodage (v1.3, REC-02, REC-04, REC-07)
+**Statut :** acceptée (2026-10-26, décisions de Palawi dans `docs/reports/v1.3-research.md`).
+- Contexte : Palawi veut un replay léger et des enregistrements d'une autre qualité. Aucun
+  logiciel grand public ne le documente ; OBS y arrive avec un 2e encodeur. Repasser le pipeline
+  en qualité « enregistrement » viderait le replay et laisserait 1,2 s de trou à chaque début et
+  à chaque fin (mesuré dans le zip de diagnostic de Palawi).
+- Décision : `record.video` (`RecordVideo` : fps, résolution, codec, qualité, débit) ; `None` =
+  « Comme le replay », donc un settings v1.2 garde exactement son comportement. Pendant un
+  enregistrement dont la qualité diffère, `VideoCapture::add_output` ajoute un 2e encodeur sur la
+  même session WGC : son horloge CFR est alignée sur la grille de la capture principale
+  (`CfrClock::new(origine principale, fps)`, échéances passées sautées), si bien que ses PTS sont
+  sur la même ligne de temps que l'audio, sans décalage ni arrondi. L'enregistreur reçoit la vidéo
+  de cette sortie et l'audio des pistes communes ; le replay continue et ses sauvegardes restent
+  possibles. Replay désarmé : le pipeline démarre directement à la qualité de l'enregistrement.
+  Encodeur commun (Automatique, carte graphique, processeur) ; 2e encodage refusé par la carte →
+  processeur et alerte `record_encoder_cpu`. REC-04 avec des qualités différentes : le replay en
+  mémoire est sauvegardé en clip à part juste avant.
+- Coût mesuré (RTX 4070 Super, un seul moteur NVENC) : un 2e flux plus léger ne se distingue pas du
+  bruit dans Fortnite ; deux flux 1440p60 complets ≈ 5 % de fps (au bord du bruit), +16 à +24 Mo de
+  mémoire, NVENC 39 → 60 %.
+- L'enregistreur ignore l'audio antérieur au début du fichier (sans découpage) : la vidéo du 2e
+  encodage arrive avant l'audio, qui a ~100 ms de retard ; sans ce filtre, le premier échantillon
+  vidéo était étiré de ~110 ms.
+- Pistes d'applis sans maximum (AUD-03 révisé) : coût linéaire mesuré ≈ 5 % d'un cœur, 1,4 Mo et
+  jusqu'à 1,44 Mo/min par piste après le partage du relevé des processus
+  (`sources::recent_processes`, 500 ms) ; note douce dès la 13e. Compression « toutes les
+  pistes » : le débit audio par piste baisse (128 → 96 → 64 kb/s) avant de refuser une cible.
+- Écarté : (b) un seul encodeur qui change de qualité (replay vidé) ; (c) ne changer que le débit
+  (résolution, fps et codec impossibles).
