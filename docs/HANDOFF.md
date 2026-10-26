@@ -40,7 +40,14 @@
   l'accord de Palawi. Brouillon relu connecté (version, signature = `.sig`, liens publics) ;
   vérifié sans connexion 1 min après : `latest.json` 1.2.0, installeur, `.sig`, page et
   CHANGELOG en 200. Branche : `dev`.
-- **Dernière mise à jour :** 2026-10-24
+- **v1.3.0 (2026-10-24/26)** : bug « réglages pris seulement après une relance » (zip de Palawi :
+  copies figées côté front, #113, ADR-039) ; recherche et mesures (`docs/reports/v1.3-research.md`),
+  décisions de Palawi : 2e encodage pour l'enregistrement, quatre réglages séparés, REC-04 en
+  clip à part, pistes sans maximum avec note dès la 13e (#114, ADR-040) ; estimation de la taille
+  (RPL-11) ; accès direct (APP-15) ; son d'enregistrement ; session T15 validée ; préparation
+  (#115), `dev` → `main` (#116, accord de Palawi pour le brouillon), tag `v1.3.0`, **release en
+  brouillon : publication en attente de l'accord de Palawi**. Branche : `dev`.
+- **Dernière mise à jour :** 2026-10-26
 
 ## Ce qui existe
 
@@ -256,7 +263,36 @@
     `post-roll-memory.ps1`, `compress-check.ps1`, `clip-continuity.py`. Preuves :
     `docs/reports/v1.2/`.
 
+- **v1.3 (2026-10-24/26)** :
+  - Config : le shell émet `config-changed` / `hotkeys-changed` depuis `EngineSlot::update` ;
+    front : un seul store (`lib/config.ts` `createConfigStore`, `lib/useConfig.ts`
+    `useLiveConfig`, `saveConfig`), `useConfigDraft` garde un patch (`configPatch` / `withPatch`,
+    objets à `kind` et listes remplacés entiers) ; `set_config { patch }` fusionné par
+    `settings::patched` ; cas de redémarrage communs `app/src/lib/restart-cases.json` (vitest +
+    Rust, `needs_restart` public) ; le moteur journalise « réglages reçus ».
+  - Moteur : `VideoCapture::add_output` → `VideoOutput` (2e encodeur, horloge alignée sur la
+    grille principale, `Role::Extra`) ; `RecordSettings::video: Option<RecordVideo>`,
+    `EngineConfig::record_video()` / `records_separately()` ; `Pipeline::request_separate_recording`
+    (repli processeur, alerte `record_encoder_cpu`), `store_record`, REC-04 en clip à part ;
+    pipeline démarré à la qualité de l'enregistrement si le replay est désarmé ; l'enregistreur
+    ignore l'audio antérieur au début (sans découpage) ; `sources::recent_processes` (500 ms) ;
+    `max_app_tracks` retiré ; `replay::estimate_file_bytes`, `ReplayEstimate.file_bytes_per_minute` ;
+    compression : débit audio abaissé avant de refuser.
+  - App : `ReplaySection` en trois parties (Replay, Enregistrement « Comme le replay », Commun) +
+    bandeau d'estimation (`lib/useEstimate.ts`), ancre `#replay-quality` et lavis d'arrivée ;
+    État : résumé de qualité cliquable (`QualityLink`), Capture : `QualityButton` ; Audio : note dès
+    la 13e piste ; sons `feedback::Sound` (sauvegarde, début et fin d'enregistrement).
+  - CLI : `capture-video --also-*`, `replay --record-*`, `estimate` (octets par minute). Scripts :
+    `track-cost.ps1`, `dual-encoder.ps1`, `fps-impact.ps1 -Dual`, `record-quality.ps1 [-AvSync]`,
+    `size-estimate.ps1`, `many-tracks.ps1 [-Keep]`, `app-isolated.ps1 -RightScreen`. Preuves :
+    `docs/reports/v1.3/`.
+
 ## Prochaines actions (dans l'ordre)
+
+0. **Publier la v1.3.0** seulement avec l'accord de Palawi : brouillon relu (version, `.sig`,
+   liens publics), puis `gh release edit v1.3.0 --draft=false --latest`, vérification sans
+   connexion (`latest.json` 1.3.0, installeur, `.sig`, page, CHANGELOG en 200), puis cocher la
+   case « Release v1.3.0 » du PLAN.
 
 1. **Clore la v1.1** : quand Palawi rapporte le test VM T11 (`docs/TESTING.md`, installeur de
    la release 1.1.1 dans `target\vm\PalaClips_1.1.1_x64-setup.exe` ; s'il a testé la 1.1.0,
@@ -303,6 +339,15 @@ Aucun. (PERF-02 levé le 2026-10-16 : RAM mesurée en working set privé, ADR-02
 Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV1, ADR-035.)
 
 ## Points d'attention
+
+- Le MCP DaVinci Resolve ne pilote pas l'édition gratuite de Palawi (pas de scripting externe) :
+  un `launch` le laisse tourner en `-nogui` ; l'arrêter ensuite (Stop-Process, avec l'accord de
+  Palawi). Tests Resolve = manuels.
+- CDP : `Input.dispatchKeyEvent` Entrée n'active un bouton qu'avec `text` (`\r`).
+- `clip-continuity.py` et le « premier pas » : un premier pas de 3–4 images révèle de l'audio
+  écrit avant le début du fichier (corrigé dans l'enregistreur pour la 2e sortie).
+- Bash : de gros heredocs Python contenant des triples apostrophes échouent (« unexpected EOF ») ; écrire le
+  script dans le scratchpad puis l'exécuter.
 
 - Glisser-déposer : il ne marche pas dans l'app de test placée par `PALACLIPS_TEST_WINDOW`
   (fenêtre créée cachée puis montrée sans focus, `show_without_focus`) ; il marche dans une
@@ -462,4 +507,5 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
 | 2026-10-22 | v1.1 | Encodage par le processeur : recherche (encodeurs du FFmpeg BtbN, licences, lecture, banc VMAF NEG), choix D de Palawi ; moteur (`h264_mf` + SVT-AV1, Video Processor → NV12 → staging ou swscale, fils en priorité basse, file bornée, découpe précise CPU) ; app (réglage Encodeur, premier lancement, panneau), critique/audit impeccable ; validé : clip CPU, A/V 3,7 ms d'écart avec NVENC, Fortnite 0 % (1 % bas −3 à −5 %), mise à jour 1.0.0 → 1.1.0 ; mémoire de `h264_mf` (~720 Mo en 1080p) gardée par Palawi ; release v1.1.0 publiée (accord de Palawi), vérifiée sans connexion, sa 1.0.0 propose la 1.1.0 | Test VM T11 par Palawi |
 | 2026-10-22 | v1.1.1 | Mémoire de `h264_mf` : nombre de fils (16 images en vol), pas une file ; faible latence et B-frames sans effet ; limité à 2/4 fils par ICodecAPI (+244 Mo au lieu de +773 en 1080p30, moins de CPU, même VMAF) ; bascule AV1 sans Media Foundation (N/KN), FAQ ; v1.1.1 publiée sans le test VM (demande de Palawi) | Test VM T11 |
+| 2026-10-24/26 | v1.3 | Zip de Palawi : moteur correct, copies figées côté front → source unique de config (#113) ; recherche et mesures (2e NVENC : invisible si plus léger, ~5 % pour deux 1440p60 ; piste ≈ 5 % d'un cœur après partage du relevé des processus) ; décisions de Palawi ; 2e encodage pour l'enregistrement, horloge alignée, A/V 8 ms ; estimation −1,4 à −5,4 % ; 26 pistes de bout en bout (compression corrigée) ; Replay & qualité en trois parties, accès direct, sons d'enregistrement (#114) ; T15 validée ; captures du README ; version 1.3.0 (#115, #116), tag | Publier la v1.3.0 avec l'accord de Palawi |
 | 2026-10-23/24 | v1.2 | Recherche (Discord 20 Mo, codecs, NVENC un passage, glisser-déposer Tauri) et décisions de Palawi (#105) ; pages Capture et Audio + alerte de sortie, vitest (#106) ; enregistrer après la sauvegarde, jonction continue, synchro identique, mémoire sans croissance sur 10 min (#107) ; compression à une taille cible, 11 cas sous la cible, HDR → SDR (#108) ; session T14 de Palawi en jeu validée, retours appliqués (#109) ; release 1.2.0 préparée | Release v1.2.0 publiée (accord de Palawi), vérifiée sans connexion |
