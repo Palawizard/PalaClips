@@ -5,6 +5,24 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.3.1] - 2026-10-26
+
+### Ajouté
+- Lecteur : un clic ou un glisser sur n'importe quelle piste audio déplace la tête de lecture ;
+  elle se cale sur l'entrée et la sortie quand elle passe tout près, et suit l'entrée quand on
+  la déplace (GAL-03).
+
+### Corrigé
+- Les sons de PalaClips (carillon de sauvegarde, début et fin d'enregistrement) n'entrent plus
+  dans la piste 1 en mode « Audio du bureau » : sa source est « Tous les sons sauf PalaClips »
+  par défaut, ou une sortie précise au choix (ADR-041). Une config qui avait déjà ce mode garde
+  sa sortie et son calibrage.
+- Un clip supprimé ou renommé (galerie, Explorateur, quota), un fichier ajouté ou un changement
+  de dossier met à jour tout de suite « Derniers clips » et l'espace disque sur État, sans
+  relancer ni changer de page. Ouvrir un clip dont le fichier a disparu affiche « Ce fichier
+  n'existe plus » et retire la carte ; le lecteur se ferme si son clip est supprimé ; le choix
+  des clips à compresser et les brouillons de compression suivent aussi.
+
 ## [1.3.0] - 2026-10-26
 
 ### Ajouté

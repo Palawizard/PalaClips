@@ -8,7 +8,7 @@ use serde_json::Value;
 
 use crate::i18n::{self, Language, LanguageSetting};
 
-pub const SETTINGS_VERSION: u32 = 2;
+pub const SETTINGS_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
@@ -128,6 +128,9 @@ pub fn load(path: &Path) -> Loaded {
     };
     if version < 2 {
         forget_default_names(&mut settings.engine.audio);
+    }
+    if version < 3 && settings.engine.audio.desktop_in_full_mix {
+        settings.engine.audio.desktop_excludes_palaclips = false;
     }
     if let Err(error) = settings.engine.validate() {
         return unreadable(path, &error.to_string());
@@ -314,6 +317,38 @@ mod tests {
             loaded.settings.hotkeys.save_replay.as_deref(),
             Some("Ctrl+F10")
         );
+    }
+
+    #[test]
+    fn a_desktop_mix_set_before_version_three_keeps_its_output_and_calibration() {
+        let path = scratch("desktop-v2");
+        std::fs::write(
+            &path,
+            SETTINGS_1_2.replace(
+                r#""desktop_in_full_mix": false"#,
+                r#""desktop_in_full_mix": true"#,
+            ),
+        )
+        .expect("write");
+        let audio = load(&path).settings.engine.audio;
+        assert!(audio.desktop_in_full_mix);
+        assert!(!audio.desktop_excludes_palaclips);
+        assert_eq!(audio.full_mix_sync_offset_ms, -103);
+    }
+
+    #[test]
+    fn the_desktop_mix_leaves_palaclips_sounds_out_unless_chosen_otherwise() {
+        assert!(Settings::default().engine.audio.desktop_excludes_palaclips);
+        let path = scratch("desktop-sum-v2");
+        std::fs::write(&path, SETTINGS_1_2).expect("write");
+        assert!(load(&path).settings.engine.audio.desktop_excludes_palaclips);
+        let path = scratch("desktop-v3");
+        std::fs::write(
+            &path,
+            r#"{ "schema_version": 3, "engine": { "audio": { "desktop_in_full_mix": true } } }"#,
+        )
+        .expect("write");
+        assert!(load(&path).settings.engine.audio.desktop_excludes_palaclips);
     }
 
     #[test]

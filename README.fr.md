@@ -187,6 +187,11 @@ façon sa propre piste.
 somme des pistes choisies. Active « Audio du bureau » (page Audio) pour qu'elle contienne
 tout ce que tu entends.
 
+**Les sons de PalaClips finissent-ils dans mes clips ?** Non. En « Audio du bureau », la source
+« Tous les sons sauf PalaClips » (par défaut) laisse de côté le carillon et les sons
+d'enregistrement. Si tu choisis une sortie précise, la piste 1 enregistre tout ce qui y passe,
+sons de PalaClips compris.
+
 **Mémoire ou disque pour le replay ?** En mémoire, rien n'est écrit sur le disque tant que tu
 ne sauvegardes pas, mais le replay occupe de la RAM (environ 320 Mo pour une minute en 1440p ;
 l'estimation s'affiche dans Réglages → Replay & qualité). Sur le disque, la RAM reste libre

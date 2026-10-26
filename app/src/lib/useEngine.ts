@@ -17,6 +17,7 @@ import {
   replaySave,
   storageStatus,
 } from "./ipc.ts";
+import { useLibraryChanges } from "./library.ts";
 import { useLiveConfig } from "./useConfig.ts";
 import { errorText } from "./i18n.ts";
 import { clearLevels, pushLevels } from "./levels.ts";
@@ -77,6 +78,8 @@ export function useEngine(): Engine {
     listRecentClips(RECENT_CLIPS).then(setClips, () => setClips([]));
     storageStatus().then(setStorage, () => setStorage(null));
   }, []);
+
+  useLibraryChanges(refreshLibrary);
 
   useEffect(() => {
     refreshState();

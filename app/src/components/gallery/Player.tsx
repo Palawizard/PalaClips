@@ -336,6 +336,7 @@ export function Player({
                 mix={mix[index] ?? FULL_MIX}
                 audible={audible[index] ?? true}
                 onMix={(next) => setMix((current) => current.map((item, place) => (place === index ? next : item)))}
+                onSeek={seek}
               />
             ))}
           </ul>
