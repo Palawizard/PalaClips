@@ -413,6 +413,12 @@ impl Writer {
     }
 
     fn push(&mut self, stream: usize, pts: Hns, keyframe: bool, packet: AVPacket) -> Result<()> {
+        if stream > 0
+            && self.previous.is_none()
+            && pts < self.current.start - self.layout.audio_packet
+        {
+            return Ok(());
+        }
         if stream == 0 && keyframe {
             self.check_space(pts)?;
         }
@@ -644,6 +650,10 @@ mod tests {
     }
 
     fn writer(root: &Path, journal: Journal, stream: MuxStream) -> Result<Writer> {
+        writer_with(root, journal, vec![stream])
+    }
+
+    fn writer_with(root: &Path, journal: Journal, specs: Vec<MuxStream>) -> Result<Writer> {
         let (events, _) = unbounded();
         let target = RecordTarget {
             root: root.to_path_buf(),
@@ -652,8 +662,8 @@ mod tests {
             kind: RecordKind::Recording,
         };
         let layout = RecordLayout {
-            time_bases: vec![stream.time_base],
-            specs: vec![stream],
+            time_bases: specs.iter().map(|spec| spec.time_base).collect(),
+            specs,
             frame: AAC,
             audio_packet: AAC,
         };
@@ -670,6 +680,25 @@ mod tests {
             next_space_check: Hns::ZERO,
             warned_space: false,
         })
+    }
+
+    #[test]
+    fn audio_from_before_the_recording_start_is_not_written() -> Result<()> {
+        let dir = scratch("early-audio");
+        let journal = Journal::at(dir.join("recordings.txt"));
+        let (stream, packets) = tone()?;
+        let mut writer = writer_with(&dir, journal, vec![stream.clone(), stream])?;
+        writer.current.start = Hns(AAC.0 * 10);
+        let mut packets = packets.into_iter();
+        let early = packets.next().expect("packet");
+        writer.push(1, Hns(AAC.0 * 5), false, early)?;
+        assert_eq!(writer.bytes.load(Ordering::Relaxed), 0);
+        let on_time = packets.next().expect("packet");
+        writer.push(1, Hns(AAC.0 * 10), false, on_time)?;
+        assert!(writer.bytes.load(Ordering::Relaxed) > 0);
+        writer.finish()?;
+        std::fs::remove_dir_all(&dir).ok();
+        Ok(())
     }
 
     #[test]

@@ -236,6 +236,7 @@ impl VideoCapture {
                 let hdr_white = self.hdr_white;
                 let fps = settings.fps;
                 let stop = stop.clone();
+                let align = self.stream.origin;
                 move || {
                     let hdr = hdr_white
                         .map(|white| HdrToSdr::new(&device.0, white))
@@ -253,7 +254,7 @@ impl VideoCapture {
                         encoder,
                         fps,
                         outputs,
-                        Role::Extra(stop),
+                        Role::Extra { stop, align },
                     )
                 }
             })?;
@@ -371,13 +372,13 @@ impl Drop for VideoOutput {
 
 enum Role {
     Primary,
-    Extra(Arc<AtomicBool>),
+    Extra { stop: Arc<AtomicBool>, align: Hns },
 }
 
 impl Role {
     fn stopped(&self, shared: &Shared) -> bool {
         shared.stop.load(Ordering::Relaxed)
-            || matches!(self, Self::Extra(stop) if stop.load(Ordering::Relaxed))
+            || matches!(self, Self::Extra { stop, .. } if stop.load(Ordering::Relaxed))
     }
 }
 
@@ -579,7 +580,14 @@ fn run_encoder(
         }
     };
 
-    let mut clock = CfrClock::new(Hns::now(), fps);
+    let mut clock = match &role {
+        Role::Primary => CfrClock::new(Hns::now(), fps),
+        Role::Extra { align, .. } => {
+            let mut aligned = CfrClock::new(*align, fps);
+            let _ = aligned.take_due(Hns::now());
+            aligned
+        }
+    };
     let mut origin = Some(origin);
     let mut rate_watch = RateWatch::new(fps);
     let mut saturation_watch = if encoder.is_hardware() {
@@ -719,8 +727,10 @@ fn run_encoder(
             counters.max_lateness = stats.max_lateness;
         }
         if let Some(origin) = origin.take() {
-            clock = CfrClock::new(Hns::now(), fps);
-            clock.take_due(clock.origin());
+            if primary {
+                clock = CfrClock::new(Hns::now(), fps);
+                clock.take_due(clock.origin());
+            }
             origin.send(clock.origin()).ok();
         }
     }
