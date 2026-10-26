@@ -133,6 +133,15 @@ export function addDrafts(requests: DraftRequest[]) {
   }
 }
 
+export function markMissing(removed: string[]) {
+  if (!state.drafts.some((draft) => removed.includes(draft.path))) return;
+  const error = errorText({ code: "file_missing", params: {} });
+  publish({
+    ...state,
+    drafts: state.drafts.map((draft) => (removed.includes(draft.path) ? { ...draft, view: null, error } : draft)),
+  });
+}
+
 export function removeDraft(key: number) {
   publish({ ...state, drafts: state.drafts.filter((draft) => draft.key !== key) });
 }

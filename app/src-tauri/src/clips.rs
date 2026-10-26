@@ -45,6 +45,19 @@ struct ExportFinished {
     error: Option<Localized>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct LibraryChange {
+    removed: Vec<String>,
+}
+
+fn emit_library(app: &tauri::AppHandle, removed: &[PathBuf]) {
+    let removed = removed
+        .iter()
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect();
+    app.emit(LIBRARY_EVENT, LibraryChange { removed }).ok();
+}
+
 #[derive(Debug, Serialize)]
 pub struct QuotaPreview {
     pub total_bytes: u64,
@@ -85,8 +98,8 @@ impl EngineSlot {
         }
         let report = self.with_library(Library::sync)?;
         tracing::info!(?report, root = %root.display(), "bibliothèque des clips synchronisée");
-        self.enforce_quota(app);
-        app.emit(LIBRARY_EVENT, ()).ok();
+        let deleted = self.enforce_quota(app);
+        emit_library(app, &deleted);
         let watcher_app = app.clone();
         let watching = watch(&root, move |paths| {
             if let Some(slot) = watcher_app.try_state::<EngineSlot>() {
@@ -102,26 +115,31 @@ impl EngineSlot {
     pub fn library_changed(&self, app: &tauri::AppHandle, paths: &[PathBuf]) {
         match self.with_library(|library| library.apply_changes(paths)) {
             Ok(_) => {
-                self.enforce_quota(app);
-                app.emit(LIBRARY_EVENT, ()).ok();
+                let mut removed: Vec<PathBuf> = paths
+                    .iter()
+                    .filter(|path| !path.exists())
+                    .cloned()
+                    .collect();
+                removed.extend(self.enforce_quota(app));
+                emit_library(app, &removed);
             }
             Err(error) => tracing::warn!(%error, "bibliothèque des clips non mise à jour"),
         }
     }
 
-    fn enforce_quota(&self, app: &tauri::AppHandle) {
+    fn enforce_quota(&self, app: &tauri::AppHandle) -> Vec<PathBuf> {
         let Some(quota) = self.config().storage.quota_bytes() else {
-            return;
+            return Vec::new();
         };
         let deleted = match self.with_library(|library| library.apply_quota(quota)) {
             Ok(deleted) => deleted,
             Err(error) => {
                 tracing::warn!(%error, "quota non appliqué");
-                return;
+                return Vec::new();
             }
         };
         if deleted.is_empty() {
-            return;
+            return Vec::new();
         }
         let size_mb = deleted.iter().map(|clip| clip.size_bytes).sum::<u64>() / 1_000_000;
         let text = Localized::new("quota_deleted")
@@ -135,16 +153,23 @@ impl EngineSlot {
                 text,
             },
         );
+        deleted
+            .into_iter()
+            .map(|clip| PathBuf::from(clip.path))
+            .collect()
     }
 
     fn known_clip(&self, path: &str) -> Result<PathBuf, Localized> {
         let path = PathBuf::from(path);
         let known = self.with_library(|library| library.contains(&path))?;
-        if known {
-            Ok(path)
-        } else {
-            Err(Localized::new("clip_unknown"))
+        if !known {
+            return Err(Localized::new("clip_unknown"));
         }
+        if !path.is_file() {
+            self.library_changed(&self.app, std::slice::from_ref(&path));
+            return Err(Localized::new("file_missing"));
+        }
+        Ok(path)
     }
 
     pub fn list_clips(&self, query: &ClipQuery) -> Result<Vec<Clip>, Localized> {
@@ -168,7 +193,7 @@ impl EngineSlot {
     ) -> Result<String, Localized> {
         let path = self.known_clip(path)?;
         let renamed = self.with_library(|library| library.rename(&path, name))?;
-        app.emit(LIBRARY_EVENT, ()).ok();
+        emit_library(app, &[]);
         Ok(renamed.to_string_lossy().into_owned())
     }
 
@@ -176,7 +201,7 @@ impl EngineSlot {
         let path = self.known_clip(path)?;
         move_to_recycle_bin(&path)?;
         self.with_library(|library| library.forget_deleted(&path))?;
-        app.emit(LIBRARY_EVENT, ()).ok();
+        emit_library(app, std::slice::from_ref(&path));
         Ok(())
     }
 

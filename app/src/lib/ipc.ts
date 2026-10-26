@@ -256,8 +256,12 @@ export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<Un
 
 export const LIBRARY_EVENT = "library-changed";
 
-export function onLibraryChanged(handler: () => void): Promise<UnlistenFn> {
-  return listen(LIBRARY_EVENT, handler);
+export interface LibraryChange {
+  removed: string[];
+}
+
+export function onLibraryChanged(handler: (change: LibraryChange) => void): Promise<UnlistenFn> {
+  return listen<LibraryChange>(LIBRARY_EVENT, (message) => handler(message.payload ?? { removed: [] }));
 }
 
 export type ClipKind = "replay" | "recording";
