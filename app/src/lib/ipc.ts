@@ -256,8 +256,12 @@ export function onEngineEvent(handler: (event: EngineEvent) => void): Promise<Un
 
 export const LIBRARY_EVENT = "library-changed";
 
-export function onLibraryChanged(handler: () => void): Promise<UnlistenFn> {
-  return listen(LIBRARY_EVENT, handler);
+export interface LibraryChange {
+  removed: string[];
+}
+
+export function onLibraryChanged(handler: (change: LibraryChange) => void): Promise<UnlistenFn> {
+  return listen<LibraryChange>(LIBRARY_EVENT, (message) => handler(message.payload ?? { removed: [] }));
 }
 
 export type ClipKind = "replay" | "recording";
@@ -626,6 +630,7 @@ export interface EngineConfig {
     output_device_id: string | null;
     full_mix_sync_offset_ms: number;
     desktop_in_full_mix: boolean;
+    desktop_excludes_palaclips: boolean;
     record_microphone: boolean;
     microphone_label: string | null;
     microphone_device_id: string | null;

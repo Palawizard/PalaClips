@@ -4,6 +4,7 @@
       "app_tracks": [],
       "auto_game_track": true,
       "desktop_in_full_mix": false,
+      "desktop_excludes_palaclips": true,
       "full_mix_label": null,
       "full_mix_sync_offset_ms": 0,
       "game_exe": null,
@@ -167,6 +168,12 @@
           "microphone_gain_db": 3.0
         }
       },
+      "restarts": true
+    },
+    {
+      "name": "desktop_source",
+      "before": { "audio": { "desktop_in_full_mix": true } },
+      "after": { "audio": { "desktop_excludes_palaclips": false } },
       "restarts": true
     },
     {

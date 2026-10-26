@@ -51,7 +51,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 
 | ID | Exigence |
 |---|---|
-| AUD-01 | Piste **Mix complet**, toujours en piste 1 si activée : somme des pistes enregistrées et choisies (micro si « Aussi dans Mix complet », Jeu, applis), ou, avec le réglage « Audio du bureau » (désactivé par défaut), toute la sortie audio plus le micro. Les pistes suivantes restent séparées pour le montage. |
+| AUD-01 | Piste **Mix complet**, toujours en piste 1 si activée : somme des pistes enregistrées et choisies (micro si « Aussi dans Mix complet », Jeu, applis), ou, avec le réglage « Audio du bureau » (désactivé par défaut), tout le son du PC plus le micro. Source au choix (v1.3.1) : « Tous les sons sauf PalaClips » (par défaut, sons de PalaClips exclus, toutes les sorties) ou une sortie précise (ses sons de PalaClips compris). Les pistes suivantes restent séparées pour le montage. |
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
 | AUD-03 | Une **piste par logiciel** choisi, sans maximum (v1.3 : au-delà de 12 pistes d'applis, une note dit ce qu'elles coûtent en processeur, mémoire et Mo par minute), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
@@ -107,7 +107,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 |---|---|
 | GAL-01 | Grille de clips avec miniature, durée, jeu, date, taille, type (replay / enregistrement). |
 | GAL-02 | Filtres (jeu, type, favoris, période), tri, recherche par nom ; fluide avec 5 000 clips. |
-| GAL-03 | Lecteur intégré avec déplacement fluide, y compris sur un fichier de 4 Go. |
+| GAL-03 | Lecteur intégré avec déplacement fluide, y compris sur un fichier de 4 Go ; clic ou glisser sur la barre de temps **ou sur n'importe quelle piste audio** (v1.3.1), la tête de lecture se cale sur l'entrée et la sortie à 8 px près et suit l'entrée quand on la déplace. |
 | GAL-04 | Dans le lecteur : **chaque piste audio** peut être coupée, isolée (solo) ou réglée en volume. |
 | GAL-05 | Renommer, favori, supprimer (vers la Corbeille), ouvrir l'emplacement, **copier le fichier** dans le presse-papiers (glisser dans Discord). |
 | GAL-06 | Découpe : export **rapide** sans réencodage (sur images clés) ou **précis** (réencodage matériel). |
