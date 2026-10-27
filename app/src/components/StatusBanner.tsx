@@ -50,7 +50,8 @@ function ReplayWitness({ phase }: { phase: ReplayPhase }) {
   );
 }
 
-const QUALITY: Destination = { view: "settings", section: "replay", focus: true };
+const QUALITY: Destination = { view: "settings", section: "replay", focus: true, tab: "replay" };
+const RECORDING_QUALITY: Destination = { ...QUALITY, tab: "recording" };
 
 export function QualityButton({ onOpen }: { onOpen: (destination: Destination) => void }) {
   const t = useT();
@@ -66,13 +67,21 @@ export function QualityButton({ onOpen }: { onOpen: (destination: Destination) =
   );
 }
 
-function QualityLink({ summary, onOpen }: { summary: string; onOpen: (destination: Destination) => void }) {
+function QualityLink({
+  summary,
+  destination,
+  onOpen,
+}: {
+  summary: string;
+  destination: Destination;
+  onOpen: (destination: Destination) => void;
+}) {
   const t = useT();
   const cut = summary.lastIndexOf(" ") + 1;
   return (
     <button
       type="button"
-      onClick={() => onOpen(QUALITY)}
+      onClick={() => onOpen(destination)}
       aria-label={t("status.qualityLink", { summary })}
       className="pressable group -mx-1.5 self-start rounded-md px-1.5 py-0.5 text-left text-ink-2 hover:bg-surface-hover hover:text-ink"
     >
@@ -163,7 +172,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             {t("status.inRam")}
           </p>
         </div>
-        {replaySummary && <QualityLink summary={replaySummary} onOpen={onOpen} />}
+        {replaySummary && <QualityLink summary={replaySummary} destination={QUALITY} onOpen={onOpen} />}
         {clipEndsAt !== null && <ClipInProgress endsAt={clipEndsAt} />}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <button
@@ -218,7 +227,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             <span className="score text-[15px] font-medium text-ink-2">{bytes(status?.recording_bytes ?? 0)}</span>
           )}
         </p>
-        {recordSummary && <QualityLink summary={recordSummary} onOpen={onOpen} />}
+        {recordSummary && <QualityLink summary={recordSummary} destination={RECORDING_QUALITY} onOpen={onOpen} />}
         <button
           type="button"
           onClick={recording ? engine.stopRecording : engine.record}

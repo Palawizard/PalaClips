@@ -349,6 +349,8 @@
       "replayPart": "Replay",
       "recordingPart": "Recording",
       "commonPart": "Shared",
+      "tabs": "Replay and quality parts",
+      "unapplied": "unapplied changes",
       "sameAsReplay": "Same as replay",
       "forRecording": "{setting} (recording)",
       "bufferSize": "Buffer:"
