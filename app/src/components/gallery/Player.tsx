@@ -15,6 +15,7 @@ import {
   setClipFavorite,
 } from "../../lib/ipc.ts";
 import { PlayerAudio, type TrackMix } from "../../lib/playerAudio.ts";
+import { ScrubSession } from "../../lib/scrubSession.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../../lib/tracks.ts";
 import type { DraftRequest } from "../../lib/compressDrafts.ts";
 import { ExportBar } from "./ExportBar.tsx";
@@ -68,6 +69,29 @@ export function Player({
   const audio = useRef<PlayerAudio | null>(null);
   const timeText = useRef<HTMLSpanElement>(null);
   const position = useRef<HTMLDivElement>(null);
+  const paintAt = useRef<(seconds?: number) => void>(() => undefined);
+  const [scrub] = useState(
+    () =>
+      new ScrubSession({
+        playing: () => video.current?.paused === false,
+        hold: () => {
+          audio.current?.hold();
+          video.current?.pause();
+        },
+        paint: (seconds) => paintAt.current(seconds),
+        seek: (seconds) => {
+          const element = video.current;
+          if (!element || element.readyState < HTMLMediaElement.HAVE_METADATA) return false;
+          element.currentTime = Math.min(Math.max(0, seconds), element.duration);
+          return true;
+        },
+        release: (resume) => {
+          audio.current?.release();
+          paintAt.current();
+          if (resume) video.current?.play().catch((failure) => setError(errorText(failure)));
+        },
+      }),
+  );
   const [duration, setDuration] = useState(clip.duration_secs);
   const [playing, setPlaying] = useState(false);
   const [range, setRange] = useState<Range>({ start: 0, end: clip.duration_secs });
@@ -100,10 +124,11 @@ export function Player({
     audio.current = player;
     prepare();
     return () => {
+      scrub.dispose();
       player.dispose();
       audio.current = null;
     };
-  }, [prepare]);
+  }, [prepare, scrub]);
 
   useEffect(() => {
     audio.current?.mix(mix);
@@ -120,9 +145,9 @@ export function Player({
     const container = root.current;
     if (!element || !container) return;
     let frameRequest = 0;
-    const paint = () => {
+    const paint = (seconds?: number) => {
       const span = element.duration || duration || 1;
-      const now = element.currentTime;
+      const now = seconds ?? (scrub.scrubbing ? scrub.position : element.currentTime);
       const played = `${Math.min(1, now / span) * 100}%`;
       for (const head of container.querySelectorAll<HTMLElement>("[data-playhead]")) head.style.left = played;
       for (const bar of container.querySelectorAll<HTMLElement>("[data-played]")) bar.style.width = played;
@@ -130,6 +155,11 @@ export function Player({
       if (timeText.current) timeText.current.textContent = shown;
       position.current?.setAttribute("aria-valuenow", String(Math.round(now)));
       position.current?.setAttribute("aria-valuetext", preciseTime(now, fps));
+    };
+    paintAt.current = paint;
+    const seeked = () => {
+      scrub.loaded();
+      paint();
     };
     const loop = () => {
       paint();
@@ -155,7 +185,7 @@ export function Player({
     element.addEventListener("play", start);
     element.addEventListener("pause", stop);
     element.addEventListener("ended", stop);
-    element.addEventListener("seeked", paint);
+    element.addEventListener("seeked", seeked);
     element.addEventListener("loadedmetadata", metadata);
     paint();
     return () => {
@@ -163,10 +193,10 @@ export function Player({
       element.removeEventListener("play", start);
       element.removeEventListener("pause", stop);
       element.removeEventListener("ended", stop);
-      element.removeEventListener("seeked", paint);
+      element.removeEventListener("seeked", seeked);
       element.removeEventListener("loadedmetadata", metadata);
     };
-  }, [duration, fps, tracks]);
+  }, [duration, fps, tracks, scrub]);
 
   const seek = (seconds: number) => {
     const element = video.current;
@@ -305,7 +335,7 @@ export function Player({
         <span className="score w-28 shrink-0 text-[20px] font-semibold">
           <span ref={timeText}>{preciseTime(0, fps)}</span>
         </span>
-        <Timeline duration={duration} fps={fps} range={range} position={position} onSeek={seek} onRange={setRange} />
+        <Timeline duration={duration} fps={fps} range={range} position={position} scrub={scrub} onSeek={seek} onRange={setRange} />
         <span className="score w-16 shrink-0 text-right text-[17px] font-medium text-ink-2">{clock(duration)}</span>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -336,7 +366,7 @@ export function Player({
                 mix={mix[index] ?? FULL_MIX}
                 audible={audible[index] ?? true}
                 onMix={(next) => setMix((current) => current.map((item, place) => (place === index ? next : item)))}
-                onSeek={seek}
+                scrub={scrub}
               />
             ))}
           </ul>
