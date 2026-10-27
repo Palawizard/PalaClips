@@ -14,8 +14,8 @@ use std::sync::{Arc, Mutex};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, track_descriptors};
 use palaclips_engine::events::{
-    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind,
-    TrackState,
+    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, Severity, SourceMode, TrackDescriptor,
+    TrackKind, TrackState,
 };
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
@@ -49,6 +49,7 @@ pub struct CaptureInfo {
     pub width: u32,
     pub height: u32,
     pub fps: u32,
+    pub source_mode: SourceMode,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -114,6 +115,7 @@ impl AppStatus {
                 width,
                 height,
                 fps,
+                source_mode,
                 tracks,
             } => {
                 self.clear_capture_alerts();
@@ -122,8 +124,14 @@ impl AppStatus {
                     width: *width,
                     height: *height,
                     fps: *fps,
+                    source_mode: *source_mode,
                 });
                 self.tracks = tracks.iter().cloned().map(TrackInfo::named).collect();
+            }
+            EngineEvent::SourceChanged { source_mode } => {
+                if let Some(capture) = &mut self.capture {
+                    capture.source_mode = *source_mode;
+                }
             }
             EngineEvent::TracksRenamed { tracks } => {
                 for (track, renamed) in self.tracks.iter_mut().zip(tracks) {
@@ -1140,6 +1148,11 @@ mod tests {
             width: 2560,
             height: 1440,
             fps: 60,
+            source_mode: SourceMode {
+                width: 2560,
+                height: 1440,
+                refresh_hz: Some(240),
+            },
             tracks: vec![
                 descriptor("Mix complet", TrackKind::Mix),
                 descriptor("Discord", TrackKind::Application),
@@ -1168,6 +1181,11 @@ mod tests {
             width: 1920,
             height: 1080,
             fps: 60,
+            source_mode: SourceMode {
+                width: 2560,
+                height: 1440,
+                refresh_hz: Some(240),
+            },
             tracks: vec![
                 descriptor("Jeu", TrackKind::Game),
                 descriptor("Jeu", TrackKind::Game),
@@ -1219,10 +1237,50 @@ mod tests {
             width: 2560,
             height: 1440,
             fps: 240,
+            source_mode: SourceMode {
+                width: 2560,
+                height: 1440,
+                refresh_hz: Some(240),
+            },
             tracks: Vec::new(),
         });
         assert_eq!(status.alerts.len(), 1);
         assert_eq!(status.alerts[0].text.code, "hotkey_unavailable");
+    }
+
+    #[test]
+    fn the_source_follows_the_screen_or_window_while_capturing() {
+        let mut status = AppStatus::default();
+        let resized = SourceMode {
+            width: 1280,
+            height: 720,
+            refresh_hz: None,
+        };
+        status.apply(&EngineEvent::SourceChanged {
+            source_mode: resized,
+        });
+        assert!(status.capture.is_none());
+        status.apply(&EngineEvent::CaptureStarted {
+            source: Localized::new("source_window"),
+            width: 1920,
+            height: 1080,
+            fps: 60,
+            source_mode: SourceMode {
+                width: 1600,
+                height: 900,
+                refresh_hz: None,
+            },
+            tracks: Vec::new(),
+        });
+        status.apply(&EngineEvent::SourceChanged {
+            source_mode: resized,
+        });
+        let capture = status.capture.expect("capture");
+        assert_eq!(capture.source_mode, resized);
+        assert_eq!(
+            (capture.width, capture.height, capture.fps),
+            (1920, 1080, 60)
+        );
     }
 
     #[test]
