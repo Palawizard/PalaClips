@@ -92,8 +92,8 @@ function Shell() {
               </p>
             )}
             <Alerts alerts={engine.status?.alerts ?? []} onOpen={open} />
-            <div className="grid flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,320px)] max-[1000px]:grid-cols-1 max-[1000px]:flex-none">
-              <div className="flex min-w-0 flex-col border-r border-line max-[1000px]:border-r-0">
+            <div className="grid min-h-60 flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,320px)] grid-rows-[minmax(0,1fr)] max-[1000px]:min-h-0 max-[1000px]:flex-none max-[1000px]:grid-cols-1 max-[1000px]:grid-rows-none">
+              <div className="flex min-w-0 flex-col overflow-y-auto border-r border-line max-[1000px]:overflow-visible max-[1000px]:border-r-0">
                 <Roster
                   tracks={engine.status?.tracks ?? []}
                   appOrder={appOrder}

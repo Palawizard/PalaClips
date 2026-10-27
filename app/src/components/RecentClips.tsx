@@ -73,7 +73,11 @@ export function RecentClips({
   const t = useT();
   const [beforeKeys, afterKeys] = t("clips.emptyWithKeys").split("{keys}");
   return (
-    <section aria-labelledby="clips-title" className="flex min-w-0 flex-col gap-3 px-5 pt-5 pb-6">
+    <section
+      aria-labelledby="clips-title"
+      tabIndex={0}
+      className="flex min-w-0 flex-col gap-3 overflow-y-auto px-5 pt-5 pb-6 -outline-offset-2 max-[1000px]:overflow-visible"
+    >
       <h2 id="clips-title" className="text-[17px] font-semibold">
         {t("clips.title")}
       </h2>
