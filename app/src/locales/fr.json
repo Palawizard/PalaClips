@@ -351,6 +351,8 @@
       "replayPart": "Replay",
       "recordingPart": "Enregistrement",
       "commonPart": "Commun",
+      "tabs": "Parties de Replay et qualité",
+      "unapplied": "changements non appliqués",
       "sameAsReplay": "Comme le replay",
       "forRecording": "{setting} (enregistrement)",
       "bufferSize": "Tampon :"
