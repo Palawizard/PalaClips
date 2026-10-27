@@ -95,6 +95,13 @@ pub enum SaveOrigin {
     Recording,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct SourceMode {
+    pub width: u32,
+    pub height: u32,
+    pub refresh_hz: Option<u32>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum EngineEvent {
@@ -106,7 +113,11 @@ pub enum EngineEvent {
         width: u32,
         height: u32,
         fps: u32,
+        source_mode: SourceMode,
         tracks: Vec<TrackDescriptor>,
+    },
+    SourceChanged {
+        source_mode: SourceMode,
     },
     TracksRenamed {
         tracks: Vec<TrackDescriptor>,

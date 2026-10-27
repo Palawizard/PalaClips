@@ -2,7 +2,7 @@ import { ChevronRight, Gauge, HardDrive, Monitor, Save } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { Destination } from "../App.tsx";
 import { recordingConfig } from "../lib/config.ts";
-import type { CaptureTarget, ReplayEstimate } from "../lib/ipc.ts";
+import type { CaptureTarget, ReplayEstimate, SourceMode } from "../lib/ipc.ts";
 import { useEstimate } from "../lib/useEstimate.ts";
 import { bytes, clock } from "../lib/format.ts";
 import { message, t, useT } from "../lib/i18n.ts";
@@ -31,6 +31,11 @@ function targetLabel(target: CaptureTarget | undefined): string {
   if (target.kind === "primary_monitor") return t("messages.source_primary_screen");
   if (target.kind === "monitor") return target.device_name;
   return target.exe_name;
+}
+
+function sourceText({ width, height, refresh_hz }: SourceMode): string {
+  const size = `${width}×${height}`;
+  return refresh_hz ? `${size} · ${t("units.hz", { value: refresh_hz })}` : size;
 }
 
 function ReplayWitness({ phase }: { phase: ReplayPhase }) {
@@ -235,7 +240,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
           </span>
         </h2>
         <p className="score truncate text-[17px] font-medium whitespace-nowrap text-ink-2">
-          {capture ? `${capture.width}×${capture.height} · ${t("units.fps", { value: capture.fps })}` : t("status.captureStopped")}
+          {capture ? sourceText(capture.source_mode) : t("status.captureStopped")}
         </p>
         {fellBack && <p className="text-[13px] text-warn">{t("status.fellBack")}</p>}
         <button

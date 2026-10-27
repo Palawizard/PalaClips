@@ -25,8 +25,8 @@ use crate::encode::{
 };
 use crate::error::{EngineError, Result};
 use crate::events::{
-    CapturePerformance, EngineEvent, EngineState, Localized, SaveOrigin, Severity, TrackDescriptor,
-    TrackKind,
+    CapturePerformance, EngineEvent, EngineState, Localized, SaveOrigin, Severity, SourceMode,
+    TrackDescriptor, TrackKind,
 };
 use crate::library::ensure_free_space;
 use crate::mux::{Mp4Writer, MuxStream};
@@ -1068,6 +1068,11 @@ impl Pipeline {
                 width: video.size.width,
                 height: video.size.height,
                 fps: video.fps,
+                source_mode: capture.source_mode().unwrap_or(SourceMode {
+                    width: video.size.width,
+                    height: video.size.height,
+                    refresh_hz: None,
+                }),
                 tracks: track_descriptors(config),
             })
             .ok();
