@@ -18,7 +18,7 @@ use windows_capture::settings::{
     GraphicsCaptureItemType, MinimumUpdateIntervalSettings, SecondaryWindowSettings, Settings,
 };
 
-use super::display::display_color;
+use super::display::{display_color, refresh_hz};
 use super::pacer::{CfrClock, bounded_due, emit_due};
 use super::rate::{
     FreezeWatch, RateWatch, SaturationWatch, composition_rate, exclusive_fullscreen,
@@ -31,7 +31,7 @@ use crate::encode::{
     output_size, render_texture,
 };
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, Localized, Severity};
+use crate::events::{EngineEvent, Localized, Severity, SourceMode};
 use crate::perf::CaptureCounters;
 
 const FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(3);
@@ -66,6 +66,7 @@ pub struct VideoCapture {
     alerts: Receiver<EngineEvent>,
     shared: Arc<Shared>,
     hdr_white: Option<f32>,
+    source_screen: Option<String>,
     encoder_thread: Option<JoinHandle<Result<VideoCaptureStats>>>,
     session: Option<CaptureControl<FrameSink, EngineError>>,
 }
@@ -83,7 +84,7 @@ impl VideoCapture {
             .and_then(display_color)
             .filter(|color| color.hdr)
             .map(|color| color.sdr_white_scrgb());
-        let hdr_watch = display.map(|name| (name, hdr_white.is_some()));
+        let hdr_watch = display.clone().map(|name| (name, hdr_white.is_some()));
         let color_format = if hdr_white.is_some() {
             ColorFormat::Rgba16F
         } else {
@@ -107,6 +108,10 @@ impl VideoCapture {
                     Some(fallback_alert(&window.title().unwrap_or_default())),
                 )
             }
+        };
+        let source_screen = match resolved {
+            ResolvedTarget::Window(_) if alert.is_none() => None,
+            _ => display,
         };
         let first = shared.latest().ok_or_else(|| {
             EngineError::Capture("aucune image reçue de Windows Graphics Capture".into())
@@ -143,6 +148,7 @@ impl VideoCapture {
                 let shared = shared.clone();
                 let device = SendCom(device);
                 let fps = settings.fps;
+                let source_screen = source_screen.clone();
                 move || {
                     let hdr = hdr_white
                         .map(|white| HdrToSdr::new(&device.0, white))
@@ -152,6 +158,7 @@ impl VideoCapture {
                         packets: packet_tx,
                         alerts: alert_tx,
                         hdr_watch,
+                        source_screen,
                     };
                     run_encoder(shared, device, hdr, encoder, fps, outputs, Role::Primary)
                 }
@@ -163,6 +170,7 @@ impl VideoCapture {
             alerts,
             shared,
             hdr_white,
+            source_screen,
             encoder_thread: Some(encoder_thread),
             session: Some(session),
         };
@@ -195,6 +203,10 @@ impl VideoCapture {
 
     pub fn counters(&self) -> CaptureCounters {
         *self.shared.counters.lock()
+    }
+
+    pub fn source_mode(&self) -> Option<SourceMode> {
+        source_mode(&self.shared, self.source_screen.as_deref())
     }
 
     pub fn add_output(&self, settings: &VideoSettings, encoder: &str) -> Result<VideoOutput> {
@@ -246,6 +258,7 @@ impl VideoCapture {
                         packets: packet_tx,
                         alerts: alert_tx,
                         hdr_watch: None,
+                        source_screen: None,
                     };
                     run_encoder(
                         shared,
@@ -541,6 +554,16 @@ struct EncoderOutputs {
     packets: Sender<AVPacket>,
     alerts: Sender<EngineEvent>,
     hdr_watch: Option<(String, bool)>,
+    source_screen: Option<String>,
+}
+
+fn source_mode(shared: &Shared, screen: Option<&str>) -> Option<SourceMode> {
+    let size = shared.latest()?.size;
+    Some(SourceMode {
+        width: size.width,
+        height: size.height,
+        refresh_hz: screen.and_then(refresh_hz),
+    })
 }
 
 fn run_encoder(
@@ -558,6 +581,7 @@ fn run_encoder(
         packets,
         alerts,
         hdr_watch,
+        source_screen,
     } = outputs;
     let device = device.0;
     let output = encoder.size();
@@ -604,6 +628,9 @@ fn run_encoder(
     let mut next_rate_check = Hns::now() + RATE_CHECK;
     let mut frames_at_check = 0;
     let mut emitted_at_check = (0, 0);
+    let mut source = primary
+        .then(|| source_mode(&shared, source_screen.as_deref()))
+        .flatten();
     while !role.stopped(&shared) {
         if shared.closed.load(Ordering::Relaxed) {
             encoder.finish(&mut send)?;
@@ -638,6 +665,14 @@ fn run_encoder(
             let new_frames = delivered.saturating_sub(frames_at_check);
             frames_at_check = delivered;
             if primary {
+                if let Some(source_mode) = source_mode(&shared, source_screen.as_deref())
+                    && Some(source_mode) != source
+                {
+                    source = Some(source_mode);
+                    alerts
+                        .try_send(EngineEvent::SourceChanged { source_mode })
+                        .ok();
+                }
                 if let Some(alert) =
                     composition_rate().and_then(|rate| rate_watch.observe(now, rate, new_frames))
                 {
