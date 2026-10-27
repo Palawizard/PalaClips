@@ -1,4 +1,4 @@
-param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [string[]]$Copy = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$RightScreen, [switch]$Tray)
+param([string]$Settings = '{}', [int]$Clips = 0, [hashtable]$Fixture = @{}, [string[]]$Link = @(), [string[]]$Copy = @(), [switch]$LeftScreen, [switch]$MainScreen, [switch]$RightScreen, [switch]$Tray, [string]$ClipsDir = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $running = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @('palaclips-app', 'PalaClips') }
@@ -14,7 +14,7 @@ if (-not $json.schema_version) {
 }
 if (-not $json.engine) { $json.engine = @{} }
 if (-not $json.engine.storage) { $json.engine.storage = @{} }
-$json.engine.storage.clips_dir = Join-Path $dir 'clips'
+$json.engine.storage.clips_dir = if ($ClipsDir) { $ClipsDir } else { Join-Path $dir 'clips' }
 $json | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $dir 'settings.json') -Encoding utf8
 if ($Clips -gt 0) { & (Join-Path $PSScriptRoot 'gallery-fixtures.ps1') -Root (Join-Path $dir 'clips') -Count $Clips @Fixture }
 foreach ($file in $Link) {
