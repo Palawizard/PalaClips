@@ -15,9 +15,10 @@ import { QualityButton, StatusBanner } from "./components/StatusBanner.tsx";
 import { type DraftRequest, addDrafts } from "./lib/compressDrafts.ts";
 import { useT } from "./lib/i18n.ts";
 import { onboardingNeeded } from "./lib/ipc.ts";
+import { type QualityTab, rememberTab } from "./lib/qualityTabs.ts";
 import { useEngine } from "./lib/useEngine.ts";
 
-export type Destination = { view: View; section?: SectionId; focus?: boolean };
+export type Destination = { view: View; section?: SectionId; focus?: boolean; tab?: QualityTab };
 
 export default function App() {
   return (
@@ -53,8 +54,12 @@ function Shell() {
     [engine.config],
   );
 
-  const open = ({ view: nextView, section: nextSection, focus }: Destination) => {
-    const focusQuality = () => focus && setQualityFocus((count) => count + 1);
+  const open = ({ view: nextView, section: nextSection, focus, tab }: Destination) => {
+    const focusQuality = () => {
+      if (!focus) return;
+      if (tab) rememberTab(tab);
+      setQualityFocus((count) => count + 1);
+    };
     if (nextView === view && (!nextSection || nextSection === section)) {
       focusQuality();
       return;
