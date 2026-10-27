@@ -360,7 +360,7 @@ aussi l'`AppStatus` renvoyé par `get_state`.
 `tracks_renamed { tracks: [{ title, kind }] }` (nom de piste ou langue changés pendant le
 replay : titres mis à jour sans redémarrage, appliqués au prochain clip), `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
-périphérique rattaché ; émis à chaque changement), `clip_saved`, `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
+périphérique rattaché ; émis à chaque changement), `clip_saved { path, duration_secs, save_latency_ms, thumbnail, origin }` (`origin` = `replay`, `post_roll` ou `recording` : le shell joue le carillon pour un replay, le son « clip terminé » à la fin d'un « après », rien pour un enregistrement, qui a déjà son son de fin), `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
 le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la

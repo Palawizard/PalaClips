@@ -768,6 +768,7 @@ export type EngineEvent =
       duration_secs: number;
       save_latency_ms: number;
       thumbnail: string | null;
+      origin: "replay" | "post_roll" | "recording";
     }
   | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }
