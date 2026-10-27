@@ -25,8 +25,8 @@ use crate::encode::{
 };
 use crate::error::{EngineError, Result};
 use crate::events::{
-    CapturePerformance, EngineEvent, EngineState, Localized, Severity, SourceMode, TrackDescriptor,
-    TrackKind,
+    CapturePerformance, EngineEvent, EngineState, Localized, SaveOrigin, Severity, SourceMode,
+    TrackDescriptor, TrackKind,
 };
 use crate::library::ensure_free_space;
 use crate::mux::{Mp4Writer, MuxStream};
@@ -1828,6 +1828,7 @@ impl SaveJob {
             duration_secs: self.duration.as_secs_f64(),
             save_latency_ms: (latency.0 / 10_000) as u64,
             thumbnail,
+            origin: SaveOrigin::Replay,
         })
     }
 }
