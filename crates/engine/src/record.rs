@@ -14,7 +14,7 @@ use crate::clock::{HNS_PER_SECOND, Hns};
 use crate::config::RecordSplit;
 use crate::encode::{route_ffmpeg_logs, write_thumbnail};
 use crate::error::{EngineError, Result};
-use crate::events::{EngineEvent, Localized, Severity};
+use crate::events::{EngineEvent, Localized, SaveOrigin, Severity};
 use crate::library::{STOP_FREE_BYTES, WARN_FREE_BYTES, disk_space};
 use crate::mux::{Mp4Writer, MuxStream};
 use crate::paths;
@@ -347,7 +347,12 @@ impl Segment {
         self.writer.write(stream, packet)
     }
 
-    fn finish(self, layout: &RecordLayout, journal: &Journal) -> Result<EngineEvent> {
+    fn finish(
+        self,
+        layout: &RecordLayout,
+        journal: &Journal,
+        kind: RecordKind,
+    ) -> Result<EngineEvent> {
         self.writer.finish()?;
         journal.remove(&self.path)?;
         let duration = self.newest_video + layout.frame - self.start;
@@ -371,6 +376,10 @@ impl Segment {
             duration_secs: duration.as_secs_f64(),
             save_latency_ms: 0,
             thumbnail,
+            origin: match kind {
+                RecordKind::Recording => SaveOrigin::Recording,
+                RecordKind::Replay => SaveOrigin::PostRoll,
+            },
         })
     }
 }
@@ -457,7 +466,7 @@ impl Writer {
     fn close_previous(&mut self) -> Result<()> {
         self.splitter.close_previous();
         if let Some(previous) = self.previous.take() {
-            let event = previous.finish(&self.layout, &self.journal)?;
+            let event = previous.finish(&self.layout, &self.journal, self.target.kind)?;
             self.events.try_send(event).ok();
         }
         Ok(())
@@ -465,7 +474,9 @@ impl Writer {
 
     fn finish(mut self) -> Result<()> {
         let previous = self.close_previous();
-        let event = self.current.finish(&self.layout, &self.journal)?;
+        let event = self
+            .current
+            .finish(&self.layout, &self.journal, self.target.kind)?;
         self.events.try_send(event).ok();
         previous
     }

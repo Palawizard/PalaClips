@@ -87,6 +87,14 @@ pub enum TrackState {
     Unavailable,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SaveOrigin {
+    Replay,
+    PostRoll,
+    Recording,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum EngineEvent {
@@ -118,6 +126,7 @@ pub enum EngineEvent {
         duration_secs: f64,
         save_latency_ms: u64,
         thumbnail: Option<String>,
+        origin: SaveOrigin,
     },
     AudioLevels {
         levels: Vec<f32>,

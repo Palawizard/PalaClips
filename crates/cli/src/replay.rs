@@ -10,7 +10,7 @@ use palaclips_engine::config::{
     AppTrack, AudioSettings, RecordSettings, RecordSplit, ReplaySettings, ReplayStorage,
 };
 use palaclips_engine::engine::{Engine, LevelRate};
-use palaclips_engine::events::{EngineEvent, EngineState};
+use palaclips_engine::events::{EngineEvent, EngineState, SaveOrigin};
 use palaclips_engine::paths::private_bytes;
 
 const STATS_EVERY: u32 = 5;
@@ -253,10 +253,14 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
             recv(engine.events()) -> event => {
                 let Ok(event) = event else { break };
                 match event {
-                    EngineEvent::ClipSaved { path, duration_secs, save_latency_ms, .. } => {
+                    EngineEvent::ClipSaved { path, duration_secs, save_latency_ms, origin, .. } => {
                         finished += 1;
                         latencies.push(save_latency_ms);
-                        chime_on(Sound::Saved);
+                        match origin {
+                            SaveOrigin::Replay => chime_on(Sound::Saved),
+                            SaveOrigin::PostRoll => chime_on(Sound::ClipFinished),
+                            SaveOrigin::Recording => {}
+                        }
                         println!(
                             "[{:>6} s] clip {finished} : {duration_secs:.3} s, prêt en {save_latency_ms} ms ; mémoire privée {:.1} Mo → {path}",
                             started.elapsed().as_secs(),

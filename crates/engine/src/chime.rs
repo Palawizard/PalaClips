@@ -9,6 +9,7 @@ pub enum Sound {
     Saved,
     RecordingStarted,
     RecordingStopped,
+    ClipFinished,
 }
 
 impl Sound {
@@ -17,6 +18,11 @@ impl Sound {
             Self::Saved => &[(880.0, 0.0, 0.11), (1318.5, 0.075, 0.2)],
             Self::RecordingStarted => &[(523.25, 0.0, 0.1), (783.99, 0.075, 0.2)],
             Self::RecordingStopped => &[(783.99, 0.0, 0.1), (523.25, 0.075, 0.2)],
+            Self::ClipFinished => &[
+                (880.0, 0.0, 0.1),
+                (1318.5, 0.075, 0.1),
+                (1760.0, 0.15, 0.22),
+            ],
         }
     }
 
@@ -25,6 +31,7 @@ impl Sound {
             Self::Saved => 0,
             Self::RecordingStarted => 1,
             Self::RecordingStopped => 2,
+            Self::ClipFinished => 3,
         }
     }
 }
@@ -80,7 +87,7 @@ pub fn play(sound: Sound) {
     use windows::Win32::Media::Audio::{PlaySoundW, SND_ASYNC, SND_MEMORY, SND_NODEFAULT};
     use windows::core::PCWSTR;
 
-    static SOUNDS: [OnceLock<Vec<u8>>; 3] = [OnceLock::new(), OnceLock::new(), OnceLock::new()];
+    static SOUNDS: [OnceLock<Vec<u8>>; 4] = [const { OnceLock::new() }; 4];
     let chime = SOUNDS[sound.index()].get_or_init(|| wav(&sound_samples(sound.notes())));
     // SAFETY: SND_MEMORY reads the WAV from `chime`, a static buffer that outlives the
     // asynchronous playback.
@@ -100,13 +107,39 @@ pub fn play(sound: Sound) {
 mod tests {
     use super::*;
 
+    const ALL: [Sound; 4] = [
+        Sound::Saved,
+        Sound::RecordingStarted,
+        Sound::RecordingStopped,
+        Sound::ClipFinished,
+    ];
+
     #[test]
-    fn recording_sounds_differ_from_the_save_chime() {
-        let saved = sound_samples(Sound::Saved.notes());
-        let started = sound_samples(Sound::RecordingStarted.notes());
-        let stopped = sound_samples(Sound::RecordingStopped.notes());
-        assert_ne!(saved, started);
-        assert_ne!(started, stopped);
+    fn all_sounds_differ() {
+        let samples: Vec<_> = ALL.map(|sound| sound_samples(sound.notes())).into();
+        for (index, sound) in samples.iter().enumerate() {
+            for other in &samples[index + 1..] {
+                assert_ne!(sound, other);
+            }
+        }
+        let indices: std::collections::HashSet<_> = ALL.map(Sound::index).into();
+        assert_eq!(indices.len(), ALL.len());
+    }
+
+    #[test]
+    fn the_finished_clip_sound_keeps_the_timbre_and_volume_of_the_chime() {
+        let peak = |sound: Sound| {
+            sound_samples(sound.notes())
+                .iter()
+                .map(|sample| sample.unsigned_abs())
+                .max()
+                .unwrap_or(0)
+        };
+        let saved = f32::from(peak(Sound::Saved));
+        let finished = f32::from(peak(Sound::ClipFinished));
+        assert!((finished / saved - 1.0).abs() < 0.15, "{saved} {finished}");
+        let seconds = sound_samples(Sound::ClipFinished.notes()).len() as f32 / SAMPLE_RATE as f32;
+        assert!(seconds < 0.4, "{seconds}");
     }
 
     #[test]

@@ -14,8 +14,8 @@ use std::sync::{Arc, Mutex};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, track_descriptors};
 use palaclips_engine::events::{
-    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind,
-    TrackState,
+    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, SaveOrigin, Severity, TrackDescriptor,
+    TrackKind, TrackState,
 };
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
@@ -566,12 +566,18 @@ impl EngineSlot {
             EngineEvent::ClipSaved {
                 path,
                 duration_secs,
+                origin,
                 ..
             } => {
                 self.library_changed(app, &[std::path::PathBuf::from(path)]);
                 let feedback = self.feedback();
-                if feedback.sound {
-                    feedback::play(feedback::Sound::Saved);
+                let sound = match origin {
+                    SaveOrigin::Replay => Some(feedback::Sound::Saved),
+                    SaveOrigin::PostRoll => Some(feedback::Sound::ClipFinished),
+                    SaveOrigin::Recording => None,
+                };
+                if let Some(sound) = sound.filter(|_| feedback.sound) {
+                    feedback::play(sound);
                 }
                 if feedback.toast {
                     let game = std::path::Path::new(path)
@@ -1248,6 +1254,7 @@ mod tests {
             duration_secs: 12.0,
             save_latency_ms: 20,
             thumbnail: None,
+            origin: SaveOrigin::Replay,
         });
         assert!(status.alerts.is_empty());
     }
