@@ -131,7 +131,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | APP-11 | Installeur Windows (NSIS, par utilisateur, sans droits admin) ; la désinstallation conserve les clips. |
 | APP-12 | Panneau de performances : RAM/CPU du moteur, taille du buffer, images perdues, encodeur utilisé. |
 | APP-13 | Accessibilité : navigation clavier complète, contrastes conformes, `prefers-reduced-motion` respecté. |
-| APP-15 | Accès direct (v1.3) : sur État, le résumé de la qualité (« 1440p60 · H.264 · ≈ X Mo/min », et celui de l'enregistrement s'il diffère) est un lien ; sur Capture, un bouton « Replay et qualité ». Les deux ouvrent Réglages → Replay & qualité (défilement et focus, via la garde de sortie). |
+| APP-15 | Accès direct (v1.3) : sur État, le résumé de la qualité (« 1440p60 · H.264 · ≈ X Mo/min », et celui de l'enregistrement s'il diffère) est un lien ; sur Capture, un bouton « Replay et qualité ». Les deux ouvrent Réglages → Replay & qualité (défilement et focus, via la garde de sortie). v1.4 : la page est en trois onglets accessibles (Replay, Enregistrement, Commun), chacun avec son estimation de taille, l'onglet choisi est retenu pendant la session, un point discret marque l'onglet qui a un changement non appliqué ; le résumé de l'enregistrement ouvre l'onglet Enregistrement. |
 | APP-14 | Barre latérale (v1.2) : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio sont des pages à part entière. Quitter une page (ou fermer la fenêtre) avec des changements non appliqués ouvre une alerte « Appliquer / Ne pas appliquer / Rester » qui dit si appliquer redémarre le replay. |
 
 ### 2.8 bis Compression (CMP, v1.2)
