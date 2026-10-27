@@ -297,6 +297,13 @@ impl EngineSlot {
             .unwrap_or_default()
     }
 
+    fn player(&self) -> settings::Player {
+        self.settings
+            .lock()
+            .map(|settings| settings.player)
+            .unwrap_or_default()
+    }
+
     fn state(&self) -> EngineState {
         self.status
             .lock()
@@ -743,6 +750,8 @@ pub fn run() {
             commands::set_autostart,
             commands::get_feedback,
             commands::set_feedback,
+            commands::get_player,
+            commands::set_player,
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
@@ -763,6 +772,8 @@ pub fn run() {
             commands::record_stop,
             commands::list_clips,
             commands::clip_games,
+            commands::clip_mix,
+            commands::set_clip_mix,
             commands::set_clip_favorite,
             commands::rename_clip,
             commands::trash_clip,

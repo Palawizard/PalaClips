@@ -16,6 +16,7 @@ pub struct Settings {
     pub schema_version: u32,
     pub engine: EngineConfig,
     pub feedback: Feedback,
+    pub player: Player,
     pub hotkeys: crate::hotkeys::Hotkeys,
     pub theme: Theme,
     pub language: LanguageSetting,
@@ -37,6 +38,7 @@ impl Default for Settings {
             schema_version: SETTINGS_VERSION,
             engine: EngineConfig::default(),
             feedback: Feedback::default(),
+            player: Player::default(),
             hotkeys: crate::hotkeys::Hotkeys::default(),
             theme: Theme::default(),
             language: LanguageSetting::default(),
@@ -66,6 +68,20 @@ fn forget_default_names(audio: &mut AudioSettings) {
     forget(&mut audio.full_mix_label, |names| &names.mix);
     forget(&mut audio.microphone_label, |names| &names.microphone);
     forget(&mut audio.game_label, |names| &names.game);
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Player {
+    pub mute_full_mix: bool,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            mute_full_mix: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -306,6 +322,7 @@ mod tests {
         std::fs::write(&path, SETTINGS_1_2).expect("write");
         let loaded = load(&path);
         assert!(loaded.problem.is_none());
+        assert!(loaded.settings.player.mute_full_mix);
         let engine = &loaded.settings.engine;
         assert_eq!(engine.record.video, None);
         assert!(!engine.records_separately());
