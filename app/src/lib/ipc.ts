@@ -687,11 +687,18 @@ export interface ActiveAlert extends Localized {
 
 export type TrackState = "waiting" | "capturing" | "silent" | "unavailable";
 
+export interface SourceMode {
+  width: number;
+  height: number;
+  refresh_hz: number | null;
+}
+
 export interface CaptureInfo {
   source: Localized;
   width: number;
   height: number;
   fps: number;
+  source_mode: SourceMode;
 }
 
 export type TrackKind = "mix" | "microphone" | "application" | "game";
@@ -748,8 +755,10 @@ export type EngineEvent =
       width: number;
       height: number;
       fps: number;
+      source_mode: SourceMode;
       tracks: TrackDescriptor[];
     }
+  | { type: "source_changed"; source_mode: SourceMode }
   | { type: "tracks_renamed"; tracks: TrackDescriptor[] }
   | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
   | { type: "game_named"; exe_name: string; name: string }
