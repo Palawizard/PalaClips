@@ -325,8 +325,11 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         println!("nom de jeu : {exe_name} → {name}");
                         config.storage.game_names.insert(exe_name, name);
                     }
-                    EngineEvent::CaptureStarted { source, width, height, fps, tracks } => {
-                        println!("capture : {source}, {width}x{height} à {fps} i/s, pistes {}", tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
+                    EngineEvent::CaptureStarted { source, width, height, fps, source_mode, tracks } => {
+                        println!("capture : {source} ({}x{} {:?} Hz), {width}x{height} à {fps} i/s, pistes {}", source_mode.width, source_mode.height, source_mode.refresh_hz, tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
+                    }
+                    EngineEvent::SourceChanged { source_mode } => {
+                        println!("source : {}x{} {:?} Hz", source_mode.width, source_mode.height, source_mode.refresh_hz);
                     }
                     EngineEvent::TracksRenamed { tracks } => {
                         println!("pistes : {}", tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
