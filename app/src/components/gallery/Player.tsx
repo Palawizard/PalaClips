@@ -1,6 +1,6 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { ArrowLeft, Copy, FolderOpen, Pause, Play, Star, Trash2 } from "lucide-react";
-import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bytes, clock } from "../../lib/format.ts";
 import { autoNamed, clipTitle, dayLabel, preciseTime, timeOfDay } from "../../lib/gallery.ts";
 import { errorText, t as translate, useT } from "../../lib/i18n.ts";
@@ -10,11 +10,16 @@ import {
   type TrackFile,
   type TrackKind,
   copyClip,
+  type ClipMix,
+  clipMix,
+  getPlayer,
   preparePlayer,
+  setClipMix,
   revealClip,
   setClipFavorite,
 } from "../../lib/ipc.ts";
 import { PlayerAudio, type TrackMix } from "../../lib/playerAudio.ts";
+import { FULL_MIX, audibleTracks, changeTrack, heardMix, openingMix } from "../../lib/playerMix.ts";
 import { ScrubSession } from "../../lib/scrubSession.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../../lib/tracks.ts";
 import type { DraftRequest } from "../../lib/compressDrafts.ts";
@@ -24,7 +29,7 @@ import { MIN_RANGE_SECS, type Range, Timeline } from "./Timeline.tsx";
 import { TrackLane } from "./TrackLane.tsx";
 
 const STEP_SECS = 1;
-const FULL_MIX: TrackMix = { volume: 1, mute: false, solo: false };
+const MIX_SAVE_MS = 400;
 const BUTTON =
   "pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong px-3 font-medium text-ink hover:bg-surface-hover";
 const HEADER_LABEL = "max-[1100px]:sr-only";
@@ -38,11 +43,6 @@ function playerShortcuts(): Shortcut[] {
     { keys: [translate("keys.home"), translate("keys.end")], label: translate("shortcuts.jumpCut") },
     { keys: [translate("keys.escape")], label: translate("shortcuts.back") },
   ];
-}
-
-export function audibleTracks(mix: TrackMix[]): boolean[] {
-  const solo = mix.some((track) => track.solo);
-  return mix.map((track) => !track.mute && track.volume > 0 && (!solo || track.solo));
 }
 
 export function Player({
@@ -97,7 +97,9 @@ export function Player({
   const [range, setRange] = useState<Range>({ start: 0, end: clip.duration_secs });
   const [tracks, setTracks] = useState<TrackFile[] | null>(null);
   const [tracksFailed, setTracksFailed] = useState<string | null>(null);
-  const [mix, setMix] = useState<TrackMix[]>([]);
+  const [mixState, setMixState] = useState<ClipMix>({ tracks: [], full_mix_chosen: false });
+  const [muteFullMix, setMuteFullMix] = useState(false);
+  const pendingMix = useRef<{ timer: number; state: ClipMix } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const fps = clip.fps;
@@ -106,10 +108,15 @@ export function Player({
   const prepare = useCallback(() => {
     setTracksFailed(null);
     setTracks(null);
-    preparePlayer(clip.path).then(
-      (files) => {
+    Promise.all([
+      preparePlayer(clip.path),
+      clipMix(clip.path).catch(() => null),
+      getPlayer().catch(() => ({ mute_full_mix: true })),
+    ]).then(
+      ([files, stored, player]) => {
         setTracks(files);
-        setMix(files.map(() => FULL_MIX));
+        setMixState(openingMix(files.length, stored));
+        setMuteFullMix(player.mute_full_mix);
         audio.current?.load(files.map((file) => file.path));
       },
       (failure) => setTracksFailed(errorText(failure)),
@@ -131,8 +138,15 @@ export function Player({
   }, [prepare, scrub]);
 
   useEffect(() => {
-    audio.current?.mix(mix);
-  }, [mix]);
+    const path = clip.path;
+    return () => {
+      const pending = pendingMix.current;
+      if (!pending) return;
+      window.clearTimeout(pending.timer);
+      pendingMix.current = null;
+      setClipMix(path, pending.state).catch(() => undefined);
+    };
+  }, [clip.path]);
 
   useEffect(() => {
     if (!notice) return;
@@ -246,7 +260,23 @@ export function Player({
   const titles = (tracks ?? []).map((track, index) => track.title || t("player.untitled", { number: index + 1 }));
   const kinds: TrackKind[] = titles.map((title) => kindOfTitle(title, labels));
   const colors = titles.map((title, index) => trackColor(kinds[index] ?? "application", title, appOrder));
+  const kindsKey = kinds.join();
+  const mix = useMemo(() => heardMix(kinds, mixState, muteFullMix), [kindsKey, mixState, muteFullMix]);
   const audible = audibleTracks(mix);
+  const changeMix = (index: number, next: TrackMix) => {
+    const state = changeTrack(kinds, mixState, muteFullMix, index, next);
+    setMixState(state);
+    if (pendingMix.current) window.clearTimeout(pendingMix.current.timer);
+    const timer = window.setTimeout(() => {
+      pendingMix.current = null;
+      setClipMix(clip.path, state).catch((failure) => setError(errorText(failure)));
+    }, MIX_SAVE_MS);
+    pendingMix.current = { timer, state };
+  };
+
+  useEffect(() => {
+    audio.current?.mix(mix);
+  }, [mix]);
 
   return (
     <div ref={root} onKeyDown={keys} className="player flex min-h-0 flex-1 flex-col">
@@ -365,7 +395,7 @@ export function Player({
                 range={range}
                 mix={mix[index] ?? FULL_MIX}
                 audible={audible[index] ?? true}
-                onMix={(next) => setMix((current) => current.map((item, place) => (place === index ? next : item)))}
+                onMix={(next) => changeMix(index, next)}
                 scrub={scrub}
               />
             ))}
@@ -378,8 +408,8 @@ export function Player({
         titles={titles}
         kinds={kinds}
         colors={colors}
-        audible={audible}
-        volumes={mix.map((track) => track.volume)}
+        audible={audibleTracks(mixState.tracks)}
+        volumes={mixState.tracks.map((track) => track.volume)}
         range={range}
         onCompress={onCompress}
       />
