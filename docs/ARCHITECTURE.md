@@ -355,7 +355,8 @@ d'une erreur système.
 Émis tels quels sur l'événement Tauri `engine-event` par le fil `palaclips-events`, qui tient
 aussi l'`AppStatus` renvoyé par `get_state`.
 
-`state_changed`, `capture_started { source, width, height, fps, tracks: [{ title, kind }] }` (à l'armement ; `source` = `Localized` : `source_primary_screen`, `source_screen { name }`, `source_window { exe }`, `source_window_fallback { exe }` ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
+`state_changed`, `capture_started { source, width, height, fps, source_mode, tracks: [{ title, kind }] }` (à l'armement ; `width`/`height`/`fps` = sortie encodée, `source_mode { width, height, refresh_hz }` = taille réelle de l'écran ou de la fenêtre capturée et fréquence de l'écran, `null` pour une fenêtre ; `source` = `Localized` : `source_primary_screen`, `source_screen { name }`, `source_window { exe }`, `source_window_fallback { exe }` ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
+`source_changed { source_mode }` (la source change de taille ou l'écran de fréquence pendant la capture, relevé chaque seconde),
 `tracks_renamed { tracks: [{ title, kind }] }` (nom de piste ou langue changés pendant le
 replay : titres mis à jour sans redémarrage, appliqués au prochain clip), `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
