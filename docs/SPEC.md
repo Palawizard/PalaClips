@@ -107,7 +107,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 |---|---|
 | GAL-01 | Grille de clips avec miniature, durée, jeu, date, taille, type (replay / enregistrement). |
 | GAL-02 | Filtres (jeu, type, favoris, période), tri, recherche par nom ; fluide avec 5 000 clips. |
-| GAL-03 | Lecteur intégré avec déplacement fluide, y compris sur un fichier de 4 Go ; clic ou glisser sur la barre de temps **ou sur n'importe quelle piste audio** (v1.3.1), la tête de lecture se cale sur l'entrée et la sortie à 8 px près et suit l'entrée quand on la déplace. |
+| GAL-03 | Lecteur intégré avec déplacement fluide, y compris sur un fichier de 4 Go ; clic ou glisser sur la barre de temps **ou sur n'importe quelle piste audio** (v1.3.1), la tête de lecture se cale sur l'entrée et la sortie à 8 px près et suit l'entrée quand on la déplace. Pendant le glisser (v1.4), le curseur, le temps et la zone jouée suivent la souris à chaque image ; l'image est chargée quand la souris s'arrête (120 ms) et au relâchement, une seule demande à la fois (la dernière position gagne) ; l'audio se recale à la fin et la lecture reprend si elle tournait. |
 | GAL-04 | Dans le lecteur : **chaque piste audio** peut être coupée, isolée (solo) ou réglée en volume. |
 | GAL-05 | Renommer, favori, supprimer (vers la Corbeille), ouvrir l'emplacement, **copier le fichier** dans le presse-papiers (glisser dans Discord). |
 | GAL-06 | Découpe : export **rapide** sans réencodage (sur images clés) ou **précis** (réencodage matériel). |
