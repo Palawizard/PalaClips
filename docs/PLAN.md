@@ -273,6 +273,27 @@ Critères :
 - 👤 « Après » en jeu, clip compressé envoyé dans Discord en 20 Mo et 500 Mo, glisser-déposer,
   alerte de sortie de page ; images extraites jugées correctes.
 
+## v1.4 — Retours de Palawi : État, Source, lecteur, onglets, son de fin (APP-15, GAL-03, GAL-04, RPL-10)
+
+Rapport : `docs/reports/v1.4.md`.
+
+- [x] Décisions de Palawi (Source = écran seul, état du lecteur par clip, export sans la coupure
+      automatique, 12 clips, son A).
+- [x] État : colonnes qui défilent chacune de leur côté, 12 clips (#125).
+- [x] Cellule Source : taille et fréquence réelles de la source, suivies en direct (#126).
+- [x] Lecteur : glisser sans attendre la vidéo, une demande d'image à la fois (#124).
+- [x] Son « clip terminé » distinct, `clip_saved.origin` (#127).
+- [x] Replay & qualité en trois onglets (#128).
+- [x] Mix complet coupé à la lecture, état par clip (#129).
+- [x] Session manuelle de Palawi (2026-10-28) : tout validé.
+- [ ] Release v1.4.0 (brouillon, puis publication avec l'accord de Palawi).
+
+Critères :
+- 🤖 Défilement à 6 tailles, molette et clavier ; Source (fenêtre redimensionnée, écran) ;
+  glisser mesuré avant/après ; sons (`scripts/feedback-sounds.ps1`) ; onglets
+  (`scripts/quality-tabs-check.mjs`) ; Mix complet et export (`scripts/player-mix-check.mjs`).
+- 👤 Session de 10 min (`scripts/manual-session.ps1`).
+
 ## v1.3.1 — Sons de PalaClips hors des clips, listes de clips à jour, déplacement dans le lecteur (AUD-01, GAL-03)
 
 - [x] Sons de PalaClips dans la piste 1 en mode « Audio du bureau » : vérifiés par la CLI,

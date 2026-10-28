@@ -62,7 +62,9 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 - **Capture d'un écran ou d'une fenêtre** par Windows Graphics Capture ; une fenêtre est
   retrouvée par le nom de son programme après un redémarrage.
 - **Galerie de clips** avec un lecteur multipiste : écoute piste par piste (muet, solo,
-  volume), découpe, export, copie du fichier pour le coller dans Discord.
+  volume, retenus par clip ; Mix complet coupé à l'ouverture pour ne rien entendre en double),
+  déplacement fluide même sur un long clip HEVC, découpe, export, copie du fichier pour le
+  coller dans Discord.
 - **Compression à une taille cible** : 20 Mo pour Discord, 50 ou 500 Mo pour Nitro, ou une taille
   libre ; résolution et images par seconde choisies selon la taille, taille finale vérifiée.
   Depuis la galerie (un ou plusieurs clips), le lecteur ou par glisser-déposer depuis
@@ -86,7 +88,7 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 
 | Replay & qualité |
 |---|
-| ![Replay & qualité : taille d'un clip et Mo par minute, puis les réglages du replay, de l'enregistrement et communs](docs/screenshots/fr/replay-quality.png) |
+| ![Replay & qualité en trois onglets (replay, enregistrement, commun), chacun avec son estimation de taille](docs/screenshots/fr/replay-quality.png) |
 
 ## Configuration requise
 

@@ -59,7 +59,15 @@
   l'accord de Palawi. Brouillon relu connecté (version, signature = `.sig`, liens publics) ;
   vérifié sans connexion après publication : `latest.json` 1.3.1, installeur, `.sig`, page et
   CHANGELOG en 200. Branche : `dev`.
-- **Dernière mise à jour :** 2026-10-26
+- **v1.4.0 en préparation (2026-10-27/28)** : six retours de Palawi, une PR chacun : défilement
+  d'État et 12 clips (#125), cellule Source = vraie source (#126, `SourceMode`, `source_changed`),
+  glisser fluide dans le lecteur (#124, `ScrubSession`), son « clip terminé » (#127,
+  `clip_saved.origin`), Replay & qualité en onglets (#128), Mix complet coupé à la lecture et
+  état par clip (#129, `player.mute_full_mix`, colonne `mix`). Décisions et mesures :
+  `docs/reports/v1.4.md`. Session manuelle de Palawi validée le 2026-10-28. Préparation de la
+  version : branche `chore/release-v1.4.0`. Reste : PR `dev` → `main`, tag et brouillon **avec
+  l'accord de Palawi**, puis publication avec son accord.
+- **Dernière mise à jour :** 2026-10-28
 
 ## Ce qui existe
 
@@ -299,6 +307,23 @@
     `size-estimate.ps1`, `many-tracks.ps1 [-Keep]`, `app-isolated.ps1 -RightScreen`. Preuves :
     `docs/reports/v1.3/`.
 
+- **v1.4 (2026-10-27/28)** :
+  - Moteur : `events::SourceMode` (`capture_started.source_mode`, `source_changed` relevé chaque
+    seconde dans le fil d'encodage, `capture::display::refresh_hz`) ; `events::SaveOrigin`
+    (`clip_saved.origin` : `replay`, `post_roll`, `recording`) ; `chime::Sound::ClipFinished` ;
+    `Library::mix` / `set_mix` (colonne `mix`, ajoutée aux bases existantes).
+  - Shell : `player.mute_full_mix` dans `settings.json` (`get_player` / `set_player`),
+    `clip_mix` / `set_clip_mix` (`ClipMix { tracks, full_mix_chosen }`, volume borné) ; son joué
+    selon `origin` (rien pour un enregistrement, qui a son propre son de fin).
+  - Front : `lib/scrubSession.ts` (glisser : dessin immédiat, chargement après 120 ms ou au
+    relâchement, dernière position gagnante, audio tenu par `PlayerAudio.hold/release`) ;
+    `lib/qualityTabs.ts` (onglets, onglet retenu, `Destination.tab`) ; `lib/playerMix.ts`
+    (coupure du Mix complet seulement avec une piste Jeu ou appli, export sur l'état choisi).
+  - Scripts : `cdp-run.ps1` (app isolée + script CDP, sortie dans `target/journals/<script>`),
+    `scrub-measure.mjs`, `quality-tabs-check.mjs`, `player-mix-check.mjs`, `manual-session.ps1`
+    (session de Palawi, clips sur F:, `-Stop` range tout), `app-isolated.ps1 -ClipsDir`,
+    `readme-screenshots.mjs` mode `quality`.
+
 ## Prochaines actions (dans l'ordre)
 
 
@@ -496,6 +521,15 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 - Écran mémorisé par `monitor_path` (#79) : un réglage enregistré avant garde le nom GDI ; il
   passe au chemin stable dès que l'écran est rechoisi dans Réglages > Capture.
 
+- Push forcé refusé par le mode auto (rebase d'une branche déjà poussée) : merger `origin/dev`
+  dans la branche à la place, le push reste en avance rapide.
+- Clips de test faits à la main : écrire `handler_name` en plus de `title` (l'app lit
+  `handler_name`, sinon toutes les pistes s'appellent « SoundHandler »). ffprobe montre le titre
+  MP4 sous `tag:name`, pas `tag:title`.
+- La build FFmpeg LGPL n'a pas libx264 : clips de test en `h264_nvenc`.
+- Palawi garde souvent son PalaClips installé ouvert : `app-isolated.ps1` refuse alors de lancer
+  l'app de test ; lui demander de le quitter, et lui dire à la fin de le relancer.
+
 ## Journal des sessions
 
 | Date | Phase | Fait | Suite |
@@ -523,6 +557,7 @@ Aucune. (2026-10-22 : encodeur CPU → D, `h264_mf` pour H.264 + SVT-AV1 pour AV
 | 2026-10-21 | 8 | Logo « Pistes » choisi par Palawi parmi 3 propositions (#83) ; feuille de route (#84) ; premier lancement en 8 questions, une à la fois, cartes « Conseillé », récapitulatif modifiable, vérifications seulement en cas de problème (#85), vu deux fois par Palawi ; RAM gardée par défaut jusqu'à 2 min (décision de Palawi, RPL-04 inchangé) ; captures FR/EN refaites | Release avec l'accord de Palawi |
 | 2026-10-22 | v1.1 | Encodage par le processeur : recherche (encodeurs du FFmpeg BtbN, licences, lecture, banc VMAF NEG), choix D de Palawi ; moteur (`h264_mf` + SVT-AV1, Video Processor → NV12 → staging ou swscale, fils en priorité basse, file bornée, découpe précise CPU) ; app (réglage Encodeur, premier lancement, panneau), critique/audit impeccable ; validé : clip CPU, A/V 3,7 ms d'écart avec NVENC, Fortnite 0 % (1 % bas −3 à −5 %), mise à jour 1.0.0 → 1.1.0 ; mémoire de `h264_mf` (~720 Mo en 1080p) gardée par Palawi ; release v1.1.0 publiée (accord de Palawi), vérifiée sans connexion, sa 1.0.0 propose la 1.1.0 | Test VM T11 par Palawi |
 | 2026-10-22 | v1.1.1 | Mémoire de `h264_mf` : nombre de fils (16 images en vol), pas une file ; faible latence et B-frames sans effet ; limité à 2/4 fils par ICodecAPI (+244 Mo au lieu de +773 en 1080p30, moins de CPU, même VMAF) ; bascule AV1 sans Media Foundation (N/KN), FAQ ; v1.1.1 publiée sans le test VM (demande de Palawi) | Test VM T11 |
+| 2026-10-27/28 | v1.4 | Six retours de Palawi, questions en une fois (Source = écran seul, état du lecteur par clip, export sans coupure auto, 12 clips) ; #125 défilement d'État ; #124 glisser (122 → 2 chargements, curseur toutes les 17 ms au lieu de figé) ; #126 cellule Source ; #127 son « clip terminé » (candidat A choisi à l'écoute) ; #128 onglets ; #129 Mix complet coupé à la lecture ; session manuelle validée ; version 1.4.0 préparée | Accord de Palawi pour `dev` → `main`, tag, brouillon, publication |
 | 2026-10-26 | v1.3.1 | Sons de PalaClips dans la piste 1 confirmés en mode bureau seulement ; exclusion du PID mesurée (sons retirés, toutes les sorties, retard de la piste Jeu) ; soustraction écartée (−3 dB) ; choix de Palawi → source au choix (#118, ADR-041) ; listes de clips suivant `library-changed { removed }` (#119) ; lecteur : pistes cliquables, calage (#120) ; session de Palawi validée ; version 1.3.1 | Release v1.3.1 publiée (accord de Palawi), vérifiée sans connexion |
 | 2026-10-24/26 | v1.3 | Zip de Palawi : moteur correct, copies figées côté front → source unique de config (#113) ; recherche et mesures (2e NVENC : invisible si plus léger, ~5 % pour deux 1440p60 ; piste ≈ 5 % d'un cœur après partage du relevé des processus) ; décisions de Palawi ; 2e encodage pour l'enregistrement, horloge alignée, A/V 8 ms ; estimation −1,4 à −5,4 % ; 26 pistes de bout en bout (compression corrigée) ; Replay & qualité en trois parties, accès direct, sons d'enregistrement (#114) ; T15 validée ; captures du README ; version 1.3.0 (#115, #116), tag, publication | Release v1.3.0 publiée (accord de Palawi), vérifiée sans connexion |
 | 2026-10-23/24 | v1.2 | Recherche (Discord 20 Mo, codecs, NVENC un passage, glisser-déposer Tauri) et décisions de Palawi (#105) ; pages Capture et Audio + alerte de sortie, vitest (#106) ; enregistrer après la sauvegarde, jonction continue, synchro identique, mémoire sans croissance sur 10 min (#107) ; compression à une taille cible, 11 cas sous la cible, HDR → SDR (#108) ; session T14 de Palawi en jeu validée, retours appliqués (#109) ; release 1.2.0 préparée | Release v1.2.0 publiée (accord de Palawi), vérifiée sans connexion |
