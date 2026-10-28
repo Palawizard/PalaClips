@@ -277,7 +277,7 @@ Critères :
 
 - [x] Double-clic ou Entrée sur une carte d'État → lecteur, retour à État, fichier disparu → message
       et carte retirée ; `Destination.clip`, `get_clip` (#133). Clic simple écarté (choix de Palawi).
-- [ ] Release v1.4.1 (brouillon, puis publication avec l'accord de Palawi).
+- [x] Release v1.4.1 (#134, #135, publiée le 2026-10-28 avec l'accord de Palawi).
 
 Critères :
 - 🤖 `scripts/recent-open-check.mjs` (6 sur 6), vitest `destination.test.ts`, test moteur.
