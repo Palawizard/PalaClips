@@ -8,6 +8,8 @@ use windows::Win32::Devices::Display::{
     QDC_ONLY_ACTIVE_PATHS, QueryDisplayConfig,
 };
 use windows::Win32::Foundation::ERROR_SUCCESS;
+use windows::Win32::Graphics::Gdi::{DEVMODEW, ENUM_CURRENT_SETTINGS, EnumDisplaySettingsW};
+use windows::core::HSTRING;
 
 const SCRGB_REFERENCE_NITS: f32 = 80.0;
 const ADVANCED_COLOR_ENABLED: u32 = 0b10;
@@ -68,6 +70,24 @@ impl DisplayColor {
     pub fn sdr_white_scrgb(&self) -> f32 {
         self.sdr_white_nits / SCRGB_REFERENCE_NITS
     }
+}
+
+pub fn refresh_hz(device_name: &str) -> Option<u32> {
+    let mut mode = DEVMODEW {
+        dmSize: size_of::<DEVMODEW>() as u16,
+        ..Default::default()
+    };
+    // SAFETY: the device name is a valid wide string and the mode is sized for the call.
+    unsafe {
+        EnumDisplaySettingsW(
+            &HSTRING::from(device_name),
+            ENUM_CURRENT_SETTINGS,
+            &mut mode,
+        )
+    }
+    .as_bool()
+    .then_some(mode.dmDisplayFrequency)
+    .filter(|hz| *hz > 1)
 }
 
 pub fn display_color(device_name: &str) -> Option<DisplayColor> {

@@ -221,6 +221,8 @@
       "armOnStartup": "Arm the replay on startup",
       "sound": "Confirmation sound",
       "soundHelp": "Played for every saved clip, even in game.",
+      "muteFullMix": "Mute Full mix during playback",
+      "muteFullMixHelp": "In the player, when the clip has separate tracks. Exports and compression keep track 1.",
       "toast": "Confirmation notification",
       "toastHelp": "Windows delays it while a game is fullscreen.",
       "theme": "Theme",
@@ -349,6 +351,8 @@
       "replayPart": "Replay",
       "recordingPart": "Recording",
       "commonPart": "Shared",
+      "tabs": "Replay and quality parts",
+      "unapplied": "unapplied changes",
       "sameAsReplay": "Same as replay",
       "forRecording": "{setting} (recording)",
       "bufferSize": "Buffer:"

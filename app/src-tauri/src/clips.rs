@@ -5,10 +5,36 @@ use palaclips_engine::library::{
     Clip, ClipQuery, Library, TrackCache, TrackFile, copy_file_to_clipboard, move_to_recycle_bin,
     track_peaks, watch,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 
 use crate::{EngineSlot, i18n, internal_error};
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct TrackMix {
+    pub volume: f32,
+    pub mute: bool,
+    pub solo: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ClipMix {
+    pub tracks: Vec<TrackMix>,
+    pub full_mix_chosen: bool,
+}
+
+impl TrackMix {
+    fn bounded(self) -> Self {
+        Self {
+            volume: if self.volume.is_finite() {
+                self.volume.clamp(0.0, 1.0)
+            } else {
+                1.0
+            },
+            ..self
+        }
+    }
+}
 
 pub const LIBRARY_EVENT: &str = "library-changed";
 pub const EXPORT_PROGRESS_EVENT: &str = "export-progress";
@@ -178,6 +204,22 @@ impl EngineSlot {
 
     pub fn clip_games(&self) -> Result<Vec<String>, Localized> {
         self.with_library(|library| library.games())
+    }
+
+    pub fn clip_mix(&self, path: &str) -> Result<Option<ClipMix>, Localized> {
+        let path = self.known_clip(path)?;
+        let stored = self.with_library(|library| library.mix(&path))?;
+        Ok(stored.and_then(|json| serde_json::from_str(&json).ok()))
+    }
+
+    pub fn set_clip_mix(&self, path: &str, mix: ClipMix) -> Result<(), Localized> {
+        let path = self.known_clip(path)?;
+        let mix = ClipMix {
+            tracks: mix.tracks.into_iter().map(TrackMix::bounded).collect(),
+            ..mix
+        };
+        let json = serde_json::to_string(&mix).map_err(|_| internal_error())?;
+        self.with_library(|library| library.set_mix(&path, &json))
     }
 
     pub fn set_clip_favorite(&self, path: &str, favorite: bool) -> Result<(), Localized> {
@@ -515,6 +557,19 @@ fn percent_decode(text: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_stored_track_volume_stays_between_silence_and_full() {
+        let mix = |volume| TrackMix {
+            volume,
+            mute: false,
+            solo: true,
+        };
+        assert_eq!(mix(3.0).bounded().volume, 1.0);
+        assert_eq!(mix(-1.0).bounded().volume, 0.0);
+        assert_eq!(mix(f32::NAN).bounded().volume, 1.0);
+        assert!(mix(0.4).bounded().solo);
+    }
 
     #[test]
     fn ranges_are_clamped_to_the_file_and_to_one_chunk() {

@@ -87,6 +87,21 @@ pub enum TrackState {
     Unavailable,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SaveOrigin {
+    Replay,
+    PostRoll,
+    Recording,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct SourceMode {
+    pub width: u32,
+    pub height: u32,
+    pub refresh_hz: Option<u32>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum EngineEvent {
@@ -98,7 +113,11 @@ pub enum EngineEvent {
         width: u32,
         height: u32,
         fps: u32,
+        source_mode: SourceMode,
         tracks: Vec<TrackDescriptor>,
+    },
+    SourceChanged {
+        source_mode: SourceMode,
     },
     TracksRenamed {
         tracks: Vec<TrackDescriptor>,
@@ -118,6 +137,7 @@ pub enum EngineEvent {
         duration_secs: f64,
         save_latency_ms: u64,
         thumbnail: Option<String>,
+        origin: SaveOrigin,
     },
     AudioLevels {
         levels: Vec<f32>,

@@ -2,7 +2,7 @@ import { ChevronRight, Gauge, HardDrive, Monitor, Save } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { Destination } from "../App.tsx";
 import { recordingConfig } from "../lib/config.ts";
-import type { CaptureTarget, ReplayEstimate } from "../lib/ipc.ts";
+import type { CaptureTarget, ReplayEstimate, SourceMode } from "../lib/ipc.ts";
 import { useEstimate } from "../lib/useEstimate.ts";
 import { bytes, clock } from "../lib/format.ts";
 import { message, t, useT } from "../lib/i18n.ts";
@@ -33,6 +33,11 @@ function targetLabel(target: CaptureTarget | undefined): string {
   return target.exe_name;
 }
 
+function sourceText({ width, height, refresh_hz }: SourceMode): string {
+  const size = `${width}×${height}`;
+  return refresh_hz ? `${size} · ${t("units.hz", { value: refresh_hz })}` : size;
+}
+
 function ReplayWitness({ phase }: { phase: ReplayPhase }) {
   const armed = phase === "armed";
   return (
@@ -45,7 +50,8 @@ function ReplayWitness({ phase }: { phase: ReplayPhase }) {
   );
 }
 
-const QUALITY: Destination = { view: "settings", section: "replay", focus: true };
+const QUALITY: Destination = { view: "settings", section: "replay", focus: true, tab: "replay" };
+const RECORDING_QUALITY: Destination = { ...QUALITY, tab: "recording" };
 
 export function QualityButton({ onOpen }: { onOpen: (destination: Destination) => void }) {
   const t = useT();
@@ -61,13 +67,21 @@ export function QualityButton({ onOpen }: { onOpen: (destination: Destination) =
   );
 }
 
-function QualityLink({ summary, onOpen }: { summary: string; onOpen: (destination: Destination) => void }) {
+function QualityLink({
+  summary,
+  destination,
+  onOpen,
+}: {
+  summary: string;
+  destination: Destination;
+  onOpen: (destination: Destination) => void;
+}) {
   const t = useT();
   const cut = summary.lastIndexOf(" ") + 1;
   return (
     <button
       type="button"
-      onClick={() => onOpen(QUALITY)}
+      onClick={() => onOpen(destination)}
       aria-label={t("status.qualityLink", { summary })}
       className="pressable group -mx-1.5 self-start rounded-md px-1.5 py-0.5 text-left text-ink-2 hover:bg-surface-hover hover:text-ink"
     >
@@ -158,7 +172,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             {t("status.inRam")}
           </p>
         </div>
-        {replaySummary && <QualityLink summary={replaySummary} onOpen={onOpen} />}
+        {replaySummary && <QualityLink summary={replaySummary} destination={QUALITY} onOpen={onOpen} />}
         {clipEndsAt !== null && <ClipInProgress endsAt={clipEndsAt} />}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <button
@@ -213,7 +227,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
             <span className="score text-[15px] font-medium text-ink-2">{bytes(status?.recording_bytes ?? 0)}</span>
           )}
         </p>
-        {recordSummary && <QualityLink summary={recordSummary} onOpen={onOpen} />}
+        {recordSummary && <QualityLink summary={recordSummary} destination={RECORDING_QUALITY} onOpen={onOpen} />}
         <button
           type="button"
           onClick={recording ? engine.stopRecording : engine.record}
@@ -235,7 +249,7 @@ export function StatusBanner({ engine, onOpen }: { engine: Engine; onOpen: (dest
           </span>
         </h2>
         <p className="score truncate text-[17px] font-medium whitespace-nowrap text-ink-2">
-          {capture ? `${capture.width}×${capture.height} · ${t("units.fps", { value: capture.fps })}` : t("status.captureStopped")}
+          {capture ? sourceText(capture.source_mode) : t("status.captureStopped")}
         </p>
         {fellBack && <p className="text-[13px] text-warn">{t("status.fellBack")}</p>}
         <button

@@ -22,7 +22,7 @@ import { useLiveConfig } from "./useConfig.ts";
 import { errorText } from "./i18n.ts";
 import { clearLevels, pushLevels } from "./levels.ts";
 
-const RECENT_CLIPS = 5;
+const RECENT_CLIPS = 12;
 
 export type ReplayPhase = "armed" | "idle" | "arming" | "disarming" | "error";
 

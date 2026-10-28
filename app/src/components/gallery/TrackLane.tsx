@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { number, useT } from "../../lib/i18n.ts";
 import { trackPeaks } from "../../lib/ipc.ts";
 import type { TrackMix } from "../../lib/playerAudio.ts";
-import { scrubHandlers } from "../../lib/scrub.ts";
+import { type Scrubber, scrubHandlers } from "../../lib/scrub.ts";
 import type { Range } from "./Timeline.tsx";
 
 function cssColor(element: HTMLElement, color: string): string {
@@ -19,13 +19,13 @@ function Waveform({
   color,
   duration,
   range,
-  onSeek,
+  scrub,
 }: {
   path: string;
   color: string;
   duration: number;
   range: Range;
-  onSeek: (seconds: number) => void;
+  scrub: Scrubber;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const peaks = useRef<Uint8Array | null>(null);
@@ -78,7 +78,7 @@ function Waveform({
   const span = Math.max(duration, 0.001);
   return (
     <div
-      {...scrubHandlers(span, [range.start, range.end], onSeek)}
+      {...scrubHandlers(span, [range.start, range.end], scrub)}
       className="relative h-9 min-w-0 flex-1 cursor-pointer touch-none overflow-hidden rounded-[2px] bg-meter-ground select-none"
     >
       <canvas ref={canvas} aria-hidden className="waveform absolute inset-0 size-full" />
@@ -103,7 +103,7 @@ export function TrackLane({
   mix,
   audible,
   onMix,
-  onSeek,
+  scrub,
 }: {
   index: number;
   title: string;
@@ -114,7 +114,7 @@ export function TrackLane({
   mix: TrackMix;
   audible: boolean;
   onMix: (mix: TrackMix) => void;
-  onSeek: (seconds: number) => void;
+  scrub: Scrubber;
 }) {
   const t = useT();
   const idle = "border-line-strong text-ink-2 hover:bg-surface-hover hover:text-ink";
@@ -135,7 +135,7 @@ export function TrackLane({
       <span className={`truncate text-[15px] font-semibold ${audible ? "text-ink" : "text-ink-2"}`} title={title}>
         {title}
       </span>
-      <Waveform path={path} color={color} duration={duration} range={range} onSeek={onSeek} />
+      <Waveform path={path} color={color} duration={duration} range={range} scrub={scrub} />
       <span className="flex gap-1.5">
         <button
           type="button"
