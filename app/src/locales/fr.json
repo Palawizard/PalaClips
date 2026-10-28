@@ -187,6 +187,8 @@
   },
   "clips": {
     "title": "Derniers clips",
+    "card": "{game}, {date}, {duration}, {tracks}",
+    "openHint": "Double-clic ou Entrée : ouvrir dans le lecteur",
     "fallbackName": "Clip",
     "emptyTitle": "Aucun clip pour l'instant",
     "emptyWithKeys": "Appuie sur {keys} en jeu pour sauvegarder les dernières secondes.",

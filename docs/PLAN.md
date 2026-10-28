@@ -273,6 +273,15 @@ Critères :
 - 👤 « Après » en jeu, clip compressé envoyé dans Discord en 20 Mo et 500 Mo, glisser-déposer,
   alerte de sortie de page ; images extraites jugées correctes.
 
+## v1.4.1 — Ouvrir un clip depuis « Derniers clips » (GAL-03)
+
+- [x] Double-clic ou Entrée sur une carte d'État → lecteur, retour à État, fichier disparu → message
+      et carte retirée ; `Destination.clip`, `get_clip` (#133). Clic simple écarté (choix de Palawi).
+- [ ] Release v1.4.1 (brouillon, puis publication avec l'accord de Palawi).
+
+Critères :
+- 🤖 `scripts/recent-open-check.mjs` (6 sur 6), vitest `destination.test.ts`, test moteur.
+
 ## v1.4 — Retours de Palawi : État, Source, lecteur, onglets, son de fin (APP-15, GAL-03, GAL-04, RPL-10)
 
 Rapport : `docs/reports/v1.4.md`.
@@ -286,7 +295,7 @@ Rapport : `docs/reports/v1.4.md`.
 - [x] Replay & qualité en trois onglets (#128).
 - [x] Mix complet coupé à la lecture, état par clip (#129).
 - [x] Session manuelle de Palawi (2026-10-28) : tout validé.
-- [ ] Release v1.4.0 (brouillon, puis publication avec l'accord de Palawi).
+- [x] Release v1.4.0 (#130, #131, publiée le 2026-10-28 avec l'accord de Palawi).
 
 Critères :
 - 🤖 Défilement à 6 tailles, molette et clavier ; Source (fenêtre redimensionnée, écran) ;
