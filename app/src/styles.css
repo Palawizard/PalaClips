@@ -178,7 +178,23 @@ body {
 .clip-card {
   transition:
     opacity 240ms var(--ease-out),
-    transform 240ms var(--ease-out);
+    transform 240ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.clip-card:has(> [data-open]:focus-visible) {
+  border-color: var(--ink);
+}
+
+.clip-card > [data-open]:focus-visible {
+  outline-offset: -3px;
+  border-radius: inherit;
+}
+
+.clip-card:has(> [data-open]:active) {
+  transform: scale(0.985);
+  transition-duration: 140ms;
 }
 
 .clip-card[data-fresh="true"] {

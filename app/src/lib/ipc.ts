@@ -311,6 +311,10 @@ export function clipGames(): Promise<string[]> {
   return invoke<string[]>("clip_games");
 }
 
+export function getClip(path: string): Promise<Clip> {
+  return invoke<Clip>("get_clip", { path });
+}
+
 export interface ClipMix {
   tracks: { volume: number; mute: boolean; solo: boolean }[];
   full_mix_chosen: boolean;

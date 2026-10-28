@@ -29,6 +29,30 @@ CREATE TABLE IF NOT EXISTS clips (
 CREATE INDEX IF NOT EXISTS clips_by_date ON clips(modified_ms);
 ";
 
+const CLIP_COLUMNS: &str = "path, name, game, kind, modified_ms, size_bytes, duration_secs, tracks, thumbnail, favorite, fps";
+
+fn clip_row(row: &rusqlite::Row) -> rusqlite::Result<Clip> {
+    let kind: String = row.get(3)?;
+    let tracks: String = row.get(7)?;
+    Ok(Clip {
+        path: row.get(0)?,
+        name: row.get(1)?,
+        game: row.get(2)?,
+        kind: if kind == "replay" {
+            ClipKind::Replay
+        } else {
+            ClipKind::Recording
+        },
+        modified_ms: row.get::<_, i64>(4)? as u64,
+        size_bytes: row.get::<_, i64>(5)? as u64,
+        duration_secs: row.get(6)?,
+        tracks: serde_json::from_str(&tracks).unwrap_or_default(),
+        thumbnail: row.get(8)?,
+        favorite: row.get(9)?,
+        fps: row.get(10)?,
+    })
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ClipKind {
@@ -384,9 +408,20 @@ impl Library {
         Ok(removed > 0)
     }
 
+    pub fn clip(&self, path: &Path) -> Result<Option<Clip>> {
+        self.conn
+            .query_row(
+                &format!("SELECT {CLIP_COLUMNS} FROM clips WHERE path = ?1"),
+                params![key(path)],
+                clip_row,
+            )
+            .optional()
+            .map_err(db_error)
+    }
+
     pub fn query(&self, query: &ClipQuery) -> Result<Vec<Clip>> {
         let sql = format!(
-            "SELECT path, name, game, kind, modified_ms, size_bytes, duration_secs, tracks, thumbnail, favorite, fps
+            "SELECT {CLIP_COLUMNS}
              FROM clips
              WHERE (?1 IS NULL OR game = ?1)
                AND (?2 IS NULL OR kind = ?2)
@@ -413,27 +448,7 @@ impl Library {
                     search,
                     query.limit.map_or(-1, i64::from),
                 ],
-                |row| {
-                    let kind: String = row.get(3)?;
-                    let tracks: String = row.get(7)?;
-                    Ok(Clip {
-                        path: row.get(0)?,
-                        name: row.get(1)?,
-                        game: row.get(2)?,
-                        kind: if kind == "replay" {
-                            ClipKind::Replay
-                        } else {
-                            ClipKind::Recording
-                        },
-                        modified_ms: row.get::<_, i64>(4)? as u64,
-                        size_bytes: row.get::<_, i64>(5)? as u64,
-                        duration_secs: row.get(6)?,
-                        tracks: serde_json::from_str(&tracks).unwrap_or_default(),
-                        thumbnail: row.get(8)?,
-                        favorite: row.get(9)?,
-                        fps: row.get(10)?,
-                    })
-                },
+                clip_row,
             )
             .map_err(db_error)?;
         let mut clips = Vec::new();
@@ -800,6 +815,25 @@ mod tests {
             ["Fortnite_long"]
         );
         assert_eq!(library.games().expect("games"), ["Fortnite", "Valorant"]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_clip_is_found_by_its_path() {
+        let dir = scratch("by-path");
+        let clips = dir.join("clips");
+        let path = clips.join("Fortnite").join("Fortnite_a_replay.mp4");
+        write_clip(&path, 1, 1);
+        let mut library = library(&dir);
+        library.sync().expect("sync");
+        let found = library.clip(&path).expect("clip").expect("indexed");
+        assert_eq!(found.name, "Fortnite_a_replay");
+        assert!(
+            library
+                .clip(&clips.join("absent.mp4"))
+                .expect("clip")
+                .is_none()
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
