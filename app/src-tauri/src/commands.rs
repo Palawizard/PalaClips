@@ -5,7 +5,7 @@ use palaclips_engine::config::CaptureTarget;
 use palaclips_engine::encode::{EncoderInfo, video_encoders};
 use palaclips_engine::engine::ReplayEstimate;
 use palaclips_engine::events::Localized;
-use palaclips_engine::library::{ClipSummary, disk_space, recent_clips};
+use palaclips_engine::library::{Clip, ClipSummary, disk_space, recent_clips};
 use palaclips_engine::sources::{AppSession, AudioDevice, app_sessions, audio_devices};
 use serde::Serialize;
 use tauri::State;
@@ -331,6 +331,11 @@ pub async fn list_clips(
 #[tauri::command]
 pub async fn clip_games(slot: State<'_, EngineSlot>) -> Result<Vec<String>, Localized> {
     slot.clip_games()
+}
+
+#[tauri::command]
+pub async fn get_clip(slot: State<'_, EngineSlot>, path: String) -> Result<Clip, Localized> {
+    slot.get_clip(&path)
 }
 
 #[tauri::command]

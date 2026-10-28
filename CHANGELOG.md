@@ -5,6 +5,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.4.1] - 2026-10-28
+
+### Corrigé
+- État : on peut ouvrir un clip depuis « Derniers clips ». Double-clic ou Entrée sur une carte
+  (cartes focusables, focus visible, nom lu par un lecteur d'écran) ouvre le clip dans le lecteur
+  de la Galerie ; le fermer ramène à État. Si le fichier a disparu entre-temps, un message
+  s'affiche sur État et la carte est retirée (GAL-03).
+
 ## [1.4.0] - 2026-10-28
 
 ### Ajouté

@@ -1,6 +1,7 @@
 import { Search, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DraftRequest } from "../../lib/compressDrafts.ts";
+import { type ClipRequest, playerExit } from "../../lib/destination.ts";
 import { type Period, clipTitle, sinceOf } from "../../lib/gallery.ts";
 import { errorText, t as translate, useT } from "../../lib/i18n.ts";
 import { useLibraryChanges } from "../../lib/library.ts";
@@ -11,12 +12,14 @@ import {
   type EngineConfig,
   clipGames,
   copyClip,
+  getClip,
   listClips,
   renameClip,
   revealClip,
   setClipFavorite,
   trashClip,
 } from "../../lib/ipc.ts";
+import type { View } from "../Rail.tsx";
 import { Segmented, Select } from "../settings/Settings.tsx";
 import type { ClipAction } from "./ClipCard.tsx";
 import { ClipGrid } from "./ClipGrid.tsx";
@@ -63,10 +66,14 @@ function gridShortcuts(): Shortcut[] {
 export function Gallery({
   config,
   saveKeys,
+  clipToOpen = null,
+  onReturn,
   onCompress,
 }: {
   config: EngineConfig | null;
   saveKeys: string | null;
+  clipToOpen?: ClipRequest | null;
+  onReturn?: (view: View) => void;
   onCompress: (requests: DraftRequest[]) => void;
 }) {
   const t = useT();
@@ -82,6 +89,8 @@ export function Gallery({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [open, setOpen] = useState<Clip | null>(null);
+  const [opening, setOpening] = useState(clipToOpen !== null);
+  const [returnTo, setReturnTo] = useState<View>("gallery");
   const scroller = useRef<HTMLDivElement>(null);
   const request = useRef(0);
   const trashQueue = useRef<PendingTrash | null>(null);
@@ -119,6 +128,20 @@ export function Gallery({
   }, [filters]);
 
   useEffect(load, [load]);
+
+  useEffect(() => {
+    if (!clipToOpen) return;
+    setOpening(true);
+    getClip(clipToOpen.path)
+      .then(
+        (clip) => {
+          setReturnTo(playerExit(clipToOpen));
+          setOpen(clip);
+        },
+        (failure) => setError(errorText(failure)),
+      )
+      .finally(() => setOpening(false));
+  }, [clipToOpen?.key]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => ({ ...current, search: search.trim() })), SEARCH_DELAY_MS);
@@ -196,7 +219,10 @@ export function Gallery({
     setNotice(null);
     setError(null);
     const fail = (failure: unknown) => setError(errorText(failure));
-    if (action === "open") setOpen(clip);
+    if (action === "open") {
+      setReturnTo("gallery");
+      setOpen(clip);
+    }
     else if (action === "favorite")
       setClipFavorite(clip.path, !clip.favorite).then(
         () => setClips((current) => current?.map((item) => (item.path === clip.path ? { ...item, favorite: !clip.favorite } : item)) ?? null),
@@ -233,6 +259,10 @@ export function Gallery({
         appOrder={appOrder}
         onBack={() => {
           setOpen(null);
+          if (returnTo !== "gallery" && onReturn) {
+            onReturn(returnTo);
+            return;
+          }
           load();
           setRestoreFocus((current) => current + 1);
         }}
@@ -246,6 +276,8 @@ export function Gallery({
       />
     );
   }
+
+  if (opening) return null;
 
   const filtered =
     filters.search !== "" || filters.game !== "" || filters.kind !== "all" || filters.favorites || filters.period !== "all";

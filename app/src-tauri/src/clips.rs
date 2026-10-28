@@ -206,6 +206,12 @@ impl EngineSlot {
         self.with_library(|library| library.games())
     }
 
+    pub fn get_clip(&self, path: &str) -> Result<Clip, Localized> {
+        let path = self.known_clip(path)?;
+        self.with_library(|library| library.clip(&path))?
+            .ok_or_else(|| Localized::new("clip_unknown"))
+    }
+
     pub fn clip_mix(&self, path: &str) -> Result<Option<ClipMix>, Localized> {
         let path = self.known_clip(path)?;
         let stored = self.with_library(|library| library.mix(&path))?;
