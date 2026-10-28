@@ -59,6 +59,10 @@ if (mode === "onboarding") {
   await waitFor("document.querySelectorAll('.choice-card').length === 4", "question de la durée");
   await sleep(2500);
   await shot("first-launch");
+} else if (mode === "quality") {
+  await click(LABELS.settings, "nav button");
+  await sleep(2500);
+  await shot("replay-quality");
 } else {
   await click(LABELS.gallery);
   await waitFor("document.querySelectorAll('[data-clip]').length > 0", "galerie");
