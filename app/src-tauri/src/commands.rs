@@ -12,9 +12,10 @@ use tauri::State;
 use tauri::ipc::{Channel, InvokeResponseBody, Response};
 use tauri_plugin_autostart::ManagerExt;
 
+use crate::clips::ClipMix;
 use crate::hotkeys::{HotkeyAction, Hotkeys};
 use crate::i18n::{self, Language, LanguageSetting};
-use crate::settings::{Feedback, Theme};
+use crate::settings::{Feedback, Player, Theme};
 use crate::{AppStatus, EngineSlot, internal_error};
 
 #[tauri::command]
@@ -109,6 +110,16 @@ pub fn get_feedback(slot: State<'_, EngineSlot>) -> Feedback {
 #[tauri::command]
 pub fn set_feedback(slot: State<'_, EngineSlot>, feedback: Feedback) -> Result<(), Localized> {
     slot.update(|settings| settings.feedback = feedback)
+}
+
+#[tauri::command]
+pub fn get_player(slot: State<'_, EngineSlot>) -> Player {
+    slot.player()
+}
+
+#[tauri::command]
+pub fn set_player(slot: State<'_, EngineSlot>, player: Player) -> Result<(), Localized> {
+    slot.update(|settings| settings.player = player)
 }
 
 #[tauri::command]
@@ -320,6 +331,23 @@ pub async fn list_clips(
 #[tauri::command]
 pub async fn clip_games(slot: State<'_, EngineSlot>) -> Result<Vec<String>, Localized> {
     slot.clip_games()
+}
+
+#[tauri::command]
+pub async fn clip_mix(
+    slot: State<'_, EngineSlot>,
+    path: String,
+) -> Result<Option<ClipMix>, Localized> {
+    slot.clip_mix(&path)
+}
+
+#[tauri::command]
+pub async fn set_clip_mix(
+    slot: State<'_, EngineSlot>,
+    path: String,
+    mix: ClipMix,
+) -> Result<(), Localized> {
+    slot.set_clip_mix(&path, mix)
 }
 
 #[tauri::command]
