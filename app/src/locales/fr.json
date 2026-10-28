@@ -221,6 +221,8 @@
       "armOnStartup": "Armer le replay au démarrage",
       "sound": "Son de confirmation",
       "soundHelp": "Joué à chaque clip sauvegardé, même en jeu.",
+      "muteFullMix": "Couper le Mix complet à la lecture",
+      "muteFullMixHelp": "Dans le lecteur, quand le clip a des pistes séparées. Les exports et la compression gardent la piste 1.",
       "toast": "Notification de confirmation",
       "toastHelp": "Windows la retient pendant une partie en plein écran.",
       "theme": "Thème",

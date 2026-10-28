@@ -11,11 +11,13 @@ import {
   openDiagnostic,
   getAutostart,
   getFeedback,
+  getPlayer,
   getLanguage,
   getTheme,
   resetSettings,
   setAutostart,
   setFeedback,
+  setPlayer,
   setLanguageSetting,
   setTheme,
 } from "../../lib/ipc.ts";
@@ -155,6 +157,7 @@ export function GeneralSection() {
   const [autostart, setAutostartState] = useState<boolean | null>(null);
   const config = useLiveConfig();
   const [feedback, setFeedbackState] = useState<Feedback | null>(null);
+  const [muteFullMix, setMuteFullMix] = useState<boolean | null>(null);
   const [theme, setThemeState] = useState<Theme>("system");
   const [language, setLanguageState] = useState<LanguageSetting>("system");
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +178,7 @@ export function GeneralSection() {
   const load = () => {
     getAutostart().then(setAutostartState, (failure) => setError(errorText(failure)));
     getFeedback().then(setFeedbackState, (failure) => setError(errorText(failure)));
+    getPlayer().then((player) => setMuteFullMix(player.mute_full_mix), (failure) => setError(errorText(failure)));
     getTheme().then(setThemeState, () => setThemeState("system"));
     getLanguage().then(
       (view) => {
@@ -209,6 +213,11 @@ export function GeneralSection() {
     const previous = feedback;
     setFeedbackState(next);
     run(setFeedback(next), () => setFeedbackState(previous));
+  };
+
+  const changeMuteFullMix = (mute_full_mix: boolean) => {
+    setMuteFullMix(mute_full_mix);
+    run(setPlayer({ mute_full_mix }), () => setMuteFullMix(!mute_full_mix));
   };
 
   const changeTheme = (next: Theme) => {
@@ -277,6 +286,11 @@ export function GeneralSection() {
             label={t("settings.general.toast")}
             onChange={(toast) => changeFeedback({ ...feedback, toast })}
           />
+        )}
+      </SettingRow>
+      <SettingRow label={t("settings.general.muteFullMix")} help={t("settings.general.muteFullMixHelp")}>
+        {muteFullMix !== null && (
+          <Switch checked={muteFullMix} label={t("settings.general.muteFullMix")} onChange={changeMuteFullMix} />
         )}
       </SettingRow>
       <SettingRow label={t("settings.general.theme")}>
