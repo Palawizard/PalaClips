@@ -15,9 +15,10 @@ import { QualityButton, StatusBanner } from "./components/StatusBanner.tsx";
 import { type DraftRequest, addDrafts } from "./lib/compressDrafts.ts";
 import { useT } from "./lib/i18n.ts";
 import { onboardingNeeded } from "./lib/ipc.ts";
+import { type QualityTab, rememberTab } from "./lib/qualityTabs.ts";
 import { useEngine } from "./lib/useEngine.ts";
 
-export type Destination = { view: View; section?: SectionId; focus?: boolean };
+export type Destination = { view: View; section?: SectionId; focus?: boolean; tab?: QualityTab };
 
 export default function App() {
   return (
@@ -53,8 +54,12 @@ function Shell() {
     [engine.config],
   );
 
-  const open = ({ view: nextView, section: nextSection, focus }: Destination) => {
-    const focusQuality = () => focus && setQualityFocus((count) => count + 1);
+  const open = ({ view: nextView, section: nextSection, focus, tab }: Destination) => {
+    const focusQuality = () => {
+      if (!focus) return;
+      if (tab) rememberTab(tab);
+      setQualityFocus((count) => count + 1);
+    };
     if (nextView === view && (!nextSection || nextSection === section)) {
       focusQuality();
       return;
@@ -92,8 +97,8 @@ function Shell() {
               </p>
             )}
             <Alerts alerts={engine.status?.alerts ?? []} onOpen={open} />
-            <div className="grid flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,320px)] max-[1000px]:grid-cols-1 max-[1000px]:flex-none">
-              <div className="flex min-w-0 flex-col border-r border-line max-[1000px]:border-r-0">
+            <div className="grid min-h-60 flex-1 grid-cols-[minmax(0,1fr)_minmax(260px,320px)] grid-rows-[minmax(0,1fr)] max-[1000px]:min-h-0 max-[1000px]:flex-none max-[1000px]:grid-cols-1 max-[1000px]:grid-rows-none">
+              <div className="flex min-w-0 flex-col overflow-y-auto border-r border-line max-[1000px]:overflow-visible max-[1000px]:border-r-0">
                 <Roster
                   tracks={engine.status?.tracks ?? []}
                   appOrder={appOrder}

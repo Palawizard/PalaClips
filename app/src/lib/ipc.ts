@@ -162,6 +162,18 @@ export function setFeedback(feedback: Feedback): Promise<void> {
   return invoke("set_feedback", { feedback });
 }
 
+export interface PlayerSettings {
+  mute_full_mix: boolean;
+}
+
+export function getPlayer(): Promise<PlayerSettings> {
+  return invoke<PlayerSettings>("get_player");
+}
+
+export function setPlayer(player: PlayerSettings): Promise<void> {
+  return invoke("set_player", { player });
+}
+
 export function getState(): Promise<AppStatus> {
   return invoke<AppStatus>("get_state");
 }
@@ -297,6 +309,19 @@ export function listClips(query: ClipQuery): Promise<Clip[]> {
 
 export function clipGames(): Promise<string[]> {
   return invoke<string[]>("clip_games");
+}
+
+export interface ClipMix {
+  tracks: { volume: number; mute: boolean; solo: boolean }[];
+  full_mix_chosen: boolean;
+}
+
+export function clipMix(path: string): Promise<ClipMix | null> {
+  return invoke<ClipMix | null>("clip_mix", { path });
+}
+
+export function setClipMix(path: string, mix: ClipMix): Promise<void> {
+  return invoke("set_clip_mix", { path, mix });
 }
 
 export function setClipFavorite(path: string, favorite: boolean): Promise<void> {
@@ -687,11 +712,18 @@ export interface ActiveAlert extends Localized {
 
 export type TrackState = "waiting" | "capturing" | "silent" | "unavailable";
 
+export interface SourceMode {
+  width: number;
+  height: number;
+  refresh_hz: number | null;
+}
+
 export interface CaptureInfo {
   source: Localized;
   width: number;
   height: number;
   fps: number;
+  source_mode: SourceMode;
 }
 
 export type TrackKind = "mix" | "microphone" | "application" | "game";
@@ -748,8 +780,10 @@ export type EngineEvent =
       width: number;
       height: number;
       fps: number;
+      source_mode: SourceMode;
       tracks: TrackDescriptor[];
     }
+  | { type: "source_changed"; source_mode: SourceMode }
   | { type: "tracks_renamed"; tracks: TrackDescriptor[] }
   | { type: "track_changed"; track: number; title: string; state: TrackState; source: string | null }
   | { type: "game_named"; exe_name: string; name: string }
@@ -759,6 +793,7 @@ export type EngineEvent =
       duration_secs: number;
       save_latency_ms: number;
       thumbnail: string | null;
+      origin: "replay" | "post_roll" | "recording";
     }
   | { type: "audio_levels"; levels: number[] }
   | { type: "replay_stats"; buffered_secs: number; bytes: number }

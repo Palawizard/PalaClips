@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS clips (
     fps REAL NOT NULL DEFAULT -1,
     tracks TEXT NOT NULL,
     thumbnail TEXT,
-    favorite INTEGER NOT NULL DEFAULT 0
+    favorite INTEGER NOT NULL DEFAULT 0,
+    mix TEXT
 );
 CREATE INDEX IF NOT EXISTS clips_by_date ON clips(modified_ms);
 ";
@@ -193,13 +194,17 @@ impl Library {
         conn.pragma_update(None, "journal_mode", "WAL")
             .map_err(db_error)?;
         conn.execute_batch(SCHEMA).map_err(db_error)?;
-        let has_fps = conn
-            .prepare("SELECT 1 FROM pragma_table_info('clips') WHERE name = 'fps'")
-            .and_then(|mut statement| statement.exists([]))
-            .map_err(db_error)?;
-        if !has_fps {
-            conn.execute_batch("ALTER TABLE clips ADD COLUMN fps REAL NOT NULL DEFAULT -1")
+        for (column, definition) in [("fps", "REAL NOT NULL DEFAULT -1"), ("mix", "TEXT")] {
+            let exists = conn
+                .prepare("SELECT 1 FROM pragma_table_info('clips') WHERE name = ?1")
+                .and_then(|mut statement| statement.exists([column]))
                 .map_err(db_error)?;
+            if !exists {
+                conn.execute_batch(&format!(
+                    "ALTER TABLE clips ADD COLUMN {column} {definition}"
+                ))
+                .map_err(db_error)?;
+            }
         }
         Ok(Self {
             conn,
@@ -469,6 +474,29 @@ impl Library {
             )
             .map_err(db_error)?;
         Ok(())
+    }
+
+    pub fn set_mix(&self, path: &Path, mix: &str) -> Result<()> {
+        self.conn
+            .execute(
+                "UPDATE clips SET mix = ?2 WHERE path = ?1",
+                params![key(path), mix],
+            )
+            .map_err(db_error)?;
+        Ok(())
+    }
+
+    pub fn mix(&self, path: &Path) -> Result<Option<String>> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT mix FROM clips WHERE path = ?1",
+                params![key(path)],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(db_error)?
+            .flatten())
     }
 
     pub fn rename(&self, path: &Path, name: &str) -> Result<PathBuf> {
@@ -772,6 +800,42 @@ mod tests {
             ["Fortnite_long"]
         );
         assert_eq!(library.games().expect("games"), ["Fortnite", "Valorant"]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_clip_keeps_its_player_mix_through_a_rename_and_a_rescan() {
+        let dir = scratch("mix");
+        let clips = dir.join("clips");
+        let original = clips.join("Fortnite").join("Fortnite_a_replay.mp4");
+        write_clip(&original, 1, 1);
+        let mut library = library(&dir);
+        library.sync().expect("sync");
+        assert_eq!(library.mix(&original).expect("mix"), None);
+        library.set_mix(&original, "[1]").expect("set mix");
+        let renamed = library.rename(&original, "Top 1").expect("rename");
+        library.sync().expect("sync");
+        assert_eq!(library.mix(&renamed).expect("mix").as_deref(), Some("[1]"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_library_from_before_the_player_mix_gains_the_column() {
+        let dir = scratch("old-schema");
+        std::fs::create_dir_all(&dir).expect("dir");
+        let db = dir.join("library.sqlite");
+        Connection::open(&db)
+            .and_then(|conn| {
+                conn.execute_batch(
+                    "CREATE TABLE clips (path TEXT PRIMARY KEY, name TEXT NOT NULL, game TEXT NOT NULL,
+                     kind TEXT NOT NULL, modified_ms INTEGER NOT NULL, size_bytes INTEGER NOT NULL,
+                     duration_secs REAL NOT NULL, tracks TEXT NOT NULL, thumbnail TEXT,
+                     favorite INTEGER NOT NULL DEFAULT 0);",
+                )
+            })
+            .expect("old schema");
+        let library = Library::open(&db, dir.join("clips")).expect("open");
+        assert_eq!(library.mix(Path::new("absent.mp4")).expect("mix"), None);
         std::fs::remove_dir_all(&dir).ok();
     }
 

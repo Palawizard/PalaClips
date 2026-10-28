@@ -14,8 +14,8 @@ use std::sync::{Arc, Mutex};
 use palaclips_engine::EngineConfig;
 use palaclips_engine::engine::{Engine, EngineHandle, LevelRate, track_descriptors};
 use palaclips_engine::events::{
-    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, Severity, TrackDescriptor, TrackKind,
-    TrackState,
+    CAPTURE_ALERTS, EngineEvent, EngineState, Localized, SaveOrigin, Severity, SourceMode,
+    TrackDescriptor, TrackKind, TrackState,
 };
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
@@ -49,6 +49,7 @@ pub struct CaptureInfo {
     pub width: u32,
     pub height: u32,
     pub fps: u32,
+    pub source_mode: SourceMode,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -114,6 +115,7 @@ impl AppStatus {
                 width,
                 height,
                 fps,
+                source_mode,
                 tracks,
             } => {
                 self.clear_capture_alerts();
@@ -122,8 +124,14 @@ impl AppStatus {
                     width: *width,
                     height: *height,
                     fps: *fps,
+                    source_mode: *source_mode,
                 });
                 self.tracks = tracks.iter().cloned().map(TrackInfo::named).collect();
+            }
+            EngineEvent::SourceChanged { source_mode } => {
+                if let Some(capture) = &mut self.capture {
+                    capture.source_mode = *source_mode;
+                }
             }
             EngineEvent::TracksRenamed { tracks } => {
                 for (track, renamed) in self.tracks.iter_mut().zip(tracks) {
@@ -286,6 +294,13 @@ impl EngineSlot {
         self.settings
             .lock()
             .map(|settings| settings.feedback)
+            .unwrap_or_default()
+    }
+
+    fn player(&self) -> settings::Player {
+        self.settings
+            .lock()
+            .map(|settings| settings.player)
             .unwrap_or_default()
     }
 
@@ -566,12 +581,18 @@ impl EngineSlot {
             EngineEvent::ClipSaved {
                 path,
                 duration_secs,
+                origin,
                 ..
             } => {
                 self.library_changed(app, &[std::path::PathBuf::from(path)]);
                 let feedback = self.feedback();
-                if feedback.sound {
-                    feedback::play(feedback::Sound::Saved);
+                let sound = match origin {
+                    SaveOrigin::Replay => Some(feedback::Sound::Saved),
+                    SaveOrigin::PostRoll => Some(feedback::Sound::ClipFinished),
+                    SaveOrigin::Recording => None,
+                };
+                if let Some(sound) = sound.filter(|_| feedback.sound) {
+                    feedback::play(sound);
                 }
                 if feedback.toast {
                     let game = std::path::Path::new(path)
@@ -735,6 +756,8 @@ pub fn run() {
             commands::set_autostart,
             commands::get_feedback,
             commands::set_feedback,
+            commands::get_player,
+            commands::set_player,
             commands::replay_arm,
             commands::replay_disarm,
             commands::replay_save,
@@ -755,6 +778,8 @@ pub fn run() {
             commands::record_stop,
             commands::list_clips,
             commands::clip_games,
+            commands::clip_mix,
+            commands::set_clip_mix,
             commands::set_clip_favorite,
             commands::rename_clip,
             commands::trash_clip,
@@ -1140,6 +1165,11 @@ mod tests {
             width: 2560,
             height: 1440,
             fps: 60,
+            source_mode: SourceMode {
+                width: 2560,
+                height: 1440,
+                refresh_hz: Some(240),
+            },
             tracks: vec![
                 descriptor("Mix complet", TrackKind::Mix),
                 descriptor("Discord", TrackKind::Application),
@@ -1168,6 +1198,11 @@ mod tests {
             width: 1920,
             height: 1080,
             fps: 60,
+            source_mode: SourceMode {
+                width: 2560,
+                height: 1440,
+                refresh_hz: Some(240),
+            },
             tracks: vec![
                 descriptor("Jeu", TrackKind::Game),
                 descriptor("Jeu", TrackKind::Game),
@@ -1219,10 +1254,50 @@ mod tests {
             width: 2560,
             height: 1440,
             fps: 240,
+            source_mode: SourceMode {
+                width: 2560,
+                height: 1440,
+                refresh_hz: Some(240),
+            },
             tracks: Vec::new(),
         });
         assert_eq!(status.alerts.len(), 1);
         assert_eq!(status.alerts[0].text.code, "hotkey_unavailable");
+    }
+
+    #[test]
+    fn the_source_follows_the_screen_or_window_while_capturing() {
+        let mut status = AppStatus::default();
+        let resized = SourceMode {
+            width: 1280,
+            height: 720,
+            refresh_hz: None,
+        };
+        status.apply(&EngineEvent::SourceChanged {
+            source_mode: resized,
+        });
+        assert!(status.capture.is_none());
+        status.apply(&EngineEvent::CaptureStarted {
+            source: Localized::new("source_window"),
+            width: 1920,
+            height: 1080,
+            fps: 60,
+            source_mode: SourceMode {
+                width: 1600,
+                height: 900,
+                refresh_hz: None,
+            },
+            tracks: Vec::new(),
+        });
+        status.apply(&EngineEvent::SourceChanged {
+            source_mode: resized,
+        });
+        let capture = status.capture.expect("capture");
+        assert_eq!(capture.source_mode, resized);
+        assert_eq!(
+            (capture.width, capture.height, capture.fps),
+            (1920, 1080, 60)
+        );
     }
 
     #[test]
@@ -1248,6 +1323,7 @@ mod tests {
             duration_secs: 12.0,
             save_latency_ms: 20,
             thumbnail: None,
+            origin: SaveOrigin::Replay,
         });
         assert!(status.alerts.is_empty());
     }

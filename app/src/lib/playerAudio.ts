@@ -19,6 +19,7 @@ export class PlayerAudio {
   private context = new AudioContext();
   private voices: Voice[] = [];
   private timer = 0;
+  private held = false;
 
   constructor(private video: HTMLVideoElement) {
     video.addEventListener("play", this.play);
@@ -51,6 +52,15 @@ export class PlayerAudio {
     });
   }
 
+  hold() {
+    this.held = true;
+  }
+
+  release() {
+    this.held = false;
+    this.align();
+  }
+
   private play = () => {
     this.context.resume().catch(() => undefined);
     this.align();
@@ -66,6 +76,7 @@ export class PlayerAudio {
   };
 
   private align = () => {
+    if (this.held) return;
     for (const voice of this.voices) {
       voice.element.playbackRate = this.video.playbackRate;
       if (Math.abs(voice.element.currentTime - this.video.currentTime) > DRIFT_LIMIT_SECS) {

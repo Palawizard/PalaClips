@@ -10,7 +10,7 @@ use palaclips_engine::config::{
     AppTrack, AudioSettings, RecordSettings, RecordSplit, ReplaySettings, ReplayStorage,
 };
 use palaclips_engine::engine::{Engine, LevelRate};
-use palaclips_engine::events::{EngineEvent, EngineState};
+use palaclips_engine::events::{EngineEvent, EngineState, SaveOrigin};
 use palaclips_engine::paths::private_bytes;
 
 const STATS_EVERY: u32 = 5;
@@ -253,10 +253,14 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
             recv(engine.events()) -> event => {
                 let Ok(event) = event else { break };
                 match event {
-                    EngineEvent::ClipSaved { path, duration_secs, save_latency_ms, .. } => {
+                    EngineEvent::ClipSaved { path, duration_secs, save_latency_ms, origin, .. } => {
                         finished += 1;
                         latencies.push(save_latency_ms);
-                        chime_on(Sound::Saved);
+                        match origin {
+                            SaveOrigin::Replay => chime_on(Sound::Saved),
+                            SaveOrigin::PostRoll => chime_on(Sound::ClipFinished),
+                            SaveOrigin::Recording => {}
+                        }
                         println!(
                             "[{:>6} s] clip {finished} : {duration_secs:.3} s, prêt en {save_latency_ms} ms ; mémoire privée {:.1} Mo → {path}",
                             started.elapsed().as_secs(),
@@ -321,8 +325,11 @@ pub fn run_replay(args: &ReplayArgs) -> Result<()> {
                         println!("nom de jeu : {exe_name} → {name}");
                         config.storage.game_names.insert(exe_name, name);
                     }
-                    EngineEvent::CaptureStarted { source, width, height, fps, tracks } => {
-                        println!("capture : {source}, {width}x{height} à {fps} i/s, pistes {}", tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
+                    EngineEvent::CaptureStarted { source, width, height, fps, source_mode, tracks } => {
+                        println!("capture : {source} ({}x{} {:?} Hz), {width}x{height} à {fps} i/s, pistes {}", source_mode.width, source_mode.height, source_mode.refresh_hz, tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));
+                    }
+                    EngineEvent::SourceChanged { source_mode } => {
+                        println!("source : {}x{} {:?} Hz", source_mode.width, source_mode.height, source_mode.refresh_hz);
                     }
                     EngineEvent::TracksRenamed { tracks } => {
                         println!("pistes : {}", tracks.iter().map(|track| track.title.as_str()).collect::<Vec<_>>().join(", "));

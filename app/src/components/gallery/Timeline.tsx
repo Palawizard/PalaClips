@@ -1,7 +1,7 @@
 import { type KeyboardEvent, type PointerEvent, type RefObject, useRef } from "react";
 import { preciseTime } from "../../lib/gallery.ts";
 import { useT } from "../../lib/i18n.ts";
-import { scrubTime } from "../../lib/scrub.ts";
+import { type Scrubber, scrubTime } from "../../lib/scrub.ts";
 
 export interface Range {
   start: number;
@@ -18,6 +18,7 @@ export function Timeline({
   fps,
   range,
   position,
+  scrub,
   onSeek,
   onRange,
 }: {
@@ -25,6 +26,7 @@ export function Timeline({
   fps: number;
   range: Range;
   position: RefObject<HTMLDivElement | null>;
+  scrub: Scrubber;
   onSeek: (seconds: number) => void;
   onRange: (range: Range) => void;
 }) {
@@ -33,26 +35,30 @@ export function Timeline({
   const drag = useRef<Drag | null>(null);
   const span = Math.max(duration, 0.001);
   const frame = 1 / (fps > 0 ? fps : 60);
-  const move = (kind: "start" | "end", seconds: number) => {
+  const move = (kind: "start" | "end", seconds: number, seekTo: (seconds: number) => void) => {
     if (kind === "start") {
       const start = Math.min(seconds, range.end - MIN_RANGE_SECS);
       onRange({ start, end: range.end });
-      onSeek(start);
+      seekTo(start);
     } else onRange({ start: range.start, end: Math.max(seconds, range.start + MIN_RANGE_SECS) });
   };
-  const apply = (kind: Drag, event: PointerEvent) => {
+  const apply = (kind: Drag, event: PointerEvent, seekTo: (seconds: number) => void) => {
     const rect = track.current?.getBoundingClientRect();
     if (!rect) return;
     const x = event.clientX - rect.left;
-    if (kind === "seek") onSeek(scrubTime(x, rect.width, span, [range.start, range.end]));
-    else move(kind, scrubTime(x, rect.width, span, []));
+    if (kind === "seek") seekTo(scrubTime(x, rect.width, span, [range.start, range.end]));
+    else move(kind, scrubTime(x, rect.width, span, []), seekTo);
   };
   const down = (kind: Drag) => (event: PointerEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
     drag.current = kind;
     track.current?.setPointerCapture(event.pointerId);
-    apply(kind, event);
+    apply(kind, event, (seconds) => scrub.start(seconds));
+  };
+  const release = () => {
+    if (drag.current !== "end") scrub.end();
+    drag.current = null;
   };
   const nudge = (kind: "start" | "end") => (event: KeyboardEvent<HTMLElement>) => {
     const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
@@ -60,7 +66,7 @@ export function Timeline({
     event.preventDefault();
     event.stopPropagation();
     const amount = event.shiftKey ? SECOND_STEPS : frame;
-    move(kind, Math.min(span, Math.max(0, (kind === "start" ? range.start : range.end) + step * amount)));
+    move(kind, Math.min(span, Math.max(0, (kind === "start" ? range.start : range.end) + step * amount)), onSeek);
   };
   const percent = (seconds: number) => `${(seconds / span) * 100}%`;
 
@@ -68,13 +74,9 @@ export function Timeline({
     <div
       ref={track}
       onPointerDown={down("seek")}
-      onPointerMove={(event) => drag.current && apply(drag.current, event)}
-      onPointerUp={() => {
-        drag.current = null;
-      }}
-      onPointerCancel={() => {
-        drag.current = null;
-      }}
+      onPointerMove={(event) => drag.current && apply(drag.current, event, (seconds) => scrub.move(seconds))}
+      onPointerUp={release}
+      onPointerCancel={release}
       className="timeline relative h-10 flex-1 cursor-pointer touch-none select-none"
     >
       <div
