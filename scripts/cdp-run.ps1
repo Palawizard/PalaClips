@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root ("target\journals\" + [IO.Path]::GetFileNameWithoutExtension($Script))
 Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force $out | Out-Null
 try {
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=$Port"
     $launch = @{ Settings = $Settings; MainScreen = $true; Clips = $Clips; Copy = $Copy; Link = $Link; ClipsDir = $ClipsDir }

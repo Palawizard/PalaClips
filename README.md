@@ -61,8 +61,9 @@ Anti-Cheat.
   Without a hardware encoder, **encoding on the processor** in H.264 or AV1.
 - **Screen or window capture** through Windows Graphics Capture; a window is found again by
   its program name after a restart.
-- **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume), trim,
-  export, or copy the file to paste it into Discord.
+- **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume,
+  remembered per clip; Full mix muted on opening so nothing plays twice), smooth scrubbing even
+  on long HEVC clips, trim, export, or copy the file to paste it into Discord.
 - **Compress to a target size**: 20 MB for Discord, 50 or 500 MB for Nitro, or any size;
   resolution and frame rate follow the size, and the final size is checked. From the gallery (one
   or several clips), the player, or by dragging files from File Explorer.
@@ -84,7 +85,7 @@ Anti-Cheat.
 
 | Replay & quality |
 |---|
-| ![Replay & quality: clip size and MB per minute, then the replay, recording and shared settings](docs/screenshots/en/replay-quality.png) |
+| ![Replay & quality in three tabs (replay, recording, shared), each with its size estimate](docs/screenshots/en/replay-quality.png) |
 
 ## Requirements
 

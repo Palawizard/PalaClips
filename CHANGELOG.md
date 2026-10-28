@@ -5,6 +5,35 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ## [Non publié]
 
+## [1.4.0] - 2026-10-28
+
+### Ajouté
+- Lecteur : réglage « Couper le Mix complet à la lecture » (Général, activé par défaut). À
+  l'ouverture d'un clip qui a une piste Jeu ou une piste d'appli, la piste 1 est coupée pour ne
+  rien entendre en double ; elle se réactive avec M. L'état muet/solo/volume est retenu par
+  clip. L'export et la compression gardent la piste 1 tant qu'on ne l'a pas coupée soi-même
+  (GAL-04).
+- Son « clip terminé » à la fin d'un clip avec « après » (La → Mi → La à l'octave), distinct du
+  carillon de l'appui et des sons d'enregistrement, soumis à « Son de confirmation » et exclu des
+  clips en « Tous les sons sauf PalaClips » (RPL-10). La fin d'un enregistrement ne joue plus le
+  carillon de sauvegarde par-dessus son propre son.
+- Réglages → Replay & qualité en trois onglets (Replay, Enregistrement, Commun), chacun avec son
+  estimation de taille ; l'onglet est retenu pendant la session, un point marque l'onglet qui a
+  un changement non appliqué, et le résumé de l'enregistrement sur État ouvre l'onglet
+  Enregistrement (APP-15).
+
+### Modifié
+- État : en fenêtre large, « Derniers clips » et la colonne des pistes et performances défilent
+  chacun de leur côté sous le bandeau ; sous 1000 px, la page défile comme avant. 12 derniers
+  clips au lieu de 5.
+- État : la cellule Source affiche la vraie source (« 2560×1440 · 240 Hz » pour un écran, la
+  taille de la fenêtre capturée pour une fenêtre), mise à jour en direct ; la qualité enregistrée
+  reste dans le résumé de la cellule Replay.
+- Lecteur : pendant le glisser sur la barre de temps ou une piste, le curseur, le temps et la
+  zone jouée suivent la souris à chaque image ; l'image est chargée quand la souris s'arrête
+  (120 ms) et au relâchement, une demande à la fois. Sur un clip 1440p120 HEVC de 3 min :
+  2 chargements au lieu de 122, curseur redessiné toutes les 17 ms au lieu d'être figé (GAL-03).
+
 ## [1.3.1] - 2026-10-26
 
 ### Ajouté
