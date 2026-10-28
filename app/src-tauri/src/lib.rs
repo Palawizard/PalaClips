@@ -778,6 +778,7 @@ pub fn run() {
             commands::record_stop,
             commands::list_clips,
             commands::clip_games,
+            commands::get_clip,
             commands::clip_mix,
             commands::set_clip_mix,
             commands::set_clip_favorite,

@@ -2,6 +2,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
 import type { ClipSummary } from "../lib/ipc.ts";
 import { clock, relativeTime } from "../lib/format.ts";
+import { dayLabel, timeOfDay } from "../lib/gallery.ts";
 import { useT } from "../lib/i18n.ts";
 import { type TrackLabels, kindOfTitle, trackColor } from "../lib/tracks.ts";
 
@@ -10,17 +11,21 @@ export function ClipCard({
   appOrder,
   labels,
   fresh,
+  onOpen,
 }: {
   clip: ClipSummary;
   appOrder: string[];
   labels: TrackLabels | null;
   fresh: boolean;
+  onOpen?: () => void;
 }) {
   const t = useT();
   return (
     <li
       data-fresh={fresh}
-      className="clip-card overflow-hidden rounded-md border border-line bg-surface"
+      className={`clip-card relative overflow-hidden rounded-md border border-line bg-surface ${
+        onOpen ? "hover:border-line-strong hover:bg-surface-hover" : ""
+      }`}
     >
       <div className="relative aspect-video bg-meter-ground">
         {clip.thumbnail ? (
@@ -53,6 +58,25 @@ export function ClipCard({
           ))}
         </ul>
       </div>
+      {onOpen && (
+        <button
+          type="button"
+          data-open
+          aria-label={t("clips.card", {
+            game: clip.game || t("clips.fallbackName"),
+            date: `${dayLabel(clip.modified_ms)} ${timeOfDay(clip.modified_ms)}`,
+            duration: clock(clip.duration_secs),
+            tracks: t("clips.tracks", { count: clip.tracks.length, names: clip.tracks.join(", ") }),
+          })}
+          aria-keyshortcuts="Enter"
+          title={t("clips.openHint")}
+          onClick={(event) => {
+            if (event.detail === 0) onOpen();
+          }}
+          onDoubleClick={onOpen}
+          className="absolute inset-0 rounded-md"
+        />
+      )}
     </li>
   );
 }
@@ -63,20 +87,21 @@ export function RecentClips({
   labels,
   freshClip,
   saveKeys,
+  onOpen,
 }: {
   clips: ClipSummary[];
   appOrder: string[];
   labels: TrackLabels | null;
   freshClip: string | null;
   saveKeys: string | null;
+  onOpen: (path: string) => void;
 }) {
   const t = useT();
   const [beforeKeys, afterKeys] = t("clips.emptyWithKeys").split("{keys}");
   return (
     <section
       aria-labelledby="clips-title"
-      tabIndex={0}
-      className="flex min-w-0 flex-col gap-3 overflow-y-auto px-5 pt-5 pb-6 -outline-offset-2 max-[1000px]:overflow-visible"
+      className="flex min-w-0 flex-col gap-3 overflow-y-auto px-5 pt-5 pb-6 max-[1000px]:overflow-visible"
     >
       <h2 id="clips-title" className="text-[17px] font-semibold">
         {t("clips.title")}
@@ -99,7 +124,14 @@ export function RecentClips({
       ) : (
         <ul className="grid grid-cols-1 gap-3 max-[1000px]:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
           {clips.map((clip) => (
-            <ClipCard key={clip.path} clip={clip} appOrder={appOrder} labels={labels} fresh={clip.path === freshClip} />
+            <ClipCard
+              key={clip.path}
+              clip={clip}
+              appOrder={appOrder}
+              labels={labels}
+              fresh={clip.path === freshClip}
+              onOpen={() => onOpen(clip.path)}
+            />
           ))}
         </ul>
       )}
