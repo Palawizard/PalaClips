@@ -1,7 +1,7 @@
 # Protocoles de test
 
 > Tests automatiques : `cargo test --workspace` (CI). Ce fichier décrit les **tests manuels**
-> (👤 dans `docs/PLAN.md`). Chaque résultat va dans `docs/reports/phase-N.md` avec la date, la
+> Chaque résultat est noté avec la date, la
 > version, la machine et la preuve (capture, sortie de commande, fichier de mesure).
 
 ## Outils
@@ -395,10 +395,10 @@ vidéo se lit dans Discord (bureau, et téléphone si possible) avec le son de l
 
 ## T14 — Session de fin de version v1.2 (≤ 15 min, en jouant)
 
-Préparation (Claude) : PalaClips installé fermé (zone de notification > Quitter) ;
+Préparation : PalaClips installé fermé (zone de notification > Quitter) ;
 `pwsh scripts/app-isolated.ps1 -LeftScreen -Settings '{"language":"fr","engine":{"replay":{"duration_secs":120,"after_secs":10}}}'`
 (replay de 2 min, 10 s après l'appui, carillon et notification actifs, fenêtre sur l'écran de
-gauche). À la fin, Claude ferme l'app de test et supprime `target\test-config`.
+gauche). À la fin, fermer l'app de test et supprimer `target\test-config`.
 
 1. **Après la sauvegarde** (en jeu, ~3 min) : `Alt+F10` → carillon + notification « Clip en cours
    / +10 s », le jeu garde le focus ; nouvel `Alt+F10` avant la fin → un seul clip, plus long ;
@@ -435,10 +435,10 @@ Moteur : `a_clip_deleted_or_renamed_on_disk_leaves_the_library_through_the_watch
 
 ## T15 — Session de fin de version v1.3 (≤ 15 min, en jouant)
 
-Préparation (Claude) : PalaClips installé fermé (zone de notification > Quitter) ; app isolée
+Préparation : PalaClips installé fermé (zone de notification > Quitter) ; app isolée
 (`scripts/app-isolated.ps1`, écran demandé par Palawi) avec un replay de 2 min, 14 pistes
 d'applis (applis de Palawi + exe non lancés) et le clip de 26 pistes de `scripts/many-tracks.ps1
--Keep` copié dans la galerie. À la fin, Claude ferme l'app de test et supprime
+-Keep` copié dans la galerie. À la fin, fermer l'app de test et supprimer
 `target\test-config`.
 
 1. **Réglages pris tout de suite** (~2 min, scénario du zip du 24/10) : replay armé, Réglages →
@@ -449,10 +449,10 @@ d'applis (applis de Palawi + exe non lancés) et le clip de 26 pistes de `script
    (focus visible au clavier) ; Capture → basculer « Afficher le curseur » → « Replay et
    qualité » → l'alerte de sortie s'ouvre.
 3. **Estimation contre un vrai clip** (~3 min, en jeu) : noter l'estimation « par clip de
-   1 min » ; jouer plus d'1 min puis `Ctrl+F11` ; Claude compare la taille du clip à l'estimation.
+   1 min » ; jouer plus d'1 min puis `Ctrl+F11` ; comparer la taille du clip à l'estimation.
 4. **Enregistrement dans une autre qualité** (~4 min, en jeu) : Enregistrement → décocher « Comme le
    replay », 1080p, 30 i/s ; en jeu `Ctrl+Alt+F9`, après 30 s `Ctrl+F11` (replay pendant
-   l'enregistrement), après 1 min `Ctrl+Alt+F9`. Claude vérifie les deux fichiers (1080p30 et
+   l'enregistrement), après 1 min `Ctrl+Alt+F9`. vérifier les deux fichiers (1080p30 et
    qualité du replay), sans trou ni doublon.
 5. **Beaucoup de pistes** (~3 min) : page Audio (note au-delà de 12, pas de maximum) ; État (toutes
    les pistes) ; Galerie → clip de 26 pistes : muet et solo sur une piste du bas ; glisser ce clip

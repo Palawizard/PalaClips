@@ -1,8 +1,8 @@
 # SPEC — PalaClips V1
 
 > Ce document définit **tout** ce que contient la V1 (`v1.0.0`). Rien de cette liste n'est
-> reportable (voir `CLAUDE.md` § 0). Chaque exigence a un identifiant (`CAP-01`...) repris
-> dans `docs/PLAN.md` et dans les rapports de validation.
+> reportable. Chaque exigence a un identifiant (`CAP-01`...) repris dans les critères
+> d'acceptation et les rapports de validation.
 
 ## 1. Pour qui, pour quoi
 

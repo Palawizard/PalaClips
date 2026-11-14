@@ -240,12 +240,8 @@ interface React et TypeScript.
 |---|---|
 | [`docs/SPEC.md`](docs/SPEC.md) | Tout ce que contient la V1 |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modules, threads, IPC, données |
-| [`docs/PLAN.md`](docs/PLAN.md) | Phases et critères d'acceptation |
-| [`docs/HANDOFF.md`](docs/HANDOFF.md) | Où on en est |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Choix d'architecture (ADR) |
-| [`docs/RESEARCH.md`](docs/RESEARCH.md) | Faits vérifiés et pièges, avec sources |
 | [`docs/TESTING.md`](docs/TESTING.md) | Protocoles de test manuels |
-| [`docs/DESIGN-BRIEF.md`](docs/DESIGN-BRIEF.md) | Brief pour la conception de l'interface |
 
 ## Contribuer
 
@@ -255,11 +251,6 @@ diagnostic. Les pull requests visent la branche `dev` et suivent les
 [Conventional Commits](https://www.conventionalcommits.org/fr/v1.0.0/). Avant d'en ouvrir une,
 lance `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`,
 `cargo test --workspace`, puis `npm run build` et `npm test` dans `app/`.
-
-Le travail avec Claude Code suit [`CLAUDE.md`](CLAUDE.md) ; les skills de design impeccable
-(`/plugin marketplace add pbakaus/impeccable`) et emil-design-eng
-(`npx -y skills add emilkowalski/skill --skill emil-design-eng --agent claude-code`) sont
-nécessaires pour le front.
 
 ## Licence
 
