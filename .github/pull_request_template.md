@@ -6,7 +6,7 @@
 
 ## Phase / tâche
 
-Phase N — (lien vers la section de docs/PLAN.md)
+Phase ou version visée
 
 ## Ce qui change
 
@@ -14,7 +14,7 @@ Phase N — (lien vers la section de docs/PLAN.md)
 
 ## Critères d'acceptation
 
-- [ ] (copier les critères de la phase depuis docs/PLAN.md et cocher)
+- [ ] (critères d'acceptation de la phase, cochés)
 
 ## Comment ça a été testé
 
@@ -23,6 +23,5 @@ Phase N — (lien vers la section de docs/PLAN.md)
 
 ## Docs mises à jour
 
-- [ ] docs/HANDOFF.md
 - [ ] CHANGELOG.md
 - [ ] docs/ARCHITECTURE.md / docs/DECISIONS.md si l'architecture ou un choix a changé

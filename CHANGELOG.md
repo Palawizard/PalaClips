@@ -157,7 +157,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - CLI `palaclips-cli ffmpeg-info` : version de FFmpeg et encodeurs vidéo matériels
   disponibles (NVENC, AMF, QSV, Media Foundation).
 - Liaison FFmpeg 8.1 LGPL via `rsmpeg` 0.18 ; `cargo run`/`cargo test` trouvent les DLL seuls.
-- `check-env.ps1` détecte les problèmes clang/Visual Studio et les skills de design.
+- `check-env.ps1` détecte les problèmes clang/Visual Studio.
 - Contexte produit `PRODUCT.md` et direction visuelle « Écran d'après-match ».
 - Capture vidéo (phase 1) : écrans et fenêtres par Windows Graphics Capture, fenêtre retrouvée
   par nom d'exe, conversion NV12 et mise à l'échelle sur le GPU, encodage matériel H.264 /
@@ -168,8 +168,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Préréglages de débit Qualité / Équilibré / Léger et débit libre.
 - Écran HDR : la vidéo garde les couleurs de l'écran au lieu d'être délavée.
 - CLI : `list-targets`, `resolve-target`, `probe-wgc`, `probe-hdr`, `capture-video`.
-- Documentation : SPEC V1, architecture, plan par phases, handoff, ADR, recherche, protocoles
-  de test, brief design.
+- Documentation : SPEC V1, architecture, ADR, protocoles de test.
 - Audio (phase 2) : piste « Mix complet » (tout ce qui sort par défaut) et piste « Micro »
   (gain réglable) en AAC dans le MP4, synchronisées sur la même horloge que la vidéo ; les
   silences et les coupures sont comblés sans décaler la synchro ; la capture suit le
@@ -316,7 +315,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   (signature vérifiée, refusé pendant un enregistrement).
 - Workflow de release : un tag `vX.Y.Z` construit et signe l'installeur, puis prépare une
   release brouillon avec `latest.json` et les notes du CHANGELOG.
-- Revue finale de la V1 (`docs/reports/release-v1.md`) : chaque exigence de la SPEC avec sa
+- Revue finale de la V1 : chaque exigence de la SPEC avec sa
   preuve ; bancs `shared-encoder.ps1` (un seul encodeur pour le replay et l'enregistrement).
 
 ### Changé
