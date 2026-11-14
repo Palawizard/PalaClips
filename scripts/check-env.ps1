@@ -43,15 +43,6 @@ Check "FFmpeg LGPL (third_party/ffmpeg)" {
 Check "Icônes Tauri générées" {
     if (Test-Path (Join-Path $root "app/src-tauri/icons/icon.ico")) { "présentes" }
 } "cd app; npm run tauri icon src-tauri/icons/app-icon.svg"
-Check "Skill impeccable" {
-    $installed = "$env:USERPROFILE\.claude\plugins\installed_plugins.json"
-    if ((Test-Path $installed) -and (Select-String -Path $installed -Pattern '"impeccable@' -Quiet)) { "plugin installé" }
-    elseif (Test-Path (Join-Path $root ".claude/skills/impeccable")) { "skill du projet" }
-} "Dans Claude Code : /plugin marketplace add pbakaus/impeccable puis /plugin -> installer impeccable"
-Check "Skill emil-design-eng" {
-    $dirs = @("$env:USERPROFILE\.claude\skills", (Join-Path $root ".claude/skills")) | Where-Object { Test-Path $_ }
-    if ($dirs | Get-ChildItem -Recurse -Depth 2 -Directory -Filter "emil-design-eng" -ErrorAction SilentlyContinue | Select-Object -First 1) { "présent" }
-} "npx -y skills add emilkowalski/skill --skill emil-design-eng --agent claude-code"
 
 Write-Host ""
 if ($ok) { Write-Host "Environnement prêt." -ForegroundColor Green } else { Write-Host "Corrige les points [KO] ci-dessus." -ForegroundColor Yellow; exit 1 }
