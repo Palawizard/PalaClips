@@ -1,7 +1,6 @@
 # Architecture — PalaClips
 
-> Référence technique. Les choix et leurs raisons sont dans `docs/DECISIONS.md`, les faits
-> vérifiés et leurs sources dans `docs/RESEARCH.md`.
+> Référence technique. Les choix et leurs raisons sont dans `docs/DECISIONS.md`.
 
 ## 1. Vue d'ensemble
 
@@ -191,7 +190,7 @@ charges :
 | `wasapi` | 0.26 | audio, sources | 2 |
 | `rusqlite` (feature `bundled`) | 0.40 | library | 6 ✅ |
 | `notify` | 8.2 (9 encore en RC) | library (surveillance du dossier, GAL-08) | 6 ✅ |
-| `tauri-plugin-*` | voir `docs/RESEARCH.md` § UI | app | 5–8 |
+| `tauri-plugin-*` | voir `app/src-tauri/Cargo.toml` | app | 5–8 |
 
 ## 3. Threads et flux de données
 

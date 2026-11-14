@@ -88,11 +88,10 @@
 - Décision : SQLite embarqué, le dossier de clips reste la source de vérité (réindexation
   possible à tout moment).
 
-## ADR-010 — Front : React 19 + TypeScript + Tailwind 4, design via impeccable + emil-design-eng
+## ADR-010 — Front : React 19 + TypeScript + Tailwind 4
 **Statut :** acceptée
 - Stack habituelle de Palawi. Composants accessibles sans style imposé (choix précis de la
-  bibliothèque headless fait en phase 5 avec `/impeccable shape`, consigné ici).
-- Tout le front passe par les skills `impeccable` et `emil-design-eng` (CLAUDE.md § 2).
+  bibliothèque headless fait en phase 5, consigné ici).
 
 ## ADR-011 — Licence MIT
 **Statut :** acceptée (modifiable par Palawi avant la première release publique)
@@ -112,10 +111,10 @@
 - La CI tourne sur les PR et sur les pushs vers `main` et `dev`.
 
 ## ADR-014 — Direction visuelle « Écran d'après-match »
-**Statut :** acceptée (2026-10-15, choix de Palawi sur le tirage impeccable `cabeab00`)
+**Statut :** acceptée (2026-10-15, choix de Palawi sur la maquette `cabeab00`)
 - Les pistes audio forment un roster présenté comme un tableau des scores ; une couleur
   mi-saturée par piste, langue fixe dans toute l'app ; rouge réservé à « ça enregistre » ;
-  fond bleu-noir. Contrat détaillé : `.impeccable/surfaces/app-src-app-tsx.md`.
+  fond bleu-noir.
 - Écartées : « Carte mémoire » (familière, risque rétro), « Console graphite » (générique),
   standard de la catégorie.
 - Build code-led (pas de génération d'image) ; `DESIGN.md` produit avec le premier écran
@@ -162,7 +161,7 @@
 - Vérification (2026-10-15, scène HDR10 de synthèse jouée par VLC sur l'écran 2, blanc SDR
   280 nits) : rampe de gris identique jusqu'à 250 nits (242/255), puis 248 → 254 de 280 à
   1500 nits au lieu de 255 dès 280 nits ; ciel, disque du soleil et couleur de l'explosion
-  conservés au lieu d'aplats blancs (`docs/reports/phase-1.md`).
+  conservés au lieu d'aplats blancs.
 
 ## ADR-017 — Décalage de synchro par piste (AUD-11)
 **Statut :** acceptée (2026-10-15, décision de Palawi) ; référence de mesure corrigée par
@@ -187,7 +186,7 @@ ADR-027.
 **Statut :** acceptée (2026-10-16, décision de Palawi)
 - Contexte : avec G-Sync et des écrans à fréquences différentes, DWM se cale sur un autre
   écran et WGC ne livre qu'une image par composition (Fortnite à 225 i/s → 165 i/s reçus,
-  horloge DWM 164,9 Hz ; `RESEARCH.md` § Capture vidéo). La sortie CFR reste juste mais
+  horloge DWM 164,9 Hz). La sortie CFR reste juste mais
   duplique des images, sans que l'utilisateur sache pourquoi. Aucun contournement sans
   injection.
 - Décision : alerte `capture_source_rate_limited` (avertissement) quand la cadence de
@@ -263,7 +262,7 @@ premier plan » de la phase 3.
 **Statut :** acceptée (2026-10-16, décision de Palawi).
 - Contexte : AUD-05 demandait que le nom de chaque piste soit visible dans Resolve. Le MP4 le
   porte aux deux endroits standard (`hdlr` et `udta/name` de chaque piste), mais Resolve
-  affiche « Audio 1 » à « Audio N » partout, en MP4 comme en MOV (`RESEARCH.md`).
+  affiche « Audio 1 » à « Audio N » partout, en MP4 comme en MOV.
 - Décision : les noms restent écrits dans le fichier (VLC, ffprobe, MPC les lisent) ; Resolve
   n'est pas tenu de les afficher. L'ordre fixe des pistes (mix, micro, applis, Jeu,
   `ARCHITECTURE.md` § 4) et l'écoute suffisent à les reconnaître en quelques secondes.
@@ -272,10 +271,10 @@ premier plan » de la phase 3.
   pour un confort que Palawi juge inutile.
 
 ## ADR-022 — Réglages NVENC pour la mémoire (PERF-02)
-**Statut :** acceptée (2026-10-16) ; le seuil de PERF-02 reste à trancher (`HANDOFF.md`).
+**Statut :** acceptée (2026-10-16) ; le seuil de PERF-02 reste à trancher.
 - Contexte : avec les réglages par défaut de FFmpeg, une session `*_nvenc` 1440p engage
   ~175 Mo de mémoire système (DPB auto, 4 surfaces, `delay` 3) : la moitié du moteur hors
-  tampon (`RESEARCH.md` § Mémoire du pipeline).
+  tampon.
 - Décision : `dpb_size=2` pour tous les encodeurs NVENC ; `surfaces=2` et `delay=1` jusqu'à
   60 i/s, défauts de FFmpeg (`surfaces=4`, `delay=3`) au-delà (`nvenc_pipeline_depth`).
 - Pourquoi : −110 Mo engagés pour −0,3 dB de PSNR à 40 Mb/s ; le pipeline court tient à
@@ -295,7 +294,7 @@ premier plan » de la phase 3.
   (`PrivateUsage`) donnait 172 Mo hors tampon après ADR-022, dont ~136 Mo pour le pilote
   NVIDIA : il engage en mémoire système une réserve de la taille de chaque texture et des
   tampons de la session NVENC, sans jamais y toucher (10 textures 1440p : +55 Mo engagés,
-  +1 Mo de working set ; `RESEARCH.md` § Mémoire du pipeline). Aucun réglage de notre côté ne
+  +1 Mo de working set). Aucun réglage de notre côté ne
   passe sous 150 Mo dans cette mesure.
 - Décision : PERF-01 et PERF-02 se mesurent sur la mémoire privée réellement occupée
   (*private working set*, colonne « Mémoire » du Gestionnaire des tâches), hors pression
@@ -519,7 +518,7 @@ phase 8).
 **Statut :** acceptée (2026-10-20, défaut 1 de la séance T7).
 - Contexte : un jeu au premier plan qui prend tout le GPU passe avant PalaClips ; la
   conversion d'image attendait 30–45 ms par image et l'encodeur accumulait jusqu'à 14 s de
-  retard (vidéo qui saute, A/V décalé). Mesures dans `RESEARCH.md` § Capture vidéo.
+  retard (vidéo qui saute, A/V décalé).
 - Décision : (1) le processus demande la classe d'ordonnancement GPU `REALTIME`
   (`D3DKMTSetProcessSchedulingPriorityClass`) au démarrage du moteur ; refusée, elle est
   seulement journalisée. Seul réglage efficace mesuré ; accordé sans admin avec HAGS.
@@ -576,8 +575,7 @@ phase 8).
 **Statut :** acceptée (2026-10-22, choix de Palawi : D).
 - Contexte : sans encodeur matériel, PalaClips ne capture rien (ENC-05) ; c'est le cas des VM
   et de beaucoup de petits PC. La feuille de route (§ 3) prévoit un encodeur sur le processeur.
-  On livre FFmpeg LGPL : x264/x265 (GPL) sont exclus. Mesures, licences et compatibilité :
-  `RESEARCH.md` § Encodage par le processeur.
+  On livre FFmpeg LGPL : x264/x265 (GPL) sont exclus.
 - Options :
   - **A. SVT-AV1 seul** (`libsvtav1` M10/M12 rtc, déjà dans nos DLL). Libre de redevances
     (licence AOM ; Sisvel ne vise que les appareils). Meilleure qualité par bit ; 1,3 à 1,7 cœur
@@ -603,7 +601,7 @@ phase 8).
   - Écartés : VP9 (pas de gain sur AV1, peu courant en MP4), libaom (ne suit pas en 1080p),
     rav1e (pas temps réel), kvazaar (brevets HEVC, lecture HEVC payante sous Windows), vvenc
     (VVC illisible).
-- Recommandation de Claude : **D**. H.264 par défaut pour que les clips s'ouvrent partout
+- Recommandation : **D**. H.264 par défaut pour que les clips s'ouvrent partout
   (Discord, téléphones, Resolve), AV1 au choix pour la qualité et la taille, aucun téléchargement
   ni licence à afficher, le tout déjà dans nos DLL ; risque brevets au plus bas des options
   H.264. B coûte le plus cher pour la plus mauvaise image.
@@ -656,7 +654,7 @@ phase 8).
   souci.
 
 ## ADR-037 — Enregistrer après la sauvegarde par l'écriture hybride (v1.2, RPL-10)
-**Statut :** acceptée (2026-10-23, décisions de Palawi dans `docs/reports/v1.2-research.md`).
+**Statut :** acceptée (2026-10-23, décisions de Palawi).
 - Contexte : ShadowPlay et OBS ne gardent que l'« avant ». Palawi veut aussi la suite de
   l'action (exemple : 1 min avant + 10 s après), sans agrandir le tampon en RAM.
 - Décision : réglage global `replay.after_secs` (0 s par défaut, 0 à 600 s), appliqué au raccourci
@@ -672,8 +670,7 @@ phase 8).
   le laisse dans le journal, remuxé au démarrage suivant (REC-06). Écriture impossible (disque
   plein, règles des 2 Go et 300 Mo de l'enregistrement) : alerte `clip_cut_short`, début gardé.
 - Jonction : il n'y en a pas au sens du fichier ; le tampon et le direct sortent du même
-  encodeur, dans l'ordre, sur le même fil. Mesuré (`scripts/post-roll.ps1`, journaux
-  `docs/reports/v1.2/`) : aucun doublon ni trou de PTS, synchro identique avant et après
+  encodeur, dans l'ordre, sur le même fil. Mesuré (`scripts/post-roll.ps1`) : aucun doublon ni trou de PTS, synchro identique avant et après
   (+137 à +141 ms contre +129 à +139 ms pour un clip instantané sur le même banc, Voicemeeter
   non compensé).
 - Écarté : agrandir le tampon de la durée « après » puis écrire d'un bloc (RAM en plus, clip
@@ -683,7 +680,7 @@ phase 8).
   image affichée ~13 ms de plus, déjà vrai pour les enregistrements depuis la 1.0) ; temps
   suivants exacts, synchro inchangée (RESEARCH).
 ## ADR-038 — Compression à une taille cible (v1.2, CMP-01 à 05)
-**Statut :** acceptée (2026-10-23, décisions de Palawi dans `docs/reports/v1.2-research.md`).
+**Statut :** acceptée (2026-10-23, décisions de Palawi).
 - Contexte : Discord refuse un fichier gratuit au-dessus de 20 Mo (Nitro Basic 50, Nitro 500) ;
   un clip 1440p60 en fait 300 par minute.
 - Décision : module `library::compress` (moteur) et `palaclips-cli compress`. Débit vidéo =
@@ -701,8 +698,7 @@ phase 8).
   au choix. File de compression dans le shell (un fil, continue fenêtre fermée), page
   Compression, bouton dans la galerie et le lecteur (découpe comprise), glisser-déposer par
   `onDragDropEvent` de Tauri (pas de HTML5 dans l'app, `dragDropEnabled` laissé actif).
-- Mesuré : 11 cas sur 11 sous la cible, entre 94,9 et 98,8 % de la cible, un seul second essai
-  (`docs/reports/v1.2/compress-check-*.txt`, images `docs/reports/v1.2/compress/`) ; un replay
+- Mesuré : 11 cas sur 11 sous la cible, entre 94,9 et 98,8 % de la cible, un seul second essai ; un replay
   sauvegardé pendant une compression reste continu.
 - Écarté : vrai double passage (NVENC ne l'a pas sur fichier, le CPU doublerait le temps) ;
   HEVC (lecture incertaine dans Discord) ; décodage matériel (gain de vitesse, mais une session
@@ -735,7 +731,7 @@ après une relance »).
 - Le moteur écrit « réglages reçus » (sections changées, redémarrage, report) à chaque Configure.
 
 ## ADR-040 — Qualité propre de l'enregistrement par un 2e encodage (v1.3, REC-02, REC-04, REC-07)
-**Statut :** acceptée (2026-10-26, décisions de Palawi dans `docs/reports/v1.3-research.md`).
+**Statut :** acceptée (2026-10-26, décisions de Palawi).
 - Contexte : Palawi veut un replay léger et des enregistrements d'une autre qualité. Aucun
   logiciel grand public ne le documente ; OBS y arrive avec un 2e encodeur. Repasser le pipeline
   en qualité « enregistrement » viderait le replay et laisserait 1,2 s de trou à chaque début et
@@ -765,8 +761,7 @@ après une relance »).
   (résolution, fps et codec impossibles).
 
 ## ADR-041 — « Tous les sons sauf PalaClips » pour l'audio du bureau (v1.3.1, AUD-01)
-**Statut :** acceptée (2026-10-26, choix de Palawi ; preuves dans
-`docs/reports/v1.3.1-feedback-sounds.md`).
+**Statut :** acceptée (2026-10-26, choix de Palawi).
 - Contexte : en mode « Audio du bureau », la piste 1 était le loopback de la sortie ; le carillon
   de l'appui (avec une durée après), celui de la sauvegarde (au début du clip suivant) et le son
   de début d'enregistrement y étaient enregistrés. Le mode par défaut (somme des pistes) n'est

@@ -62,7 +62,7 @@ jobs:
           $file = "docs/release-notes/$version.md"
           $notes = if (Test-Path $file) { (Get-Content $file -Raw).Trim() }
                    elseif ($env:TAG -like "test-v*") { "Version de test." }
-                   else { throw "notes de version manquantes : $file (voir docs/HANDOFF.md, procédure de release)" }
+                   else { throw "notes de version manquantes : $file" }
           "body<<NOTES_END" >> $env:GITHUB_OUTPUT
           $notes >> $env:GITHUB_OUTPUT
           "NOTES_END" >> $env:GITHUB_OUTPUT
