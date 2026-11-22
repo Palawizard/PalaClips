@@ -19,9 +19,9 @@ Phase ou version visée
 ## Comment ça a été testé
 
 - Automatique : `cargo test --workspace`, `cargo clippy -- -D warnings`, `npm run build`
-- Manuel (protocole de docs/TESTING.md) :
+- Manuel :
 
 ## Docs mises à jour
 
 - [ ] CHANGELOG.md
-- [ ] docs/ARCHITECTURE.md / docs/DECISIONS.md si l'architecture ou un choix a changé
+- [ ] docs/ARCHITECTURE.md si l'architecture a changé
