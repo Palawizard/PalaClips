@@ -73,7 +73,7 @@ charges :
   ignorés). Tick en retard → tous les ticks manqués sont émis. `MinUpdateInterval` = moitié de
   la période. Encodeur CPU : au plus une demi-seconde de ticks en retard est émise, les plus
   anciens sont sautés (trou dans les PTS, la synchro A/V tient) ; comptés en retard, ils lèvent
-  `cpu_encoder_overloaded` (ADR-035).
+  `cpu_encoder_overloaded`.
 - Repli sur l'écran de la fenêtre si la capture de fenêtre échoue → alerte
   `capture_fallback_monitor`.
 - Suivre changement de résolution, fermeture de la fenêtre, perte du périphérique D3D.
@@ -96,7 +96,7 @@ charges :
   le handle de chaque processus racine (`SYNCHRONIZE`) et revérifie les racines chaque seconde :
   une instance qui apparaît ou disparaît rouvre les flux. Sans racine, la piste attend le retour
   de l'appli.
-- Piste "Jeu" (`AudioSource::Game(CurrentGame)`, ADR-019) : même mécanique, l'exe est le
+- Piste "Jeu" (`AudioSource::Game(CurrentGame)`) : même mécanique, l'exe est le
   "jeu en cours" de `sources::CurrentGame` : processus fixé par l'utilisateur
   (`AudioSettings::game_exe`), sinon l'appli de la fenêtre capturée, sinon la dernière appli
   passée au premier plan en plein écran ou sans bordure (fenêtre qui couvre son écran, sans
@@ -120,14 +120,14 @@ charges :
   paquet, la piste se réveille et comble jusqu'à `maintenant + décalage − 100 ms`, puis
   encode. Elle produit donc des paquets en continu ; aucun réveil quand les données arrivent.
   Même chose pendant l'attente d'un périphérique indisponible.
-- Décalage de synchro par piste (AUD-11, ADR-017), positif = son retardé.
+- Décalage de synchro par piste (AUD-11), positif = son retardé.
 
 **`encode`**
 - Encodeurs `h264/hevc/av1` × `nvenc/amf/qsv`, et sur le processeur `h264_mf` (MFT logiciel de
   Windows, `hw_encoding=0`, CBR) et `libsvtav1` (`rtc=1:rc=2:lp=2`, M10 jusqu'à 720p30, M12
   au-delà), tous détectés par un encodage de test réel (`video_encoders`, `EncoderInfo.hardware`).
   Choix `video.encoder` = `auto` (matériel si un encodeur matériel marche, sinon CPU),
-  `hardware` ou `cpu` (`pick_encoder`) ; HEVC n'existe qu'en matériel (ADR-035).
+  `hardware` ou `cpu` (`pick_encoder`) ; HEVC n'existe qu'en matériel.
 - Encodeur CPU : BGRA → NV12 par le Video Processor dans une texture NV12, une seule relecture
   par texture de staging, puis swscale vers le format de l'encodeur (NV12, ou yuv420p pour
   SVT-AV1). Sans Video Processor (création ou `VideoProcessorBlt` en échec, VM, WARP) :
@@ -140,7 +140,7 @@ charges :
   Processor (BT.709 limité), écrit directement dans la frame de l'encodeur. QSV : contexte
   dérivé + `av_hwframe_map`.
 - Écran HDR : capture FP16 scRGB → `HdrToSdr` (pixel shader : ÷ blanc SDR, sRGB) → BGRA8 →
-  même chemin (ADR-015).
+  même chemin.
 - CBR pour le replay, intervalle d'images clés configurable.
 - AAC-LC 48 kHz stéréo, 192 kb/s, un encodeur par piste ; PTS = numéro d'échantillon, le
   premier paquet a un PTS négatif (amorçage de 1024 échantillons) que la liste d'édition MP4
@@ -186,7 +186,7 @@ charges :
 |---|---|---|---|
 | `windows-capture` | 2.0 | capture | 1 |
 | `windows` | 0.62 | capture, audio, sources | 1 |
-| `rsmpeg` | 0.18 (FFmpeg 8.x, ADR-004) | encode, mux | 0-1 |
+| `rsmpeg` | 0.18 (FFmpeg 8.x) | encode, mux | 0-1 |
 | `wasapi` | 0.26 | audio, sources | 2 |
 | `rusqlite` (feature `bundled`) | 0.40 | library | 6 (fait) |
 | `notify` | 8.2 (9 encore en RC) | library (surveillance du dossier, GAL-08) | 6 (fait) |
@@ -252,13 +252,13 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
 | 3... | Appli (choisie ou "Jeu" automatique) | libellé choisi par l'utilisateur |
 
 Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout ce qui
-est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyée au stream).
+est enregistré, micro compris (comme la piste 1 d'OBS envoyée au stream).
 
 - Par défaut (`desktop_in_full_mix: false`), la piste 1 ne capture rien elle-même
   (`AudioSource::TracksMix`) : elle additionne le micro (si `microphone_in_full_mix`), la piste
   Jeu et les pistes d'applis.
 - Avec "Audio du bureau" (`desktop_in_full_mix: true`), elle capture tout le son et n'ajoute
-  que le micro : ce son contient déjà le jeu et les applis. Source (ADR-041) :
+  que le micro : ce son contient déjà le jeu et les applis. Source :
   `desktop_excludes_palaclips: true` (défaut) → `AudioSource::DesktopExceptPalaClips`,
   `new_application_loopback_client(notre PID, false)` = mode `EXCLUDE_TARGET_PROCESS_TREE` :
   toutes les sorties sauf PalaClips et ses enfants (sons, WebView) ; `false` → `SystemMix`,
@@ -276,11 +276,10 @@ est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyé
 ## 5. UI et lecture des clips
 
 - Les fichiers sont servis au WebView par un **protocole personnalisé `palaclips://`** qui
-  gère les requêtes `Range` (lecture et déplacement fluides sur des fichiers de plusieurs Go,
-  ADR-007).
+  gère les requêtes `Range` (lecture et déplacement fluides sur des fichiers de plusieurs Go).
 - Chromium ne permet pas de choisir la piste audio d'une `<video>` sans option expérimentale :
   le lecteur lit la vidéo **sans son** et joue les pistes via Web Audio à partir de fichiers
-  audio extraits à la demande et mis en cache (ADR-008). Mute/solo/volume par piste.
+  audio extraits à la demande et mis en cache. Mute/solo/volume par piste.
 - HEVC/AV1 : si WebView2 ne sait pas décoder le codec sur la machine, le lecteur utilise un
   proxy H.264 généré à la demande (vérifié en phase 6).
 
@@ -289,7 +288,7 @@ est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyé
 Source de vérité : `app/src-tauri/src/commands.rs`, `crates/engine/src/events.rs`,
 miroir TypeScript `app/src/lib/ipc.ts`.
 
-Textes (ADR-028) : aucune phrase affichée ne traverse l'IPC. Une erreur de commande est un
+Textes : aucune phrase affichée ne traverse l'IPC. Une erreur de commande est un
 `Localized { code, params }` ; le front l'affiche par `messages.<code>` de
 `app/src/locales/fr.json` / `en.json` (`errorText`, `message` de `lib/i18n.ts`). Un paramètre
 peut être un autre `Localized` (`reason`), traduit à son tour ; `detail` est le texte brut
@@ -303,21 +302,21 @@ d'une erreur système.
 | `default_config` | 0 (fait) | configuration par défaut |
 | `get_state` | 5 (fait) | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
 | `get_config` | 5 (fait) | configuration en cours |
-| `set_config { patch }` → `EngineConfig` | 5 (fait) (patch : ADR-039) | `patch` = seulement les champs changés, fusionné dans la config en cours (objet sans `kind` : champ par champ ; objet à `kind` et liste : remplacés entiers) ; si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `set_config { patch }` → `EngineConfig` | 5 (fait) | `patch` = seulement les champs changés, fusionné dans la config en cours (objet sans `kind` : champ par champ ; objet à `kind` et liste : remplacés entiers) ; si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
 | `get_autostart` / `set_autostart { enabled }` | 5 (fait) | démarrage avec Windows (APP-04, `tauri-plugin-autostart` 2.7, clé `Run` de l'utilisateur) ; lancé avec `--autostart` : zone de notification seulement, aucune fenêtre ni WebView2, puis "armer au démarrage" comme d'habitude |
 | `get_feedback` / `set_feedback { feedback }` | 5 (fait) | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
 | `get_player` / `set_player { player }` | v1.4 | lecteur : `{ mute_full_mix }` (vrai par défaut), enregistré dans `settings.json` |
 | `reset_settings` | 5 (fait) | tous les réglages par défaut (APP-07) : moteur, confirmation, raccourcis, thème, démarrage avec Windows désactivé |
 | `get_theme` / `set_theme { theme }` | 5 (fait) | `system` / `dark` / `light` ; le front pose `data-theme` sur `<html>` (système suivi par `matchMedia`) |
-| `get_language` / `set_language { language }` | 5 (fait) | APP-08, ADR-028 : `system` / `fr` / `en` ; `get_language` renvoie `{ setting, resolved }` (`system` = langue d'affichage de Windows, français si elle est française, anglais sinon), `set_language` renvoie la langue retenue et retraduit le menu de la zone de notification |
+| `get_language` / `set_language { language }` | 5 (fait) | APP-08 : `system` / `fr` / `en` ; `get_language` renvoie `{ setting, resolved }` (`system` = langue d'affichage de Windows, français si elle est française, anglais sinon), `set_language` renvoie la langue retenue et retraduit le menu de la zone de notification |
 | `suspend_hotkeys` / `resume_hotkeys` | 5 (fait) | pendant la saisie d'un raccourci : sinon `RegisterHotKey` intercepte la combinaison avant la fenêtre |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
-| `calibrate_audio` | 5 (fait) | assistant de calibrage (AUD-11, ADR-026) : capture temporaire de l'écran principal, flash + bip 10 s, mesure par piste, replay réarmé ; renvoie mesures et décalages proposés (rien n'est appliqué) |
+| `calibrate_audio` | 5 (fait) | assistant de calibrage (AUD-11) : capture temporaire de l'écran principal, flash + bip 10 s, mesure par piste, replay réarmé ; renvoie mesures et décalages proposés (rien n'est appliqué) |
 | `list_audio_devices { input }` | 5 (fait) | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
 | `list_app_sessions` | 5 (fait) | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
 | `pick_app_exe` | 5 (fait) | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
 | `compress_probe { path }` / `compress_pick_files` | v1.2 (fait) | CMP-01 : source (taille, cadence, durée, HDR, pistes, octets) et miniature ; sélecteur de fichiers vidéo |
-| `compress_plan { input }` / `compress_preview { plan, codec, durationSecs }` | v1.2 (fait) | plan de compression (ADR-038) ou plan modifié → `{ plan, quality, estimated_bytes, duration_secs }` |
+| `compress_plan { input }` / `compress_preview { plan, codec, durationSecs }` | v1.2 (fait) | plan de compression ou plan modifié → `{ plan, quality, estimated_bytes, duration_secs }` |
 | `compress_add { inputs }` / `compress_jobs` / `compress_cancel { id }` / `compress_clear` | v1.2 (fait) | file de compression dans le shell, un fil en priorité basse, continue fenêtre fermée ; événement `compress-changed` (tâche : `queued`, `running { attempt, fraction }`, `done { path, bytes, attempts }`, `failed { error }`, `cancelled`) |
 | `compress_copy { id }` / `compress_reveal { id }` | v1.2 (fait) | copie du fichier compressé dans le presse-papiers, Explorateur ; seulement pour une tâche terminée |
 | `replay_arm` / `replay_disarm` / `replay_save` | 5 (fait) | contrôle du replay (erreur = `Localized`) ; avec `replay.after_secs` > 0 (RPL-10, v1.2), `replay_save` écrit le tampon dans un MP4 hybride et y ajoute le direct jusqu'à la fin de la durée après l'appui ; pendant ce temps, un nouvel appui prolonge le même clip |
@@ -330,7 +329,7 @@ d'une erreur système.
 | `app_icon { processId }` | 5 (fait) | icône 48 px de l'exe en PNG (octets bruts, `SHDefExtractIconW` + encodeur PNG de FFmpeg) |
 | `set_performance_panel { open }` | 7 (fait) | panneau de performances (APP-12) ouvert ou fermé : le moteur n'envoie `performance_stats` que si le panneau est ouvert **et** la fenêtre visible (coupé à la réduction et à la destruction de la fenêtre) |
 | `start_preview { target, channel }` / `stop_preview { id }` / `stop_previews` | 5 (fait) | aperçu en direct d'une cible : session WGC à part, sans curseur ni bordure, ~1 image/s, réduite sur le GPU (≤ 384×216) puis JPEG envoyé en octets bruts sur un `Channel` ; 12 au plus ; toutes arrêtées à la destruction de la fenêtre. Jamais utilisé pour la capture réelle |
-| `get_update` / `check_update` / `install_update` | 8 (fait) | mises à jour (ADR-034) : `UpdateInfo { current, available: { version, notes } | null }` ; `get_update` lit le résultat de la dernière recherche (démarrage puis toutes les 6 h), `check_update` relance, `install_update` télécharge, arrête le moteur, installe en mode `passive` et redémarre ; erreurs `update_failed { detail }`, `update_while_recording`, `update_none` ; une version nouvelle lève l'alerte `update_available { version }` (info) |
+| `get_update` / `check_update` / `install_update` | 8 (fait) | mises à jour : `UpdateInfo { current, available: { version, notes } | null }` ; `get_update` lit le résultat de la dernière recherche (démarrage puis toutes les 6 h), `check_update` relance, `install_update` télécharge, arrête le moteur, installe en mode `passive` et redémarre ; erreurs `update_failed { detail }`, `update_while_recording`, `update_none` ; une version nouvelle lève l'alerte `update_available { version }` (info) |
 | `onboarding_needed` / `onboarding_checks` / `finish_onboarding` | 8 (fait) | premier lancement guidé (APP-06) : `onboarding_needed` vaut vrai seulement si `settings.json` n'existait pas (`onboarded` absent d'un fichier existant = déjà fait) ; `onboarding_checks` renvoie `{ windows_build, windows_supported (≥ 20348), webview, clips_dir_writable }` (le dossier des clips est créé et testé par un fichier vide aussitôt supprimé) ; `finish_onboarding` écrit `onboarded: true` ("Passer" et "Terminer") ; une réinitialisation des réglages garde `onboarded` |
 | `export_diagnostic` | 8 (fait) | boîte "Enregistrer sous" (zip daté), puis `diagnostic::entries` + `write_archive` : `system.txt` (version, Windows, processeur, mémoire, cartes graphiques et pilotes, HAGS, écrans et HDR, encodeurs, périphériques audio, WebView2), `settings.json` et `logs/*.log` ; chemin du profil remplacé par `%USERPROFILE%` et nom du PC par `[pc]` partout ; nom d'utilisateur et mots du nom complet du compte (`NetUserGetInfo` niveau 10) remplacés par `[user]` dans les noms de périphériques, les réglages et les journaux (pas dans le reste de `system.txt`, où "RTX 4070 SUPER" se ferait masquer) ; titre de fenêtre capturée masqué ; `system.txt` donne aussi le fuseau horaire (les journaux sont en UTC) ; renvoie le nom du zip ou `null` si annulé ; erreur `diagnostic_failed { detail }`. Même contenu par `palaclips-cli diagnostic --out` |
 | `open_diagnostic` | 8 (fait) | ouvre dans l'Explorateur le dernier zip exporté pendant la session (chemin gardé côté Rust, jamais reçu du front) |
@@ -344,7 +343,7 @@ d'une erreur système.
 | `clip_mix { path }` / `set_clip_mix { path, mix }` | v1.4 | GAL-04 : état du lecteur par clip, `{ tracks: [{ volume, mute, solo }], full_mix_chosen }` (colonne `mix` de la bibliothèque, suit le renommage ; volume borné à 0-1) ; `null` = jamais réglé. `full_mix_chosen` = la piste 1 a été coupée ou réactivée à la main, sinon le réglage `mute_full_mix` s'applique par-dessus |
 | `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 (fait) | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
 | `quota_preview { quotaGb }` | 6 (fait) | STO-04 : taille totale et clips qui seraient supprimés (plus anciens, jamais un favori ni un enregistrement en cours) |
-| `prepare_player { path }` | 6 (fait) | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\com.palawi.palaclips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
+| `prepare_player { path }` | 6 (fait) | pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\com.palawi.palaclips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
 | `track_peaks { path }` | 6 (fait) | forme d'onde d'une piste du cache : 1 600 pics (0-255, octets bruts), calculés en décodant le `.m4a` une fois puis gardés à côté (`.peaks`) ; chemin hors du cache refusé |
 | `copy_clip { path }` | 6 (fait) | GAL-05 : copie le fichier dans le presse-papiers (`CF_HDROP`) pour le coller dans Discord ou l'Explorateur |
 | `start_export { export }` / `cancel_export { id }` | 6 (fait) | GAL-06/07 : `{ path, name, start_secs, end_secs, precise, tracks, gains, mix, mix_title }` → id. `gains` : un volume (0-1) par piste choisie, appliqué au mixage (le lecteur envoie ses volumes ; absent = 1). Rapide : copie depuis l'image clé au début ou juste avant ; précis : décodage puis réencodage matériel, ou sur le processeur sans encodeur matériel du codec (même codec, débit de la source) à partir de l'image exacte. Pistes audio choisies (positions parmi les pistes audio), copiées, ou mixées en une piste AAC titrée `mix_title`. Fichier `<name>.mp4` dans le dossier du clip (suffixe `_2`... si pris), écrit en `.part.mp4` puis renommé (la bibliothèque ignore les `.part`). Événements Tauri `export-progress { id, progress }` (pas de 1 %) et `export-finished { id, path, error }` |
@@ -360,21 +359,21 @@ aussi l'`AppStatus` renvoyé par `get_state`.
 `state_changed`, `capture_started { source, width, height, fps, source_mode, tracks: [{ title, kind }] }` (à l'armement ; `width`/`height`/`fps` = sortie encodée, `source_mode { width, height, refresh_hz }` = taille réelle de l'écran ou de la fenêtre capturée et fréquence de l'écran, `null` pour une fenêtre ; `source` = `Localized` : `source_primary_screen`, `source_screen { name }`, `source_window { exe }`, `source_window_fallback { exe }` ; `kind` = `mix`, `microphone`, `application` ou `game`, car les pistes sont renommables),
 `source_changed { source_mode }` (la source change de taille ou l'écran de fréquence pendant la capture, relevé chaque seconde),
 `tracks_renamed { tracks: [{ title, kind }] }` (nom de piste ou langue changés pendant le
-replay : titres mis à jour sans redémarrage, appliqués au prochain clip), `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
+replay : titres mis à jour sans redémarrage, appliqués au prochain clip), `game_named { exe_name, name }` (nom de jeu choisi et figé ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
 périphérique rattaché ; émis à chaque changement), `clip_saved { path, duration_secs, save_latency_ms, thumbnail, origin }` (`origin` = `replay`, `post_roll` ou `recording` : le shell joue le carillon pour un replay, le son "clip terminé" à la fin d'un "après", rien pour un enregistrement, qui a déjà son son de fin), `audio_levels { levels }` (crête linéaire 0-1 de chaque piste depuis
 le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
 fenêtre),
-Protocole `palaclips` (ADR-007, `register_asynchronous_uri_scheme_protocol`) :
+Protocole `palaclips` (`register_asynchronous_uri_scheme_protocol`) :
 `http://palaclips.localhost/<chemin encodé>` (`convertFileSrc(path, "palaclips")`), sert un clip
 de la bibliothèque ou une piste du cache, et rien d'autre (403 ; `..` refusé) ; réponses `206`
 par plages, 4 Mo au plus par réponse ; lecture sur un fil bloquant de Tauri.
 
 Événement Tauri `config-changed` (`EngineConfig`) : émis par le shell à chaque changement de la
 config enregistrée (`set_config`, langue, nom de jeu, réinitialisation). Le front n'a qu'une copie
-de la config (`lib/useConfig.ts`), suivie par État, la galerie et chaque page (ADR-039).
+de la config (`lib/useConfig.ts`), suivie par État, la galerie et chaque page.
 Événement Tauri `hotkeys-changed` (sans contenu) : les raccourcis ont changé ; État relit
 `get_hotkeys`.
 
@@ -409,7 +408,7 @@ et à chaque démarrage ou arrêt de capture.
 
 Codes d'alerte stables : `capture_fallback_monitor`, `capture_source_lost`, `capture_source_rate_limited`, `capture_gpu_saturated`, `cpu_encoder_overloaded`, `capture_exclusive_fullscreen`, `app_track_silent`,
 `audio_device_changed`, `audio_device_unavailable`, `disk_almost_full`, `disk_full`, `encoder_reset`, `no_hardware_encoder`, `no_video_encoder`,
-`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `record_encoder_cpu { reason }` (2e encodage de l'enregistrement refusé par la carte graphique : il passe sur le processeur, ADR-040), `recording_failed { reason }`
+`hotkey_unavailable` (raccourci global déjà pris ; cite l'overlay NVIDIA), `record_encoder_cpu { reason }` (2e encodage de l'enregistrement refusé par la carte graphique : il passe sur le processeur), `recording_failed { reason }`
 (écriture impossible ou disque plein : l'enregistrement s'arrête, les fichiers déjà écrits
 restent lisibles), `disk_almost_full { free_mb }` (moins de 2 Go libres pendant un
 enregistrement, une fois), `recording_recovered { name }` (enregistrement interrompu remuxé au
@@ -428,10 +427,10 @@ exemple ; le début déjà écrit reste lisible) ;
 `encoder_reset { reason }` (avertissement : capture, encodage ou piste en panne, par exemple
 après un redémarrage du pilote graphique ; le moteur désarme puis réarme seul après 1, 2 puis
 5 s, tampon de replay vide, et un enregistrement en cours reprend dans un nouveau fichier ; après
-trois échecs, `replay_stopped`, ADR-031) ;
+trois échecs, `replay_stopped`) ;
 `capture_source_rate_limited { rate, fps }` (cadence de composition DWM sous le fps demandé
 pendant 5 s, vérifiée chaque seconde par le fil d'encodage vidéo ; seules comptent les secondes
-où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l'alerte, ADR-018) ;
+où Windows livre de nouvelles images, un écran immobile ne déclenche jamais l'alerte) ;
 `capture_gpu_saturated` (au moins 10 % des images de chaque seconde encodées plus d'une période
 en retard pendant 5 s : le jeu prend tout le GPU ; conseille de limiter ses fps) ;
 `cpu_encoder_overloaded` (même mesure avec un encodeur CPU, ticks sautés compris : le processeur
@@ -452,12 +451,12 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 
 | Quoi | Où |
 |---|---|
-| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language, onboarded }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\com.palawi.palaclips\` (ADR-032) |
+| Réglages (`settings.json` : `{ schema_version, engine, feedback, hotkeys, theme, language, onboarded }`, format 2 : noms de pistes par défaut à `null`, versionné ; illisible → `.bak` + défauts ; version plus récente → défauts sans écraser) | `%APPDATA%\com.palawi.palaclips\` |
 | Journaux (`tracing` sans couleurs, filtre `warn,palaclips_engine=info,palaclips_app_lib=info` ou `RUST_LOG` ; un fichier `palaclips.AAAA-MM-JJ.log` par jour, 7 gardés ; les paniques y sont écrites) | `%LOCALAPPDATA%\com.palawi.palaclips\logs\` (ou `<dossier>\local\logs\`) |
 | Index de la bibliothèque (SQLite, table `clips` : chemin, nom, jeu, type, date, taille, durée, pistes, miniature, favori ; WAL) | `library.db` à côté de `settings.json` (`%APPDATA%\com.palawi.palaclips\`, ou `PALACLIPS_CONFIG_DIR`) ; le dossier des clips reste la source de vérité |
 | Miniatures, pistes extraites, proxys | `%LOCALAPPDATA%\com.palawi.palaclips\cache\` (miniatures : `thumbnails\<nom du clip>.jpg`, 480 px, dernière image clé, écrites à la sauvegarde) ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\local\cache\`, pour qu'aucun fichier de test ne sorte du dossier isolé ; le dossier des miniatures est autorisé au protocole `asset` au démarrage |
 | Buffer de replay sur disque | `%LOCALAPPDATA%\com.palawi.palaclips\replay\` (ou `<dossier>\local\replay\`) |
-| Migration (premier lancement après ADR-032, à chaque démarrage tant qu'il reste quelque chose à déplacer) | `settings.json`, `.bak`, `library.db` (+ `-wal`, `-shm`), `recordings.txt` de `%APPDATA%\PalaClips\`, puis `cache\` et `replay\` de `%LOCALAPPDATA%\PalaClips\`, déplacés vers les dossiers ci-dessus (`migrate::migrate_data`) ; un fichier déjà présent à l'arrivée n'est jamais écrasé ; chemins des miniatures réécrits dans `library.db` ; seuls ces fichiers et sous-dossiers bougent : un fichier inconnu reste en place, `%APPDATA%\PalaClips` est supprimé seulement s'il est vide, et `%LOCALAPPDATA%\PalaClips` (dossier d'installation) n'est jamais supprimé ni renommé. Jamais en mode isolé |
+| Migration (premier lancement après le passage des données sous l'identifiant de l'app, à chaque démarrage tant qu'il reste quelque chose à déplacer) | `settings.json`, `.bak`, `library.db` (+ `-wal`, `-shm`), `recordings.txt` de `%APPDATA%\PalaClips\`, puis `cache\` et `replay\` de `%LOCALAPPDATA%\PalaClips\`, déplacés vers les dossiers ci-dessus (`migrate::migrate_data`) ; un fichier déjà présent à l'arrivée n'est jamais écrasé ; chemins des miniatures réécrits dans `library.db` ; seuls ces fichiers et sous-dossiers bougent : un fichier inconnu reste en place, `%APPDATA%\PalaClips` est supprimé seulement s'il est vide, et `%LOCALAPPDATA%\PalaClips` (dossier d'installation) n'est jamais supprimé ni renommé. Jamais en mode isolé |
 | Données du WebView2 (localStorage : état du panneau de performances) | `%LOCALAPPDATA%\com.palawi.palaclips\EBWebView\` ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\webview\` (`data_directory` de la fenêtre) : une app de test ne lit ni n'écrit jamais le stockage réel (`scripts/webview-isolation.ps1` le vérifie par empreinte) |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | Enregistrements en cours (`recordings.txt` : `PID<tab>chemin`, une ligne par fichier ouvert ; au démarrage, ceux d'un processus mort sont remuxés en MP4 classique) | à côté de `settings.json` |

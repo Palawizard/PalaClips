@@ -52,7 +52,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Corrigé
 - Les sons de PalaClips (carillon de sauvegarde, début et fin d'enregistrement) n'entrent plus
   dans la piste 1 en mode "Audio du bureau" : sa source est "Tous les sons sauf PalaClips"
-  par défaut, ou une sortie précise au choix (ADR-041). Une config qui avait déjà ce mode garde
+  par défaut, ou une sortie précise au choix. Une config qui avait déjà ce mode garde
   sa sortie et son calibrage.
 - Un clip supprimé ou renommé (galerie, Explorateur, quota), un fichier ajouté ou un changement
   de dossier met à jour tout de suite "Derniers clips" et l'espace disque sur État, sans
@@ -63,7 +63,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ## [1.3.0] - 2026-10-26
 
 ### Ajouté
-- Qualité propre de l'enregistrement (REC-07, ADR-040) : dans Réglages → Replay & qualité,
+- Qualité propre de l'enregistrement (REC-07) : dans Réglages → Replay & qualité,
   l'enregistrement suit le replay ou prend son codec, sa qualité, ses images par seconde et sa
   résolution. Le replay continue pendant l'enregistrement et reste sauvegardable.
 - Estimation de la taille des clips (RPL-11) : Mo par minute, taille d'un clip, avec l'"après",
@@ -79,7 +79,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Corrigé
 - Compression "Garder toutes les pistes" avec beaucoup de pistes : le débit audio baisse au
   lieu de refuser une cible pourtant suffisante.
-- Des réglages ne semblaient pris en compte qu'après une relance (ADR-039) : l'écran État
+- Des réglages ne semblaient pris en compte qu'après une relance : l'écran État
   affichait encore l'ancienne durée du replay et l'ancien raccourci, et une page ouverte avant
   un changement fait ailleurs pouvait l'écraser. Le moteur appliquait déjà chaque réglage ; la
   config affichée suit maintenant chaque changement, et chaque page n'envoie que ce qu'elle
@@ -88,12 +88,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ## [1.2.0] - 2026-10-24
 
 ### Ajouté
-- Enregistrer après la sauvegarde (RPL-10, ADR-037) : réglage "Après l'appui" (0 s par défaut,
+- Enregistrer après la sauvegarde (RPL-10) : réglage "Après l'appui" (0 s par défaut,
   jusqu'à 10 min) dans Réglages → Replay & qualité. Le tampon est écrit tout de suite dans un MP4
   hybride, puis le direct y est ajouté jusqu'à la fin ; un nouvel appui prolonge le même clip ;
   "Terminer maintenant" sur État et dans la zone de notification ; carillon et notification
   "Clip en cours" à l'appui. Clip récupéré au démarrage après un arrêt brutal.
-- Compression à une taille cible (CMP-01 à 05, ADR-038) : page Compression (20 Mo Discord,
+- Compression à une taille cible (CMP-01 à 05) : page Compression (20 Mo Discord,
   50 Mo Nitro Basic, 500 Mo Nitro ou taille libre ; H.264 ou AV1 ; piste 1 seule ou toutes les
   pistes), résolution et images par seconde choisies selon la taille, taille vérifiée et
   nouvel essai si besoin, jamais au-dessus de la cible ; HDR converti en SDR ; original déjà
@@ -105,7 +105,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ### Changé
 - Barre latérale : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio
-  sortent de Réglages (APP-14, ADR-036). Quitter une page, une section de Réglages ou fermer la
+  sortent de Réglages (APP-14). Quitter une page, une section de Réglages ou fermer la
   fenêtre avec un changement non appliqué demande "Appliquer et redémarrer", "Ne pas
   appliquer" ou "Rester". Liens directs depuis État et les alertes.
 - Tailles affichées en unités binaires, comme l'Explorateur et Discord.
@@ -126,7 +126,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Ajouté
 - Encodage par le processeur quand aucun encodeur de la carte graphique ne marche : H.264 par
   l'encodeur logiciel de Windows, AV1 par SVT-AV1, détectés par un encodage de test réel
-  (ENC-06, ADR-035). Conversion d'image sur le GPU puis une seule relecture, ou par le
+  (ENC-06). Conversion d'image sur le GPU puis une seule relecture, ou par le
   processeur quand il n'y a pas de Video Processor (machine virtuelle) ; fils d'encodage en
   priorité basse ; au-delà d'une demi-seconde de retard, des images sont sautées et l'alerte
   "le processeur n'arrive pas à encoder" s'affiche.

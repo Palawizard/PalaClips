@@ -45,7 +45,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | ENC-03 | Intervalle d'images clés réglable (défaut 1 s) pour un replay précis. |
 | ENC-04 | Aucune copie CPU des images dans le chemin nominal (texture D3D11 → encodeur). |
 | ENC-05 | Sans encodeur matériel : le premier lancement et l'app disent que le processeur encodera, avec un avertissement sur la charge en jeu ; message clair au démarrage seulement si aucun encodeur, ni matériel ni processeur, ne fonctionne (v1.1). |
-| ENC-06 | **Encodage par le processeur** (v1.1, ADR-035) : H.264 par l'encodeur logiciel de Windows et AV1 par SVT-AV1, détectés par un encodage de test réel ; réglage "Encodeur" (Automatique = matériel si disponible sinon processeur, Carte graphique, Processeur) ; fils d'encodage en priorité basse et en nombre limité ; même contrat que le matériel (CFR, images clés réglables, file bornée, replay, enregistrement, découpe précise et export) ; 1080p30 par défaut sur le processeur ; alerte quand l'encodage ne suit pas. |
+| ENC-06 | **Encodage par le processeur** (v1.1) : H.264 par l'encodeur logiciel de Windows et AV1 par SVT-AV1, détectés par un encodage de test réel ; réglage "Encodeur" (Automatique = matériel si disponible sinon processeur, Carte graphique, Processeur) ; fils d'encodage en priorité basse et en nombre limité ; même contrat que le matériel (CFR, images clés réglables, file bornée, replay, enregistrement, découpe précise et export) ; 1080p30 par défaut sur le processeur ; alerte quand l'encodage ne suit pas. |
 
 ### 2.3 Audio (AUD)
 
@@ -55,7 +55,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | AUD-02 | Piste **Micro** : choix du périphérique, gain (−20 à +20 dB), suivi du micro par défaut. |
 | AUD-03 | Une **piste par logiciel** choisi, sans maximum (v1.3 : au-delà de 12 pistes d'applis, une note dit ce qu'elles coûtent en processeur, mémoire et Mo par minute), capture par arbre de processus (PID parent + enfants). |
 | AUD-04 | Sélecteur de sources audio soigné : applis ayant du son en tête, **icône, nom, vumètre en direct**, recherche, ajout d'une appli **non lancée** (liste des processus ou parcourir un .exe). |
-| AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (lu par VLC, ffprobe... ; DaVinci Resolve ne l'affiche pas, ADR-021). |
+| AUD-05 | Chaque piste est renommable ; le nom est écrit dans les métadonnées du fichier (lu par VLC, ffprobe... ; DaVinci Resolve ne l'affiche pas). |
 | AUD-06 | Option "Piste Jeu automatique" : une piste dédiée suit **le jeu**, pas le premier plan. Capture d'une fenêtre → l'appli de cette fenêtre. Capture d'un écran → la dernière appli passée au premier plan en plein écran ou en fenêtre sans bordure couvrant un écran ; un Alt+Tab vers une appli fenêtrée (Discord, navigateur, terminal...), le bureau ou PalaClips ne la change pas. L'utilisateur peut aussi la fixer sur un processus choisi dans le sélecteur AUD-04. |
 | AUD-07 | Appli fermée puis relancée : la piste se rattache seule, silence entre-temps, aucun fichier cassé. |
 | AUD-08 | Synchronisation audio/vidéo < 1 image sur **1 h**, y compris avec de longs silences. |
@@ -89,7 +89,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 | REC-04 | Option "inclure le replay en cours au début de l'enregistrement" ; si la qualité de l'enregistrement diffère de celle du replay (v1.3), le replay en mémoire est sauvegardé en clip à part juste avant. |
 | REC-05 | Découpage automatique optionnel par durée ou par taille. |
 | REC-06 | Récupération au démarrage d'un enregistrement interrompu : il apparaît dans la galerie, finalisé. |
-| REC-07 | **Qualité propre de l'enregistrement** (v1.3, ADR-040) : "Comme le replay" par défaut, ou codec, qualité/débit, images par seconde et résolution propres ; source, audio, encodeur, images clés et priorité GPU communs. Un 2e encodage tourne seulement pendant l'enregistrement, sans coupure du replay ; les sauvegardes de replay restent possibles pendant l'enregistrement ; 2e encodage matériel refusé → processeur, avec une alerte. |
+| REC-07 | **Qualité propre de l'enregistrement** (v1.3) : "Comme le replay" par défaut, ou codec, qualité/débit, images par seconde et résolution propres ; source, audio, encodeur, images clés et priorité GPU communs. Un 2e encodage tourne seulement pendant l'enregistrement, sans coupure du replay ; les sauvegardes de replay restent possibles pendant l'enregistrement ; 2e encodage matériel refusé → processeur, avec une alerte. |
 
 ### 2.6 Fichiers et stockage (STO)
 
@@ -150,7 +150,7 @@ sans lui, encodage par le processeur (ENC-06, v1.1).
 |---|---|
 | PERF-01 | Zone de notification, replay désarmé : **< 30 Mo** de RAM, 0 % CPU au repos. |
 | PERF-02 | Replay armé : RAM du moteur hors buffer **< 150 Mo** ; taille du buffer affichée. |
-| | PERF-01 et PERF-02 : RAM = mémoire privée réellement occupée (*private working set*, ce qu'affiche le Gestionnaire des tâches), mesurée hors pression mémoire ; la mémoire engagée (*commit*) est relevée pour information (ADR-023). |
+| | PERF-01 et PERF-02 : RAM = mémoire privée réellement occupée (*private working set*, ce qu'affiche le Gestionnaire des tâches), mesurée hors pression mémoire ; la mémoire engagée (*commit*) est relevée pour information. |
 | PERF-03 | Capture 1440p60 NVENC + 4 pistes : **< 2 % CPU** sur i5 13e gen, perte de fps en jeu ≤ 2 %. |
 | PERF-04 | Fenêtre ouverte : démarrage de l'UI **< 1 s** à chaud. |
 
