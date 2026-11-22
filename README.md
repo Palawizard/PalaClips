@@ -219,7 +219,7 @@ npm run tauri dev
 `check-env.ps1` checks the machine and `fetch-ffmpeg.ps1` downloads the FFmpeg LGPL libraries
 into `third_party/`. The engine test bench runs with `cargo run -p palaclips-cli -- info`.
 Architecture and decisions are in [`docs/`](docs) ([`SPEC`](docs/SPEC.md),
-[`ARCHITECTURE`](docs/ARCHITECTURE.md), [`DECISIONS`](docs/DECISIONS.md)).
+[`ARCHITECTURE`](docs/ARCHITECTURE.md)).
 
 Stack: Rust engine (Windows Graphics Capture, WASAPI, FFmpeg), Tauri 2 shell, React and
 TypeScript interface.

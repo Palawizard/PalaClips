@@ -240,8 +240,6 @@ interface React et TypeScript.
 |---|---|
 | [`docs/SPEC.md`](docs/SPEC.md) | Tout ce que contient la V1 |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modules, threads, IPC, données |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Choix d'architecture (ADR) |
-| [`docs/TESTING.md`](docs/TESTING.md) | Protocoles de test manuels |
 
 ## Contribuer
 

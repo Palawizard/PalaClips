@@ -1,6 +1,6 @@
 # Architecture de PalaClips
 
-> Référence technique. Les choix et leurs raisons sont dans `docs/DECISIONS.md`.
+> Référence technique.
 
 ## 1. Vue d'ensemble
 
