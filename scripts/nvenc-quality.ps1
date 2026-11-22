@@ -38,7 +38,7 @@ try {
     $env:PATH = "$root\third_party\ffmpeg\bin;$env:PATH"
     $cli = Join-Path $root "target\release\palaclips-cli.exe"
     $reference = Join-Path $work "reference.mp4"
-    Write-Journal "$(Get-Date -Format s) $Name : $Target, $Seconds s à $Fps i/s, référence $ReferenceMbps Mb/s (réglages PalaClips), puis réencodage à $BitrateMbps Mb/s : défauts FFmpeg contre ADR-022"
+    Write-Journal "$(Get-Date -Format s) $Name : $Target, $Seconds s à $Fps i/s, référence $ReferenceMbps Mb/s (réglages PalaClips), puis réencodage à $BitrateMbps Mb/s : défauts FFmpeg contre réglages PalaClips"
     $log = & $cli capture-video --target $Target --fps $Fps --bitrate-mbps $ReferenceMbps --seconds $Seconds --out $reference 2>&1 | Out-String
     if (-not (Test-Path $reference)) { throw "capture impossible : $($log.Trim())" }
     $log -split "`r?`n" | Where-Object { $_ -match 'i/s|arrêtée|WARN|ERROR' } | ForEach-Object { Write-Journal ($_ -replace '^\S+Z\s+', '') }
@@ -46,7 +46,7 @@ try {
     $common = @("-c:v", "h264_nvenc", "-preset", "p4", "-rc", "cbr", "-b:v", "$($BitrateMbps)M", "-maxrate", "$($BitrateMbps)M", "-bufsize", "$($BitrateMbps)M", "-g", "$Fps", "-bf", "0")
     $variants = [ordered]@{
         "défauts FFmpeg" = @()
-        "ADR-022 (dpb_size=2, surfaces=2, delay=1)" = @("-dpb_size", "2", "-surfaces", "2", "-delay", "1")
+        "PalaClips (dpb_size=2, surfaces=2, delay=1)" = @("-dpb_size", "2", "-surfaces", "2", "-delay", "1")
     }
     $results = @()
     $index = 0
@@ -60,7 +60,7 @@ try {
         Write-Journal ("{0,-44} VMAF {1,6:N2} | PSNR moy {2,6:N2} dB, min {3,6:N2} dB | SSIM {4:N5} | {5,6:N1} Mo" -f $label, $quality.Vmaf, $quality.Psnr, $quality.PsnrMin, $quality.Ssim, $size)
         $results += $quality
     }
-    Write-Journal ("ÉCART ADR-022 − défauts : VMAF {0:+0.00;-0.00}, PSNR {1:+0.00;-0.00} dB, SSIM {2:+0.00000;-0.00000}" -f ($results[1].Vmaf - $results[0].Vmaf), ($results[1].Psnr - $results[0].Psnr), ($results[1].Ssim - $results[0].Ssim))
+    Write-Journal ("ÉCART PalaClips − défauts : VMAF {0:+0.00;-0.00}, PSNR {1:+0.00;-0.00} dB, SSIM {2:+0.00000;-0.00000}" -f ($results[1].Vmaf - $results[0].Vmaf), ($results[1].Psnr - $results[0].Psnr), ($results[1].Ssim - $results[0].Ssim))
 } catch {
     Write-Journal "ÉCHEC : $_"
 } finally {

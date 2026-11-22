@@ -8,7 +8,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ## [1.4.1] - 2026-10-28
 
 ### Corrigé
-- État : on peut ouvrir un clip depuis « Derniers clips ». Double-clic ou Entrée sur une carte
+- État : on peut ouvrir un clip depuis "Derniers clips". Double-clic ou Entrée sur une carte
   (cartes focusables, focus visible, nom lu par un lecteur d'écran) ouvre le clip dans le lecteur
   de la Galerie ; le fermer ramène à État. Si le fichier a disparu entre-temps, un message
   s'affiche sur État et la carte est retirée (GAL-03).
@@ -16,14 +16,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ## [1.4.0] - 2026-10-28
 
 ### Ajouté
-- Lecteur : réglage « Couper le Mix complet à la lecture » (Général, activé par défaut). À
+- Lecteur : réglage "Couper le Mix complet à la lecture" (Général, activé par défaut). À
   l'ouverture d'un clip qui a une piste Jeu ou une piste d'appli, la piste 1 est coupée pour ne
   rien entendre en double ; elle se réactive avec M. L'état muet/solo/volume est retenu par
   clip. L'export et la compression gardent la piste 1 tant qu'on ne l'a pas coupée soi-même
   (GAL-04).
-- Son « clip terminé » à la fin d'un clip avec « après » (La → Mi → La à l'octave), distinct du
-  carillon de l'appui et des sons d'enregistrement, soumis à « Son de confirmation » et exclu des
-  clips en « Tous les sons sauf PalaClips » (RPL-10). La fin d'un enregistrement ne joue plus le
+- Son "clip terminé" à la fin d'un clip avec "après" (La → Mi → La à l'octave), distinct du
+  carillon de l'appui et des sons d'enregistrement, soumis à "Son de confirmation" et exclu des
+  clips en "Tous les sons sauf PalaClips" (RPL-10). La fin d'un enregistrement ne joue plus le
   carillon de sauvegarde par-dessus son propre son.
 - Réglages → Replay & qualité en trois onglets (Replay, Enregistrement, Commun), chacun avec son
   estimation de taille ; l'onglet est retenu pendant la session, un point marque l'onglet qui a
@@ -31,10 +31,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   Enregistrement (APP-15).
 
 ### Modifié
-- État : en fenêtre large, « Derniers clips » et la colonne des pistes et performances défilent
+- État : en fenêtre large, "Derniers clips" et la colonne des pistes et performances défilent
   chacun de leur côté sous le bandeau ; sous 1000 px, la page défile comme avant. 12 derniers
   clips au lieu de 5.
-- État : la cellule Source affiche la vraie source (« 2560×1440 · 240 Hz » pour un écran, la
+- État : la cellule Source affiche la vraie source ("2560×1440 · 240 Hz" pour un écran, la
   taille de la fenêtre capturée pour une fenêtre), mise à jour en direct ; la qualité enregistrée
   reste dans le résumé de la cellule Replay.
 - Lecteur : pendant le glisser sur la barre de temps ou une piste, le curseur, le temps et la
@@ -51,22 +51,22 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ### Corrigé
 - Les sons de PalaClips (carillon de sauvegarde, début et fin d'enregistrement) n'entrent plus
-  dans la piste 1 en mode « Audio du bureau » : sa source est « Tous les sons sauf PalaClips »
-  par défaut, ou une sortie précise au choix (ADR-041). Une config qui avait déjà ce mode garde
+  dans la piste 1 en mode "Audio du bureau" : sa source est "Tous les sons sauf PalaClips"
+  par défaut, ou une sortie précise au choix. Une config qui avait déjà ce mode garde
   sa sortie et son calibrage.
 - Un clip supprimé ou renommé (galerie, Explorateur, quota), un fichier ajouté ou un changement
-  de dossier met à jour tout de suite « Derniers clips » et l'espace disque sur État, sans
-  relancer ni changer de page. Ouvrir un clip dont le fichier a disparu affiche « Ce fichier
-  n'existe plus » et retire la carte ; le lecteur se ferme si son clip est supprimé ; le choix
+  de dossier met à jour tout de suite "Derniers clips" et l'espace disque sur État, sans
+  relancer ni changer de page. Ouvrir un clip dont le fichier a disparu affiche "Ce fichier
+  n'existe plus" et retire la carte ; le lecteur se ferme si son clip est supprimé ; le choix
   des clips à compresser et les brouillons de compression suivent aussi.
 
 ## [1.3.0] - 2026-10-26
 
 ### Ajouté
-- Qualité propre de l'enregistrement (REC-07, ADR-040) : dans Réglages → Replay & qualité,
+- Qualité propre de l'enregistrement (REC-07) : dans Réglages → Replay & qualité,
   l'enregistrement suit le replay ou prend son codec, sa qualité, ses images par seconde et sa
   résolution. Le replay continue pendant l'enregistrement et reste sauvegardable.
-- Estimation de la taille des clips (RPL-11) : Mo par minute, taille d'un clip, avec l'« après »,
+- Estimation de la taille des clips (RPL-11) : Mo par minute, taille d'un clip, avec l'"après",
   et Mo par minute et par heure pour l'enregistrement.
 - Accès direct à Replay & qualité : résumé de la qualité cliquable sur État, bouton sur Capture.
 - Son au début et à la fin d'un enregistrement (désactivable avec le son de confirmation).
@@ -77,9 +77,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   toutes les pistes : 11,5 % → 7 % de la machine à 24 pistes).
 
 ### Corrigé
-- Compression « Garder toutes les pistes » avec beaucoup de pistes : le débit audio baisse au
+- Compression "Garder toutes les pistes" avec beaucoup de pistes : le débit audio baisse au
   lieu de refuser une cible pourtant suffisante.
-- Des réglages ne semblaient pris en compte qu'après une relance (ADR-039) : l'écran État
+- Des réglages ne semblaient pris en compte qu'après une relance : l'écran État
   affichait encore l'ancienne durée du replay et l'ancien raccourci, et une page ouverte avant
   un changement fait ailleurs pouvait l'écraser. Le moteur appliquait déjà chaque réglage ; la
   config affichée suit maintenant chaque changement, et chaque page n'envoie que ce qu'elle
@@ -88,12 +88,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ## [1.2.0] - 2026-10-24
 
 ### Ajouté
-- Enregistrer après la sauvegarde (RPL-10, ADR-037) : réglage « Après l'appui » (0 s par défaut,
+- Enregistrer après la sauvegarde (RPL-10) : réglage "Après l'appui" (0 s par défaut,
   jusqu'à 10 min) dans Réglages → Replay & qualité. Le tampon est écrit tout de suite dans un MP4
   hybride, puis le direct y est ajouté jusqu'à la fin ; un nouvel appui prolonge le même clip ;
-  « Terminer maintenant » sur État et dans la zone de notification ; carillon et notification
-  « Clip en cours » à l'appui. Clip récupéré au démarrage après un arrêt brutal.
-- Compression à une taille cible (CMP-01 à 05, ADR-038) : page Compression (20 Mo Discord,
+  "Terminer maintenant" sur État et dans la zone de notification ; carillon et notification
+  "Clip en cours" à l'appui. Clip récupéré au démarrage après un arrêt brutal.
+- Compression à une taille cible (CMP-01 à 05) : page Compression (20 Mo Discord,
   50 Mo Nitro Basic, 500 Mo Nitro ou taille libre ; H.264 ou AV1 ; piste 1 seule ou toutes les
   pistes), résolution et images par seconde choisies selon la taille, taille vérifiée et
   nouvel essai si besoin, jamais au-dessus de la cible ; HDR converti en SDR ; original déjà
@@ -105,9 +105,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 
 ### Changé
 - Barre latérale : État, Galerie, Capture, Audio, Compression, Réglages ; Capture et Audio
-  sortent de Réglages (APP-14, ADR-036). Quitter une page, une section de Réglages ou fermer la
-  fenêtre avec un changement non appliqué demande « Appliquer et redémarrer », « Ne pas
-  appliquer » ou « Rester ». Liens directs depuis État et les alertes.
+  sortent de Réglages (APP-14). Quitter une page, une section de Réglages ou fermer la
+  fenêtre avec un changement non appliqué demande "Appliquer et redémarrer", "Ne pas
+  appliquer" ou "Rester". Liens directs depuis État et les alertes.
 - Tailles affichées en unités binaires, comme l'Explorateur et Discord.
 
 ## [1.1.1] - 2026-10-22
@@ -126,11 +126,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Ajouté
 - Encodage par le processeur quand aucun encodeur de la carte graphique ne marche : H.264 par
   l'encodeur logiciel de Windows, AV1 par SVT-AV1, détectés par un encodage de test réel
-  (ENC-06, ADR-035). Conversion d'image sur le GPU puis une seule relecture, ou par le
+  (ENC-06). Conversion d'image sur le GPU puis une seule relecture, ou par le
   processeur quand il n'y a pas de Video Processor (machine virtuelle) ; fils d'encodage en
   priorité basse ; au-delà d'une demi-seconde de retard, des images sont sautées et l'alerte
-  « le processeur n'arrive pas à encoder » s'affiche.
-- Réglage « Encodeur » dans Réglages → Replay & qualité : Automatique (carte graphique si elle
+  "le processeur n'arrive pas à encoder" s'affiche.
+- Réglage "Encodeur" dans Réglages → Replay & qualité : Automatique (carte graphique si elle
   marche, sinon processeur), Carte graphique ou Processeur. Sur le processeur : passage en
   1080p30, avertissement sur la charge en jeu, mémoire de l'encodeur ajoutée à l'estimation.
 - Découpe précise et export réencodent aussi sur le processeur sans encodeur matériel du codec.
@@ -140,8 +140,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 ### Changé
 - Premier lancement : sans encodeur matériel, il propose le processeur au lieu de bloquer ;
   il ne bloque plus que si aucun encodeur ne marche.
-- Panneau de performances : « Processeur · H.264 » au lieu du nom de l'encodeur FFmpeg.
-- Message « aucun encodeur de la carte graphique » : propose de choisir le processeur.
+- Panneau de performances : "Processeur · H.264" au lieu du nom de l'encodeur FFmpeg.
+- Message "aucun encodeur de la carte graphique" : propose de choisir le processeur.
 - Notes de version : un court résumé rédigé en français et en anglais remplace la liste brute
   des PR, sur GitHub comme dans l'app ; l'app n'affiche que la partie dans sa langue.
 - Essai de mise à jour (`scripts/update-test.ps1`) : version prise dans le tag de test, notes
@@ -153,12 +153,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Création du repo : workspace Cargo (`palaclips-engine`, `palaclips-cli`, app Tauri 2),
   front React 19 + TypeScript + Tailwind 4, CI Windows.
 - Moteur : horloge `Hns` (QPC), `EngineConfig` validée, contrat `EngineEvent`, file de replay
-  `PacketRing` purgée par âge, estimation de RAM — avec tests.
+  `PacketRing` purgée par âge, estimation de RAM, avec tests.
 - CLI `palaclips-cli ffmpeg-info` : version de FFmpeg et encodeurs vidéo matériels
   disponibles (NVENC, AMF, QSV, Media Foundation).
 - Liaison FFmpeg 8.1 LGPL via `rsmpeg` 0.18 ; `cargo run`/`cargo test` trouvent les DLL seuls.
 - `check-env.ps1` détecte les problèmes clang/Visual Studio.
-- Contexte produit `PRODUCT.md` et direction visuelle « Écran d'après-match ».
+- Contexte produit `PRODUCT.md` et direction visuelle "Écran d'après-match".
 - Capture vidéo (phase 1) : écrans et fenêtres par Windows Graphics Capture, fenêtre retrouvée
   par nom d'exe, conversion NV12 et mise à l'échelle sur le GPU, encodage matériel H.264 /
   HEVC / AV1 sans copie CPU, fps constant sur l'horloge QPC, curseur et bordure réglables,
@@ -169,7 +169,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Écran HDR : la vidéo garde les couleurs de l'écran au lieu d'être délavée.
 - CLI : `list-targets`, `resolve-target`, `probe-wgc`, `probe-hdr`, `capture-video`.
 - Documentation : SPEC V1, architecture, ADR, protocoles de test.
-- Audio (phase 2) : piste « Mix complet » (tout ce qui sort par défaut) et piste « Micro »
+- Audio (phase 2) : piste "Mix complet" (tout ce qui sort par défaut) et piste "Micro"
   (gain réglable) en AAC dans le MP4, synchronisées sur la même horloge que la vidéo ; les
   silences et les coupures sont comblés sans décaler la synchro ; la capture suit le
   périphérique par défaut quand on change de sortie ou qu'on débranche le casque.
@@ -178,7 +178,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   heure (`scripts/t2-av-sync.ps1`).
 
 - Une piste par logiciel (capture de l'appli et de ses processus enfants), retrouvée par nom
-  d'exe et rattachée seule quand l'appli est fermée puis relancée ; piste « Jeu » ; alerte si une piste d'appli reste muette alors que l'appli émet du
+  d'exe et rattachée seule quand l'appli est fermée puis relancée ; piste "Jeu" ; alerte si une piste d'appli reste muette alors que l'appli émet du
   son.
 - CLI : `list-audio-sessions`, `capture-apps`, `probe-audio --app`, `play-tone`.
 - Replay instantané (phase 4) : les dernières secondes (5 s à 60 min) gardées en RAM ou sur
@@ -198,7 +198,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Écran État : le replay (armé ou non, secondes en mémoire, RAM utilisée, Sauvegarder,
   Armer/Désarmer), la source capturée, l'espace disque, les alertes, chaque piste audio dans
   l'ordre du fichier avec sa couleur, son vumètre, sa crête et son état (en attente de l'appli,
-  muette…), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
+  muette...), et les derniers clips avec miniature. Thèmes sombre et clair, polices embarquées.
 - Menu de la zone de notification : armer et désarmer le replay.
 - Écran Réglages : sections Raccourcis (saisie en appuyant sur la combinaison, conflits
   signalés) et Général (démarrage avec Windows, armement au démarrage, son et notification de
@@ -214,7 +214,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   changement qui redémarre le replay armé demande confirmation.
 - La résolution de sortie ne dépasse jamais celle de la source. Un changement vidéo est
   vérifié avant d'être appliqué (limite du codec, puis essai réel de l'encodeur) avec un
-  message clair en cas de refus, par exemple 5120×1440 en H.264. « Réglages appliqués »
+  message clair en cas de refus, par exemple 5120×1440 en H.264. "Réglages appliqués"
   s'affiche quand un changement en attente part au désarmement du replay.
 - `PALACLIPS_CONFIG_DIR` : dossier de réglages séparé, pour les essais.
 - Assistant de calibrage de la synchro (Réglages > Audio) : flash + bip sur l'écran principal
@@ -244,8 +244,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   le raccourci ne crée plus de clip d'une seconde.
 - Sauvegarde confirmée par un petit carillon joué par PalaClips, même en jeu quand Windows
   bloque les notifications, et par une notification ; les deux sont désactivables.
-- Les clips sont rangés sous le vrai nom du jeu (« Fortnite » au lieu de
-  « FortniteClient-Win64-Shipping »), lu dans l'exe ou tiré de son nom ; le nom est gardé une
+- Les clips sont rangés sous le vrai nom du jeu ("Fortnite" au lieu de
+  "FortniteClient-Win64-Shipping"), lu dans l'exe ou tiré de son nom ; le nom est gardé une
   fois choisi.
 - CLI : `game-name` (nom de jeu choisi pour un exe en cours).
 - Les réglages sont enregistrés (`%APPDATA%\PalaClips\settings.json`) et retrouvés au
@@ -280,29 +280,29 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - La piste 1 (Mix complet) est la somme des pistes que tu enregistres : ton micro, le jeu et
   les applis choisies, comme la piste du stream sur OBS. Un clip collé dans Discord contient ta
   voix, sans les notifications ni la musique du bureau. Les autres pistes restent séparées pour
-  le montage. Réglages > Audio : « Aussi dans Mix complet » (micro) et « Audio du bureau »
+  le montage. Réglages > Audio : "Aussi dans Mix complet" (micro) et "Audio du bureau"
   (toute la sortie à la place des pistes Jeu et applis).
-- Écran État : section « Performances » repliable, CPU de PalaClips en % de la machine, RAM
+- Écran État : section "Performances" repliable, CPU de PalaClips en % de la machine, RAM
   hors tampon, tampon, encodeur, images répétées et en retard ; rien n'est mesuré quand elle
   est fermée.
 - Installateur Windows par utilisateur : FFmpeg et ses licences (LGPL v3, GPL v3) inclus, page
   de licence ; à la désinstallation, une case dit ce qui part (réglages, historique et favoris
   de la galerie), jamais les clips.
-- Réglages > Replay & qualité : « Quand le GPU est à fond » — Priorité au jeu (défaut, le jeu
+- Réglages > Replay & qualité : "Quand le GPU est à fond": Priorité au jeu (défaut, le jeu
   garde ses fps) ou Priorité à la capture (vidéo fluide, environ 7 % de fps en moins).
-- Alertes « GPU à fond » (limite les fps du jeu ou choisis la priorité à la capture) et « plein
-  écran exclusif » (passe le jeu en plein écran fenêtré ou sans bordure).
+- Alertes "GPU à fond" (limite les fps du jeu ou choisis la priorité à la capture) et "plein
+  écran exclusif" (passe le jeu en plein écran fenêtré ou sans bordure).
 - CLI : `probe-gpu-priority`, `probe-fullscreen` ; scénario `scripts/app-crash.ps1`.
 - Journaux de l'app : un fichier par jour, 7 jours gardés, paniques comprises.
-- Réglages > Général : « Exporter un diagnostic », un zip avec les journaux, les réglages et
+- Réglages > Général : "Exporter un diagnostic", un zip avec les journaux, les réglages et
   les infos système (Windows, processeur, carte graphique et pilote, écrans, encodeurs,
   périphériques audio, fuseau horaire), sans le chemin du profil, le nom du PC, le nom du
-  compte ni le titre de la fenêtre capturée ; « Ouvrir le zip » pour voir ce qui part. CLI
+  compte ni le titre de la fenêtre capturée ; "Ouvrir le zip" pour voir ce qui part. CLI
   `diagnostic --out`.
 - Premier lancement guidé (seulement à la toute première ouverture) : vérifications (Windows,
   encodeur, WebView2, dossier des clips), écran à capturer en miniatures vivantes, micro et
   contenu de la piste 1, dossier des clips, durée et emplacement du replay (mémoire ou disque),
-  raccourci de sauvegarde, puis un vrai clip de test ; « Passer la configuration » garde les
+  raccourci de sauvegarde, puis un vrai clip de test ; "Passer la configuration" garde les
   réglages par défaut.
 - README utilisateur en anglais (`README.md`) et en français (`README.fr.md`) : installation,
   SmartScreen, raccourcis, FAQ (plein écran exclusif, Minecraft Java, anti-triches, GPU à fond,
@@ -311,7 +311,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
 - Feuille de route publique (`ROADMAP.md`, `ROADMAP.fr.md`) : compatibilité sur plus de
   systèmes, encodage par le processeur, autres pistes.
 - Mises à jour : recherche au démarrage puis toutes les 6 h, alerte quand une version sort,
-  Réglages → Général → Mises à jour avec les notes de version et « Installer et redémarrer »
+  Réglages → Général → Mises à jour avec les notes de version et "Installer et redémarrer"
   (signature vérifiée, refusé pendant un enregistrement).
 - Workflow de release : un tag `vX.Y.Z` construit et signe l'installeur, puis prépare une
   release brouillon avec `latest.json` et les notes du CHANGELOG.
@@ -331,12 +331,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   contribution.
 
 ### Corrigé
-- Minecraft Java en plein écran (F11) : l'alerte « plein écran exclusif » donne la solution qui
+- Minecraft Java en plein écran (F11) : l'alerte "plein écran exclusif" donne la solution qui
   marche (fenêtre agrandie ou mod de plein écran sans bordure), et la FAQ du README aussi.
 - Sans encodeur matériel : le message ne se coupe plus au milieu d'un mot au premier lancement
   et se lit d'une traite dans l'alerte de l'accueil.
 - L'écran choisi pour la capture est retrouvé même quand Windows renumérote ses écrans
-  (`\\.\DISPLAY1`, `2`…) : il est mémorisé par le chemin stable du moniteur ; un écran débranché
+  (`\\.\DISPLAY1`, `2`...) : il est mémorisé par le chemin stable du moniteur ; un écran débranché
   n'est jamais remplacé par un autre.
 - Windows requis : Windows 11 (le build 20348 de la capture audio par appli n'existe pas en
   Windows 10 grand public) ; sur un Windows trop ancien, une alerte le dit dès le démarrage.
@@ -354,7 +354,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions
   identique sur une partie de Fortnite).
 - Estimation de la RAM du replay plus juste : elle compte les secondes de marge du tampon et
   sa surcharge réelle.
-- Piste « Jeu » : elle suit le jeu (dernière appli en plein écran ou sans bordure, l'appli de
+- Piste "Jeu" : elle suit le jeu (dernière appli en plein écran ou sans bordure, l'appli de
   la fenêtre capturée, ou le processus choisi) au lieu de passer sur Discord, le navigateur
   ou le terminal à chaque Alt+Tab.
 - Écran SDR avec gestion automatique des couleurs : il n'est plus pris pour un écran HDR.

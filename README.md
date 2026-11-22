@@ -43,17 +43,17 @@ Anti-Cheat.
 
 ## Features
 
-- **Instant replay**: the last 5 seconds to 60 minutes stay in memory or on disk. A hotkey
+- Instant replay: the last 5 seconds to 60 minutes stay in memory or on disk. A hotkey
   (`Alt+F10` by default) saves them without leaving the game; a sound and a notification
   confirm the save.
-- **After the press**: the clip can also keep going for up to 10 min after the hotkey (for
+- After the press: the clip can also keep going for up to 10 min after the hotkey (for
   example 1 min before + 10 s after); pressing again extends it.
 - **Screen recording** (`Ctrl+Alt+F9`) in a fragmented MP4 that stays readable even if the PC
   crashes mid-way, in the replay's quality or in its own (codec, quality, frame rate,
   resolution); the replay keeps running and can still be saved during a recording.
 - **Size estimate** while you change the settings: MB per minute, size of a clip, and MB per
   minute and per hour of recording.
-- **Separate audio tracks**: track 1 is the full mix, track 2 the microphone, then one track
+- Separate audio tracks: track 1 is the full mix, track 2 the microphone, then one track
   per app you pick (Discord, Spotify, browser...), with no maximum, and a "Game" track that
   follows the game in the foreground. Each track carries its name in the file.
 - **Hardware encoding** on the graphics card (NVIDIA NVENC, AMD AMF, Intel Quick Sync) in
@@ -64,12 +64,12 @@ Anti-Cheat.
 - **Clip gallery** with a multitrack player: listen track by track (mute, solo, volume,
   remembered per clip; Full mix muted on opening so nothing plays twice), smooth scrubbing even
   on long HEVC clips, trim, export, or copy the file to paste it into Discord.
-- **Compress to a target size**: 20 MB for Discord, 50 or 500 MB for Nitro, or any size;
+- Compress to a target size: 20 MB for Discord, 50 or 500 MB for Nitro, or any size;
   resolution and frame rate follow the size, and the final size is checked. From the gallery (one
   or several clips), the player, or by dragging files from File Explorer.
-- **Lightweight**: lives in the notification area; with the window closed, only one small
+- Lightweight: lives in the notification area; with the window closed, only one small
   process remains.
-- **Private**: no account, no telemetry, no injection into games.
+- Private: no account, no telemetry, no injection into games.
 - **Automatic updates**, verified with a signature before they install.
 - Interface in English and French.
 
@@ -219,7 +219,7 @@ npm run tauri dev
 `check-env.ps1` checks the machine and `fetch-ffmpeg.ps1` downloads the FFmpeg LGPL libraries
 into `third_party/`. The engine test bench runs with `cargo run -p palaclips-cli -- info`.
 Architecture and decisions are in [`docs/`](docs) ([`SPEC`](docs/SPEC.md),
-[`ARCHITECTURE`](docs/ARCHITECTURE.md), [`DECISIONS`](docs/DECISIONS.md)).
+[`ARCHITECTURE`](docs/ARCHITECTURE.md)).
 
 Stack: Rust engine (Windows Graphics Capture, WASAPI, FFmpeg), Tauri 2 shell, React and
 TypeScript interface.
