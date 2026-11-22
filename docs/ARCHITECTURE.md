@@ -1,4 +1,4 @@
-# Architecture — PalaClips
+# Architecture de PalaClips
 
 > Référence technique. Les choix et leurs raisons sont dans `docs/DECISIONS.md`.
 
@@ -33,28 +33,28 @@ ouverte (APP-02, PERF-01).
 | `crates/engine` | Capture, audio, encodage, replay, mux, sources, bibliothèque de clips | **Non, jamais** |
 | `crates/cli` | Banc de test du moteur, une sous-commande par phase | Non |
 | `app/src-tauri` | Shell : commandes, événements, zone de notification, raccourcis, plugins | Oui |
-| `app/src` | UI React 19 + TypeScript + Tailwind 4 | — |
+| `app/src` | UI React 19 + TypeScript + Tailwind 4 | - |
 
 Modules du moteur (`crates/engine/src/`) :
 
 | Module | Contenu | Phase |
 |---|---|---|
-| `clock` | `Hns` (QPC en 100 ns), conversions vers bases de temps | 0 ✅ |
-| `config` | `EngineConfig` sérialisable + validation | 0 ✅ |
-| `events` | `EngineEvent` (contrat moteur → UI) | 0 ✅ |
-| `error` | `EngineError` (messages FR affichables) | 0 ✅ |
-| `replay` | `PacketRing` purgé par âge, estimation RAM, `plan_clip`, paquets en RAM ou sur disque (`Spool`) | 0 (file) ✅ / 4 ✅ |
-| `capture` | WGC, énumération écrans/fenêtres, pacer CFR, repli (miniatures : phase 5) | 1 ✅ |
-| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, encodeurs CPU (`h264_mf`, SVT-AV1), conversion GPU, détection par test réel ; AAC | 1 ✅ / 2 / v1.1 |
-| `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2–3 ✅ |
-| `sources` | Sessions audio, processus, jeu en cours (`CurrentGame`), périphériques | 3 ✅ |
-| `mux` | `Mp4Writer` multi-pistes titrées (vidéo, replay) ; MP4 hybride | 1–4 ✅ / 6 |
-| `paths` | Dossiers connus (Vidéos, LocalAppData), nom des clips, mémoire du processus | 4 ✅ |
+| `clock` | `Hns` (QPC en 100 ns), conversions vers bases de temps | 0 (fait) |
+| `config` | `EngineConfig` sérialisable + validation | 0 (fait) |
+| `events` | `EngineEvent` (contrat moteur → UI) | 0 (fait) |
+| `error` | `EngineError` (messages FR affichables) | 0 (fait) |
+| `replay` | `PacketRing` purgé par âge, estimation RAM, `plan_clip`, paquets en RAM ou sur disque (`Spool`) | 0 (file) (fait) / 4 (fait) |
+| `capture` | WGC, énumération écrans/fenêtres, pacer CFR, repli (miniatures : phase 5) | 1 (fait) |
+| `encode` | FFmpeg (rsmpeg) : NVENC/AMF/QSV, encodeurs CPU (`h264_mf`, SVT-AV1), conversion GPU, détection par test réel ; AAC | 1 (fait) / 2 / v1.1 |
+| `audio` | Loopback mix, micro, process loopback, combleur de silences, détection muette | 2-3 (fait) |
+| `sources` | Sessions audio, processus, jeu en cours (`CurrentGame`), périphériques | 3 (fait) |
+| `mux` | `Mp4Writer` multi-pistes titrées (vidéo, replay) ; MP4 hybride | 1-4 (fait) / 6 |
+| `paths` | Dossiers connus (Vidéos, LocalAppData), nom des clips, mémoire du processus | 4 (fait) |
 | `record` | Enregistrement manuel, découpage, récupération après crash | 6 |
 | `library` | Index des clips (SQLite), miniatures, surveillance du dossier, quota | 6 |
-| `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4 ✅ / 5 |
+| `engine` | `Engine` / `EngineHandle` : orchestration, threads, cycle de vie | 4 (fait) / 5 |
 
-Les modules sans ✅ n'existent pas encore : ils sont créés dans leur phase. Leur cahier des
+Les modules non marqués "fait" n'existent pas encore : ils sont créés dans leur phase. Leur cahier des
 charges :
 
 **`capture`**
@@ -66,8 +66,8 @@ charges :
   `monitor_missing` au lieu d'un autre écran. Réglage ancien sans chemin : nom GDI, comme avant.
 - Session WGC sur la `CaptureTarget` choisie : bordure (`DrawBorderSettings`) et curseur selon
   les réglages.
-- Le rappel WGC ne fait qu'un `CopyResource` GPU de `Frame::as_raw_texture` vers la « dernière
-  image » (texture BGRA recréée si la taille change). Aucune copie CPU.
+- Le rappel WGC ne fait qu'un `CopyResource` GPU de `Frame::as_raw_texture` vers la "dernière
+  image" (texture BGRA recréée si la taille change). Aucune copie CPU.
 - Pacer CFR (`CfrClock`) : tick `n` à `t0 + n / fps` sur l'horloge QPC ; à chaque tick, la
   dernière image reçue est convertie et encodée (doublon si Windows n'a rien envoyé, surplus
   ignorés). Tick en retard → tous les ticks manqués sont émis. `MinUpdateInterval` = moitié de
@@ -79,7 +79,7 @@ charges :
 - Suivre changement de résolution, fermeture de la fenêtre, perte du périphérique D3D.
 
 **`audio`**
-- Pistes dans l'ordre : mix complet (somme des pistes, « tout sauf PalaClips » en process loopback
+- Pistes dans l'ordre : mix complet (somme des pistes, "tout sauf PalaClips" en process loopback
   exclusif, ou loopback d'une sortie suivie à chaud), micro
   (gain appliqué), une par appli (`new_application_loopback_client(pid_parent, true)`).
 - Horodatage uniquement par `pu64QPCPosition`.
@@ -96,8 +96,8 @@ charges :
   le handle de chaque processus racine (`SYNCHRONIZE`) et revérifie les racines chaque seconde :
   une instance qui apparaît ou disparaît rouvre les flux. Sans racine, la piste attend le retour
   de l'appli.
-- Piste « Jeu » (`AudioSource::Game(CurrentGame)`, ADR-019) : même mécanique, l'exe est le
-  « jeu en cours » de `sources::CurrentGame` : processus fixé par l'utilisateur
+- Piste "Jeu" (`AudioSource::Game(CurrentGame)`, ADR-019) : même mécanique, l'exe est le
+  "jeu en cours" de `sources::CurrentGame` : processus fixé par l'utilisateur
   (`AudioSettings::game_exe`), sinon l'appli de la fenêtre capturée, sinon la dernière appli
   passée au premier plan en plein écran ou sans bordure (fenêtre qui couvre son écran, sans
   barre de titre). `ForegroundWatch` (thread dédié, `SetWinEventHook`
@@ -107,7 +107,7 @@ charges :
   piste sans échantillon non nul depuis 3 s, puis crête de session des arbres > 0,001 à deux
   vérifications (une par seconde) → une alerte, réarmée dès que la piste reçoit du signal.
   Les sessions de PalaClips sont ignorées : une capture loopback crée une session de rendu
-  « active » dont le vumètre reproduit la sortie. Limite connue : une appli suivie qui
+  "active" dont le vumètre reproduit la sortie. Limite connue : une appli suivie qui
   enregistre elle-même la sortie en loopback (OBS, fond d'écran réactif au son) peut déclencher
   l'alerte alors qu'elle ne joue rien.
 - Capture en 48 kHz, stéréo, f32, `autoconvert = true` (le rééchantillonnage et le mixage
@@ -133,7 +133,7 @@ charges :
   SVT-AV1). Sans Video Processor (création ou `VideoProcessorBlt` en échec, VM, WARP) :
   relecture BGRA et conversion + mise à l'échelle + bandes noires par swscale (BT.709 limité).
   Les fils créés par l'encodeur (départ dans `mfh264enc.dll` ou `avcodec-*.dll`) passent en
-  priorité « en dessous de la normale » à l'ouverture et après la première image
+  priorité "en dessous de la normale" à l'ouverture et après la première image
   (`encode::threads`). ENC-04 reste vrai pour le chemin matériel.
 - Entrée en frames matérielles `d3d11va` (pool dynamique, `BIND_RENDER_TARGET`) sur le
   périphérique de WGC ; BGRA → NV12 + mise à l'échelle + bandes noires par le D3D11 Video
@@ -156,14 +156,14 @@ charges :
 
 **`record`**
 - Partage capture et encodeur avec le replay.
-- Option « inclure le replay en cours au début ».
+- Option "inclure le replay en cours au début".
 - Découpage par durée ou taille ; récupération au démarrage d'un fichier interrompu.
 
 **`sources`**
 - Sessions audio actives + crête (`get_iaudiosessionmanager` → `get_audiosessionenumerator` →
   `get_process_id`, `get_audiometerinformation`).
 - Processus (appli non lancée), résolution exe → PID parent, démarrages/arrêts.
-- Jeu en cours (`CurrentGame`) : piste « Jeu », nom des clips (STO-03), galerie (GAL-01/02).
+- Jeu en cours (`CurrentGame`) : piste "Jeu", nom des clips (STO-03), galerie (GAL-01/02).
 - Périphériques audio et changements du périphérique par défaut.
 - Persistance par nom d'exe / identifiant de périphérique, jamais par PID.
 - Processus par `CreateToolhelp32Snapshot` (PID, PID parent, nom d'exe), sans dépendance.
@@ -171,7 +171,7 @@ charges :
   exe, triés ; `root_pid` (liste des sessions, jeux) garde le plus petit. L'arbre = la racine et
   tous ses descendants.
 - Fenêtre au premier plan (`foreground_window`) : `GetForegroundWindow` → PID → nom d'exe,
-  rectangle comparé à celui de son écran (thread « per-monitor DPI aware »), style
+  rectangle comparé à celui de son écran (thread "per-monitor DPI aware"), style
   `WS_CAPTION`. Jamais un jeu : PalaClips lui-même et le shell (`explorer.exe`, menu
   Démarrer, recherche, écran de verrouillage, `ApplicationFrameHost.exe`).
 - Sessions audio de **toutes** les sorties actives (une appli peut jouer ailleurs que sur la
@@ -186,11 +186,11 @@ charges :
 |---|---|---|---|
 | `windows-capture` | 2.0 | capture | 1 |
 | `windows` | 0.62 | capture, audio, sources | 1 |
-| `rsmpeg` | 0.18 (FFmpeg 8.x, ADR-004) | encode, mux | 0–1 |
+| `rsmpeg` | 0.18 (FFmpeg 8.x, ADR-004) | encode, mux | 0-1 |
 | `wasapi` | 0.26 | audio, sources | 2 |
-| `rusqlite` (feature `bundled`) | 0.40 | library | 6 ✅ |
-| `notify` | 8.2 (9 encore en RC) | library (surveillance du dossier, GAL-08) | 6 ✅ |
-| `tauri-plugin-*` | voir `app/src-tauri/Cargo.toml` | app | 5–8 |
+| `rusqlite` (feature `bundled`) | 0.40 | library | 6 (fait) |
+| `notify` | 8.2 (9 encore en RC) | library (surveillance du dossier, GAL-08) | 6 (fait) |
+| `tauri-plugin-*` | voir `app/src-tauri/Cargo.toml` | app | 5-8 |
 
 ## 3. Threads et flux de données
 
@@ -199,7 +199,7 @@ tenu pendant un appel système bloquant.
 
 | Thread | Entrée | Sortie | Notes |
 |---|---|---|---|
-| Capture (callback WGC) | images WGC | « dernière image » (texture GPU) | un `CopyResource`, jamais de travail lourd |
+| Capture (callback WGC) | images WGC | "dernière image" (texture GPU) | un `CopyResource`, jamais de travail lourd |
 | Vidéo (`palaclips-video`) | dernière image | `AVPacket` vidéo (canal borné) | pacer CFR sur QPC + conversion GPU + encodeur : une seule session matérielle |
 | Audio × N (`palaclips-audio-<piste>`, un par source) | WASAPI | `AVPacket` AAC (canal borné) | 48 kHz stéréo f32, `WaitForMultipleObjects` (arrêt, données, défaut changé), réveil après 50 ms sans paquet pour combler ; gain, décalage de synchro, `GapFiller`, AAC dans le même fil |
 | Moteur (`palaclips-engine`) | commandes (`EngineHandle`) + paquets de tous les flux + alertes des pistes | un `PacketRing` par flux, événements | un seul fil : armer, désarmer, sauvegarder, reconfigurer ; `select` sur les canaux, réveil chaque seconde pour `replay_stats` ; paquets partagés par référence FFmpeg (`av_packet_clone`), sans copie, pour le replay et (phase 6) l'enregistreur |
@@ -237,7 +237,7 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
   un segment se supprime dès que plus aucun paquet ne le référence ; les restes d'une session
   précédente sont effacés au démarrage.
 - Nom (STO-03) : `<dossier>/<Jeu>/<Jeu>_<AAAA-MM-JJ_HH-MM-SS>_replay.mp4`, `<Jeu>` = exe du
-  jeu en cours sans `.exe`, « Bureau » s'il n'y en a pas ; suffixe `_2`, `_3`… si deux
+  jeu en cours sans `.exe`, "Bureau" s'il n'y en a pas ; suffixe `_2`, `_3`... si deux
   sauvegardes tombent dans la même seconde. Dossier par défaut : `Vidéos\PalaClips`
   (`StorageSettings::clips_dir`).
 - Redémarrage (RPL-07) : `configure` redémarre la capture et vide le tampon si la zone, la
@@ -249,7 +249,7 @@ audio : GetBuffer → pu64QPCPosition (QPC, 100 ns)
 |---|---|---|
 | 1 | Mix complet : somme des pistes choisies, ou sortie audio entière + micro | `Mix complet` |
 | 2 | Micro | `Micro` |
-| 3… | Appli (choisie ou « Jeu » automatique) | libellé choisi par l'utilisateur |
+| 3... | Appli (choisie ou "Jeu" automatique) | libellé choisi par l'utilisateur |
 
 Les lecteurs et Discord ne lisent que la piste 1 : c'est pour ça qu'elle contient tout ce qui
 est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyée au stream).
@@ -257,7 +257,7 @@ est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyé
 - Par défaut (`desktop_in_full_mix: false`), la piste 1 ne capture rien elle-même
   (`AudioSource::TracksMix`) : elle additionne le micro (si `microphone_in_full_mix`), la piste
   Jeu et les pistes d'applis.
-- Avec « Audio du bureau » (`desktop_in_full_mix: true`), elle capture tout le son et n'ajoute
+- Avec "Audio du bureau" (`desktop_in_full_mix: true`), elle capture tout le son et n'ajoute
   que le micro : ce son contient déjà le jeu et les applis. Source (ADR-041) :
   `desktop_excludes_palaclips: true` (défaut) → `AudioSource::DesktopExceptPalaClips`,
   `new_application_loopback_client(notre PID, false)` = mode `EXCLUDE_TARGET_PROCESS_TREE` :
@@ -270,7 +270,7 @@ est enregistré, micro compris (ADR-029, ADR-030, comme la piste 1 d'OBS envoyé
   `max(200 ms, plus grand décalage négatif des pistes ajoutées + 150 ms)`, borné à 1 s, puis
   continue sans elle ; à l'arrêt, elle attend leur fin au plus 2 s. Une piste Jeu qui suit le
   même exe qu'une piste d'appli ajoutée envoie du silence au mixage (pas de doublon). Le
-  calibrage force « Audio du bureau » et coupe le micro de la piste 1 pour mesurer chaque
+  calibrage force "Audio du bureau" et coupe le micro de la piste 1 pour mesurer chaque
   source seule.
 
 ## 5. UI et lecture des clips
@@ -299,56 +299,56 @@ d'une erreur système.
 
 | Commande | Phase | Rôle |
 |---|---|---|
-| `engine_version` | 0 ✅ | version du moteur |
-| `default_config` | 0 ✅ | configuration par défaut |
-| `get_state` | 5 ✅ | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
-| `get_config` | 5 ✅ | configuration en cours |
-| `set_config { patch }` → `EngineConfig` | 5 ✅ (patch : ADR-039) | `patch` = seulement les champs changés, fusionné dans la config en cours (objet sans `kind` : champ par champ ; objet à `kind` et liste : remplacés entiers) ; si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
-| `get_autostart` / `set_autostart { enabled }` | 5 ✅ | démarrage avec Windows (APP-04, `tauri-plugin-autostart` 2.7, clé `Run` de l'utilisateur) ; lancé avec `--autostart` : zone de notification seulement, aucune fenêtre ni WebView2, puis « armer au démarrage » comme d'habitude |
-| `get_feedback` / `set_feedback { feedback }` | 5 ✅ | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
+| `engine_version` | 0 (fait) | version du moteur |
+| `default_config` | 0 (fait) | configuration par défaut |
+| `get_state` | 5 (fait) | état du moteur (`AppStatus` : état, secondes et octets du tampon, source capturée, pistes dans l'ordre avec leur état, alertes actives une par code) |
+| `get_config` | 5 (fait) | configuration en cours |
+| `set_config { patch }` → `EngineConfig` | 5 (fait) (patch : ADR-039) | `patch` = seulement les champs changés, fusionné dans la config en cours (objet sans `kind` : champ par champ ; objet à `kind` et liste : remplacés entiers) ; si la vidéo ou la capture change : limite du codec puis essai réel d'ouverture de l'encodeur à la taille de sortie (refus = `output_too_large` / `output_unsupported` avec codec et taille, rien n'est appliqué) ; valider, enregistrer `settings.json` (écriture atomique), appliquer au moteur (redémarre le replay si la capture ou les sources changent) ; refusé si le fichier vient d'une version plus récente |
+| `get_autostart` / `set_autostart { enabled }` | 5 (fait) | démarrage avec Windows (APP-04, `tauri-plugin-autostart` 2.7, clé `Run` de l'utilisateur) ; lancé avec `--autostart` : zone de notification seulement, aucune fenêtre ni WebView2, puis "armer au démarrage" comme d'habitude |
+| `get_feedback` / `set_feedback { feedback }` | 5 (fait) | confirmation de sauvegarde : `{ sound, toast }` (RPL-06), enregistrée dans `settings.json` |
 | `get_player` / `set_player { player }` | v1.4 | lecteur : `{ mute_full_mix }` (vrai par défaut), enregistré dans `settings.json` |
-| `reset_settings` | 5 ✅ | tous les réglages par défaut (APP-07) : moteur, confirmation, raccourcis, thème, démarrage avec Windows désactivé |
-| `get_theme` / `set_theme { theme }` | 5 ✅ | `system` / `dark` / `light` ; le front pose `data-theme` sur `<html>` (système suivi par `matchMedia`) |
-| `get_language` / `set_language { language }` | 5 ✅ | APP-08, ADR-028 : `system` / `fr` / `en` ; `get_language` renvoie `{ setting, resolved }` (`system` = langue d'affichage de Windows, français si elle est française, anglais sinon), `set_language` renvoie la langue retenue et retraduit le menu de la zone de notification |
-| `suspend_hotkeys` / `resume_hotkeys` | 5 ✅ | pendant la saisie d'un raccourci : sinon `RegisterHotKey` intercepte la combinaison avant la fenêtre |
+| `reset_settings` | 5 (fait) | tous les réglages par défaut (APP-07) : moteur, confirmation, raccourcis, thème, démarrage avec Windows désactivé |
+| `get_theme` / `set_theme { theme }` | 5 (fait) | `system` / `dark` / `light` ; le front pose `data-theme` sur `<html>` (système suivi par `matchMedia`) |
+| `get_language` / `set_language { language }` | 5 (fait) | APP-08, ADR-028 : `system` / `fr` / `en` ; `get_language` renvoie `{ setting, resolved }` (`system` = langue d'affichage de Windows, français si elle est française, anglais sinon), `set_language` renvoie la langue retenue et retraduit le menu de la zone de notification |
+| `suspend_hotkeys` / `resume_hotkeys` | 5 (fait) | pendant la saisie d'un raccourci : sinon `RegisterHotKey` intercepte la combinaison avant la fenêtre |
 | `list_capture_targets` | 5 | écrans + fenêtres + miniatures |
-| `calibrate_audio` | 5 ✅ | assistant de calibrage (AUD-11, ADR-026) : capture temporaire de l'écran principal, flash + bip 10 s, mesure par piste, replay réarmé ; renvoie mesures et décalages proposés (rien n'est appliqué) |
-| `list_audio_devices { input }` | 5 ✅ | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
-| `list_app_sessions` | 5 ✅ | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
-| `pick_app_exe` | 5 ✅ | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
-| `compress_probe { path }` / `compress_pick_files` | v1.2 ✅ | CMP-01 : source (taille, cadence, durée, HDR, pistes, octets) et miniature ; sélecteur de fichiers vidéo |
-| `compress_plan { input }` / `compress_preview { plan, codec, durationSecs }` | v1.2 ✅ | plan de compression (ADR-038) ou plan modifié → `{ plan, quality, estimated_bytes, duration_secs }` |
-| `compress_add { inputs }` / `compress_jobs` / `compress_cancel { id }` / `compress_clear` | v1.2 ✅ | file de compression dans le shell, un fil en priorité basse, continue fenêtre fermée ; événement `compress-changed` (tâche : `queued`, `running { attempt, fraction }`, `done { path, bytes, attempts }`, `failed { error }`, `cancelled`) |
-| `compress_copy { id }` / `compress_reveal { id }` | v1.2 ✅ | copie du fichier compressé dans le presse-papiers, Explorateur ; seulement pour une tâche terminée |
-| `replay_arm` / `replay_disarm` / `replay_save` | 5 ✅ | contrôle du replay (erreur = `Localized`) ; avec `replay.after_secs` > 0 (RPL-10, v1.2), `replay_save` écrit le tampon dans un MP4 hybride et y ajoute le direct jusqu'à la fin de la durée après l'appui ; pendant ce temps, un nouvel appui prolonge le même clip |
-| `replay_finish_clip` | v1.2 ✅ | termine tout de suite le clip en cours (aussi dans le menu de la zone de notification, entrée visible seulement pendant le « après ») |
-| `record_start` / `record_stop` | 6 ✅ | enregistrement manuel (REC-01/02) : même capture et mêmes encodeurs que le replay (arme le pipeline si besoin, désarmé à la fin s'il ne l'était pas) ; état `recording` ; MP4 hybride (`hybrid_fragmented`, fragment d'1 s, `flush_packets`) ; option `record.include_replay` (REC-04) et découpage `record.split` par durée ou taille sur image clé (REC-05) ; un changement de sources pendant l'enregistrement redémarre le replay à la fin ; calibrage refusé (`recording_running`) |
-| `list_recent_clips { limit }` | 5 ✅ | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
-| `storage_status` | 5 ✅ | dossier des clips, espace libre et total du disque |
-| `pick_clips_dir` | 5 ✅ | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
-| `list_capture_targets` | 5 ✅ | écrans (nom GDI, `monitor_path` stable de DisplayConfig, nom, définition, Hz, principal) et fenêtres (exe, titre, PID, taille, réduite) ; PalaClips, fenêtres invisibles et fenêtres de moins de 160×90 exclues |
-| `app_icon { processId }` | 5 ✅ | icône 48 px de l'exe en PNG (octets bruts, `SHDefExtractIconW` + encodeur PNG de FFmpeg) |
-| `set_performance_panel { open }` | 7 ✅ | panneau de performances (APP-12) ouvert ou fermé : le moteur n'envoie `performance_stats` que si le panneau est ouvert **et** la fenêtre visible (coupé à la réduction et à la destruction de la fenêtre) |
-| `start_preview { target, channel }` / `stop_preview { id }` / `stop_previews` | 5 ✅ | aperçu en direct d'une cible : session WGC à part, sans curseur ni bordure, ~1 image/s, réduite sur le GPU (≤ 384×216) puis JPEG envoyé en octets bruts sur un `Channel` ; 12 au plus ; toutes arrêtées à la destruction de la fenêtre. Jamais utilisé pour la capture réelle |
-| `get_update` / `check_update` / `install_update` | 8 ✅ | mises à jour (ADR-034) : `UpdateInfo { current, available: { version, notes } | null }` ; `get_update` lit le résultat de la dernière recherche (démarrage puis toutes les 6 h), `check_update` relance, `install_update` télécharge, arrête le moteur, installe en mode `passive` et redémarre ; erreurs `update_failed { detail }`, `update_while_recording`, `update_none` ; une version nouvelle lève l'alerte `update_available { version }` (info) |
-| `onboarding_needed` / `onboarding_checks` / `finish_onboarding` | 8 ✅ | premier lancement guidé (APP-06) : `onboarding_needed` vaut vrai seulement si `settings.json` n'existait pas (`onboarded` absent d'un fichier existant = déjà fait) ; `onboarding_checks` renvoie `{ windows_build, windows_supported (≥ 20348), webview, clips_dir_writable }` (le dossier des clips est créé et testé par un fichier vide aussitôt supprimé) ; `finish_onboarding` écrit `onboarded: true` (« Passer » et « Terminer ») ; une réinitialisation des réglages garde `onboarded` |
-| `export_diagnostic` | 8 ✅ | boîte « Enregistrer sous » (zip daté), puis `diagnostic::entries` + `write_archive` : `system.txt` (version, Windows, processeur, mémoire, cartes graphiques et pilotes, HAGS, écrans et HDR, encodeurs, périphériques audio, WebView2), `settings.json` et `logs/*.log` ; chemin du profil remplacé par `%USERPROFILE%` et nom du PC par `[pc]` partout ; nom d'utilisateur et mots du nom complet du compte (`NetUserGetInfo` niveau 10) remplacés par `[user]` dans les noms de périphériques, les réglages et les journaux (pas dans le reste de `system.txt`, où « RTX 4070 SUPER » se ferait masquer) ; titre de fenêtre capturée masqué ; `system.txt` donne aussi le fuseau horaire (les journaux sont en UTC) ; renvoie le nom du zip ou `null` si annulé ; erreur `diagnostic_failed { detail }`. Même contenu par `palaclips-cli diagnostic --out` |
-| `open_diagnostic` | 8 ✅ | ouvre dans l'Explorateur le dernier zip exporté pendant la session (chemin gardé côté Rust, jamais reçu du front) |
-| `open_clips_dir` | 5 ✅ | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
-| `list_encoders` | 5 ✅ | encodeurs matériels et CPU (`{ name, description, codec, hardware, failure }`) détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur pour le choix courant est grisé dans Réglages |
-| `memory_status` | 5 ✅ | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
-| `estimate_replay { config }` | 5 ✅ | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %), `file_bytes_per_minute` (taille d'un fichier par minute, RPL-11 : débit vidéo + 192 kb/s par piste + 1 % de conteneur). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
-| `list_clips { query }` | 6 ✅ | clips de la bibliothèque (index SQLite) : filtres `game`, `kind` (`replay` / `recording`, d'après le nom), `favorites`, `since_ms`, `search` (nom ou jeu), tri `newest` / `oldest` / `largest` / `longest` / `name`, `limit` ; seuls les clips du dossier courant (racine + un niveau). Chaque clip : `path`, `name`, `game`, `kind`, `modified_ms`, `size_bytes`, `duration_secs`, `fps` (cadence vidéo moyenne, pas d'image du lecteur), `tracks` (titres), `thumbnail`, `favorite` |
-| `clip_games` | 6 ✅ | jeux (sous-dossiers) présents dans la bibliothèque |
-| `get_clip { path }` | v1.4.1 | un clip de la bibliothèque (même forme que `list_clips`) ; fichier disparu → `file_missing` et retrait de la bibliothèque (`library-changed { removed }`), chemin inconnu → `clip_unknown`. Sert à ouvrir le lecteur depuis « Derniers clips » |
-| `clip_mix { path }` / `set_clip_mix { path, mix }` | v1.4 | GAL-04 : état du lecteur par clip, `{ tracks: [{ volume, mute, solo }], full_mix_chosen }` (colonne `mix` de la bibliothèque, suit le renommage ; volume borné à 0–1) ; `null` = jamais réglé. `full_mix_chosen` = la piste 1 a été coupée ou réactivée à la main, sinon le réglage `mute_full_mix` s'applique par-dessus |
-| `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 ✅ | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
-| `quota_preview { quotaGb }` | 6 ✅ | STO-04 : taille totale et clips qui seraient supprimés (plus anciens, jamais un favori ni un enregistrement en cours) |
-| `prepare_player { path }` | 6 ✅ | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\com.palawi.palaclips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
-| `track_peaks { path }` | 6 ✅ | forme d'onde d'une piste du cache : 1 600 pics (0–255, octets bruts), calculés en décodant le `.m4a` une fois puis gardés à côté (`.peaks`) ; chemin hors du cache refusé |
-| `copy_clip { path }` | 6 ✅ | GAL-05 : copie le fichier dans le presse-papiers (`CF_HDROP`) pour le coller dans Discord ou l'Explorateur |
-| `start_export { export }` / `cancel_export { id }` | 6 ✅ | GAL-06/07 : `{ path, name, start_secs, end_secs, precise, tracks, gains, mix, mix_title }` → id. `gains` : un volume (0–1) par piste choisie, appliqué au mixage (le lecteur envoie ses volumes ; absent = 1). Rapide : copie depuis l'image clé au début ou juste avant ; précis : décodage puis réencodage matériel, ou sur le processeur sans encodeur matériel du codec (même codec, débit de la source) à partir de l'image exacte. Pistes audio choisies (positions parmi les pistes audio), copiées, ou mixées en une piste AAC titrée `mix_title`. Fichier `<name>.mp4` dans le dossier du clip (suffixe `_2`… si pris), écrit en `.part.mp4` puis renommé (la bibliothèque ignore les `.part`). Événements Tauri `export-progress { id, progress }` (pas de 1 %) et `export-finished { id, path, error }` |
-| `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 ✅ | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay`, `toggle_recording` (défaut `Ctrl+Alt+F9`) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab…), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
+| `calibrate_audio` | 5 (fait) | assistant de calibrage (AUD-11, ADR-026) : capture temporaire de l'écran principal, flash + bip 10 s, mesure par piste, replay réarmé ; renvoie mesures et décalages proposés (rien n'est appliqué) |
+| `list_audio_devices { input }` | 5 (fait) | sorties ou entrées actives (id, nom, par défaut) pour le Mix et le Micro |
+| `list_app_sessions` | 5 (fait) | applis qui ont une session audio, regroupées par exe (PID racine, nom d'appli, crête) ; interrogé ~10 fois/s seulement pendant que la section Audio est visible |
+| `pick_app_exe` | 5 (fait) | sélecteur de fichier .exe pour une appli non lancée ; renvoie le nom d'exe et le nom d'appli lu dans ses métadonnées |
+| `compress_probe { path }` / `compress_pick_files` | v1.2 (fait) | CMP-01 : source (taille, cadence, durée, HDR, pistes, octets) et miniature ; sélecteur de fichiers vidéo |
+| `compress_plan { input }` / `compress_preview { plan, codec, durationSecs }` | v1.2 (fait) | plan de compression (ADR-038) ou plan modifié → `{ plan, quality, estimated_bytes, duration_secs }` |
+| `compress_add { inputs }` / `compress_jobs` / `compress_cancel { id }` / `compress_clear` | v1.2 (fait) | file de compression dans le shell, un fil en priorité basse, continue fenêtre fermée ; événement `compress-changed` (tâche : `queued`, `running { attempt, fraction }`, `done { path, bytes, attempts }`, `failed { error }`, `cancelled`) |
+| `compress_copy { id }` / `compress_reveal { id }` | v1.2 (fait) | copie du fichier compressé dans le presse-papiers, Explorateur ; seulement pour une tâche terminée |
+| `replay_arm` / `replay_disarm` / `replay_save` | 5 (fait) | contrôle du replay (erreur = `Localized`) ; avec `replay.after_secs` > 0 (RPL-10, v1.2), `replay_save` écrit le tampon dans un MP4 hybride et y ajoute le direct jusqu'à la fin de la durée après l'appui ; pendant ce temps, un nouvel appui prolonge le même clip |
+| `replay_finish_clip` | v1.2 (fait) | termine tout de suite le clip en cours (aussi dans le menu de la zone de notification, entrée visible seulement pendant le "après") |
+| `record_start` / `record_stop` | 6 (fait) | enregistrement manuel (REC-01/02) : même capture et mêmes encodeurs que le replay (arme le pipeline si besoin, désarmé à la fin s'il ne l'était pas) ; état `recording` ; MP4 hybride (`hybrid_fragmented`, fragment d'1 s, `flush_packets`) ; option `record.include_replay` (REC-04) et découpage `record.split` par durée ou taille sur image clé (REC-05) ; un changement de sources pendant l'enregistrement redémarre le replay à la fin ; calibrage refusé (`recording_running`) |
+| `list_recent_clips { limit }` | 5 (fait) | derniers clips du dossier (`ClipSummary` : chemin, jeu, date, taille, durée, noms des pistes lus dans le fichier, miniature) |
+| `storage_status` | 5 (fait) | dossier des clips, espace libre et total du disque |
+| `pick_clips_dir` | 5 (fait) | sélecteur de dossier Windows (`tauri-plugin-dialog`, appelé côté Rust, aucune permission JS) ; renvoie le chemin ou rien si annulé ; l'app l'enregistre ensuite par `set_config` |
+| `list_capture_targets` | 5 (fait) | écrans (nom GDI, `monitor_path` stable de DisplayConfig, nom, définition, Hz, principal) et fenêtres (exe, titre, PID, taille, réduite) ; PalaClips, fenêtres invisibles et fenêtres de moins de 160×90 exclues |
+| `app_icon { processId }` | 5 (fait) | icône 48 px de l'exe en PNG (octets bruts, `SHDefExtractIconW` + encodeur PNG de FFmpeg) |
+| `set_performance_panel { open }` | 7 (fait) | panneau de performances (APP-12) ouvert ou fermé : le moteur n'envoie `performance_stats` que si le panneau est ouvert **et** la fenêtre visible (coupé à la réduction et à la destruction de la fenêtre) |
+| `start_preview { target, channel }` / `stop_preview { id }` / `stop_previews` | 5 (fait) | aperçu en direct d'une cible : session WGC à part, sans curseur ni bordure, ~1 image/s, réduite sur le GPU (≤ 384×216) puis JPEG envoyé en octets bruts sur un `Channel` ; 12 au plus ; toutes arrêtées à la destruction de la fenêtre. Jamais utilisé pour la capture réelle |
+| `get_update` / `check_update` / `install_update` | 8 (fait) | mises à jour (ADR-034) : `UpdateInfo { current, available: { version, notes } | null }` ; `get_update` lit le résultat de la dernière recherche (démarrage puis toutes les 6 h), `check_update` relance, `install_update` télécharge, arrête le moteur, installe en mode `passive` et redémarre ; erreurs `update_failed { detail }`, `update_while_recording`, `update_none` ; une version nouvelle lève l'alerte `update_available { version }` (info) |
+| `onboarding_needed` / `onboarding_checks` / `finish_onboarding` | 8 (fait) | premier lancement guidé (APP-06) : `onboarding_needed` vaut vrai seulement si `settings.json` n'existait pas (`onboarded` absent d'un fichier existant = déjà fait) ; `onboarding_checks` renvoie `{ windows_build, windows_supported (≥ 20348), webview, clips_dir_writable }` (le dossier des clips est créé et testé par un fichier vide aussitôt supprimé) ; `finish_onboarding` écrit `onboarded: true` ("Passer" et "Terminer") ; une réinitialisation des réglages garde `onboarded` |
+| `export_diagnostic` | 8 (fait) | boîte "Enregistrer sous" (zip daté), puis `diagnostic::entries` + `write_archive` : `system.txt` (version, Windows, processeur, mémoire, cartes graphiques et pilotes, HAGS, écrans et HDR, encodeurs, périphériques audio, WebView2), `settings.json` et `logs/*.log` ; chemin du profil remplacé par `%USERPROFILE%` et nom du PC par `[pc]` partout ; nom d'utilisateur et mots du nom complet du compte (`NetUserGetInfo` niveau 10) remplacés par `[user]` dans les noms de périphériques, les réglages et les journaux (pas dans le reste de `system.txt`, où "RTX 4070 SUPER" se ferait masquer) ; titre de fenêtre capturée masqué ; `system.txt` donne aussi le fuseau horaire (les journaux sont en UTC) ; renvoie le nom du zip ou `null` si annulé ; erreur `diagnostic_failed { detail }`. Même contenu par `palaclips-cli diagnostic --out` |
+| `open_diagnostic` | 8 (fait) | ouvre dans l'Explorateur le dernier zip exporté pendant la session (chemin gardé côté Rust, jamais reçu du front) |
+| `open_clips_dir` | 5 (fait) | crée le dossier des clips au besoin et l'ouvre dans l'Explorateur |
+| `list_encoders` | 5 (fait) | encodeurs matériels et CPU (`{ name, description, codec, hardware, failure }`) détectés par encodage de test (ENC-01), mis en cache pour la session ; un codec sans encodeur pour le choix courant est grisé dans Réglages |
+| `memory_status` | 5 (fait) | RAM physique totale et disponible (`GlobalMemoryStatusEx`) |
+| `estimate_replay { config }` | 5 (fait) | estimation du tampon pour une config non appliquée (RPL-03) : taille de la source, taille de sortie (jamais plus haute que la source), débit vidéo, nombre de pistes, octets (fenêtre du tampon + 7 %), `file_bytes_per_minute` (taille d'un fichier par minute, RPL-11 : débit vidéo + 192 kb/s par piste + 1 % de conteneur). Réglages alerte au-delà de 40 % de la RAM disponible et propose le tampon sur disque |
+| `list_clips { query }` | 6 (fait) | clips de la bibliothèque (index SQLite) : filtres `game`, `kind` (`replay` / `recording`, d'après le nom), `favorites`, `since_ms`, `search` (nom ou jeu), tri `newest` / `oldest` / `largest` / `longest` / `name`, `limit` ; seuls les clips du dossier courant (racine + un niveau). Chaque clip : `path`, `name`, `game`, `kind`, `modified_ms`, `size_bytes`, `duration_secs`, `fps` (cadence vidéo moyenne, pas d'image du lecteur), `tracks` (titres), `thumbnail`, `favorite` |
+| `clip_games` | 6 (fait) | jeux (sous-dossiers) présents dans la bibliothèque |
+| `get_clip { path }` | v1.4.1 | un clip de la bibliothèque (même forme que `list_clips`) ; fichier disparu → `file_missing` et retrait de la bibliothèque (`library-changed { removed }`), chemin inconnu → `clip_unknown`. Sert à ouvrir le lecteur depuis "Derniers clips" |
+| `clip_mix { path }` / `set_clip_mix { path, mix }` | v1.4 | GAL-04 : état du lecteur par clip, `{ tracks: [{ volume, mute, solo }], full_mix_chosen }` (colonne `mix` de la bibliothèque, suit le renommage ; volume borné à 0-1) ; `null` = jamais réglé. `full_mix_chosen` = la piste 1 a été coupée ou réactivée à la main, sinon le réglage `mute_full_mix` s'applique par-dessus |
+| `set_clip_favorite { path, favorite }` / `rename_clip { path, name }` / `trash_clip { path }` / `reveal_clip { path }` | 6 (fait) | GAL-05 : favori ; renommer le fichier (mêmes règles de nom que les dossiers de jeux, miniature renommée, favori gardé) ; Corbeille (`SHFileOperationW` + `FOF_ALLOWUNDO`) ; Explorateur sur le fichier. Un chemin absent de la bibliothèque est refusé (`clip_unknown`) |
+| `quota_preview { quotaGb }` | 6 (fait) | STO-04 : taille totale et clips qui seraient supprimés (plus anciens, jamais un favori ni un enregistrement en cours) |
+| `prepare_player { path }` | 6 (fait) | ADR-008 : pistes audio du clip copiées (sans réencodage) en `.m4a`, une par piste, en une seule lecture du fichier ; cache `%LOCALAPPDATA%\com.palawi.palaclips\cache\tracks\` limité à 2 Go (les moins récemment utilisées sont supprimées, les `.part` nettoyés au démarrage) ; renvoie `[{ title, path }]` |
+| `track_peaks { path }` | 6 (fait) | forme d'onde d'une piste du cache : 1 600 pics (0-255, octets bruts), calculés en décodant le `.m4a` une fois puis gardés à côté (`.peaks`) ; chemin hors du cache refusé |
+| `copy_clip { path }` | 6 (fait) | GAL-05 : copie le fichier dans le presse-papiers (`CF_HDROP`) pour le coller dans Discord ou l'Explorateur |
+| `start_export { export }` / `cancel_export { id }` | 6 (fait) | GAL-06/07 : `{ path, name, start_secs, end_secs, precise, tracks, gains, mix, mix_title }` → id. `gains` : un volume (0-1) par piste choisie, appliqué au mixage (le lecteur envoie ses volumes ; absent = 1). Rapide : copie depuis l'image clé au début ou juste avant ; précis : décodage puis réencodage matériel, ou sur le processeur sans encodeur matériel du codec (même codec, débit de la source) à partir de l'image exacte. Pistes audio choisies (positions parmi les pistes audio), copiées, ou mixées en une piste AAC titrée `mix_title`. Fichier `<name>.mp4` dans le dossier du clip (suffixe `_2`... si pris), écrit en `.part.mp4` puis renommé (la bibliothèque ignore les `.part`). Événements Tauri `export-progress { id, progress }` (pas de 1 %) et `export-finished { id, path, error }` |
+| `get_hotkeys` / `set_hotkeys { hotkeys }` | 5 (fait) | raccourcis globaux (APP-05) : `save_replay`, `toggle_replay`, `toggle_recording` (défaut `Ctrl+Alt+F9`) ; refus des touches sans modificateur, des raccourcis système (Alt+F4, Alt+Tab...), de la touche Windows, de Maj + lettre et des doublons ; conflit = `RegisterHotKey` refusé → retour aux raccourcis précédents. `get_hotkeys` renvoie aussi les actions dont le raccourci est indisponible. Limite : les applis qui lisent le clavier sans `RegisterHotKey` (Discord, overlay NVIDIA) ne sont pas détectées |
 | `performance_snapshot` | 7 | panneau de performances |
 | `export_diagnostics` | 8 | archive zip |
 
@@ -362,7 +362,7 @@ aussi l'`AppStatus` renvoyé par `get_state`.
 `tracks_renamed { tracks: [{ title, kind }] }` (nom de piste ou langue changés pendant le
 replay : titres mis à jour sans redémarrage, appliqués au prochain clip), `game_named { exe_name, name }` (nom de jeu choisi et figé, ADR-024 ; l'app l'ajoute à
 `settings.json`), `track_changed { track, title, state: waiting | capturing | silent | unavailable, source }` (appli ou
-périphérique rattaché ; émis à chaque changement), `clip_saved { path, duration_secs, save_latency_ms, thumbnail, origin }` (`origin` = `replay`, `post_roll` ou `recording` : le shell joue le carillon pour un replay, le son « clip terminé » à la fin d'un « après », rien pour un enregistrement, qui a déjà son son de fin), `audio_levels { levels }` (crête linéaire 0–1 de chaque piste depuis
+périphérique rattaché ; émis à chaque changement), `clip_saved { path, duration_secs, save_latency_ms, thumbnail, origin }` (`origin` = `replay`, `post_roll` ou `recording` : le shell joue le carillon pour un replay, le son "clip terminé" à la fin d'un "après", rien pour un enregistrement, qui a déjà son son de fin), `audio_levels { levels }` (crête linéaire 0-1 de chaque piste depuis
 le relevé précédent, un nombre par piste dans l'ordre des pistes : le front indexe par numéro
 de piste, jamais par titre ; 20 Hz fenêtre focalisée, 10 Hz sans focus, coupé
 fenêtre réduite ou fermée : `EngineHandle::set_level_rate`, piloté par les événements de la
@@ -399,7 +399,7 @@ l'armement et sur la dernière minute ; replay désarmé : CPU et RAM seulement,
 `replay_stats`, `recording_stats { elapsed_secs, bytes }` (chaque seconde pendant un
 enregistrement ; chaque fichier terminé arrive en `clip_saved`), `post_roll { ends_in_secs }`
 (v1.2 : nombre = clip en cours ou prolongé, secondes restantes ; `null` = clip en cours terminé,
-le fichier arrive en `clip_saved` ; le shell joue le carillon et le toast « Clip en cours » et
+le fichier arrive en `clip_saved` ; le shell joue le carillon et le toast "Clip en cours" et
 tient `AppStatus.clip_ends_at_ms`, heure de fin en ms Unix), `alert { severity, code, params, message }` (`code` + `params` pour le texte
 affiché, `message` en français pour les journaux et la CLI), `alert_cleared { code }` (la
 condition d'une alerte a disparu : l'app la retire de `AppStatus.alerts`). Alertes de capture
@@ -461,14 +461,14 @@ Raccourci global : `tauri-plugin-global-shortcut` 2.4, côté Rust seulement ; `
 | Données du WebView2 (localStorage : état du panneau de performances) | `%LOCALAPPDATA%\com.palawi.palaclips\EBWebView\` ; avec `PALACLIPS_CONFIG_DIR`, `<dossier>\webview\` (`data_directory` de la fenêtre) : une app de test ne lit ni n'écrit jamais le stockage réel (`scripts/webview-isolation.ps1` le vérifie par empreinte) |
 | Clips | `Vidéos\PalaClips\<Jeu>\` (réglable) |
 | Enregistrements en cours (`recordings.txt` : `PID<tab>chemin`, une ligne par fichier ouvert ; au démarrage, ceux d'un processus mort sont remuxés en MP4 classique) | à côté de `settings.json` |
-| Programme (installateur NSIS par utilisateur) | `%LOCALAPPDATA%\PalaClips\` : `palaclips-app.exe` (même nom que la build de dev : même instance unique, même entrée « Démarrer avec Windows »), les 7 DLL FFmpeg (LGPL) à côté, `licenses\` (MIT de PalaClips, LGPL v3 et GPL v3 de FFmpeg, `THIRD-PARTY.txt` : version, compilation BtbN, liens vers le code source, DLL remplaçables). Page de licence = MIT + notice tiers. Désinstallation : retire le programme et l'entrée `Run` ; la case « Supprimer aussi les réglages, l'historique et les favoris de la galerie (jamais les clips) » efface `%APPDATA%\com.palawi.palaclips` et `%LOCALAPPDATA%\com.palawi.palaclips` (textes dans `app/src-tauri/nsis/*.nsh`, sans BOM : Tauri en ajoute un) ; le dossier des clips n'est jamais touché |
+| Programme (installateur NSIS par utilisateur) | `%LOCALAPPDATA%\PalaClips\` : `palaclips-app.exe` (même nom que la build de dev : même instance unique, même entrée "Démarrer avec Windows"), les 7 DLL FFmpeg (LGPL) à côté, `licenses\` (MIT de PalaClips, LGPL v3 et GPL v3 de FFmpeg, `THIRD-PARTY.txt` : version, compilation BtbN, liens vers le code source, DLL remplaçables). Page de licence = MIT + notice tiers. Désinstallation : retire le programme et l'entrée `Run` ; la case "Supprimer aussi les réglages, l'historique et les favoris de la galerie (jamais les clips)" efface `%APPDATA%\com.palawi.palaclips` et `%LOCALAPPDATA%\com.palawi.palaclips` (textes dans `app/src-tauri/nsis/*.nsh`, sans BOM : Tauri en ajoute un) ; le dossier des clips n'est jamais touché |
 
 ## 8. Légèreté
 
 - WebView détruit à la fermeture ; `RunEvent::ExitRequested` → `prevent_exit()` ; sortie via
-  « Quitter » uniquement.
+  "Quitter" uniquement.
 - Sondes (sessions audio, crêtes) arrêtées quand l'UI est fermée, sauf rattachement en attente.
 - Pas de polling : notifications Windows (périphériques audio, fichiers). Exceptions bornées :
   une piste d'appli qui attend son appli cherche le processus chaque seconde (Toolhelp) ; une
   appli rattachée est suivie par son handle de processus (attente, pas de polling) ; la piste
-  « Jeu » est réveillée par les événements de premier plan (`SetWinEventHook`).
+  "Jeu" est réveillée par les événements de premier plan (`SetWinEventHook`).

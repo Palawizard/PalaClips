@@ -54,7 +54,7 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
 - **Estimation de la taille** pendant le réglage : Mo par minute, taille d'un clip, et Mo par
   minute et par heure d'enregistrement.
 - **Pistes audio séparées** : piste 1 = mix complet, piste 2 = micro, puis une piste par appli
-  choisie (Discord, Spotify, navigateur...), sans maximum, et une piste « Jeu » qui suit le jeu
+  choisie (Discord, Spotify, navigateur...), sans maximum, et une piste "Jeu" qui suit le jeu
   au premier plan. Chaque piste porte son nom dans le fichier.
 - **Encodage matériel** par la carte graphique (NVIDIA NVENC, AMD AMF, Intel Quick Sync) en
   H.264, HEVC ou AV1, à fps constant jusqu'à 240 i/s, écrans HDR pris en charge. Sans
@@ -105,7 +105,7 @@ fonctionne avec les anti-triches comme Easy Anti-Cheat.
    [dernière version](https://github.com/Palawizard/PalaClips/releases/latest) et lance-le.
    L'installation se fait pour ton compte, sans droits administrateur.
 2. **SmartScreen** : l'installeur n'est pas signé par un certificat payant, donc Windows peut
-   afficher « Windows a protégé votre ordinateur ». Clique sur *Informations complémentaires*,
+   afficher "Windows a protégé votre ordinateur". Clique sur *Informations complémentaires*,
    puis sur *Exécuter quand même*.
 3. Au premier lancement, PalaClips vérifie la machine, puis pose quelques questions, une à la
    fois : l'écran, le micro, le contenu de la piste 1, la durée du replay et où le garder, le
@@ -138,8 +138,8 @@ affiche une alerte. Passe le jeu en *plein écran fenêtré* (ou *fenêtre sans 
 ses options d'affichage. La plupart des jeux récents utilisent déjà ce mode.
 
 **Minecraft Java en plein écran (F11).** F11 met Minecraft Java en plein écran exclusif, et la
-vidéo reste figée (PalaClips affiche une alerte ; le réglage NVIDIA « Méthode de présentation
-Vulkan/OpenGL » n'a rien changé dans notre essai). Joue plutôt en fenêtre agrandie, ou installe
+vidéo reste figée (PalaClips affiche une alerte ; le réglage NVIDIA "Méthode de présentation
+Vulkan/OpenGL" n'a rien changé dans notre essai). Joue plutôt en fenêtre agrandie, ou installe
 un mod de plein écran sans bordure comme Borderless Fullscreen (Fabric) : les deux se
 capturent normalement.
 
@@ -149,7 +149,7 @@ WASAPI pour le son). Il a été testé avec Fortnite (Easy Anti-Cheat).
 
 **Le jeu perd des fps quand la carte graphique est à fond.** Par défaut, le jeu a la priorité :
 si le GPU est saturé, c'est la vidéo qui peut saccader, et une alerte le signale. Dans
-Réglages → Replay & qualité, « Quand le GPU est à fond » → *Priorité à la capture* rend la
+Réglages → Replay & qualité, "Quand le GPU est à fond" → *Priorité à la capture* rend la
 vidéo fluide, mais le jeu perd environ 7 % de fps. Limiter les fps du jeu laisse aussi de la
 marge.
 
@@ -176,21 +176,21 @@ l'ajoute à l'estimation. Réglages → Replay & qualité →
 processeur n'arrive pas à suivre, baisse la résolution ou les images par seconde (720p30 est le
 plus léger). 
 
-**Windows en édition « N » ou « KN » (Europe, Corée).** Ces éditions n'ont pas Media Foundation :
+**Windows en édition "N" ou "KN" (Europe, Corée).** Ces éditions n'ont pas Media Foundation :
 l'encodeur H.264 de Windows manque tant que le Media Feature Pack n'est pas installé
 (Paramètres → Applications → Fonctionnalités facultatives). Sans lui, PalaClips passe tout seul
 en AV1 sur le processeur ; installe le pack pour retrouver le H.264.
 
-**Mon micro est aussi dans la piste 1.** C'est le réglage « Aussi dans Mix complet »
+**Mon micro est aussi dans la piste 1.** C'est le réglage "Aussi dans Mix complet"
 (page Audio), pour qu'un clip soit prêt à partager tel quel. Ta voix garde de toute
 façon sa propre piste.
 
 **La piste 1 ne contient pas les notifications ni la musique.** Par défaut, la piste 1 est la
-somme des pistes choisies. Active « Audio du bureau » (page Audio) pour qu'elle contienne
+somme des pistes choisies. Active "Audio du bureau" (page Audio) pour qu'elle contienne
 tout ce que tu entends.
 
-**Les sons de PalaClips finissent-ils dans mes clips ?** Non. En « Audio du bureau », la source
-« Tous les sons sauf PalaClips » (par défaut) laisse de côté le carillon et les sons
+**Les sons de PalaClips finissent-ils dans mes clips ?** Non. En "Audio du bureau", la source
+"Tous les sons sauf PalaClips" (par défaut) laisse de côté le carillon et les sons
 d'enregistrement. Si tu choisis une sortie précise, la piste 1 enregistre tout ce qui y passe,
 sons de PalaClips compris.
 
